@@ -8,6 +8,15 @@ Six shape fighters punch, grab and throw each other off Cloud Island. The last o
 
 Open `index.html` in a web browser, or play the GitHub Pages version.
 
+## Play online
+
+1. Click **play online**, type your name and click **host**.
+2. Send your friends the 4-letter code.
+3. They click **play online**, type the code and click **join**.
+4. Everyone picks a fighter, and the host clicks **make fight happen**.
+
+The host's browser runs the fight, and everyone else connects to it directly using [PeerJS](https://peerjs.com/). Keep the host's game window open and in front while you play. Some school or work networks block these direct connections.
+
 ## Controls
 
 | | Keys: WASD | Keys: Arrows | Controller |
@@ -22,4 +31,6 @@ Open `index.html` in a web browser, or play the GitHub Pages version.
 ## Made with
 
 - [Matter.js](https://brm.io/matter-js/) for physics
+- [PeerJS](https://peerjs.com/) for online play
+- Menu music is an original tune played with the Web Audio API
 - Plain HTML, CSS and JavaScript (no build step)
