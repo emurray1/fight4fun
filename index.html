@@ -159,6 +159,9 @@ input:focus-visible{outline:4px solid var(--yellow);outline-offset:2px}
 .kick-box b{font-weight:400;font-size:18px}
 .kick-box .plist li{color:var(--paper)}
 .disband.small-disband{width:100%;height:100px;border-radius:16px;font-size:26px}
+.team-btn{font-family:var(--display);font-size:22px;border-color:var(--ink)}
+.team-btn:disabled{cursor:default;opacity:1}
+#winCanvas{display:flex;flex-wrap:wrap;justify-content:center;gap:4px}
 .res-note{margin:0;font-size:19px;background:var(--paper);padding:2px 10px}
 .res-note:empty{display:none}
 
@@ -196,6 +199,7 @@ input:focus-visible{outline:4px solid var(--yellow);outline-offset:2px}
       <section>
         <h3>The goal</h3>
         <p>Knock everyone off Cloud Island into the water. The last fighter still on the island wins the round. Win enough rounds and you win the whole fight and get the crown.</p>
+        <p><b>Team vs team:</b> pick "Team vs team" for the game mode, then put each fighter on the Red team or the Blue team. You can't punch or grab your own teammates. A team wins the round when everyone on the other team is in the water.</p>
       </section>
       <section>
         <h3>A fight, step by step</h3>
@@ -262,6 +266,7 @@ input:focus-visible{outline:4px solid var(--yellow);outline-offset:2px}
         <div class="setting"><span>Menu music</span><div class="seg" id="musicSeg"></div><small>A silly polka that plays on the menus.</small></div>
         <div class="setting"><span>Volume</span><div class="seg" id="volSeg"></div></div>
         <div class="setting"><span>Rounds to win</span><div class="seg" id="setRoundsSeg"></div><small>How many rounds you need to win the fight.</small></div>
+        <div class="setting"><span>Game mode</span><div class="seg" id="setModeSeg"></div><small>Free for all, or Red team against Blue team.</small></div>
         <div class="setting"><span>Computer players</span><div class="seg" id="setDiffSeg"></div><small>How good the computer fighters are.</small></div>
         <div class="setting"><span>Screen shake</span><div class="seg" id="shakeSeg"></div><small>The screen wobbles on big hits.</small></div>
         <div class="setting"><span>Name tags</span><div class="seg" id="tagsSeg"></div><small>Shows P1, P2 or CPU over each fighter.</small></div>
@@ -328,6 +333,7 @@ input:focus-visible{outline:4px solid var(--yellow);outline-offset:2px}
       <aside class="host">
         <h3>you are host</h3>
         <div class="setting"><span>Rounds to win</span><div class="seg" id="roundsSeg"></div></div>
+        <div class="setting"><span>Game mode</span><div class="seg" id="modeSeg"></div></div>
         <div class="setting"><span>Computer players</span><div class="seg" id="diffSeg"></div></div>
         <div class="mapbox"><span>map</span><canvas id="mapPreview" width="320" height="180"></canvas><small>Cloud Island: knock everyone into the water</small></div>
         <button id="fightBtn" class="btn big">make fight happen</button>
@@ -400,10 +406,13 @@ const CONTROLS = [
   { id:'pad2', label:'Controller 3', kind:'human', tag:'C3' }, { id:'pad3', label:'Controller 4', kind:'human', tag:'C4' },
 ];
 const CTRL = Object.fromEntries(CONTROLS.map(c => [c.id, c]));
+const TEAMS = [{ name:'Red team', color:'#ed1c24', dark:'#880015' }, { name:'Blue team', color:'#3f48cc', dark:'#1d2370' }];
+const MODES = [['ffa','Free for all'],['teams','Team vs team']];
+const allies = (a, b) => G.mode === 'teams' && a.team === b.team;
 const DIFF = { easy:{ punch:0.3, cd:0.9, mash:0.06, label:'Easy' }, normal:{ punch:0.55, cd:0.55, mash:0.13, label:'Normal' }, hard:{ punch:0.85, cd:0.36, mash:0.25, label:'Hard' } };
 const TOPS = { star5:1.15, star4:1.25, tri:1.3, diamond:1.15, square:0.85, circle:1 };
 
-const setup = { slots:{ star:'cpu', tri:'p1', circle:'cpu', diamond:'off', square:'cpu', sparkle:'off' }, rounds:3, diff:'normal', sound:true, music:true, volume:1, shake:true, tags:true };
+const setup = { slots:{ star:'cpu', tri:'p1', circle:'cpu', diamond:'off', square:'cpu', sparkle:'off' }, rounds:3, diff:'normal', mode:'ffa', teams:{ star:0, tri:1, circle:0, diamond:1, square:1, sparkle:0 }, sound:true, music:true, volume:1, shake:true, tags:true };
 try { const s = JSON.parse(localStorage.getItem('fff-setup') || 'null'); if (s && s.slots) Object.assign(setup, s); } catch (e) {}
 const saveSetup = () => { try { localStorage.setItem('fff-setup', JSON.stringify(setup)); } catch (e) {} };
 
@@ -660,16 +669,21 @@ function makeFighter(ch, control, x, idx) {
 }
 
 function startMatch() {
-  G.wins = {}; G.round = 0; G.rounds = setup.rounds; G.online = null; G.lineup = CHARS.filter(c => setup.slots[c.id] !== 'off').map(c => ({ ch:c, control:setup.slots[c.id] }));
+  G.wins = {}; G.round = 0; G.rounds = setup.rounds; G.online = null; G.mode = setup.mode; G.lineup = CHARS.filter(c => setup.slots[c.id] !== 'off').map(c => ({ ch:c, control:setup.slots[c.id], team:setup.teams[c.id] || 0 }));
   G.state = 'fight'; G.paused = false; showScreen(null); cv.focus(); startRound();
 }
 function startRound() {
   G.round++;
   const w = buildWorld(); G.engine = w.engine; G.island = w.island; G.clouds = w.clouds; G.time = 0;
   const n = G.lineup.length, xs = [];
-  for (let i=0;i<n;i++) xs.push(ISLAND.x1 + 110 + (ISLAND.x2-ISLAND.x1-220) * (n === 1 ? 0.5 : i/(n-1)));
-  xs.sort(() => Math.random() - 0.5);
-  G.fighters = G.lineup.map((l, i) => { const f = makeFighter(l.ch, l.control, xs[i], i); f.tag = l.tag || (l.control === 'cpu' ? 'CPU' : CTRL[l.control].tag); return f; });
+  if (G.mode === 'teams') {
+    const flip = Math.random() < 0.5, side = [0, 0], count = [0, 1].map(t => G.lineup.filter(l => l.team === t).length);
+    for (const l of G.lineup) { const t = l.team, k = count[t] === 1 ? 0.5 : side[t]++/(count[t] - 1), left = (t === 0) !== flip; xs.push(left ? 410 + k*330 : 860 + k*330); }
+  } else {
+    for (let i=0;i<n;i++) xs.push(ISLAND.x1 + 110 + (ISLAND.x2-ISLAND.x1-220) * (n === 1 ? 0.5 : i/(n-1)));
+    xs.sort(() => Math.random() - 0.5);
+  }
+  G.fighters = G.lineup.map((l, i) => { const f = makeFighter(l.ch, l.control, xs[i], i); f.team = l.team || 0; f.tag = l.tag || (l.control === 'cpu' ? 'CPU' : CTRL[l.control].tag); return f; });
   Composite.add(G.engine.world, G.fighters.map(f => f.body));
   ev('clear'); G.banner = null; G.phase = 'countdown'; G.timer = 3; G.lastCount = 4; G.goT = 0; G.champ = null;
 }
@@ -683,7 +697,7 @@ function release(p) {
 function tryGrab(p) {
   let best = null, bd = 1e9;
   for (const q of G.fighters) {
-    if (q === p || !q.alive || q.grabbedBy) continue;
+    if (q === p || !q.alive || q.grabbedBy || allies(p, q)) continue;
     const dx = q.body.position.x - p.body.position.x, dy = q.body.position.y - p.body.position.y, d = Math.hypot(dx, dy);
     const front = dx*p.facing > -q.r*0.3 ? 0 : 25;
     if (d < p.r + q.r + 30 - front && d < bd) { best = q; bd = d; }
@@ -707,7 +721,7 @@ function tryPunch(p) {
   p.punchCD = 0.36; p.punchAnim = 0.18;
   let hit = false;
   for (const q of G.fighters) {
-    if (q === p || !q.alive || q.grabbedBy === p) continue;
+    if (q === p || !q.alive || q.grabbedBy === p || allies(p, q)) continue;
     const dx = q.body.position.x - p.body.position.x, dy = q.body.position.y - p.body.position.y;
     if (dx*p.facing < -q.r*0.4) continue;
     if (Math.abs(dx) > p.r + q.r + 42 || Math.abs(dy) > p.r + q.r*0.9) continue;
@@ -768,7 +782,7 @@ function aiInput(p) {
   if (a.think <= 0 || !a.target || !a.target.alive) {
     a.think = rand(0.3, 0.7); let best = null, bd = 1e9;
     for (const q of G.fighters) {
-      if (q === p || !q.alive || (q.grabbedBy && q.grabbedBy !== p)) continue;
+      if (q === p || !q.alive || (q.grabbedBy && q.grabbedBy !== p) || allies(p, q)) continue;
       const d = Math.hypot(q.body.position.x - x, q.body.position.y - y) * (q.ko > 0 ? 0.55 : 1) * rand(0.85, 1.15);
       if (d < bd) { bd = d; best = q; }
     }
@@ -828,6 +842,8 @@ function control(p, inp) {
 }
 
 // ---------- simulation step ----------
+const winKey = w => G.mode === 'teams' ? 'team' + w.team : w.ch.id;
+const winLabel = w => G.mode === 'teams' ? TEAMS[w.team].name : w.ch.name;
 function step() {
   G.time += DT;
   const live = G.phase !== 'countdown';
@@ -873,14 +889,19 @@ function step() {
   const alive = G.fighters.filter(f => f.alive);
   G.netTick = (G.netTick || 0) + 1;
   if (G.online === 'host' && G.netTick % 2 === 0) netBroadcast(snapshot());
-  if (G.phase === 'fight' && alive.length <= 1) { G.phase = 'roundEnd'; G.timer = 1.1; G.roundWinner = alive[0] || null; }
+  const teamsLeft = new Set(alive.map(f => f.team));
+  if (G.phase === 'fight' && (G.mode === 'teams' ? teamsLeft.size <= 1 : alive.length <= 1)) {
+    G.phase = 'roundEnd'; G.timer = 1.1;
+    G.roundWinner = G.mode === 'teams' ? (alive.length ? { team:alive[0].team } : null) : (alive[0] || null);
+  }
   else if (G.phase === 'roundEnd') {
     G.timer -= DT;
     if (G.timer <= 0) {
       const w = G.roundWinner;
-      if (w) G.wins[w.ch.id] = (G.wins[w.ch.id] || 0) + 1;
-      G.champ = w && G.wins[w.ch.id] >= G.rounds ? w : null;
-      G.banner = { title: w ? `${w.ch.name} wins the round!` : 'Nobody is left. Draw!', sub: G.champ ? 'and wins the whole fight!' : `Round ${G.round + 1} is next` };
+      const key = w && winKey(w);
+      if (w) G.wins[key] = (G.wins[key] || 0) + 1;
+      G.champ = w && G.wins[key] >= G.rounds ? w : null;
+      G.banner = { title: w ? `${winLabel(w)} wins the round!` : 'Nobody is left. Draw!', sub: G.champ ? 'and wins the whole fight!' : `Round ${G.round + 1} is next` };
       if (w) ev('sfx','win');
       G.phase = 'between'; G.timer = G.champ ? 2.3 : 2.4;
     }
@@ -949,8 +970,9 @@ function drawFighter(p, t) {
   const tag = p.tag || 'CPU';
   g.font = `22px ${BODYFONT}`; g.textAlign = 'center'; g.textBaseline = 'alphabetic';
   const tw = g.measureText(tag).width + 14, ty = top - (p.ko > 0 ? 26 : 12);
-  g.fillStyle = p.control === 'cpu' ? 'rgba(255,255,255,.75)' : C.ink; roundRect(x - tw/2, ty - 20, tw, 24, 6); g.fill();
-  g.fillStyle = p.control === 'cpu' ? C.ink : C.white; g.fillText(tag, x, ty - 1);
+  const tcol = G.mode === 'teams' ? TEAMS[p.team || 0].color : null;
+  g.fillStyle = tcol || (p.control === 'cpu' ? 'rgba(255,255,255,.75)' : C.ink); roundRect(x - tw/2, ty - 20, tw, 24, 6); g.fill();
+  g.fillStyle = tcol ? C.white : p.control === 'cpu' ? C.ink : C.white; g.fillText(tag, x, ty - 1);
 }
 function drawParticles(dt) {
   const keep = [];
@@ -976,11 +998,12 @@ function drawHUD() {
   let x = (W - total)/2;
   for (const p of G.fighters) {
     g.globalAlpha = p.alive ? 1 : 0.45;
-    g.fillStyle = C.white; g.strokeStyle = C.ink; g.lineWidth = 3; roundRect(x, 14, cw, 70, 6); g.fill(); g.stroke();
+    const tm = G.mode === 'teams' ? TEAMS[p.team || 0] : null;
+    g.fillStyle = C.white; g.strokeStyle = tm ? tm.color : C.ink; g.lineWidth = tm ? 6 : 3; roundRect(x, 14, cw, 70, 6); g.fill(); g.stroke();
     g.save(); g.translate(x + 34, 50); drawCharacter(g, p.ch, 19, { facing:1, ko:!p.alive || p.ko > 0 }); g.restore();
     g.fillStyle = C.ink; g.textAlign = 'left'; g.textBaseline = 'alphabetic';
     g.font = `24px ${FONT}`; g.fillText(p.ch.name, x + 62, 42, cw - 70);
-    const wins = G.wins[p.ch.id] || 0;
+    const wins = G.wins[tm ? 'team' + (p.team || 0) : p.ch.id] || 0;
     for (let i=0;i<G.rounds;i++) drawStar(x + 72 + i*22, 64, 9, i < wins ? C.yellow : C.white, C.ink);
     const tag = p.tag || 'CPU';
     g.font = `18px ${BODYFONT}`; g.textAlign = 'right'; g.fillStyle = C.grey; g.fillText(tag, x + cw - 8, 72);
@@ -1050,6 +1073,10 @@ function nextControl(id) {
   }
   return 'off';
 }
+function teamButton(id, team, fn) {
+  const b = document.createElement('button'); b.className = 'ctl team-btn'; b.id = id; b.textContent = TEAMS[team].name;
+  b.style.background = TEAMS[team].color; b.style.color = '#fff'; b.title = 'Click to switch teams'; if (fn) b.onclick = fn; else b.disabled = true; return b;
+}
 function renderRoster() {
   const box = $('roster'); box.innerHTML = '';
   for (const ch of CHARS) {
@@ -1060,7 +1087,9 @@ function renderRoster() {
     const b = document.createElement('button'); b.className = 'ctl'; b.id = 'ctl-' + ch.id; b.dataset.kind = ctl.kind; b.textContent = ctl.label;
     b.title = 'Click to change who plays this character';
     b.onclick = () => { setup.slots[ch.id] = nextControl(ch.id); saveSetup(); renderRoster(); $('ctl-' + ch.id).focus(); $('setupMsg').textContent = ''; };
-    card.appendChild(b); box.appendChild(card);
+    card.appendChild(b);
+    if (setup.mode === 'teams' && ctl.kind !== 'off') card.appendChild(teamButton('team-' + ch.id, setup.teams[ch.id] || 0, () => { setup.teams[ch.id] = 1 - (setup.teams[ch.id] || 0); saveSetup(); renderRoster(); $('team-' + ch.id).focus(); }));
+    box.appendChild(card);
   }
 }
 function renderSeg(id, opts, key, after) {
@@ -1087,17 +1116,24 @@ function openSetup() {
   G.state = 'setup'; showScreen('setup'); renderRoster();
   renderSeg('roundsSeg', [[1,'1'],[3,'3'],[5,'5']], 'rounds');
   renderSeg('diffSeg', Object.entries(DIFF).map(([k, v]) => [k, v.label]), 'diff');
+  renderSeg('modeSeg', MODES, 'mode', renderRoster);
   drawMapPreview(); $('setupMsg').textContent = ''; $('fightBtn').focus();
 }
 function showResults() {
   G.state = 'results'; G.paused = false;
-  const champ = G.champ;
-  $('winCanvas').replaceChildren(charCanvas(champ.ch, 200, { crown:true }));
-  $('winName').textContent = champ.ch.name;
-  const losers = G.fighters.filter(f => f !== champ).sort((a, b) => (G.wins[b.ch.id] || 0) - (G.wins[a.ch.id] || 0));
+  const champ = G.champ, teamWin = G.mode === 'teams';
+  if (teamWin) {
+    const mates = G.fighters.filter(f => f.team === champ.team);
+    $('winCanvas').replaceChildren(...mates.map(f => charCanvas(f.ch, mates.length > 2 ? 110 : 150, { crown:true })));
+    $('winName').textContent = TEAMS[champ.team].name; $('winName').style.color = TEAMS[champ.team].dark;
+  } else {
+    $('winCanvas').replaceChildren(charCanvas(champ.ch, 200, { crown:true }));
+    $('winName').textContent = champ.ch.name; $('winName').style.color = '';
+  }
+  const losers = teamWin ? G.fighters.filter(f => f.team !== champ.team) : G.fighters.filter(f => f !== champ).sort((a, b) => (G.wins[b.ch.id] || 0) - (G.wins[a.ch.id] || 0));
   $('loserRow').replaceChildren(...losers.map(f => charCanvas(f.ch, 66, { ko:true })));
   const on = G.online;
-  if (on === 'host') netBroadcast({ t:'results', champ:champ.idx, w:G.wins });
+  if (on === 'host') netBroadcast({ t:'results', champ: teamWin ? -1 : champ.idx, team: teamWin ? champ.team : null, w:G.wins });
   $('rematchBtn').hidden = on === 'client'; $('disbandBtn').hidden = on === 'client';
   $('resNote').textContent = on === 'client' ? 'Waiting for the host to pick what happens next.' : on === 'host' ? 'Leave takes everyone back to the team screen. Disband team ends it for everyone.' : '';
   showScreen('results'); (on === 'client' ? $('leaveBtn') : $('rematchBtn')).focus();
@@ -1114,6 +1150,7 @@ function renderSettings() {
   renderSeg('volSeg', [[0.5,'Quiet'],[1,'Medium'],[1.6,'Loud']], 'volume', musicUpdate);
   renderSeg('setRoundsSeg', [[1,'1'],[3,'3'],[5,'5']], 'rounds');
   renderSeg('setDiffSeg', Object.entries(DIFF).map(([k, v]) => [k, v.label]), 'diff');
+  renderSeg('setModeSeg', MODES, 'mode');
   renderSeg('shakeSeg', ONOFF, 'shake');
   renderSeg('tagsSeg', ONOFF, 'tags');
 }
@@ -1131,6 +1168,7 @@ $('fightBtn').onclick = () => {
   audioOn();
   const n = Object.values(setup.slots).filter(v => v !== 'off').length;
   if (n < 2) { $('setupMsg').textContent = 'Pick at least 2 fighters. Click a button under a character to turn them on.'; return; }
+  if (setup.mode === 'teams') { const on = CHARS.filter(c => setup.slots[c.id] !== 'off').map(c => setup.teams[c.id] || 0); if (!on.includes(0) || !on.includes(1)) { $('setupMsg').textContent = 'Each team needs at least one fighter. Click a team button to switch someone.'; return; } }
   startMatch();
 };
 $('resumeBtn').onclick = () => togglePause();
@@ -1216,7 +1254,7 @@ function hostRoom() {
   Net.role = 'host'; Net.peer = peer;
   peer.on('open', () => {
     if (Net.peer !== peer) return;
-    Net.lobby = { code, players:[{ id:'host', name, ch:null }], cpus:[] };
+    Net.lobby = { code, players:[{ id:'host', name, ch:null }], cpus:[], mode:setup.mode, teams:Object.assign({}, setup.teams) };
     Net.lobby.players[0].ch = firstFree();
     openLobby();
   });
@@ -1249,6 +1287,7 @@ function hostOnData(conn, d) {
   }
   if (!Net.conns.has(id)) return;
   if (d.t === 'pick') return lobbyPick(id, d.ch);
+  if (d.t === 'team') { const pl = L.players.find(p => p.id === id); if (pl && pl.ch) { L.teams[pl.ch] = 1 - (L.teams[pl.ch] || 0); broadcastLobby(); } return; }
   if (d.t === 'i') { Net.inputs.set(id, { x:Math.max(-1, Math.min(1, +d.x || 0)), d:!!d.d, j:+d.j || 0, p:+d.p || 0, g:+d.g || 0 }); return; }
   if (d.t === 'bye') return hostDrop(id);
 }
@@ -1291,13 +1330,15 @@ function hostStartMatch() {
   const L = Net.lobby, lineup = [];
   for (const c of CHARS) {
     const pl = L.players.find(p => p.ch === c.id);
-    if (pl) lineup.push({ ch:c, control: pl.id === 'host' ? 'local' : 'net:' + pl.id, tag:pl.name });
-    else if (L.cpus.includes(c.id)) lineup.push({ ch:c, control:'cpu', tag:'CPU' });
+    const team = L.teams[c.id] || 0;
+    if (pl) lineup.push({ ch:c, control: pl.id === 'host' ? 'local' : 'net:' + pl.id, tag:pl.name, team });
+    else if (L.cpus.includes(c.id)) lineup.push({ ch:c, control:'cpu', tag:'CPU', team });
   }
   if (lineup.length < 2) { const m = $('lobbyMsg'); if (m) m.textContent = 'You need at least 2 fighters. Wait for a friend, or add a computer fighter.'; return; }
-  G.online = 'host'; G.lineup = lineup; G.wins = {}; G.round = 0; G.rounds = setup.rounds; G.paused = false; NETEV.length = 0;
+  if (L.mode === 'teams' && !(lineup.some(l => l.team === 0) && lineup.some(l => l.team === 1))) { const m = $('lobbyMsg'); if (m) m.textContent = 'Each team needs at least one fighter.'; return; }
+  G.mode = L.mode; G.online = 'host'; G.lineup = lineup; G.wins = {}; G.round = 0; G.rounds = setup.rounds; G.paused = false; NETEV.length = 0;
   for (const f of lineup) if (f.control.startsWith('net:')) { const r = Net.inputs.get(f.control.slice(4)); if (r) r.seen = null; }
-  netBroadcast({ t:'start', rounds:G.rounds, lineup:lineup.map(l => ({ ch:l.ch.id, control: l.control === 'local' ? 'host' : l.control, tag:l.tag })) });
+  netBroadcast({ t:'start', rounds:G.rounds, mode:G.mode, lineup:lineup.map(l => ({ ch:l.ch.id, control: l.control === 'local' ? 'host' : l.control, tag:l.tag, team:l.team })) });
   G.state = 'fight'; showScreen(null); cv.focus(); startRound();
 }
 function hostToLobby() { G.online = null; netBroadcast({ t:'tolobby' }); openLobby(); broadcastLobby(); }
@@ -1341,7 +1382,7 @@ function clientOnData(d) {
       break;
     case 'start': clientStart(d); break;
     case 's': if (G.state === 'fight' && G.online === 'client') applySnap(d); break;
-    case 'results': if (G.online === 'client') { G.wins = d.w || {}; G.champ = G.fighters[d.champ]; if (G.champ) showResults(); } break;
+    case 'results': if (G.online === 'client') { G.wins = d.w || {}; G.champ = G.mode === 'teams' ? { team:d.team } : G.fighters[d.champ]; if (G.champ) showResults(); } break;
     case 'tolobby': G.online = null; openLobby(); break;
     case 'kicked': endNet('The host removed you from the team.'); break;
     case 'full': endNet('That team is full. A team can have 6 players.', true); break;
@@ -1351,9 +1392,9 @@ function clientOnData(d) {
 }
 function clientLeave() { try { if (Net.host && Net.host.open) Net.host.send({ t:'bye' }); } catch (e) {} endNet('You left the team.'); }
 function clientStart(d) {
-  G.online = 'client'; G.rounds = d.rounds || 3; G.wins = {}; G.particles = []; G.banner = null; G.phase = 'countdown'; G.timer = 3; G.goT = 0; G.paused = false;
+  G.online = 'client'; G.mode = d.mode || 'ffa'; G.rounds = d.rounds || 3; G.wins = {}; G.particles = []; G.banner = null; G.phase = 'countdown'; G.timer = 3; G.goT = 0; G.paused = false;
   const me = 'net:' + (Net.peer && Net.peer.id);
-  G.fighters = d.lineup.map((l, i) => ({ ch:CHAR[l.ch], control:l.control, tag:l.tag, idx:i, r:38, me:l.control === me, body:{ position:{ x:800, y:560 }, angle:0 }, tgt:null, seen:false,
+  G.fighters = d.lineup.map((l, i) => ({ ch:CHAR[l.ch], control:l.control, tag:l.tag, team:l.team || 0, idx:i, r:38, me:l.control === me, body:{ position:{ x:800, y:560 }, angle:0 }, tgt:null, seen:false,
     alive:true, ko:0, dizzy:0, facing:1, punchAnim:0, flash:0, grabbing:null, squash:0 }));
   G.clouds = [{ position:{ x:235, y:470 }, w:200 }, { position:{ x:1365, y:470 }, w:200 }, { position:{ x:800, y:355 }, w:230 }];
   G.state = 'fight'; showScreen(null); cv.focus();
@@ -1407,6 +1448,10 @@ function renderLobby() {
       if (isHost) mk(cpu ? 'no computer' : '+ computer', 'cpu', () => hostToggleCpu(ch.id), 'cpu-' + ch.id);
     }
     if (row.children.length) card.appendChild(row);
+    if (L.mode === 'teams' && (owner || cpu)) {
+      const t = L.teams[ch.id] || 0, mine = owner && owner.id === me;
+      card.appendChild(teamButton('lteam-' + ch.id, t, (isHost || mine) ? () => { if (isHost) { L.teams[ch.id] = 1 - t; broadcastLobby(); } else Net.host && Net.host.send({ t:'team' }); } : null));
+    }
     box.appendChild(card);
   }
   const aside = $('lobbyAside');
@@ -1416,6 +1461,7 @@ function renderLobby() {
     aside.innerHTML = `<h3>you are host</h3>
       <div class="kick-box"><b>kick?</b><ul class="plist">${others.length ? others.map(p => `<li>${dot(p)}<span>${esc(p.name)}</span><button class="kick" data-kick="${esc(p.id)}">kick</button></li>`).join('') : '<li><span>No friends here yet. Send them the code!</span></li>'}</ul></div>
       <div class="setting"><span>Rounds to win</span><div class="seg" id="lobRoundsSeg"></div></div>
+      <div class="setting"><span>Game mode</span><div class="seg" id="lobModeSeg"></div></div>
       <div class="setting"><span>Computer players</span><div class="seg" id="lobDiffSeg"></div></div>
       <button id="lobbyFight" class="btn big">make fight happen</button>
       <p id="lobbyMsg" class="msg" role="status"></p>
@@ -1423,12 +1469,13 @@ function renderLobby() {
     aside.querySelectorAll('[data-kick]').forEach(b => b.onclick = () => hostKick(b.dataset.kick));
     renderSeg('lobRoundsSeg', [[1,'1'],[3,'3'],[5,'5']], 'rounds', broadcastLobby);
     renderSeg('lobDiffSeg', Object.entries(DIFF).map(([k, v]) => [k, v.label]), 'diff', broadcastLobby);
+    renderSeg('lobModeSeg', MODES, 'mode', () => { L.mode = setup.mode; broadcastLobby(); });
     $('lobbyFight').onclick = () => { audioOn(); hostStartMatch(); };
     $('lobbyDisband').onclick = () => endRoom('You disbanded the team.');
   } else {
     aside.innerHTML = `<h3>the team</h3>
       <ul class="plist">${L.players.map(p => `<li>${dot(p)}<span>${esc(p.name)}${p.id === 'host' ? ' (host)' : ''}${p.id === me ? ' (you)' : ''}</span></li>`).join('')}</ul>
-      <p>Rounds to win: <b>${esc(Net.hostRounds || 3)}</b> · Computer players: <b>${esc((DIFF[Net.hostDiff] || DIFF.normal).label)}</b></p>
+      <p>Mode: <b>${L.mode === 'teams' ? 'Team vs team' : 'Free for all'}</b> · Rounds to win: <b>${esc(Net.hostRounds || 3)}</b> · Computer players: <b>${esc((DIFF[Net.hostDiff] || DIFF.normal).label)}</b></p>
       <p class="msg" style="color:var(--ink)">Pick a fighter, then wait for the host to make the fight happen.</p>
       <button id="lobbyLeave" class="btn black">leave team</button>`;
     $('lobbyLeave').onclick = () => clientLeave();

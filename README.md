@@ -8,6 +8,11 @@ Six shape fighters punch, grab and throw each other off Cloud Island. The last o
 
 Open `index.html` in a web browser, or play the GitHub Pages version.
 
+## Game modes
+
+- **Free for all:** everyone for themselves. The last fighter on the island wins the round.
+- **Team vs team:** Red team against Blue team. You can't punch or grab your teammates. A team wins the round when the whole other team is in the water.
+
 ## Play online
 
 1. Click **play online**, type your name and click **host**.
