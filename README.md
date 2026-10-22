@@ -13,6 +13,11 @@ Open `index.html` in a web browser, or play the GitHub Pages version.
 - **Free for all:** everyone for themselves. The last fighter on the island wins the round.
 - **Team vs team:** Red team against Blue team. You can't punch or grab your teammates. A team wins the round when the whole other team is in the water.
 
+## Maps
+
+- **Cloud Island:** a floating island over the water, with three clouds to stand on (the middle one moves).
+- **Snowy Hills:** two slippery icy cliffs with a broken bridge between them. Caution signs flash and beep before ice falls on the left side or snow on the right.
+
 ## Play online
 
 1. Click **play online**, type your name and click **host**.
