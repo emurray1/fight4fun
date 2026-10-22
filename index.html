@@ -68,6 +68,7 @@ button:focus-visible,.ctl:focus-visible{outline:4px solid var(--yellow);outline-
 .setting{display:flex;flex-direction:column;gap:6px}
 .setting>span{font-size:19px}
 .seg{display:flex;border:3px solid var(--ink)}
+.seg{flex-wrap:wrap}
 .seg button{flex:1;line-height:1.1;font-family:var(--body);font-size:18px;padding:5px 4px;background:var(--paper)}
 .seg button+button{border-left:3px solid var(--ink)}
 .seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
@@ -242,6 +243,7 @@ input:focus-visible{outline:4px solid var(--yellow);outline-offset:2px}
       <section>
         <h3>Maps</h3>
         <p><b>Cloud Island:</b> a floating island over the water with three clouds to stand on. The middle cloud moves.</p>
+        <p><b>Lava Rocks:</b> black rocks in a sea of lava. Falling in the lava burns your hp every second, so jump out fast! If your hp runs out in the lava, you sink and you're out. Between the rocks, lava geysers blast up on a timer. Watch the stopwatches: when the lava bubbles and the clock flashes red, get out of the way.</p>
         <p><b>Roadside Fights:</b> three floors. Cars zoom along the road at the bottom (HONK! means one is coming, and it hits for 50). Birds swoop across the sidewalk in the middle (tweet tweet, 15). The power lines at the top zap anyone standing on them (bzzz then ZAAP, 5). Jump to dodge cars, and press down to drop off a wire before it zaps.</p>
         <p><b>Snowy Hills:</b> two icy cliffs with a broken bridge between them. The ice is slippery, so it's hard to stop! When a yellow caution sign flashes and beeps, ice is about to fall on the left side or snow on the right. Watch for the red warning mark on the ground and get out of the way.</p>
       </section>
@@ -430,6 +432,10 @@ const MAPS = {
     ground:[{ x1:80, x2:1520, top:700 }], planks:[],
     ledges:[{ x:800, y:480, w:1000, amp:0, kind:'sidewalk' }, { x:420, y:260, w:460, amp:0, kind:'wire', color:'#a349a4' }, { x:1180, y:230, w:460, amp:0, kind:'wire', color:'#3f48cc' }],
     sides:[[230,700],[900,1370]], ice:false, hazards:'road' },
+  lava: { id:'lava', name:'Lava Rocks', desc:'Black rocks over a lava sea. Lava burns your hp (jump out fast!), and lava geysers blast up between the rocks on a timer.',
+    ground:[{ x1:120, x2:390, top:690 }, { x1:495, x2:1170, top:690 }, { x1:1270, x2:1370, top:690 }], groundH:220, planks:[],
+    ledges:[{ x:442, y:440, w:120, amp:0, kind:'rock' }, { x:1220, y:460, w:120, amp:0, kind:'rock' }],
+    sides:[[540,800],[870,1130]], ice:false, hazards:'lava', lava:760, geysers:[442, 1220] },
 };
 let MAP = MAPS.cloud;
 const groundAt = x => MAP.ground.find(gp => x >= gp.x1 - 5 && x <= gp.x2 + 5);
@@ -461,7 +467,7 @@ const CONTROLS = [
 const CTRL = Object.fromEntries(CONTROLS.map(c => [c.id, c]));
 const TEAMS = [{ name:'Red team', color:'#ed1c24', dark:'#880015' }, { name:'Blue team', color:'#3f48cc', dark:'#1d2370' }];
 const MODES = [['ffa','Free for all'],['teams','Team vs team']];
-const MAPLIST = [['cloud','Cloud Island'],['snow','Snowy Hills'],['road','Roadside Fights']];
+const MAPLIST = [['cloud','Cloud Island'],['snow','Snowy Hills'],['road','Roadside Fights'],['lava','Lava Rocks']];
 const allies = (a, b) => G.mode === 'teams' && a.team === b.team;
 const DIFF = { easy:{ punch:0.3, cd:0.9, mash:0.06, label:'Easy' }, normal:{ punch:0.55, cd:0.55, mash:0.13, label:'Normal' }, hard:{ punch:0.85, cd:0.36, mash:0.25, label:'Hard' } };
 const MAX_HP = 200; // health points: when they run out, you get dizzy
@@ -604,6 +610,9 @@ const sfx = {
   win(){ [523,659,784,1046].forEach((f,i)=>tone(f,f,0.2,'square',0.07,i*0.12)); },
   warn(){ tone(880,880,0.09,'square',0.06); tone(880,880,0.09,'square',0.06,0.16); tone(880,880,0.09,'square',0.06,0.32); },
   fall(){ tone(1200,300,0.5,'sine',0.06); },
+  sizzle(){ noise(0.25,3500,0.07,'highpass'); },
+  rumble(){ tone(60,45,1.2,'sawtooth',0.07); },
+  erupt(){ noise(1.0,900,0.28); tone(200,80,0.8,'sawtooth',0.06); },
   crack(){ noise(0.18,5000,0.14,'highpass'); },
   roll(){ tone(180,520,0.45,'sawtooth',0.05); },
   quake(){ tone(90,40,0.5,'square',0.14); noise(0.4,700,0.22); },
@@ -738,7 +747,7 @@ const rand = (a, b) => a + Math.random()*(b-a);
 
 function buildWorld() {
   const engine = Engine.create(); engine.gravity.y = 1.7; engine.positionIterations = 8; engine.velocityIterations = 6;
-  const gh = MAP.ice ? 260 : 50;
+  const gh = MAP.groundH || (MAP.ice ? 260 : 50);
   const grounds = MAP.ground.map(gp => Bodies.rectangle((gp.x1+gp.x2)/2, gp.top + gh/2, gp.x2-gp.x1, gh, { isStatic:true, chamfer:{ radius:MAP.ice ? 14 : [12,12,30,30] }, friction:MAP.ice ? 0.02 : 0.8, label:MAP.ice ? 'ice' : 'island', collisionFilter:{ category:CAT.WORLD, mask:0xffff } }));
   const planks = MAP.planks.map(k => Bodies.rectangle((k.x1+k.x2)/2, k.y, k.x2-k.x1, 14, { isStatic:true, angle:k.ang, friction:0.7, label:'plank', collisionFilter:{ category:CAT.WORLD, mask:0xffff } }));
   const cloudOpts = { isStatic:true, chamfer:{ radius:16 }, friction:0.9, label:'cloud', collisionFilter:{ category:CAT.CLOUD, mask:CAT.PLAYER } };
@@ -866,7 +875,7 @@ function eliminate(p) {
 // ---------- particles ----------
 function burst(x, y, color, n) { for (let i=0;i<n;i++){ const a = rand(0,TAU), s = rand(2,7); G.particles.push({ type:'dot', x, y, vx:Math.cos(a)*s, vy:Math.sin(a)*s, life:0.35, max:0.35, size:rand(4,9), color }); } G.particles.push({ type:'ring', x, y, life:0.25, max:0.25, size:10, color:C.white }); }
 function popText(x, y, text, color) { G.particles.push({ type:'text', x, y, vx:0, vy:-1.2, life:0.8, max:0.8, size:44, color, text }); }
-function splash(x) { for (let i=0;i<22;i++) G.particles.push({ type:'drop', x, y:WATER, vx:rand(-5,5), vy:rand(-14,-5), life:1.1, max:1.1, size:rand(5,11), color: i%3 ? C.white : C.blue }); }
+function splash(x) { const hot = !!MAP.lava; for (let i=0;i<22;i++) G.particles.push({ type:'drop', x, y:MAP.lava || WATER, vx:rand(-5,5), vy:rand(-14,-5), life:1.1, max:1.1, size:rand(5,11), color: hot ? (i%3 ? C.orange : C.red) : i%3 ? C.white : C.blue }); }
 function puff(x, y) { for (let i=0;i<6;i++) G.particles.push({ type:'dot', x:x+rand(-14,14), y, vx:rand(-1.5,1.5), vy:rand(0.5,2), life:0.35, max:0.35, size:rand(6,11), color:'rgba(255,255,255,.9)' }); }
 
 // ---------- AI ----------
@@ -879,6 +888,7 @@ function aiInput(p) {
   const x = b.position.x, y = b.position.y;
   // get back onto solid ground
   const gp = groundAt(x), ng = nearestGround(x);
+  if (p.inLava && a.cd <= 0) { inp.x = x < (ng.x1 + ng.x2)/2 ? 1 : -1; inp.jumpP = true; a.cd = 0.4; return inp; }
   if ((!gp && y > ng.top - 160) || y > ng.top + 15) {
     inp.x = !gp ? (x < ng.x1 ? 1 : -1) : (x < (gp.x1 + gp.x2)/2 ? 1 : -1);
     if (b.velocity.y > 0.5 && (p.grounded > 0 || p.airJumps > 0) && a.cd <= 0) { inp.jumpP = true; a.cd = 0.2; }
@@ -914,6 +924,7 @@ function aiInput(p) {
   for (const h of G.hazards || []) {
     if ((h.type === 'ice' || h.type === 'snow') && Math.abs(h.x - x) < 85 && (h.warn > 0 || h.y < y) && p.grounded > 0) { inp.x = x < h.x ? -1 : 1; break; }
     if (h.type === 'car' && p.grounded > 0 && y > MAP.ground[0].top - 80 && (h.warn > 0 ? h.warn < 0.35 : (x - h.x)*h.dir > 0 && Math.abs(x - h.x) < 380)) { inp.jumpP = true; }
+    if (h.type === 'geyser' && (h.warn > 0 || h.live > 0) && Math.abs(x - h.x) < 95) inp.x = x < h.x ? -1 : 1;
     if (h.type === 'zap') { const wl = MAP.ledges[h.wire]; if (Math.abs(x - wl.x) < wl.w/2 + 10 && y < wl.y && y > wl.y - 100) inp.down = true; }
   }
   if (onIsland && p.grounded > 0 && inp.x && ((inp.x < 0 && x < gp.x1 + 55) || (inp.x > 0 && x > gp.x2 - 55))) {
@@ -949,6 +960,97 @@ function hazardHit(h, p) {
   if (p.ko <= 0) { p.dizzy += ice ? 55 : 40; if (p.dizzy >= MAX_HP) { p.dizzy = MAX_HP; p.ko = 3; ev('pop', b.position.x, b.position.y - 80, 'DIZZY!', C.purple); ev('sfx','dizzy'); } }
   ev('pop', b.position.x, b.position.y - 45, ice ? 'CRACK!' : 'SPLAT!', C.white); ev('shatter', h.x, h.y, h.type); ev('sfx','bonk'); ev('shake', 7);
 }
+// ---------- Lava Rocks: burning lava and geysers ----------
+function lavaPhysics() {
+  const L = MAP.lava;
+  for (const p of G.fighters) {
+    if (!p.alive || p.grabbedBy) continue;
+    const b = p.body, was = p.inLava;
+    p.inLava = b.position.y > L - p.r*0.6;
+    if (!p.inLava) continue;
+    if (!was) { ev('pop', b.position.x, L - 70, 'HOT!', C.orange); ev('sfx','sizzle'); }
+    if (p.ko > 0) { Body.setVelocity(b, { x:b.velocity.x*0.9, y:2.2 }); continue; } // too dizzy to swim: sinks
+    if (b.velocity.y > -6) Body.setVelocity(b, { x:b.velocity.x*0.94, y:b.velocity.y*0.82 + (L - p.r*0.25 - b.position.y)*0.12 - 0.45 });
+    p.grounded = 0.1; p.surface = 'lava';
+    hurt(p, 40*DT);
+    p.sizzle = (p.sizzle || 0) - DT;
+    if (p.sizzle <= 0) { p.sizzle = 0.18; ev('sizzle', b.position.x, L); }
+  }
+}
+function updateGeysers() {
+  if (!G.hazards.some(h => h.type === 'geyser')) MAP.geysers.forEach((x, i) => G.hazards.push({ type:'geyser', x, y:rand(3, 5) + i*2.5, warn:0, live:0, hit:[] }));
+  for (const h of G.hazards) {
+    if (h.type !== 'geyser') continue;
+    if (h.live > 0) {
+      h.live -= DT;
+      const top = geyserTop(h.x);
+      for (const p of G.fighters) {
+        const b = p.body; if (!p.alive || Math.abs(b.position.x - h.x) > 34 + p.r*0.6 || b.position.y < top - p.r || b.position.y > MAP.lava + 40) continue;
+        hurt(p, 60*DT);
+        if (b.velocity.y > -12) Body.setVelocity(b, { x:b.velocity.x + Math.sign(b.position.x - h.x || 1)*0.6, y:-17 });
+        if (!h.hit.includes(p.idx)) { h.hit.push(p.idx); p.flash = 0.15; ev('pop', b.position.x, b.position.y - 50, 'WHOOSH!', C.orange); if (p.grabbing) release(p); }
+      }
+      if (h.live <= 0) h.y = rand(4, 7);
+    } else if (h.warn > 0) {
+      h.warn -= DT; if (h.warn <= 0) { h.live = 1.2; h.hit = []; ev('sfx','erupt'); ev('shake', 6); }
+    } else if (G.phase === 'fight') {
+      h.y -= DT; if (h.y <= 0) { h.warn = 1.3; ev('sfx','rumble'); }
+    }
+  }
+}
+const geyserTop = x => { const l = MAP.ledges.find(l => Math.abs(l.x - x) < 20); return l ? l.y + 17 : 200; };
+function drawLavaSky(t) {
+  const gr = g.createLinearGradient(0, -200, 0, H); gr.addColorStop(0, '#fff4ea'); gr.addColorStop(1, '#ffd2b0');
+  g.fillStyle = gr; g.fillRect(-3000, -3000, W + 6000, H + 6000);
+  g.fillStyle = '#e7b28f'; g.beginPath(); g.moveTo(980, 700); g.lineTo(1250, 330); g.lineTo(1330, 330); g.lineTo(1640, 700); g.closePath(); g.fill();
+  g.fillStyle = 'rgba(120,110,110,.35)';
+  for (let i=0;i<7;i++) { const k = ((t*0.08 + i/7) % 1); g.beginPath(); g.arc(1290 + Math.sin(i*2 + t*0.5)*40*k, 320 - k*330, 30 + k*60, 0, TAU); g.fill(); }
+}
+function veinRock(x, y, w, h, seed) {
+  g.fillStyle = C.ink; g.fillRect(x, y, w, h);
+  let r = seed*9301 + 49297;
+  const rnd = () => (r = (r*9301 + 49297) % 233280)/233280;
+  for (let i=0;i<w*h/90;i++) { g.fillStyle = rnd() < 0.5 ? C.orange : rnd() < 0.6 ? C.red : '#ffb27a'; g.fillRect(x + rnd()*w, y + rnd()*h, 3, 3); }
+  g.strokeStyle = 'rgba(255,127,39,.55)'; g.lineWidth = 3; g.beginPath();
+  for (let i=0;i<w/60;i++) { const sx = x + rnd()*w, sy = y + rnd()*h; g.moveTo(sx, sy); g.quadraticCurveTo(sx + rnd()*60 - 30, sy + rnd()*40 - 20, sx + rnd()*80 - 40, sy + rnd()*50 - 25); }
+  g.stroke();
+}
+function drawLavaArena(t, clouds, live) {
+  const L = MAP.lava;
+  g.fillStyle = C.orange; g.beginPath(); g.moveTo(-3000, L);
+  for (let x = -200; x <= W + 200; x += 40) g.lineTo(x, L + Math.sin(x*0.03 + t*2)*5);
+  g.lineTo(W + 3000, L); g.lineTo(W + 3000, H + 3000); g.lineTo(-3000, H + 3000); g.closePath(); g.fill();
+  g.fillStyle = 'rgba(136,0,21,.45)';
+  for (let i=0;i<70;i++) { const x = (i*97 + t*14*(i%3 - 1)) % (W + 100), y = L + 30 + (i*53) % (H - L); g.beginPath(); g.arc((x + W + 100) % (W + 100) - 50, y, 3, 0, TAU); g.fill(); }
+  MAP.ground.forEach((gp, i) => veinRock(gp.x1, gp.top, gp.x2 - gp.x1, L + 70 - gp.top, i + 3));
+  g.fillStyle = 'rgba(255,127,39,.8)'; for (const gp of MAP.ground) { g.fillRect(gp.x1 - 6, L + 50, gp.x2 - gp.x1 + 12, 30); }
+  clouds.forEach((c, i) => { if (c.kind === 'rock') veinRock(c.position.x - c.w/2, c.position.y - 17, c.w, 70, i + 11); });
+  // geysers and their timers
+  for (const h of (live ? G.hazards || [] : [])) {
+    if (h.type !== 'geyser') continue;
+    const top = geyserTop(h.x);
+    if (h.warn > 0) {
+      for (let i=0;i<5;i++) { const bx = h.x + Math.sin(t*9 + i*1.7)*30, by = L - 4 - ((t*90 + i*23) % 40); g.fillStyle = i%2 ? C.yellow : C.orange; g.beginPath(); g.arc(bx, by, 6 + i%3*2, 0, TAU); g.fill(); }
+      g.fillStyle = 'rgba(255,242,0,' + (0.25 + 0.25*Math.sin(t*20)) + ')'; g.fillRect(h.x - 40, L - 30, 80, 30);
+    }
+    if (h.live > 0) {
+      const k = Math.min(1, (1.2 - h.live)*6), y0 = L + 10, y1 = y0 - (y0 - top)*k;
+      g.fillStyle = C.orange; g.beginPath(); g.moveTo(h.x - 34, y0);
+      for (let y = y0; y > y1; y -= 20) g.lineTo(h.x - 34 + Math.sin(y*0.08 + t*25)*6, y);
+      g.lineTo(h.x + 34, y1); for (let y = y1; y < y0; y += 20) g.lineTo(h.x + 34 + Math.sin(y*0.08 + t*25 + 2)*6, y);
+      g.closePath(); g.fill();
+      g.fillStyle = C.yellow; g.fillRect(h.x - 12, y1, 24, y0 - y1);
+      for (let i=0;i<4;i++) { g.fillStyle = C.red; g.beginPath(); g.arc(h.x + Math.sin(t*30 + i)*30, y1 + 10 + i*6, 5, 0, TAU); g.fill(); }
+    }
+    // Mason's stopwatch: the hand shows how long until the next blast
+    const sx = h.x + 90, sy = top + 70, frac = h.live > 0 ? 1 : h.warn > 0 ? 1 : Math.max(0, 1 - h.y/7);
+    const flash = h.warn > 0 && Math.floor(t*8) % 2 === 0;
+    g.fillStyle = flash ? C.red : C.white; g.strokeStyle = C.ink; g.lineWidth = 3;
+    g.beginPath(); g.arc(sx, sy, 20, 0, TAU); g.fill(); g.stroke();
+    g.fillStyle = C.ink; g.fillRect(sx - 5, sy - 30, 10, 7); g.beginPath(); g.moveTo(sx, sy); g.lineTo(sx + Math.sin(frac*TAU)*14, sy - Math.cos(frac*TAU)*14); g.stroke();
+  }
+}
+
 // ---------- Roadside Fights: cars, birds and power lines ----------
 const CAR_COLORS = [C.red, C.blue, C.orange, C.green, C.purple];
 function roadHit(p, kind, dir) {
@@ -1002,6 +1104,7 @@ function updateRoad() {
 function updateHazards() {
   if (!MAP.hazards) return;
   if (MAP.hazards === 'road') return updateRoad();
+  if (MAP.hazards === 'lava') return updateGeysers();
   if (G.phase === 'fight') { G.hzT -= DT; if (G.hzT <= 0) { spawnHazard(); G.hzT = rand(3.5, 6.5); } }
   for (const h of G.hazards) {
     if (h.warn > 0) { h.warn -= DT; if (h.warn <= 0) { h.vy = 4; ev('sfx','fall'); } continue; }
@@ -1138,7 +1241,7 @@ function control(p, inp) {
   if (p.ko > 0) return;
   const grounded = p.grounded > 0; if (grounded) p.airJumps = 1;
   if (p.special) return runSpecial(p, inp, grounded);
-  const speed = 7*ch.speed*(p.grabbing ? 0.72 : 1), vx = b.velocity.x;
+  const speed = 7*ch.speed*(p.grabbing ? 0.72 : 1)*(p.inLava ? 0.5 : 1), vx = b.velocity.x;
   const slick = grounded && p.surface === 'ice';
   const accel = grounded ? (p.hitstun > 0 ? (slick ? 0.01 : 0.04) : slick ? (inp.x ? 0.07 : 0.025) : 0.2) : (inp.x ? (p.hitstun > 0 ? 0.02 : 0.08) : 0);
   Body.setVelocity(b, { x: vx + (inp.x*speed - vx)*accel, y: b.velocity.y });
@@ -1193,6 +1296,7 @@ function step() {
     if (!passAll) G.clouds.forEach(c => { if (b.bounds.max.y <= c.bounds.min.y + 12) mask |= c.collisionFilter.category; });
     b.collisionFilter.mask = mask;
   }
+  if (MAP.lava) lavaPhysics();
   Engine.update(G.engine, STEP);
   updateHazards();
   updateWaves();
@@ -1232,6 +1336,7 @@ function roundRect(x, y, w, h, r) { g.beginPath(); g.roundRect ? g.roundRect(x, 
 function drawSky(t, map) {
   if (map && map.id === 'snow') return drawSnowSky(t);
   if (map && map.id === 'road') return drawRoadSky(t);
+  if (map && map.id === 'lava') return drawLavaSky(t);
   g.fillStyle = C.blue; g.fillRect(-3000, -3000, W + 6000, H + 6000);
   g.fillStyle = C.white; g.fillRect(-3000, -3000, W + 6000, 3110);
   const off = (t*12) % 170;
@@ -1331,6 +1436,7 @@ function drawSnowArena(t, clouds, live) {
 }
 function drawHazards(t) {
   for (const h of G.hazards || []) {
+    if (h.type === 'geyser') continue;
     if (h.type === 'car' || h.type === 'bird' || h.type === 'zap') { drawRoadHazard(h, t); continue; }
     const gp = groundAt(h.x), gy = gp ? gp.top : 640;
     if (h.warn > 0) {
@@ -1444,7 +1550,7 @@ function drawMenuGround() {
   g.fillStyle = C.green; g.beginPath(); g.moveTo(-3000, H+3000); g.lineTo(-3000, 800);
   g.bezierCurveTo(300, 760, 500, 790, 700, 830); g.bezierCurveTo(1000, 780, 1300, 760, W+3000, 790); g.lineTo(W+3000, H+3000); g.fill();
 }
-function drawArena(t, clouds = G.clouds, live = true) { if (MAP.id === 'snow') drawSnowArena(t, clouds, live); else if (MAP.id === 'road') drawRoadArena(t, clouds, live); else drawCloudArena(t, clouds); }
+function drawArena(t, clouds = G.clouds, live = true) { if (MAP.id === 'snow') drawSnowArena(t, clouds, live); else if (MAP.id === 'lava') drawLavaArena(t, clouds, live); else if (MAP.id === 'road') drawRoadArena(t, clouds, live); else drawCloudArena(t, clouds); }
 function drawCloudArena(t, clouds) {
   g.fillStyle = C.forest; g.beginPath(); g.moveTo(-3000, WATER+10); g.lineTo(-3000, 740);
   g.bezierCurveTo(150, 690, 330, 700, 460, 760); g.bezierCurveTo(800, 720, 1250, 690, W+3000, 735); g.lineTo(W+3000, WATER+10); g.fill();
@@ -1749,15 +1855,16 @@ function runEv(type, a, b, c, d) {
     case 'splash': splash(a); break;
     case 'shake': G.shake = Math.max(G.shake, a); break;
     case 'clear': G.particles = []; break;
+    case 'sizzle': for (let i=0;i<4;i++) G.particles.push({ type:'dot', x:a + rand(-18, 18), y:b, vx:rand(-1, 1), vy:rand(-4, -1.5), life:0.5, max:0.5, size:rand(4, 8), color: i%2 ? 'rgba(120,110,110,.7)' : C.orange }); break;
     case 'dust': for (let i=0;i<16;i++) G.particles.push({ type:'dot', x:a + rand(-20, 20), y:b, vx:(i%2 ? 1 : -1)*rand(3, 9), vy:rand(-4, -1), life:0.5, max:0.5, size:rand(5, 10), color: i%3 ? 'rgba(17,17,17,.7)' : 'rgba(255,255,255,.9)' }); break;
     case 'shatter': for (let i=0;i<14;i++) { const an = rand(Math.PI, TAU), sp = rand(2, 8); G.particles.push({ type:'drop', x:a, y:b, vx:Math.cos(an)*sp, vy:Math.sin(an)*sp - 2, life:0.7, max:0.7, size:rand(4, 9), color: c === 'ice' ? (i%2 ? '#c9e9ff' : '#8091ff') : (i%3 ? '#ffffff' : '#d0d0d0') }); } break;
   }
 }
-const HZ_CODES = ['ice','snow','car','bird','zap'];
+const HZ_CODES = ['ice','snow','car','bird','zap','geyser'];
 const r1 = v => Math.round(v*10)/10, r2 = v => Math.round(v*100)/100;
 function snapshot() {
   const f = G.fighters.map(p => { const b = p.body; return [r1(b.position.x), r1(b.position.y), r2(b.angle), p.alive ? 1 : 0, p.ko > 0 ? r1(p.ko) : 0, Math.round(p.dizzy), p.facing, r2(p.punchAnim), p.flash > 0 ? r2(p.flash) : 0, p.grabbing ? p.grabbing.idx : -1, r2(p.squash)]; });
-  return { t:'s', ph:G.phase, tm:r2(G.timer), go:r2(G.goT), bn:G.banner, w:G.wins, f, c:G.clouds.map(c => r1(c.position.x)), hz:(G.hazards || []).map(h => [HZ_CODES.indexOf(h.type), r1(h.x), r1(h.y), r2(Math.max(0, h.warn)), h.type === 'car' ? h.dir*10 + (h.dir > 0 ? h.c : -h.c) : h.type === 'bird' ? h.dir : h.type === 'zap' ? h.wire : 0]), wv:(G.waves || []).map(w => [r1(w.x), r1(w.y), w.dir, Math.round(w.dist), w.owner]), e:NETEV.splice(0) };
+  return { t:'s', ph:G.phase, tm:r2(G.timer), go:r2(G.goT), bn:G.banner, w:G.wins, f, c:G.clouds.map(c => r1(c.position.x)), hz:(G.hazards || []).map(h => [HZ_CODES.indexOf(h.type), r1(h.x), r1(h.y), r2(Math.max(0, h.warn)), h.type === 'car' ? h.dir*10 + (h.dir > 0 ? h.c : -h.c) : h.type === 'bird' ? h.dir : h.type === 'zap' ? h.wire : h.type === 'geyser' ? Math.round(h.live*100) : 0]), wv:(G.waves || []).map(w => [r1(w.x), r1(w.y), w.dir, Math.round(w.dist), w.owner]), e:NETEV.splice(0) };
 }
 
 // A stand-in for PeerJS that talks between browser tabs, used for testing with ?mock=1
@@ -1971,7 +2078,7 @@ function applySnap(s) {
   });
   if (s.c) s.c.forEach((x, i) => { if (G.clouds[i]) G.clouds[i].tx = x; });
   G.waves = (s.wv || []).map(a => ({ x:a[0], y:a[1], dir:a[2], dist:a[3], owner:a[4] }));
-  G.hazards = (s.hz || []).map(a => { const type = HZ_CODES[a[0]] || 'ice'; return { type, x:a[1], y:a[2], warn:a[3], r: type === 'snow' ? 36 : 24, dir: type === 'car' ? Math.sign(a[4]) : a[4], c: Math.abs(a[4]) % 10, wire:a[4], live:a[2], ph:a[3] ? 0 : (a[1]|0) % 7 }; });
+  G.hazards = (s.hz || []).map(a => { const type = HZ_CODES[a[0]] || 'ice'; return { type, x:a[1], y:a[2], warn:a[3], r: type === 'snow' ? 36 : 24, dir: type === 'car' ? Math.sign(a[4]) : a[4], c: Math.abs(a[4]) % 10, wire:a[4], live: type === 'geyser' ? a[4]/100 : a[2], ph:a[3] ? 0 : (a[1]|0) % 7 }; });
   for (const e of s.e || []) runEv(...e);
 }
 function clientSmooth(dt) {

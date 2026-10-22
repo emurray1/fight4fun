@@ -26,6 +26,7 @@ Every fighter has 200 hp. When it runs out, they get dizzy and can be thrown.
 - **Cloud Island:** a floating island over the water, with three clouds to stand on (the middle one moves).
 - **Snowy Hills:** two slippery icy cliffs with a broken bridge between them. Caution signs flash and beep before ice falls on the left side or snow on the right.
 - **Roadside Fights:** three floors. Cars on the road (50), birds on the sidewalk (15) and zapping power lines on top (5), each with its own caution sign and warning sound.
+- **Lava Rocks:** black rocks in a lava sea. Lava burns your hp every second (jump out!), and lava geysers blast up between the rocks on a timer.
 
 ## Play online
 
