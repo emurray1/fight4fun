@@ -38,7 +38,7 @@ button:focus-visible,.ctl:focus-visible{outline:4px solid var(--yellow);outline-
 .fff span:nth-child(2){height:120px}
 .title-card{background:var(--paper);width:min(640px,100%);display:flex;flex-direction:column;align-items:center;gap:14px;padding-bottom:26px;box-shadow:10px 10px 0 rgba(15,61,28,.35)}
 .title-card .band{align-self:stretch;height:56px;background:var(--indigo);position:relative}
-.title-card .band::after{content:"designed by Mason";position:absolute;right:16px;top:12px;color:var(--paper);font-family:var(--body);font-size:22px}
+.title-card .band::after{content:"designed by Mason, with Alex";position:absolute;right:16px;top:12px;color:var(--paper);font-family:var(--body);font-size:22px}
 .title-card h1{font-family:var(--display);font-weight:400;font-size:clamp(64px,13vw,112px);line-height:.95;color:var(--forest);margin:6px 0 0;text-align:center;text-wrap:balance}
 .title-card mark{background:linear-gradient(transparent 30%,var(--yellow) 30%,var(--yellow) 88%,transparent 88%);color:inherit;padding:0 6px}
 .smile{display:inline-block;transform:rotate(90deg);margin-left:8px}
@@ -169,6 +169,7 @@ input:focus-visible{outline:4px solid var(--yellow);outline-offset:2px}
 .key-row button{min-width:120px;font-family:var(--body);font-size:20px;padding:4px 12px;border:3px solid var(--ink);border-bottom-width:6px;background:var(--soft);cursor:pointer}
 .key-row button.waiting{background:var(--yellow);animation:blink .6s steps(2) infinite}
 @keyframes blink{50%{background:var(--paper)}}
+.by{color:var(--maroon);font-size:15px}
 .res-note{margin:0;font-size:19px;background:var(--paper);padding:2px 10px}
 .res-note:empty{display:none}
 
@@ -447,9 +448,9 @@ const CHARS = [
   { id:'diamond', name:'Sly Diamond',    color:C.green,  shape:'diamond', trait:'Jumps the highest',          speed:1.05, power:0.95, weight:0.95, jump:1.2 },
   { id:'square',  name:'Yelling Square', color:C.orange, shape:'square',  trait:'Heavy. Special: jumps and slams down', speed:0.85, power:1.15, weight:1.45, jump:0.92 },
   { id:'sparkle', name:'Goofy Sparkle',  color:C.yellow, shape:'star4',   trait:'Light and zippy',            speed:1.15, power:0.9,  weight:0.8,  jump:1.12 },
-  { id:'hex',      name:'Nervous Hexstar', color:'#7f7f7f', shape:'star6',    trait:'Six points, extra sturdy',  speed:0.9,  power:1.05, weight:1.25, jump:0.95 },
-  { id:'heart',    name:'Lovely Heart',    color:'#ffaec9', shape:'heart',    trait:'Bouncy, jumps really high', speed:1.05, power:0.9,  weight:0.9,  jump:1.22 },
-  { id:'shuriken', name:'Grumpy Shuriken', color:'#b97a57', shape:'shuriken', trait:'Fast and sharp',            speed:1.2,  power:1.1,  weight:0.85, jump:1.0 },
+  { id:'hex',      name:'Nervous Hexstar', color:'#7f7f7f', shape:'star6',    trait:'Six points, extra sturdy',  speed:0.9,  power:1.05, weight:1.25, jump:0.95 , by:'Alex' },
+  { id:'heart',    name:'Lovely Heart',    color:'#ffaec9', shape:'heart',    trait:'Bouncy, jumps really high', speed:1.05, power:0.9,  weight:0.9,  jump:1.22 , by:'Alex' },
+  { id:'shuriken', name:'Grumpy Shuriken', color:'#b97a57', shape:'shuriken', trait:'Fast and sharp',            speed:1.2,  power:1.1,  weight:0.85, jump:1.0 , by:'Alex' },
 ];
 const CHAR = Object.fromEntries(CHARS.map(c => [c.id, c]));
 const CONTROLS = [
@@ -1606,7 +1607,7 @@ function renderRoster() {
     const ctl = CTRL[setup.slots[ch.id]] || CTRL.off;
     const card = document.createElement('div'); card.className = 'card' + (ctl.kind === 'off' ? ' off' : '');
     card.appendChild(charCanvas(ch, 92));
-    card.insertAdjacentHTML('beforeend', `<h4>${ch.name}</h4><p>${ch.trait}</p>`);
+    card.insertAdjacentHTML('beforeend', `<h4>${ch.name}</h4><p>${ch.trait}${ch.by ? `<br><i class="by">drawn by ${ch.by}</i>` : ''}</p>`);
     const b = document.createElement('button'); b.className = 'ctl'; b.id = 'ctl-' + ch.id; b.dataset.kind = ctl.kind; b.textContent = ctl.label;
     b.title = 'Click to change who plays this character';
     b.onclick = () => { setup.slots[ch.id] = nextControl(ch.id); saveSetup(); renderRoster(); $('ctl-' + ch.id).focus(); $('setupMsg').textContent = ''; };
@@ -1665,7 +1666,7 @@ function showResults() {
 $('okBtn').onclick = () => { audioOn(); openSetup(); };
 CHARS.forEach(ch => {
   const d = document.createElement('div'); d.appendChild(charCanvas(ch, 64));
-  d.insertAdjacentHTML('beforeend', `<span><b>${ch.name}</b>${ch.trait}</span>`); $('howChars').appendChild(d);
+  d.insertAdjacentHTML('beforeend', `<span><b>${ch.name}</b>${ch.trait}${ch.by ? ` (drawn by ${ch.by})` : ''}</span>`); $('howChars').appendChild(d);
 });
 const ONOFF = [[true,'On'],[false,'Off']];
 function renderSettings() {
