@@ -2,7 +2,7 @@
 
 A Party Animals–style brawler designed by Mason.
 
-Six shape fighters punch, grab and throw each other off Cloud Island. The last one standing wins the round.
+Nine shape fighters punch, grab and throw each other off Cloud Island. The last one standing wins the round.
 
 ## Play
 
