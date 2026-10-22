@@ -206,7 +206,7 @@ input:focus-visible{outline:4px solid var(--yellow);outline-offset:2px}
         <ol class="steps">
           <li>Press OK, then pick who plays each fighter on the "who is with who" screen.</li>
           <li>Press "make fight happen" and wait for 3, 2, 1, FIGHT!</li>
-          <li>Punch someone until stars spin over their head. Now they are dizzy and can't move.</li>
+          <li>Punch someone to knock down their health. Everyone has 200 hp. When it runs out, stars spin over their head and they are dizzy and can't move.</li>
           <li>Grab the dizzy fighter. Walk them to the edge of the island.</li>
           <li>Press grab again to throw them into the water. Splash, they're out!</li>
         </ol>
@@ -348,7 +348,7 @@ input:focus-visible{outline:4px solid var(--yellow);outline-offset:2px}
       </aside>
     </div>
     <div class="howto">
-      <div><b>How to win</b>Punch someone until they get dizzy (stars spin over their head). Grab them and throw them off the island. Last one standing wins the round.</div>
+      <div><b>How to win</b>Everyone has 200 hp. Punch someone until their hp runs out and they get dizzy (stars spin over their head). Grab them and throw them off the island. Last one standing wins the round.</div>
       <div><b>Keys: WASD</b><kbd>A</kbd> <kbd>D</kbd> move · <kbd>W</kbd> jump (twice in the air) · <kbd>S</kbd> drop through clouds · <kbd>F</kbd> punch · <kbd>G</kbd> grab, <kbd>G</kbd> again to throw</div>
       <div><b>Keys: Arrows</b><kbd>←</kbd> <kbd>→</kbd> move · <kbd>↑</kbd> jump · <kbd>↓</kbd> drop · <kbd>K</kbd> punch · <kbd>L</kbd> grab, <kbd>L</kbd> again to throw</div>
       <div><b>Controller</b>Stick move · <kbd>A</kbd> jump · <kbd>X</kbd> punch · <kbd>B</kbd> grab and throw · <kbd>Start</kbd> pause. <kbd>Esc</kbd> pauses, <kbd>M</kbd> mutes.</div>
@@ -436,6 +436,7 @@ const MODES = [['ffa','Free for all'],['teams','Team vs team']];
 const MAPLIST = [['cloud','Cloud Island'],['snow','Snowy Hills'],['road','Roadside Fights']];
 const allies = (a, b) => G.mode === 'teams' && a.team === b.team;
 const DIFF = { easy:{ punch:0.3, cd:0.9, mash:0.06, label:'Easy' }, normal:{ punch:0.55, cd:0.55, mash:0.13, label:'Normal' }, hard:{ punch:0.85, cd:0.36, mash:0.25, label:'Hard' } };
+const MAX_HP = 200; // health points: when they run out, you get dizzy
 const TOPS = { star5:1.15, star4:1.25, tri:1.3, diamond:1.15, square:0.85, circle:1 };
 
 const setup = { slots:{ star:'cpu', tri:'p1', circle:'cpu', diamond:'off', square:'cpu', sparkle:'off' }, rounds:3, diff:'normal', mode:'ffa', map:'cloud', teams:{ star:0, tri:1, circle:0, diamond:1, square:1, sparkle:0 }, sound:true, music:true, volume:1, shake:true, tags:true };
@@ -778,7 +779,7 @@ function hitFighter(p, q) {
   q.hitstun = 0.35; q.flash = 0.12; q.lastHitBy = p;
   if (q.ko <= 0) {
     q.dizzy += 26*pw;
-    if (q.dizzy >= 100) { q.dizzy = 100; q.ko = 3; ev('pop', q.body.position.x, q.body.position.y - 70, 'DIZZY!', C.purple); ev('sfx','dizzy'); }
+    if (q.dizzy >= MAX_HP) { q.dizzy = MAX_HP; q.ko = 3; ev('pop', q.body.position.x, q.body.position.y - 70, 'DIZZY!', C.purple); ev('sfx','dizzy'); }
   }
   if (q.grabbing) release(q);
   const hx = q.body.position.x - p.facing*q.r*0.6, hy = q.body.position.y;
@@ -872,7 +873,7 @@ function hazardHit(h, p) {
   if (p.grabbedBy) release(p.grabbedBy); if (p.grabbing) release(p);
   Body.setVelocity(b, { x:dir*(ice ? 8 : 11), y:-8 }); Body.setAngularVelocity(b, dir*0.25);
   p.hitstun = 0.6; p.flash = 0.15;
-  if (p.ko <= 0) { p.dizzy += ice ? 55 : 40; if (p.dizzy >= 100) { p.dizzy = 100; p.ko = 3; ev('pop', b.position.x, b.position.y - 80, 'DIZZY!', C.purple); ev('sfx','dizzy'); } }
+  if (p.ko <= 0) { p.dizzy += ice ? 55 : 40; if (p.dizzy >= MAX_HP) { p.dizzy = MAX_HP; p.ko = 3; ev('pop', b.position.x, b.position.y - 80, 'DIZZY!', C.purple); ev('sfx','dizzy'); } }
   ev('pop', b.position.x, b.position.y - 45, ice ? 'CRACK!' : 'SPLAT!', C.white); ev('shatter', h.x, h.y, h.type); ev('sfx','bonk'); ev('shake', 7);
 }
 // ---------- Roadside Fights: cars, birds and power lines ----------
@@ -884,7 +885,7 @@ function roadHit(p, kind, dir) {
   else if (kind === 'bird') { Body.setVelocity(b, { x:b.velocity.x*0.5 + dir*5, y:-5 }); p.hitstun = 0.3; }
   else { Body.setVelocity(b, { x:b.velocity.x + rand(-3, 3), y:-13 }); p.hitstun = 0.35; }
   p.flash = 0.15;
-  if (p.ko <= 0) { p.dizzy += dmg; if (p.dizzy >= 100) { p.dizzy = 100; p.ko = 3; ev('pop', b.position.x, b.position.y - 80, 'DIZZY!', C.purple); ev('sfx','dizzy'); } }
+  if (p.ko <= 0) { p.dizzy += dmg; if (p.dizzy >= MAX_HP) { p.dizzy = MAX_HP; p.ko = 3; ev('pop', b.position.x, b.position.y - 80, 'DIZZY!', C.purple); ev('sfx','dizzy'); } }
   ev('pop', b.position.x, b.position.y - 45, { car:'BAM!', bird:'PECK!', zap:'ZAAP!' }[kind], kind === 'zap' ? '#7fdcff' : C.white);
   ev('burst', b.position.x, b.position.y, kind === 'zap' ? '#7fdcff' : C.yellow, 8); ev('sfx', kind === 'zap' ? 'zap' : 'bonk'); ev('shake', kind === 'car' ? 10 : 4);
 }
@@ -1304,7 +1305,7 @@ function drawFighter(p, t) {
   if (p.grabbing) { const q = p.grabbing.body.position; fist((x + q.x)/2 - 12, (y + q.y)/2); fist((x + q.x)/2 + 12, (y + q.y)/2 + 6); }
   const top = y - TOPS[p.ch.shape]*p.r - 14;
   if (p.ko > 0) for (let i=0;i<3;i++) { const a = t*5 + i*TAU/3; drawStar(x + Math.cos(a)*30, top - 8 + Math.sin(a)*8, 9, C.yellow, C.ink); }
-  else if (p.dizzy > 0) { g.fillStyle = 'rgba(17,17,17,.25)'; roundRect(x - 26, top - 4, 52, 7, 4); g.fill(); g.fillStyle = C.maroon; roundRect(x - 26, top - 4, 52*p.dizzy/100, 7, 4); g.fill(); }
+  else if (p.dizzy > 0) { const hp = Math.max(0, 1 - p.dizzy/MAX_HP); g.fillStyle = C.red; roundRect(x - 30, top - 5, 60, 9, 4); g.fill(); g.fillStyle = hp > 0.5 ? C.green : hp > 0.25 ? C.orange : C.yellow; roundRect(x - 30, top - 5, 60*hp, 9, 4); g.fill(); g.strokeStyle = C.ink; g.lineWidth = 2; roundRect(x - 30, top - 5, 60, 9, 4); g.stroke(); }
   if (!setup.tags) return;
   const tag = p.tag || 'CPU';
   g.font = `22px ${BODYFONT}`; g.textAlign = 'center'; g.textBaseline = 'alphabetic';
@@ -1343,6 +1344,7 @@ function drawHUD() {
     g.fillStyle = C.ink; g.textAlign = 'left'; g.textBaseline = 'alphabetic';
     g.font = `24px ${FONT}`; g.fillText(p.ch.name, x + 62, 42, cw - 70);
     const wins = G.wins[tm ? 'team' + (p.team || 0) : p.ch.id] || 0;
+    if (p.alive) { const hp = p.ko > 0 ? 0 : Math.max(0, 1 - p.dizzy/MAX_HP); g.fillStyle = 'rgba(237,28,36,.25)'; g.fillRect(x + 6, 76, cw - 12, 4); g.fillStyle = hp > 0.5 ? C.green : hp > 0.25 ? C.orange : C.red; g.fillRect(x + 6, 76, (cw - 12)*hp, 4); }
     for (let i=0;i<G.rounds;i++) drawStar(x + 72 + i*22, 64, 9, i < wins ? C.yellow : C.white, C.ink);
     const tag = p.tag || 'CPU';
     g.font = `18px ${BODYFONT}`; g.textAlign = 'right'; g.fillStyle = C.grey; g.fillText(tag, x + cw - 8, 72);
