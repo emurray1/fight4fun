@@ -1,6 +1,6 @@
 # Fight for Fun
 
-A Party Animals–style brawler designed by Mason, with fighters by Alex.
+A Party Animals–style brawler designed by Mason.
 
 Nine shape fighters punch, grab and throw each other off Cloud Island. The last one standing wins the round.
 
@@ -49,11 +49,6 @@ The host's browser runs the fight, and everyone else connects to it directly usi
 | Pause | Esc | Esc | Start |
 
 You can change the keyboard keys on the **controls** page in the main menu.
-
-## Credits
-
-- Game design, maps, special moves and the first six fighters: **Mason**
-- Nervous Hexstar, Lovely Heart and Grumpy Shuriken: **Alex**
 
 ## Made with
 
