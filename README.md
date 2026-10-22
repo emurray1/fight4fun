@@ -48,6 +48,8 @@ The host's browser runs the fight, and everyone else connects to it directly usi
 | Special move | H | ; | Y |
 | Pause | Esc | Esc | Start |
 
+You can change the keyboard keys on the **controls** page in the main menu.
+
 ## Made with
 
 - [Matter.js](https://brm.io/matter-js/) for physics

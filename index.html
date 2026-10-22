@@ -162,6 +162,13 @@ input:focus-visible{outline:4px solid var(--yellow);outline-offset:2px}
 .team-btn{font-family:var(--display);font-size:22px;border-color:var(--ink)}
 .team-btn:disabled{cursor:default;opacity:1}
 #winCanvas{display:flex;flex-wrap:wrap;justify-content:center;gap:4px}
+.key-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px}
+.key-grid section{border:4px solid var(--ink);padding:12px}
+.key-list{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.key-row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:20px}
+.key-row button{min-width:120px;font-family:var(--body);font-size:20px;padding:4px 12px;border:3px solid var(--ink);border-bottom-width:6px;background:var(--soft);cursor:pointer}
+.key-row button.waiting{background:var(--yellow);animation:blink .6s steps(2) infinite}
+@keyframes blink{50%{background:var(--paper)}}
 .res-note{margin:0;font-size:19px;background:var(--paper);padding:2px 10px}
 .res-note:empty{display:none}
 
@@ -186,7 +193,7 @@ input:focus-visible{outline:4px solid var(--yellow);outline-offset:2px}
     <h1><mark>fight</mark> for<br><mark>fun</mark> <span class="smile">:D</span></h1>
     <div class="title-chars" id="titleChars"></div>
     <button id="okBtn" class="btn grey">OK</button>
-    <div class="menu"><button id="onlineBtn" class="btn">play online</button><button id="howBtn" class="btn">how to play</button><button id="setBtn" class="btn">settings</button></div>
+    <div class="menu"><button id="onlineBtn" class="btn">play online</button><button id="howBtn" class="btn">how to play</button><button id="keysBtn" class="btn">controls</button><button id="setBtn" class="btn">settings</button></div>
     <p id="notice" class="msg" role="status"></p>
     <p class="hint">OK plays on this computer. Best with a keyboard or game controllers.</p>
   </div>
@@ -215,14 +222,14 @@ input:focus-visible{outline:4px solid var(--yellow);outline-offset:2px}
         <h3>Controls</h3>
         <div class="ctable-wrap">
           <table class="ctable">
-            <thead><tr><th></th><th>Keys: WASD</th><th>Keys: Arrows</th><th>Controller</th></tr></thead>
+            <thead><tr><th></th><th>Keyboard player 1</th><th>Keyboard player 2</th><th>Controller</th></tr></thead>
             <tbody>
-              <tr><th>Move</th><td><kbd>A</kbd> <kbd>D</kbd></td><td><kbd>←</kbd> <kbd>→</kbd></td><td>Left stick or D-pad</td></tr>
-              <tr><th>Jump</th><td><kbd>W</kbd> (press again in the air for a double jump)</td><td><kbd>↑</kbd></td><td><kbd>A</kbd></td></tr>
-              <tr><th>Drop through a cloud</th><td><kbd>S</kbd></td><td><kbd>↓</kbd></td><td>Stick down</td></tr>
-              <tr><th>Punch</th><td><kbd>F</kbd></td><td><kbd>K</kbd></td><td><kbd>X</kbd></td></tr>
-              <tr><th>Grab, then throw</th><td><kbd>G</kbd>, then <kbd>G</kbd> again</td><td><kbd>L</kbd>, then <kbd>L</kbd> again</td><td><kbd>B</kbd>, then <kbd>B</kbd> again</td></tr>
-              <tr><th>Special move</th><td><kbd>H</kbd></td><td><kbd>;</kbd></td><td><kbd>Y</kbd></td></tr>
+              <tr><th>Move</th><td><kbd data-k="p1.l"></kbd> <kbd data-k="p1.r"></kbd></td><td><kbd data-k="p2.l"></kbd> <kbd data-k="p2.r"></kbd></td><td>Left stick or D-pad</td></tr>
+              <tr><th>Jump</th><td><kbd data-k="p1.u"></kbd> (press again in the air for a double jump)</td><td><kbd data-k="p2.u"></kbd></td><td><kbd>A</kbd></td></tr>
+              <tr><th>Drop through a cloud</th><td><kbd data-k="p1.d"></kbd></td><td><kbd data-k="p2.d"></kbd></td><td>Stick down</td></tr>
+              <tr><th>Punch</th><td><kbd data-k="p1.punch"></kbd></td><td><kbd data-k="p2.punch"></kbd></td><td><kbd>X</kbd></td></tr>
+              <tr><th>Grab, then throw</th><td><kbd data-k="p1.grab"></kbd>, then again</td><td><kbd data-k="p2.grab"></kbd>, then again</td><td><kbd>B</kbd>, then <kbd>B</kbd> again</td></tr>
+              <tr><th>Special move</th><td><kbd data-k="p1.special"></kbd></td><td><kbd data-k="p2.special"></kbd></td><td><kbd>Y</kbd></td></tr>
               <tr><th>Pause</th><td colspan="2"><kbd>Esc</kbd> (or click "quit" in the corner to leave)</td><td><kbd>Start</kbd></td></tr>
             </tbody>
           </table>
@@ -261,6 +268,22 @@ input:focus-visible{outline:4px solid var(--yellow);outline-offset:2px}
         </ul>
       </section>
       <div class="page-foot"><button class="btn grey" data-back>got it</button></div>
+    </div>
+  </div>
+</div>
+
+<div id="keys" class="screen" hidden>
+  <div class="panel page">
+    <header class="whois"><h2>controls</h2><button class="btn back" data-back>back</button></header>
+    <div class="page-body">
+      <p>Click a button, then press the key you want for it. Press Esc to cancel. If that key is already used, the two swap.</p>
+      <div class="key-grid">
+        <section><h3>Keyboard player 1</h3><p class="note">Shows up as "Keys: WASD" on the team screen.</p><div class="key-list" id="keys-p1"></div></section>
+        <section><h3>Keyboard player 2</h3><p class="note">Shows up as "Keys: Arrows" on the team screen.</p><div class="key-list" id="keys-p2"></div></section>
+      </div>
+      <p class="note">Controllers always use: stick or D-pad to move, A jump, X punch, B grab and throw, Y special, Start pause. Esc always pauses.</p>
+      <p id="keysMsg" class="msg" role="status"></p>
+      <div class="page-foot"><button id="keysReset" class="btn">reset to normal keys</button><button class="btn grey" data-back>done</button></div>
     </div>
   </div>
 </div>
@@ -351,8 +374,8 @@ input:focus-visible{outline:4px solid var(--yellow);outline-offset:2px}
     </div>
     <div class="howto">
       <div><b>How to win</b>Everyone has 200 hp. Punch someone until their hp runs out and they get dizzy (stars spin over their head). Grab them and throw them off the island. Last one standing wins the round.</div>
-      <div><b>Keys: WASD</b><kbd>A</kbd> <kbd>D</kbd> move · <kbd>W</kbd> jump (twice in the air) · <kbd>S</kbd> drop through clouds · <kbd>F</kbd> punch · <kbd>G</kbd> grab, <kbd>G</kbd> again to throw · <kbd>H</kbd> special</div>
-      <div><b>Keys: Arrows</b><kbd>←</kbd> <kbd>→</kbd> move · <kbd>↑</kbd> jump · <kbd>↓</kbd> drop · <kbd>K</kbd> punch · <kbd>L</kbd> grab, <kbd>L</kbd> again to throw · <kbd>;</kbd> special</div>
+      <div><b>Keyboard player 1</b><kbd data-k="p1.l"></kbd> <kbd data-k="p1.r"></kbd> move · <kbd data-k="p1.u"></kbd> jump (twice in the air) · <kbd data-k="p1.d"></kbd> drop through clouds · <kbd data-k="p1.punch"></kbd> punch · <kbd data-k="p1.grab"></kbd> grab, again to throw · <kbd data-k="p1.special"></kbd> special</div>
+      <div><b>Keyboard player 2</b><kbd data-k="p2.l"></kbd> <kbd data-k="p2.r"></kbd> move · <kbd data-k="p2.u"></kbd> jump · <kbd data-k="p2.d"></kbd> drop · <kbd data-k="p2.punch"></kbd> punch · <kbd data-k="p2.grab"></kbd> grab, again to throw · <kbd data-k="p2.special"></kbd> special. Change keys on the <b style="display:inline;font-size:inherit">controls</b> page.</div>
       <div><b>Controller</b>Stick move · <kbd>A</kbd> jump · <kbd>X</kbd> punch · <kbd>B</kbd> grab and throw · <kbd>Y</kbd> special · <kbd>Start</kbd> pause. <kbd>Esc</kbd> pauses, <kbd>M</kbd> mutes.</div>
     </div>
   </div>
@@ -625,18 +648,34 @@ addEventListener('resize', resize); resize();
 const keys = new Set();
 const GAME_KEYS = new Set(['KeyH','Semicolon','Quote','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','KeyW','KeyA','KeyS','KeyD','KeyF','KeyG','KeyK','KeyL','Slash','Period']);
 addEventListener('keydown', e => {
-  if (G.state === 'fight' && GAME_KEYS.has(e.code)) e.preventDefault();
+  if (G.state === 'fight' && (GAME_KEYS.has(e.code) || boundKeys().has(e.code))) e.preventDefault();
   if (e.repeat) return;
   keys.add(e.code);
   if (e.code === 'Escape' && G.state === 'fight') { if (!$('quitAsk').hidden) closeQuit(); else if (G.online) openQuit(); else togglePause(); }
-  if (e.code === 'KeyM') { setup.sound = !setup.sound; saveSetup(); musicUpdate(); }
+  if (e.code === 'KeyM' && !boundKeys().has('KeyM')) { setup.sound = !setup.sound; saveSetup(); musicUpdate(); }
 });
 addEventListener('keyup', e => keys.delete(e.code));
 addEventListener('blur', () => keys.clear());
-const KEYMAP = {
+const DEFAULT_KEYS = {
   p1:{ l:['KeyA'], r:['KeyD'], u:['KeyW'], d:['KeyS'], punch:['KeyF'], grab:['KeyG'], special:['KeyH'] },
   p2:{ l:['ArrowLeft'], r:['ArrowRight'], u:['ArrowUp'], d:['ArrowDown'], punch:['KeyK','Numpad1','Period'], grab:['KeyL','Numpad2','Slash'], special:['Semicolon','Quote','Numpad3'] },
 };
+const KEYMAP = JSON.parse(JSON.stringify(DEFAULT_KEYS));
+try { const saved = JSON.parse(localStorage.getItem('fff-keys') || 'null'); if (saved) for (const pl of ['p1','p2']) for (const a in KEYMAP[pl]) if (saved[pl] && Array.isArray(saved[pl][a]) && saved[pl][a].length) KEYMAP[pl][a] = saved[pl][a]; } catch (e) {}
+const saveKeys = () => { try { localStorage.setItem('fff-keys', JSON.stringify(KEYMAP)); } catch (e) {} };
+const boundKeys = () => new Set(['p1','p2'].flatMap(pl => Object.values(KEYMAP[pl]).flat()));
+const KEY_NAMES = { ArrowLeft:'←', ArrowRight:'→', ArrowUp:'↑', ArrowDown:'↓', Space:'Space', Semicolon:';', Quote:"'", Comma:',', Period:'.', Slash:'/', Backslash:'\\', BracketLeft:'[', BracketRight:']', Minus:'-', Equal:'=', Backquote:'`', Enter:'Enter', Tab:'Tab', Backspace:'Backspace',
+  ShiftLeft:'Left Shift', ShiftRight:'Right Shift', ControlLeft:'Left Ctrl', ControlRight:'Right Ctrl', AltLeft:'Left Alt', AltRight:'Right Alt', CapsLock:'Caps Lock' };
+function keyName(code) {
+  if (!code) return '?';
+  if (KEY_NAMES[code]) return KEY_NAMES[code];
+  if (/^Key[A-Z]$/.test(code)) return code.slice(3);
+  if (/^Digit\d$/.test(code)) return code.slice(5);
+  if (/^Numpad/.test(code)) return 'Num ' + code.slice(6);
+  return code;
+}
+const ACTIONS = [['l','Move left'],['r','Move right'],['u','Jump'],['d','Drop down'],['punch','Punch'],['grab','Grab / throw'],['special','Special move']];
+function fillKeyLabels() { document.querySelectorAll('[data-k]').forEach(el => { const [pl, a] = el.dataset.k.split('.'); el.textContent = keyName(KEYMAP[pl][a][0]); }); }
 const anyKey = list => list.some(k => keys.has(k));
 function readHeld(ctrl) {
   if (ctrl === 'local') {
@@ -1507,7 +1546,7 @@ function frame(now) {
 
 // ---------- menus ----------
 const $ = id => document.getElementById(id);
-const screens = ['title','setup','pause','results','howto','settings','quitAsk','online','lobby'];
+const screens = ['title','setup','pause','results','howto','settings','quitAsk','online','lobby','keys'];
 function showScreen(id) { for (const s of screens) $(s).hidden = s !== id; $('gameQuit').hidden = !(id === null && G.state === 'fight'); musicUpdate(); }
 function openQuit() {
   if (G.state !== 'fight') return;
@@ -1617,10 +1656,43 @@ function renderSettings() {
   renderSeg('tagsSeg', ONOFF, 'tags');
 }
 let backTo = 'title';
-function openPage(id) { backTo = G.state; G.state = id; if (id === 'settings') renderSettings(); showScreen(id); $(id).scrollTop = 0; $(id).querySelector('[data-back]').focus(); }
+function openPage(id) { backTo = G.state; G.state = id; waitingKey = null; if (id === 'settings') renderSettings(); if (id === 'keys') { renderKeys(); $('keysMsg').textContent = ''; } fillKeyLabels(); showScreen(id); $(id).scrollTop = 0; $(id).querySelector('[data-back]').focus(); }
 document.querySelectorAll('[data-back]').forEach(b => b.onclick = () => { if (backTo === 'setup') openSetup(); else { G.state = 'title'; showScreen('title'); $('okBtn').focus(); } });
 $('howBtn').onclick = () => { audioOn(); openPage('howto'); };
 $('setBtn').onclick = () => { audioOn(); openPage('settings'); };
+let waitingKey = null;
+function renderKeys() {
+  for (const pl of ['p1','p2']) {
+    const box = $('keys-' + pl); box.innerHTML = '';
+    for (const [a, label] of ACTIONS) {
+      const row = document.createElement('div'); row.className = 'key-row';
+      const span = document.createElement('span'); span.textContent = label;
+      const b = document.createElement('button'); b.id = `key-${pl}-${a}`;
+      const waiting = waitingKey && waitingKey.pl === pl && waitingKey.a === a;
+      b.textContent = waiting ? 'press a key…' : keyName(KEYMAP[pl][a][0]); if (waiting) b.className = 'waiting';
+      b.onclick = () => { waitingKey = { pl, a }; $('keysMsg').textContent = ''; renderKeys(); $(`key-${pl}-${a}`).focus(); };
+      row.append(span, b); box.appendChild(row);
+    }
+  }
+}
+addEventListener('keydown', e => {
+  if (!waitingKey) return;
+  e.preventDefault(); e.stopImmediatePropagation();
+  const { pl, a } = waitingKey; waitingKey = null;
+  if (e.code === 'Escape') { renderKeys(); $(`key-${pl}-${a}`).focus(); return; }
+  const old = KEYMAP[pl][a][0];
+  for (const p2 of ['p1','p2']) for (const a2 in KEYMAP[p2]) {
+    if (p2 === pl && a2 === a) continue;
+    if (KEYMAP[p2][a2].includes(e.code)) {
+      KEYMAP[p2][a2] = [old];
+      $('keysMsg').textContent = `${keyName(e.code)} was already used, so they swapped: ${ACTIONS.find(x => x[0] === a2)[1].toLowerCase()} for keyboard player ${p2.slice(1)} is now ${keyName(old)}.`;
+    }
+  }
+  KEYMAP[pl][a] = [e.code]; saveKeys(); fillKeyLabels(); renderKeys(); $(`key-${pl}-${a}`).focus();
+}, true);
+$('keysBtn').onclick = () => { audioOn(); openPage('keys'); };
+$('keysReset').onclick = () => { for (const pl of ['p1','p2']) for (const a in DEFAULT_KEYS[pl]) KEYMAP[pl][a] = [...DEFAULT_KEYS[pl][a]]; saveKeys(); fillKeyLabels(); waitingKey = null; renderKeys(); $('keysMsg').textContent = 'Back to the normal keys.'; };
+fillKeyLabels();
 $('testSound').onclick = () => { audioOn(); sfx.bonk(); setTimeout(() => sfx.win(), 250); };
 $('gameQuit').onclick = () => openQuit();
 $('quitNo').onclick = () => closeQuit();
