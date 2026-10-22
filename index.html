@@ -678,7 +678,7 @@ function buildWorld() {
   const grounds = MAP.ground.map(gp => Bodies.rectangle((gp.x1+gp.x2)/2, gp.top + gh/2, gp.x2-gp.x1, gh, { isStatic:true, chamfer:{ radius:MAP.ice ? 14 : [12,12,30,30] }, friction:MAP.ice ? 0.02 : 0.8, label:MAP.ice ? 'ice' : 'island', collisionFilter:{ category:CAT.WORLD, mask:0xffff } }));
   const planks = MAP.planks.map(k => Bodies.rectangle((k.x1+k.x2)/2, k.y, k.x2-k.x1, 14, { isStatic:true, angle:k.ang, friction:0.7, label:'plank', collisionFilter:{ category:CAT.WORLD, mask:0xffff } }));
   const cloudOpts = { isStatic:true, chamfer:{ radius:16 }, friction:0.9, label:'cloud', collisionFilter:{ category:CAT.CLOUD, mask:CAT.PLAYER } };
-  const clouds = MAP.ledges.map(l => Object.assign(Bodies.rectangle(l.x, l.y, l.w, 34, cloudOpts), { w:l.w, base:{ x:l.x, y:l.y }, amp:l.amp, kind:l.kind, color:l.color }));
+  const clouds = MAP.ledges.map((l, i) => Object.assign(Bodies.rectangle(l.x, l.y, l.w, 34, { ...cloudOpts, collisionFilter:{ category:1 << (3 + i), mask:CAT.PLAYER } }), { w:l.w, base:{ x:l.x, y:l.y }, amp:l.amp, kind:l.kind, color:l.color }));
   const island = grounds[0];
   Composite.add(engine.world, [...grounds, ...planks, ...clouds]);
   const onCol = e => {
@@ -698,7 +698,7 @@ function buildWorld() {
 function makeFighter(ch, control, x, idx) {
   const r = 38;
   const opts = { friction:0.5, frictionStatic:0.8, frictionAir:0.012, restitution:0.05, density:0.0016*ch.weight, label:'fighter',
-    collisionFilter:{ group:0, category:CAT.PLAYER, mask:CAT.WORLD|CAT.CLOUD|CAT.PLAYER } };
+    collisionFilter:{ group:0, category:CAT.PLAYER, mask:CAT.WORLD|CAT.PLAYER } };
   const body = ch.shape === 'circle' ? Bodies.circle(x, 560, r, opts) : Bodies.fromVertices(x, 560, [shapeVerts(ch.shape, r, false)], opts);
   const p = { ch, control, idx, r, body, alive:true, facing: x < 800 ? 1 : -1, grounded:0, airJumps:1, ko:0, dizzy:0, hitstun:0, flash:0,
     punchCD:0, punchAnim:0, grabbing:null, grabbedBy:null, holdT:0, struggle:0, walk:0, squash:0, prevHeld:null,
@@ -1073,11 +1073,11 @@ function step() {
   for (const p of G.fighters) {
     if (!p.alive) continue;
     const b = p.body;
-    let pass = b.velocity.y < -0.5 || (p.input && p.input.down) || !!p.grabbedBy;
-    if (!pass) for (const c of G.clouds) {
-      if (b.bounds.max.x > c.bounds.min.x && b.bounds.min.x < c.bounds.max.x && b.bounds.max.y > c.bounds.min.y + 12) pass = true;
-    }
-    b.collisionFilter.mask = pass ? (CAT.WORLD|CAT.PLAYER) : (CAT.WORLD|CAT.PLAYER|CAT.CLOUD);
+    // each jump-through platform is solid only for fighters standing above it
+    const passAll = b.velocity.y < -0.5 || (p.input && p.input.down) || !!p.grabbedBy;
+    let mask = CAT.WORLD|CAT.PLAYER;
+    if (!passAll) G.clouds.forEach(c => { if (b.bounds.max.y <= c.bounds.min.y + 12) mask |= c.collisionFilter.category; });
+    b.collisionFilter.mask = mask;
   }
   Engine.update(G.engine, STEP);
   updateHazards();
