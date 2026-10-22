@@ -1,6 +1,6 @@
 # Fight for Fun
 
-A Party Animals–style brawler designed by Mason.
+A Party Animals–style brawler designed by Mason, with Alex and Mason's dad.
 
 Nine shape fighters punch, grab and throw each other off Cloud Island. The last one standing wins the round.
 
