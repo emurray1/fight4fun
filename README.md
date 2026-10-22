@@ -17,6 +17,7 @@ Open `index.html` in a web browser, or play the GitHub Pages version.
 
 - **Cloud Island:** a floating island over the water, with three clouds to stand on (the middle one moves).
 - **Snowy Hills:** two slippery icy cliffs with a broken bridge between them. Caution signs flash and beep before ice falls on the left side or snow on the right.
+- **Roadside Fights:** three floors. Cars on the road (50), birds on the sidewalk (15) and zapping power lines on top (5), each with its own caution sign and warning sound.
 
 ## Play online
 

@@ -68,7 +68,7 @@ button:focus-visible,.ctl:focus-visible{outline:4px solid var(--yellow);outline-
 .setting{display:flex;flex-direction:column;gap:6px}
 .setting>span{font-size:19px}
 .seg{display:flex;border:3px solid var(--ink)}
-.seg button{flex:1;font-family:var(--body);font-size:18px;padding:5px 4px;background:var(--paper)}
+.seg button{flex:1;line-height:1.1;font-family:var(--body);font-size:18px;padding:5px 4px;background:var(--paper)}
 .seg button+button{border-left:3px solid var(--ink)}
 .seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
 .mapbox{display:flex;flex-direction:column;gap:4px}
@@ -234,6 +234,7 @@ input:focus-visible{outline:4px solid var(--yellow);outline-offset:2px}
       <section>
         <h3>Maps</h3>
         <p><b>Cloud Island:</b> a floating island over the water with three clouds to stand on. The middle cloud moves.</p>
+        <p><b>Roadside Fights:</b> three floors. Cars zoom along the road at the bottom (HONK! means one is coming, and it hits for 50). Birds swoop across the sidewalk in the middle (tweet tweet, 15). The power lines at the top zap anyone standing on them (bzzz then ZAAP, 5). Jump to dodge cars, and press down to drop off a wire before it zaps.</p>
         <p><b>Snowy Hills:</b> two icy cliffs with a broken bridge between them. The ice is slippery, so it's hard to stop! When a yellow caution sign flashes and beeps, ice is about to fall on the left side or snow on the right. Watch for the red warning mark on the ground and get out of the way.</p>
       </section>
       <section>
@@ -399,12 +400,16 @@ const MAPS = {
     ground:[{ x1:40, x2:750, top:640 }, { x1:905, x2:1450, top:640 }],
     planks:[{ x1:744, x2:800, y:648, ang:0.14 }, { x1:868, x2:912, y:647, ang:-0.16 }],
     ledges:[{ x:340, y:430, w:220, amp:0, kind:'ice' }, { x:1200, y:430, w:220, amp:0, kind:'snow' }],
-    sides:[[150,640],[1000,1380]], ice:true, hazards:true },
+    sides:[[150,640],[1000,1380]], ice:true, hazards:'snow' },
+  road: { id:'road', name:'Roadside Fights', desc:'Three floors: dodge cars on the road (50), birds on the sidewalk (15) and zaps on the power lines (5).',
+    ground:[{ x1:80, x2:1520, top:700 }], planks:[],
+    ledges:[{ x:800, y:480, w:1000, amp:0, kind:'sidewalk' }, { x:420, y:260, w:460, amp:0, kind:'wire', color:'#a349a4' }, { x:1180, y:230, w:460, amp:0, kind:'wire', color:'#3f48cc' }],
+    sides:[[230,700],[900,1370]], ice:false, hazards:'road' },
 };
 let MAP = MAPS.cloud;
 const groundAt = x => MAP.ground.find(gp => x >= gp.x1 - 5 && x <= gp.x2 + 5);
 const nearestGround = x => { let best = MAP.ground[0], bd = 1e9; for (const gp of MAP.ground) { const d = x < gp.x1 ? gp.x1 - x : x > gp.x2 ? x - gp.x2 : 0; if (d < bd) { bd = d; best = gp; } } return best; };
-const ledgeObjs = m => m.ledges.map(l => ({ position:{ x:l.x, y:l.y }, w:l.w, kind:l.kind }));
+const ledgeObjs = m => m.ledges.map(l => ({ position:{ x:l.x, y:l.y }, w:l.w, kind:l.kind, color:l.color }));
 const WATER = 815;
 const FONT = '"Gochi Hand","Comic Sans MS",cursive';
 const BODYFONT = '"Patrick Hand","Comic Sans MS",cursive';
@@ -428,7 +433,7 @@ const CONTROLS = [
 const CTRL = Object.fromEntries(CONTROLS.map(c => [c.id, c]));
 const TEAMS = [{ name:'Red team', color:'#ed1c24', dark:'#880015' }, { name:'Blue team', color:'#3f48cc', dark:'#1d2370' }];
 const MODES = [['ffa','Free for all'],['teams','Team vs team']];
-const MAPLIST = [['cloud','Cloud Island'],['snow','Snowy Hills']];
+const MAPLIST = [['cloud','Cloud Island'],['snow','Snowy Hills'],['road','Roadside Fights']];
 const allies = (a, b) => G.mode === 'teams' && a.team === b.team;
 const DIFF = { easy:{ punch:0.3, cd:0.9, mash:0.06, label:'Easy' }, normal:{ punch:0.55, cd:0.55, mash:0.13, label:'Normal' }, hard:{ punch:0.85, cd:0.36, mash:0.25, label:'Hard' } };
 const TOPS = { star5:1.15, star4:1.25, tri:1.3, diamond:1.15, square:0.85, circle:1 };
@@ -550,6 +555,11 @@ const sfx = {
   warn(){ tone(880,880,0.09,'square',0.06); tone(880,880,0.09,'square',0.06,0.16); tone(880,880,0.09,'square',0.06,0.32); },
   fall(){ tone(1200,300,0.5,'sine',0.06); },
   crack(){ noise(0.18,5000,0.14,'highpass'); },
+  honk(){ tone(330,330,0.22,'square',0.08); tone(262,262,0.3,'square',0.08,0.26); },
+  tweet(){ for (let i=0;i<4;i++) tone(2200 + (i%2)*500, 3200, 0.07, 'sine', 0.06, i*0.11); },
+  buzz(){ tone(110,120,0.9,'sawtooth',0.04); },
+  zap(){ noise(0.35,6000,0.16,'highpass'); tone(1500,200,0.3,'square',0.06); },
+  car(){ tone(90,70,0.9,'sawtooth',0.07); },
 };
 
 
@@ -663,7 +673,7 @@ function buildWorld() {
   const grounds = MAP.ground.map(gp => Bodies.rectangle((gp.x1+gp.x2)/2, gp.top + gh/2, gp.x2-gp.x1, gh, { isStatic:true, chamfer:{ radius:MAP.ice ? 14 : [12,12,30,30] }, friction:MAP.ice ? 0.02 : 0.8, label:MAP.ice ? 'ice' : 'island', collisionFilter:{ category:CAT.WORLD, mask:0xffff } }));
   const planks = MAP.planks.map(k => Bodies.rectangle((k.x1+k.x2)/2, k.y, k.x2-k.x1, 14, { isStatic:true, angle:k.ang, friction:0.7, label:'plank', collisionFilter:{ category:CAT.WORLD, mask:0xffff } }));
   const cloudOpts = { isStatic:true, chamfer:{ radius:16 }, friction:0.9, label:'cloud', collisionFilter:{ category:CAT.CLOUD, mask:CAT.PLAYER } };
-  const clouds = MAP.ledges.map(l => Object.assign(Bodies.rectangle(l.x, l.y, l.w, 34, cloudOpts), { w:l.w, base:{ x:l.x, y:l.y }, amp:l.amp, kind:l.kind }));
+  const clouds = MAP.ledges.map(l => Object.assign(Bodies.rectangle(l.x, l.y, l.w, 34, cloudOpts), { w:l.w, base:{ x:l.x, y:l.y }, amp:l.amp, kind:l.kind, color:l.color }));
   const island = grounds[0];
   Composite.add(engine.world, [...grounds, ...planks, ...clouds]);
   const onCol = e => {
@@ -713,7 +723,7 @@ function startRound() {
   } else {
     xs.push(...ffaXs(n)); xs.sort(() => Math.random() - 0.5);
   }
-  G.hazards = []; G.hzT = 3;
+  G.hazards = []; G.hzT = 3; G.hzCar = 4.5; G.hzBird = 7; G.hzZap = 3;
   G.fighters = G.lineup.map((l, i) => { const f = makeFighter(l.ch, l.control, xs[i], i); f.team = l.team || 0; f.tag = l.tag || (l.control === 'cpu' ? 'CPU' : CTRL[l.control].tag); return f; });
   Composite.add(G.engine.world, G.fighters.map(f => f.body));
   ev('clear'); G.banner = null; G.phase = 'countdown'; G.timer = 3; G.lastCount = 4; G.goT = 0; G.champ = null;
@@ -832,7 +842,11 @@ function aiInput(p) {
     }
   }
   const onIsland = !!gp && y > gp.top - 90;
-  for (const h of G.hazards || []) if (Math.abs(h.x - x) < 85 && (h.warn > 0 || h.y < y) && p.grounded > 0) { inp.x = x < h.x ? -1 : 1; break; }
+  for (const h of G.hazards || []) {
+    if ((h.type === 'ice' || h.type === 'snow') && Math.abs(h.x - x) < 85 && (h.warn > 0 || h.y < y) && p.grounded > 0) { inp.x = x < h.x ? -1 : 1; break; }
+    if (h.type === 'car' && p.grounded > 0 && y > MAP.ground[0].top - 80 && (h.warn > 0 ? h.warn < 0.35 : (x - h.x)*h.dir > 0 && Math.abs(x - h.x) < 380)) { inp.jumpP = true; }
+    if (h.type === 'zap') { const wl = MAP.ledges[h.wire]; if (Math.abs(x - wl.x) < wl.w/2 + 10 && y < wl.y && y > wl.y - 100) inp.down = true; }
+  }
   if (onIsland && p.grounded > 0 && inp.x && ((inp.x < 0 && x < gp.x1 + 55) || (inp.x > 0 && x > gp.x2 - 55))) {
     const across = MAP.ground.some(o => o !== gp && (inp.x > 0 ? o.x1 > gp.x2 && o.x1 - gp.x2 < 250 : o.x2 < gp.x1 && gp.x1 - o.x2 < 250));
     if (across && (t.body.position.x - x)*inp.x > 100 && a.cd <= 0) { inp.jumpP = true; a.cd = 0.6; } else if (!(across && a.cd > 0.3)) inp.x = 0;
@@ -861,8 +875,59 @@ function hazardHit(h, p) {
   if (p.ko <= 0) { p.dizzy += ice ? 55 : 40; if (p.dizzy >= 100) { p.dizzy = 100; p.ko = 3; ev('pop', b.position.x, b.position.y - 80, 'DIZZY!', C.purple); ev('sfx','dizzy'); } }
   ev('pop', b.position.x, b.position.y - 45, ice ? 'CRACK!' : 'SPLAT!', C.white); ev('shatter', h.x, h.y, h.type); ev('sfx','bonk'); ev('shake', 7);
 }
+// ---------- Roadside Fights: cars, birds and power lines ----------
+const CAR_COLORS = [C.red, C.blue, C.orange, C.green, C.purple];
+function roadHit(p, kind, dir) {
+  const b = p.body, dmg = { car:50, bird:15, zap:5 }[kind];
+  if (p.grabbedBy) release(p.grabbedBy); if (p.grabbing) release(p);
+  if (kind === 'car') { Body.setVelocity(b, { x:dir*19, y:-11 }); Body.setAngularVelocity(b, dir*0.35); p.hitstun = 0.9; }
+  else if (kind === 'bird') { Body.setVelocity(b, { x:b.velocity.x*0.5 + dir*5, y:-5 }); p.hitstun = 0.3; }
+  else { Body.setVelocity(b, { x:b.velocity.x + rand(-3, 3), y:-13 }); p.hitstun = 0.35; }
+  p.flash = 0.15;
+  if (p.ko <= 0) { p.dizzy += dmg; if (p.dizzy >= 100) { p.dizzy = 100; p.ko = 3; ev('pop', b.position.x, b.position.y - 80, 'DIZZY!', C.purple); ev('sfx','dizzy'); } }
+  ev('pop', b.position.x, b.position.y - 45, { car:'BAM!', bird:'PECK!', zap:'ZAAP!' }[kind], kind === 'zap' ? '#7fdcff' : C.white);
+  ev('burst', b.position.x, b.position.y, kind === 'zap' ? '#7fdcff' : C.yellow, 8); ev('sfx', kind === 'zap' ? 'zap' : 'bonk'); ev('shake', kind === 'car' ? 10 : 4);
+}
+function updateRoad() {
+  const roadTop = MAP.ground[0].top, walk = MAP.ledges[0];
+  if (G.phase === 'fight') {
+    if ((G.hzCar -= DT) <= 0) {
+      const dir = Math.random() < 0.5 ? 1 : -1;
+      G.hazards.push({ type:'car', x: dir > 0 ? -260 : W + 260, y:roadTop - 36, dir, warn:1.8, c:(Math.random()*CAR_COLORS.length)|0, hit:[] });
+      ev('sfx','honk'); ev('pop', dir > 0 ? 170 : W - 170, roadTop - 110, 'HONK!', C.yellow); G.hzCar = rand(6, 9);
+    }
+    if ((G.hzBird -= DT) <= 0) {
+      const dir = Math.random() < 0.5 ? 1 : -1, base = walk.y - 17 - 42;
+      for (let k=0;k<3;k++) G.hazards.push({ type:'bird', x:(dir > 0 ? -60 : W + 60) - dir*k*80, y:base + [0, -28, 14][k], base:base + [0, -28, 14][k], dir, warn:1.4, ph:k, hit:[] });
+      ev('sfx','tweet'); ev('pop', dir > 0 ? 150 : W - 150, base - 40, 'tweet tweet!', C.white); G.hzBird = rand(5, 8);
+    }
+    if ((G.hzZap -= DT) <= 0) {
+      const wires = MAP.ledges.map((l, i) => l.kind === 'wire' ? i : -1).filter(i => i >= 0), wi = wires[(Math.random()*wires.length)|0];
+      G.hazards.push({ type:'zap', wire:wi, x:MAP.ledges[wi].x, y:0, warn:1.2, live:0.6, hit:[] });
+      ev('sfx','buzz'); G.hzZap = rand(4, 6.5);
+    }
+  }
+  for (const h of G.hazards) {
+    if (h.warn > 0) { h.warn -= DT; if (h.warn <= 0) ev('sfx', h.type === 'car' ? 'car' : h.type === 'zap' ? 'zap' : 'tweet'); continue; }
+    if (h.type === 'car') {
+      h.x += h.dir*20;
+      for (const p of G.fighters) { const pb = p.body.position; if (p.alive && !h.hit.includes(p.idx) && Math.abs(pb.x - h.x) < 105 + p.r*0.6 && pb.y > h.y - 35 - p.r && pb.y < h.y + 35 + p.r) { h.hit.push(p.idx); roadHit(p, 'car', h.dir); } }
+      if (h.x < -320 || h.x > W + 320) h.dead = true;
+    } else if (h.type === 'bird') {
+      h.x += h.dir*8; h.ph += DT; h.y = h.base + Math.sin(h.ph*6)*12;
+      for (const p of G.fighters) { const pb = p.body.position; if (p.alive && !h.hit.includes(p.idx) && Math.hypot(pb.x - h.x, pb.y - h.y) < p.r + 18) { h.hit.push(p.idx); roadHit(p, 'bird', h.dir); } }
+      if (h.x < -400 || h.x > W + 400) h.dead = true;
+    } else if (h.type === 'zap') {
+      h.live -= DT; h.y = h.live; const wl = MAP.ledges[h.wire];
+      for (const p of G.fighters) { const b = p.body; if (p.alive && !h.hit.includes(p.idx) && Math.abs(b.position.x - wl.x) < wl.w/2 + 6 && b.bounds.max.y > wl.y - 32 && b.bounds.max.y < wl.y + 14) { h.hit.push(p.idx); roadHit(p, 'zap', 0); } }
+      if (h.live <= 0) h.dead = true;
+    }
+  }
+  G.hazards = G.hazards.filter(h => !h.dead);
+}
 function updateHazards() {
   if (!MAP.hazards) return;
+  if (MAP.hazards === 'road') return updateRoad();
   if (G.phase === 'fight') { G.hzT -= DT; if (G.hzT <= 0) { spawnHazard(); G.hzT = rand(3.5, 6.5); } }
   for (const h of G.hazards) {
     if (h.warn > 0) { h.warn -= DT; if (h.warn <= 0) { h.vy = 4; ev('sfx','fall'); } continue; }
@@ -985,6 +1050,7 @@ function step() {
 function roundRect(x, y, w, h, r) { g.beginPath(); g.roundRect ? g.roundRect(x, y, w, h, r) : g.rect(x, y, w, h); }
 function drawSky(t, map) {
   if (map && map.id === 'snow') return drawSnowSky(t);
+  if (map && map.id === 'road') return drawRoadSky(t);
   g.fillStyle = C.blue; g.fillRect(-3000, -3000, W + 6000, H + 6000);
   g.fillStyle = C.white; g.fillRect(-3000, -3000, W + 6000, 3110);
   const off = (t*12) % 170;
@@ -1000,16 +1066,26 @@ function drawSnowSky(t) {
     g.beginPath(); g.arc(x, y, 2 + (i%3), 0, TAU); g.fill();
   }
 }
-function cautionSign(x, y, w, label, kind, flashing, t) {
+function cautionSign(x, y, w, label, kind, flashing, t, gy = 642) {
   const on = flashing && Math.floor(t*7) % 2 === 0;
   g.strokeStyle = '#6b6b6b'; g.lineWidth = 5; g.lineCap = 'round';
-  g.beginPath(); g.moveTo(x + w*0.2, y + 60); g.lineTo(x + w*0.15, 642); g.moveTo(x + w*0.8, y + 60); g.lineTo(x + w*0.85, 642); g.stroke();
+  g.beginPath(); g.moveTo(x + w*0.2, y + 60); g.lineTo(x + w*0.15, gy); g.moveTo(x + w*0.8, y + 60); g.lineTo(x + w*0.85, gy); g.stroke();
   g.fillStyle = on ? C.orange : C.yellow; g.strokeStyle = on ? C.red : C.ink; g.lineWidth = on ? 6 : 3;
   g.fillRect(x, y, w, 72); g.strokeRect(x, y, w, 72);
   g.fillStyle = on ? C.red : '#9a8a00'; g.font = `16px ${FONT}`; g.textAlign = 'left'; g.textBaseline = 'top'; g.fillText(label, x + 6, y + 4, w - 12);
   if (kind === 'ice') {
     g.fillStyle = ICE; g.fillRect(x + 6, y + 26, w - 12, 10);
     for (let i=0;i<4;i++) { const ix = x + 18 + i*(w - 36)/3; g.beginPath(); g.moveTo(ix - 8, y + 34); g.lineTo(ix + 8, y + 34); g.lineTo(ix, y + 64 - (i%2)*10); g.closePath(); g.fill(); }
+  } else if (kind === 'car') {
+    g.fillStyle = C.red; roundRect(x + w/2 - 36, y + 34, 72, 22, 6); g.fill(); roundRect(x + w/2 - 20, y + 24, 38, 16, 6); g.fill();
+    g.fillStyle = C.ink; for (const dx of [-22, 22]) { g.beginPath(); g.arc(x + w/2 + dx, y + 58, 7, 0, TAU); g.fill(); }
+  } else if (kind === 'bird') {
+    g.fillStyle = C.ink; g.beginPath(); g.ellipse(x + w/2, y + 46, 18, 11, 0, 0, TAU); g.fill();
+    g.beginPath(); g.moveTo(x + w/2 - 4, y + 42); g.lineTo(x + w/2 - 22, y + 26); g.lineTo(x + w/2 + 8, y + 40); g.fill();
+    g.fillStyle = C.orange; g.beginPath(); g.moveTo(x + w/2 + 16, y + 42); g.lineTo(x + w/2 + 28, y + 46); g.lineTo(x + w/2 + 16, y + 50); g.fill();
+  } else if (kind === 'zap') {
+    g.strokeStyle = '#00a2e8'; g.lineWidth = 4; g.beginPath(); g.moveTo(x + 10, y + 46);
+    for (let i=1;i<=8;i++) g.lineTo(x + 10 + i*(w - 20)/8, y + 46 + (i%2 ? -12 : 12)); g.stroke();
   } else {
     g.fillStyle = STORM; g.beginPath(); g.ellipse(x + w/2, y + 52, w*0.38, 10, 0, 0, TAU); g.fill();
     g.fillRect(x + w/2 - 5, y + 26, 10, 22); g.beginPath(); g.arc(x + w/2, y + 26, 10, 0, TAU); g.fill();
@@ -1074,6 +1150,7 @@ function drawSnowArena(t, clouds, live) {
 }
 function drawHazards(t) {
   for (const h of G.hazards || []) {
+    if (h.type === 'car' || h.type === 'bird' || h.type === 'zap') { drawRoadHazard(h, t); continue; }
     const gp = groundAt(h.x), gy = gp ? gp.top : 640;
     if (h.warn > 0) {
       const blink = Math.floor(t*8) % 2 === 0;
@@ -1090,13 +1167,103 @@ function drawHazardShape(h) {
   if (h.type === 'ice') { g.fillStyle = '#c9e9ff'; g.beginPath(); g.moveTo(-h.r, -40); g.lineTo(h.r, -40); g.lineTo(0, 40); g.closePath(); g.fill(); g.stroke(); g.fillStyle = 'rgba(255,255,255,.8)'; g.fillRect(-8, -34, 5, 40); }
   else { g.fillStyle = '#ffffff'; for (const [dx, dy, r] of [[-14,4,22],[14,2,24],[0,-12,26],[0,10,24]]) { g.beginPath(); g.arc(dx, dy, r, 0, TAU); g.fill(); } g.strokeStyle = '#9a9a9a'; g.beginPath(); g.arc(0, 0, h.r, 0, TAU); g.stroke(); }
 }
+// Roadside Fights, from Mason's drawing
+function drawRoadSky(t) {
+  g.fillStyle = '#eef7fc'; g.fillRect(-3000, -3000, W + 6000, H + 6000);
+  for (let i=-3;i<14;i++) {
+    const x = i*140 - 40, h = 170 + ((i*73 + 400) % 190);
+    g.fillStyle = i%2 ? '#d7e0e7' : '#cbd5dd'; g.fillRect(x, 700 - h, 120, h);
+    g.fillStyle = '#e9f1f6'; for (let wy = 700 - h + 16; wy < 640; wy += 34) for (let wx = x + 14; wx < x + 110; wx += 30) g.fillRect(wx, wy, 14, 16);
+  }
+}
+function drawRoadArena(t, clouds, live) {
+  const hz = live ? (G.hazards || []) : [], warn = type => hz.some(h => h.type === type && h.warn > 0), R = MAP.ground[0];
+  g.lineCap = 'round';
+  // tangle of power lines, like Mason's
+  g.lineWidth = 5;
+  for (const [col, a, b] of [['#880015',[1250,-40],[1345,470]],['#22b14c',[1440,-40],[1420,470]],['#a349a4',[1190,300],[1650,-20]],['#3f48cc',[1180,170],[1660,420]],['#ed1c24',[1330,480],[1660,350]]]) {
+    g.strokeStyle = col; g.globalAlpha = 0.55; g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke();
+  }
+  g.globalAlpha = 1;
+  const walk = clouds.find(c => c.kind === 'sidewalk');
+  // poles
+  for (const c of clouds) if (c.kind === 'wire') for (const px of [c.position.x - c.w/2 - 12, c.position.x + c.w/2 + 12]) {
+    const base = walk && px > walk.position.x - walk.w/2 && px < walk.position.x + walk.w/2 ? walk.position.y - 17 : R.top;
+    g.fillStyle = '#6b4f3a'; g.fillRect(px - 7, c.position.y - 60, 14, base - c.position.y + 60);
+    g.fillRect(px - 30, c.position.y - 50, 60, 8);
+  }
+  // road
+  g.fillStyle = C.ink; g.fillRect(R.x1, R.top, R.x2 - R.x1, H + 300 - R.top);
+  g.fillStyle = C.grey; g.fillRect(R.x1, R.top, R.x2 - R.x1, 10);
+  g.fillStyle = C.yellow; for (let x = R.x1 + 20; x < R.x2 - 40; x += 90) g.fillRect(x, R.top + 92, 54, 9);
+  cautionSign(R.x1 + 30, R.top - 120, 130, 'caution cars', 'car', warn('car'), t, R.top);
+  // sidewalk and lamp post
+  if (walk) {
+    const { x, y } = walk.position, w = walk.w, top = y - 17;
+    g.fillStyle = C.grey; g.fillRect(x - w/2, top, w, 64); g.fillStyle = '#6a6a6a'; g.fillRect(x - w/2, top + 54, w, 10);
+    g.fillStyle = '#9a9a9a'; g.fillRect(x - w/2, top, w, 6);
+    g.fillStyle = C.yellow; for (let i=0;i<16;i++) { g.beginPath(); g.arc(x - w/2 + 40 + i*(w - 80)/15, top + 30 + (i%3 - 1)*2, 7, 0, TAU); g.fill(); }
+    const lx = x - w/2 + 150;
+    g.fillStyle = C.ink; g.fillRect(lx - 3, top - 150, 6, 150);
+    g.fillStyle = C.yellow; g.beginPath(); g.arc(lx, top - 152, 9, 0, TAU); g.fill(); g.strokeStyle = C.ink; g.lineWidth = 3; g.stroke();
+    cautionSign(x + w/2 - 200, top - 105, 140, 'caution birds', 'bird', warn('bird'), t, top);
+  }
+  // wires
+  for (let i=0;i<clouds.length;i++) {
+    const c = clouds[i]; if (c.kind !== 'wire') continue;
+    const { x, y } = c.position, w = c.w, wy = y - 13;
+    const z = hz.find(h => h.type === 'zap' && h.wire === i), buzzing = z && z.warn > 0, live = z && z.warn <= 0;
+    g.strokeStyle = c.color || '#3f48cc'; g.lineWidth = 7; g.beginPath(); g.moveTo(x - w/2 - 12, wy - 4); g.quadraticCurveTo(x, wy + 8, x + w/2 + 12, wy - 4); g.stroke();
+    if (buzzing || live) {
+      g.strokeStyle = live ? '#7fdcff' : 'rgba(0,162,232,' + (0.3 + 0.4*Math.abs(Math.sin(t*30))) + ')'; g.lineWidth = live ? 6 : 3;
+      g.beginPath(); g.moveTo(x - w/2, wy);
+      for (let k=1;k<=24;k++) g.lineTo(x - w/2 + k*w/24, wy + (k%2 ? -1 : 1)*(live ? 16 : 8)*(0.6 + 0.4*Math.sin(t*50 + k)));
+      g.stroke();
+    }
+  }
+  const leftWire = clouds.find(c => c.kind === 'wire');
+  if (leftWire) cautionSign(leftWire.position.x + 70, leftWire.position.y + 42, 160, 'caution power lines', 'zap', warn('zap'), t, walk ? walk.position.y - 17 : R.top);
+}
+function drawRoadHazard(h, t) {
+  const blink = Math.floor(t*8) % 2 === 0;
+  if (h.type === 'car') {
+    if (h.warn > 0) {
+      const ex = h.dir > 0 ? 0 : W;
+      g.fillStyle = blink ? 'rgba(255,242,0,.55)' : 'rgba(255,242,0,.2)';
+      g.beginPath(); g.moveTo(ex, h.y - 10); g.lineTo(ex + h.dir*420, h.y - 70); g.lineTo(ex + h.dir*420, h.y + 40); g.closePath(); g.fill();
+      return;
+    }
+    g.save(); g.translate(h.x, h.y); g.scale(h.dir, 1);
+    g.fillStyle = CAR_COLORS[h.c] || C.red; g.strokeStyle = C.ink; g.lineWidth = 4;
+    roundRect(-105, -10, 210, 44, 12); g.fill(); g.stroke(); roundRect(-55, -42, 110, 38, 14); g.fill(); g.stroke();
+    g.fillStyle = '#bfe6fb'; roundRect(-44, -34, 40, 24, 5); g.fill(); roundRect(6, -34, 40, 24, 5); g.fill();
+    g.fillStyle = C.yellow; g.beginPath(); g.arc(98, 6, 8, 0, TAU); g.fill();
+    g.fillStyle = C.ink; for (const wx of [-62, 62]) { g.beginPath(); g.arc(wx, 34, 18, 0, TAU); g.fill(); g.fillStyle = '#9a9a9a'; g.beginPath(); g.arc(wx, 34, 7, 0, TAU); g.fill(); g.fillStyle = C.ink; }
+    g.restore();
+    g.strokeStyle = 'rgba(17,17,17,.3)'; g.lineWidth = 4; for (let i=0;i<3;i++) { const sx = h.x - h.dir*(130 + i*30); g.beginPath(); g.moveTo(sx, h.y - 20 + i*18); g.lineTo(sx - h.dir*40, h.y - 20 + i*18); g.stroke(); }
+  } else if (h.type === 'bird') {
+    if (h.warn > 0) {
+      const ex = h.dir > 0 ? 40 : W - 40;
+      g.font = `30px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = blink ? C.ink : C.grey; g.fillText('♪', ex + Math.sin(t*12 + h.ph)*10, h.y - 20 - h.ph*6);
+      return;
+    }
+    const flap = Math.sin(t*25 + h.ph*2)*14;
+    g.save(); g.translate(h.x, h.y); g.scale(h.dir, 1);
+    g.fillStyle = '#3a3a3a'; g.beginPath(); g.ellipse(0, 0, 20, 12, 0, 0, TAU); g.fill();
+    g.beginPath(); g.arc(16, -6, 9, 0, TAU); g.fill();
+    g.beginPath(); g.moveTo(-6, -4); g.lineTo(-18, -16 - flap); g.lineTo(8, -6); g.closePath(); g.fill();
+    g.fillStyle = C.orange; g.beginPath(); g.moveTo(24, -8); g.lineTo(34, -5); g.lineTo(24, -2); g.fill();
+    g.fillStyle = C.white; g.beginPath(); g.arc(18, -8, 3, 0, TAU); g.fill();
+    g.restore();
+  }
+}
 function drawMenuGround() {
   g.fillStyle = C.forest; g.beginPath(); g.moveTo(-3000, H+3000); g.lineTo(-3000, 720);
   g.bezierCurveTo(200, 640, 420, 650, 640, 760); g.bezierCurveTo(900, 700, 1300, 620, W+3000, 700); g.lineTo(W+3000, H+3000); g.fill();
   g.fillStyle = C.green; g.beginPath(); g.moveTo(-3000, H+3000); g.lineTo(-3000, 800);
   g.bezierCurveTo(300, 760, 500, 790, 700, 830); g.bezierCurveTo(1000, 780, 1300, 760, W+3000, 790); g.lineTo(W+3000, H+3000); g.fill();
 }
-function drawArena(t, clouds = G.clouds, live = true) { if (MAP.id === 'snow') drawSnowArena(t, clouds, live); else drawCloudArena(t, clouds); }
+function drawArena(t, clouds = G.clouds, live = true) { if (MAP.id === 'snow') drawSnowArena(t, clouds, live); else if (MAP.id === 'road') drawRoadArena(t, clouds, live); else drawCloudArena(t, clouds); }
 function drawCloudArena(t, clouds) {
   g.fillStyle = C.forest; g.beginPath(); g.moveTo(-3000, WATER+10); g.lineTo(-3000, 740);
   g.bezierCurveTo(150, 690, 330, 700, 460, 760); g.bezierCurveTo(800, 720, 1250, 690, W+3000, 735); g.lineTo(W+3000, WATER+10); g.fill();
@@ -1369,10 +1536,11 @@ function runEv(type, a, b, c, d) {
     case 'shatter': for (let i=0;i<14;i++) { const an = rand(Math.PI, TAU), sp = rand(2, 8); G.particles.push({ type:'drop', x:a, y:b, vx:Math.cos(an)*sp, vy:Math.sin(an)*sp - 2, life:0.7, max:0.7, size:rand(4, 9), color: c === 'ice' ? (i%2 ? '#c9e9ff' : '#8091ff') : (i%3 ? '#ffffff' : '#d0d0d0') }); } break;
   }
 }
+const HZ_CODES = ['ice','snow','car','bird','zap'];
 const r1 = v => Math.round(v*10)/10, r2 = v => Math.round(v*100)/100;
 function snapshot() {
   const f = G.fighters.map(p => { const b = p.body; return [r1(b.position.x), r1(b.position.y), r2(b.angle), p.alive ? 1 : 0, p.ko > 0 ? r1(p.ko) : 0, Math.round(p.dizzy), p.facing, r2(p.punchAnim), p.flash > 0 ? r2(p.flash) : 0, p.grabbing ? p.grabbing.idx : -1, r2(p.squash)]; });
-  return { t:'s', ph:G.phase, tm:r2(G.timer), go:r2(G.goT), bn:G.banner, w:G.wins, f, c:G.clouds.map(c => r1(c.position.x)), hz:(G.hazards || []).map(h => [h.type === 'ice' ? 0 : 1, r1(h.x), r1(h.y), r2(Math.max(0, h.warn))]), e:NETEV.splice(0) };
+  return { t:'s', ph:G.phase, tm:r2(G.timer), go:r2(G.goT), bn:G.banner, w:G.wins, f, c:G.clouds.map(c => r1(c.position.x)), hz:(G.hazards || []).map(h => [HZ_CODES.indexOf(h.type), r1(h.x), r1(h.y), r2(Math.max(0, h.warn)), h.type === 'car' ? h.dir*10 + (h.dir > 0 ? h.c : -h.c) : h.type === 'bird' ? h.dir : h.type === 'zap' ? h.wire : 0]), e:NETEV.splice(0) };
 }
 
 // A stand-in for PeerJS that talks between browser tabs, used for testing with ?mock=1
@@ -1585,7 +1753,7 @@ function applySnap(s) {
     p.alive = !!a[3]; p.ko = a[4]; p.dizzy = a[5]; p.facing = a[6]; p.punchAnim = a[7]; p.flash = a[8]; p.grabbing = a[9] >= 0 ? G.fighters[a[9]] : null; p.squash = a[10];
   });
   if (s.c) s.c.forEach((x, i) => { if (G.clouds[i]) G.clouds[i].tx = x; });
-  G.hazards = (s.hz || []).map(a => ({ type: a[0] ? 'snow' : 'ice', x:a[1], y:a[2], warn:a[3], r: a[0] ? 36 : 24 }));
+  G.hazards = (s.hz || []).map(a => { const type = HZ_CODES[a[0]] || 'ice'; return { type, x:a[1], y:a[2], warn:a[3], r: type === 'snow' ? 36 : 24, dir: type === 'car' ? Math.sign(a[4]) : a[4], c: Math.abs(a[4]) % 10, wire:a[4], live:a[2], ph:a[3] ? 0 : (a[1]|0) % 7 }; });
   for (const e of s.e || []) runEv(...e);
 }
 function clientSmooth(dt) {
