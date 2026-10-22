@@ -8,6 +8,13 @@ Six shape fighters punch, grab and throw each other off Cloud Island. The last o
 
 Open `index.html` in a web browser, or play the GitHub Pages version.
 
+## Special moves
+
+- **Shocked Circle** rolls into people (35 damage). If it misses, it does a flip.
+- **Yelling Square** jumps up and slams down on anyone close by (45 damage). If it misses, it crashes into a puff of dust.
+
+Every fighter has 200 hp. When it runs out, they get dizzy and can be thrown.
+
 ## Game modes
 
 - **Free for all:** everyone for themselves. The last fighter on the island wins the round.
@@ -37,6 +44,7 @@ The host's browser runs the fight, and everyone else connects to it directly usi
 | Drop through a cloud | S | ↓ | Stick down |
 | Punch | F | K | X |
 | Grab, then throw | G, G | L, L | B, B |
+| Special move | H | ; | Y |
 | Pause | Esc | Esc | Start |
 
 ## Made with

@@ -222,6 +222,7 @@ input:focus-visible{outline:4px solid var(--yellow);outline-offset:2px}
               <tr><th>Drop through a cloud</th><td><kbd>S</kbd></td><td><kbd>↓</kbd></td><td>Stick down</td></tr>
               <tr><th>Punch</th><td><kbd>F</kbd></td><td><kbd>K</kbd></td><td><kbd>X</kbd></td></tr>
               <tr><th>Grab, then throw</th><td><kbd>G</kbd>, then <kbd>G</kbd> again</td><td><kbd>L</kbd>, then <kbd>L</kbd> again</td><td><kbd>B</kbd>, then <kbd>B</kbd> again</td></tr>
+              <tr><th>Special move</th><td><kbd>H</kbd></td><td><kbd>;</kbd></td><td><kbd>Y</kbd></td></tr>
               <tr><th>Pause</th><td colspan="2"><kbd>Esc</kbd> (or click "quit" in the corner to leave)</td><td><kbd>Start</kbd></td></tr>
             </tbody>
           </table>
@@ -250,6 +251,7 @@ input:focus-visible{outline:4px solid var(--yellow);outline-offset:2px}
       <section>
         <h3>Tips</h3>
         <ul class="tips">
+          <li>Special moves: Shocked Circle rolls into people (35 damage), and Yelling Square jumps up and slams down on anyone close by (45). If they miss, they do a silly flip or a dusty crash instead.</li>
           <li>Got grabbed? Mash punch, jump or grab to wriggle free.</li>
           <li>Knocked off the edge? Use your double jump and steer back to the island.</li>
           <li>Throwing a dizzy fighter sends them much farther than throwing an awake one.</li>
@@ -349,9 +351,9 @@ input:focus-visible{outline:4px solid var(--yellow);outline-offset:2px}
     </div>
     <div class="howto">
       <div><b>How to win</b>Everyone has 200 hp. Punch someone until their hp runs out and they get dizzy (stars spin over their head). Grab them and throw them off the island. Last one standing wins the round.</div>
-      <div><b>Keys: WASD</b><kbd>A</kbd> <kbd>D</kbd> move · <kbd>W</kbd> jump (twice in the air) · <kbd>S</kbd> drop through clouds · <kbd>F</kbd> punch · <kbd>G</kbd> grab, <kbd>G</kbd> again to throw</div>
-      <div><b>Keys: Arrows</b><kbd>←</kbd> <kbd>→</kbd> move · <kbd>↑</kbd> jump · <kbd>↓</kbd> drop · <kbd>K</kbd> punch · <kbd>L</kbd> grab, <kbd>L</kbd> again to throw</div>
-      <div><b>Controller</b>Stick move · <kbd>A</kbd> jump · <kbd>X</kbd> punch · <kbd>B</kbd> grab and throw · <kbd>Start</kbd> pause. <kbd>Esc</kbd> pauses, <kbd>M</kbd> mutes.</div>
+      <div><b>Keys: WASD</b><kbd>A</kbd> <kbd>D</kbd> move · <kbd>W</kbd> jump (twice in the air) · <kbd>S</kbd> drop through clouds · <kbd>F</kbd> punch · <kbd>G</kbd> grab, <kbd>G</kbd> again to throw · <kbd>H</kbd> special</div>
+      <div><b>Keys: Arrows</b><kbd>←</kbd> <kbd>→</kbd> move · <kbd>↑</kbd> jump · <kbd>↓</kbd> drop · <kbd>K</kbd> punch · <kbd>L</kbd> grab, <kbd>L</kbd> again to throw · <kbd>;</kbd> special</div>
+      <div><b>Controller</b>Stick move · <kbd>A</kbd> jump · <kbd>X</kbd> punch · <kbd>B</kbd> grab and throw · <kbd>Y</kbd> special · <kbd>Start</kbd> pause. <kbd>Esc</kbd> pauses, <kbd>M</kbd> mutes.</div>
     </div>
   </div>
 </div>
@@ -418,9 +420,9 @@ const BODYFONT = '"Patrick Hand","Comic Sans MS",cursive';
 const CHARS = [
   { id:'star',    name:'Cool Star',      color:C.purple, shape:'star5',   trait:'Balanced, and way too cool', speed:1.0,  power:1.0,  weight:1.0,  jump:1.0 },
   { id:'tri',     name:'Angry Triangle', color:C.red,    shape:'tri',     trait:'Hits the hardest',           speed:0.95, power:1.3,  weight:1.05, jump:0.95 },
-  { id:'circle',  name:'Shocked Circle', color:C.blue,   shape:'circle',  trait:'Fastest roller',             speed:1.25, power:0.85, weight:0.85, jump:1.0 },
+  { id:'circle',  name:'Shocked Circle', color:C.blue,   shape:'circle',  trait:'Fastest roller. Special: rolls into you', speed:1.25, power:0.85, weight:0.85, jump:1.0 },
   { id:'diamond', name:'Sly Diamond',    color:C.green,  shape:'diamond', trait:'Jumps the highest',          speed:1.05, power:0.95, weight:0.95, jump:1.2 },
-  { id:'square',  name:'Yelling Square', color:C.orange, shape:'square',  trait:'Heavy and hard to throw',    speed:0.85, power:1.15, weight:1.45, jump:0.92 },
+  { id:'square',  name:'Yelling Square', color:C.orange, shape:'square',  trait:'Heavy. Special: jumps and slams down', speed:0.85, power:1.15, weight:1.45, jump:0.92 },
   { id:'sparkle', name:'Goofy Sparkle',  color:C.yellow, shape:'star4',   trait:'Light and zippy',            speed:1.15, power:0.9,  weight:0.8,  jump:1.12 },
 ];
 const CHAR = Object.fromEntries(CHARS.map(c => [c.id, c]));
@@ -556,6 +558,8 @@ const sfx = {
   warn(){ tone(880,880,0.09,'square',0.06); tone(880,880,0.09,'square',0.06,0.16); tone(880,880,0.09,'square',0.06,0.32); },
   fall(){ tone(1200,300,0.5,'sine',0.06); },
   crack(){ noise(0.18,5000,0.14,'highpass'); },
+  roll(){ tone(180,520,0.45,'sawtooth',0.05); },
+  slam(){ tone(140,40,0.45,'square',0.14); noise(0.35,500,0.28); },
   honk(){ tone(330,330,0.22,'square',0.08); tone(262,262,0.3,'square',0.08,0.26); },
   tweet(){ for (let i=0;i<4;i++) tone(2200 + (i%2)*500, 3200, 0.07, 'sine', 0.06, i*0.11); },
   buzz(){ tone(110,120,0.9,'sawtooth',0.04); },
@@ -618,7 +622,7 @@ addEventListener('resize', resize); resize();
 
 // ---------- input ----------
 const keys = new Set();
-const GAME_KEYS = new Set(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','KeyW','KeyA','KeyS','KeyD','KeyF','KeyG','KeyK','KeyL','Slash','Period']);
+const GAME_KEYS = new Set(['KeyH','Semicolon','Quote','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','KeyW','KeyA','KeyS','KeyD','KeyF','KeyG','KeyK','KeyL','Slash','Period']);
 addEventListener('keydown', e => {
   if (G.state === 'fight' && GAME_KEYS.has(e.code)) e.preventDefault();
   if (e.repeat) return;
@@ -629,20 +633,20 @@ addEventListener('keydown', e => {
 addEventListener('keyup', e => keys.delete(e.code));
 addEventListener('blur', () => keys.clear());
 const KEYMAP = {
-  p1:{ l:['KeyA'], r:['KeyD'], u:['KeyW'], d:['KeyS'], punch:['KeyF'], grab:['KeyG'] },
-  p2:{ l:['ArrowLeft'], r:['ArrowRight'], u:['ArrowUp'], d:['ArrowDown'], punch:['KeyK','Numpad1','Period'], grab:['KeyL','Numpad2','Slash'] },
+  p1:{ l:['KeyA'], r:['KeyD'], u:['KeyW'], d:['KeyS'], punch:['KeyF'], grab:['KeyG'], special:['KeyH'] },
+  p2:{ l:['ArrowLeft'], r:['ArrowRight'], u:['ArrowUp'], d:['ArrowDown'], punch:['KeyK','Numpad1','Period'], grab:['KeyL','Numpad2','Slash'], special:['Semicolon','Quote','Numpad3'] },
 };
 const anyKey = list => list.some(k => keys.has(k));
 function readHeld(ctrl) {
   if (ctrl === 'local') {
-    const hs = ['p1','p2','pad0'].map(readHeld), m = { x:0, down:false, jump:false, punch:false, grab:false, start:false };
-    for (const h of hs) { if (h.x) m.x = h.x; for (const k of ['down','jump','punch','grab','start']) m[k] = m[k] || h[k]; }
+    const hs = ['p1','p2','pad0'].map(readHeld), m = { x:0, down:false, jump:false, punch:false, grab:false, special:false, start:false };
+    for (const h of hs) { if (h.x) m.x = h.x; for (const k of ['down','jump','punch','grab','special','start']) m[k] = m[k] || h[k]; }
     return m;
   }
   const h = { x:0, down:false, jump:false, punch:false, grab:false, start:false };
   if (KEYMAP[ctrl]) {
     const m = KEYMAP[ctrl]; h.x = (anyKey(m.r)?1:0) - (anyKey(m.l)?1:0);
-    h.down = anyKey(m.d); h.jump = anyKey(m.u); h.punch = anyKey(m.punch); h.grab = anyKey(m.grab);
+    h.down = anyKey(m.d); h.jump = anyKey(m.u); h.punch = anyKey(m.punch); h.grab = anyKey(m.grab); h.special = anyKey(m.special);
   } else if (ctrl.startsWith('pad')) {
     const pads = navigator.getGamepads ? navigator.getGamepads() : [];
     const gp = pads && pads[+ctrl.slice(3)];
@@ -650,7 +654,7 @@ function readHeld(ctrl) {
       const b = i => !!(gp.buttons[i] && gp.buttons[i].pressed);
       const ax = gp.axes[0] || 0, ay = gp.axes[1] || 0;
       h.x = Math.abs(ax) > 0.35 ? Math.sign(ax) : (b(15)?1:0) - (b(14)?1:0);
-      h.down = ay > 0.6 || b(13); h.jump = b(0) || b(12); h.punch = b(2) || b(7); h.grab = b(1) || b(5) || b(3); h.start = b(9);
+      h.down = ay > 0.6 || b(13); h.jump = b(0) || b(12); h.punch = b(2) || b(7); h.grab = b(1) || b(5); h.special = b(3) || b(4); h.start = b(9);
     }
   }
   return h;
@@ -659,7 +663,7 @@ function humanInput(p) {
   const h = readHeld(p.control), pr = p.prevHeld || {};
   p.prevHeld = h;
   if (h.start && !pr.start && !G.online) { if (!$('quitAsk').hidden) closeQuit(); else togglePause(); }
-  return { x:h.x, down:h.down, jumpP:h.jump && !pr.jump, punchP:h.punch && !pr.punch, grabP:h.grab && !pr.grab };
+  return { x:h.x, down:h.down, jumpP:h.jump && !pr.jump, punchP:h.punch && !pr.punch, grabP:h.grab && !pr.grab, specialP:h.special && !pr.special };
 }
 const BLANK = { x:0, down:false, jumpP:false, punchP:false, grabP:false };
 
@@ -854,6 +858,10 @@ function aiInput(p) {
   }
   if (dy < -100 && Math.abs(dx) < 280 && p.grounded > 0 && a.cd <= 0 && Math.random() < 0.06) { inp.jumpP = true; a.cd = 0.35; }
   if (dy > 90 && !onIsland && Math.random() < 0.02) inp.down = true;
+  if (p.grounded > 0 && (p.specCD || 0) <= 0 && t.ko <= 0) {
+    if (SPECIALS[p.ch.id] === 'roll' && Math.abs(dy) < 45 && Math.abs(dx) > 110 && Math.abs(dx) < 420 && Math.random() < 0.03) { p.facing = Math.sign(dx); inp.specialP = true; }
+    if (SPECIALS[p.ch.id] === 'slam' && Math.abs(dx) < 160 && Math.abs(dy) < 60 && Math.random() < 0.03) inp.specialP = true;
+  }
   if (p.grounded > 0 && Math.random() < 0.003) inp.jumpP = true;
   return inp;
 }
@@ -941,10 +949,65 @@ function updateHazards() {
   G.hazards = G.hazards.filter(h => !h.dead);
 }
 
+// ---------- special moves (from Mason's drawings) ----------
+const SPECIALS = { circle:'roll', square:'slam' };
+function startSpecial(p, grounded) {
+  const kind = SPECIALS[p.ch.id]; if (!kind || !grounded) return;
+  const b = p.body;
+  if (kind === 'roll') { p.special = { kind, t:0 }; p.specCD = 3; ev('sfx','roll'); }
+  else { p.special = { kind, t:0, phase:'up' }; p.specCD = 4; Body.setVelocity(b, { x:b.velocity.x*0.4, y:-21 }); p.grounded = 0; ev('sfx','jump'); ev('puff', b.position.x, b.position.y + p.r); }
+}
+function hurt(q, dmg) {
+  if (q.ko > 0) return;
+  q.dizzy += dmg;
+  if (q.dizzy >= MAX_HP) { q.dizzy = MAX_HP; q.ko = 3; ev('pop', q.body.position.x, q.body.position.y - 80, 'DIZZY!', C.purple); ev('sfx','dizzy'); }
+}
+function specialHit(p, q, dmg, vx, vy, word) {
+  if (q.grabbedBy) release(q.grabbedBy); if (q.grabbing) release(q);
+  Body.setVelocity(q.body, { x:vx, y:vy }); Body.setAngularVelocity(q.body, Math.sign(vx || 1)*0.3);
+  q.hitstun = 0.55; q.flash = 0.15; q.special = null; q.lastHitBy = p;
+  hurt(q, dmg);
+  ev('burst', q.body.position.x, q.body.position.y, C.yellow, 10); ev('pop', q.body.position.x, q.body.position.y - 50, word, C.yellow); ev('sfx','bonk'); ev('shake', 9);
+}
+function runSpecial(p, inp, grounded) {
+  const sp = p.special, b = p.body; sp.t += DT;
+  const foes = G.fighters.filter(q => q !== p && q.alive && !q.grabbedBy && !allies(p, q));
+  if (sp.kind === 'roll') {
+    Body.setVelocity(b, { x:p.facing*16, y:b.velocity.y }); Body.setAngularVelocity(b, p.facing*0.45);
+    if (Math.random() < 0.5) G.particles.push({ type:'dot', x:b.position.x - p.facing*p.r, y:b.position.y + p.r*0.8, vx:-p.facing*rand(1, 3), vy:rand(-2, 0), life:0.3, max:0.3, size:rand(4, 7), color:'rgba(160,160,160,.8)' });
+    const q = foes.find(q => Math.hypot(q.body.position.x - b.position.x, q.body.position.y - b.position.y) < p.r + q.r + 4);
+    if (q) { specialHit(p, q, 35, p.facing*13, -7, 'ROLL!'); Body.setVelocity(b, { x:-p.facing*4, y:-5 }); p.special = null; return; }
+    if (sp.t > 0.9) { ev('pop', b.position.x, b.position.y - 50, 'miss', C.white); Body.setVelocity(b, { x:-p.facing*3, y:-13 }); p.special = { kind:'loop', t:0 }; }
+    return;
+  }
+  if (sp.kind === 'loop') {
+    Body.setAngularVelocity(b, -p.facing*0.32);
+    if (sp.t > 0.25 && grounded || sp.t > 0.9) p.special = null;
+    return;
+  }
+  // slam: jump up, then come down hard
+  const ang = wrap(b.angle); Body.setAngularVelocity(b, b.angularVelocity*0.8 - ang*0.14);
+  if (sp.phase === 'up') {
+    Body.setVelocity(b, { x:b.velocity.x + (inp.x*6 - b.velocity.x)*0.1, y:b.velocity.y });
+    if (b.velocity.y > -1 || sp.t > 0.55) { sp.phase = 'down'; sp.t = 0; Body.setVelocity(b, { x:b.velocity.x*0.3, y:26 }); ev('sfx','throw'); }
+    return;
+  }
+  if (b.velocity.y < 22 && !grounded) Body.setVelocity(b, { x:b.velocity.x, y:24 });
+  G.particles.push({ type:'dot', x:b.position.x + rand(-p.r, p.r), y:b.position.y - p.r, vx:0, vy:-2, life:0.2, max:0.2, size:4, color:'rgba(17,17,17,.6)' });
+  const landed = grounded && sp.t > 0.04;
+  if (landed || sp.t > 1.5) {
+    p.special = null;
+    const hit = foes.filter(q => Math.abs(q.body.position.x - b.position.x) < 100 + q.r && Math.abs(q.body.position.y - b.position.y) < 85);
+    for (const q of hit) specialHit(p, q, 45, Math.sign(q.body.position.x - b.position.x || 1)*10, -11, 'SLAM!');
+    ev('dust', b.position.x, b.position.y + p.r); ev('sfx','slam'); ev('shake', 11);
+    if (!hit.length) ev('pop', b.position.x, b.position.y - 60, 'miss', C.white);
+  }
+}
+
 // ---------- per-fighter control ----------
 function control(p, inp) {
   const b = p.body, ch = p.ch;
-  p.punchCD -= DT; p.punchAnim = Math.max(0, p.punchAnim - DT); p.hitstun = Math.max(0, p.hitstun - DT); p.flash = Math.max(0, p.flash - DT);
+  p.punchCD -= DT; p.specCD = (p.specCD || 0) - DT; if (p.ko > 0 || p.grabbedBy || p.hitstun > 0.25) p.special = null; p.punchAnim = Math.max(0, p.punchAnim - DT); p.hitstun = Math.max(0, p.hitstun - DT); p.flash = Math.max(0, p.flash - DT);
   if (p.ko > 0) { p.ko -= DT; if (p.ko <= 0) { p.ko = 0; p.dizzy = 0; } } else p.dizzy = Math.max(0, p.dizzy - DT*7);
   p.squash *= 0.85;
   if (p.grabbedBy) {
@@ -960,6 +1023,7 @@ function control(p, inp) {
   }
   if (p.ko > 0) return;
   const grounded = p.grounded > 0; if (grounded) p.airJumps = 1;
+  if (p.special) return runSpecial(p, inp, grounded);
   const speed = 7*ch.speed*(p.grabbing ? 0.72 : 1), vx = b.velocity.x;
   const slick = grounded && p.surface === 'ice';
   const accel = grounded ? (p.hitstun > 0 ? (slick ? 0.01 : 0.04) : slick ? (inp.x ? 0.07 : 0.025) : 0.2) : (inp.x ? (p.hitstun > 0 ? 0.02 : 0.08) : 0);
@@ -973,6 +1037,7 @@ function control(p, inp) {
   Body.setAngularVelocity(b, b.angularVelocity*(p.hitstun > 0 ? 0.98 : 0.82) - ang*k);
   if (inp.punchP) { if (p.grabbing) doThrow(p); else tryPunch(p); }
   if (inp.grabP) { if (p.grabbing) doThrow(p); else tryGrab(p); }
+  if (inp.specialP && !p.grabbing && p.specCD <= 0) startSpecial(p, grounded);
   if (grounded && inp.x) { p.walk += DT*13; p.squash = Math.sin(p.walk)*0.06; }
 }
 
@@ -1535,6 +1600,7 @@ function runEv(type, a, b, c, d) {
     case 'splash': splash(a); break;
     case 'shake': G.shake = Math.max(G.shake, a); break;
     case 'clear': G.particles = []; break;
+    case 'dust': for (let i=0;i<16;i++) G.particles.push({ type:'dot', x:a + rand(-20, 20), y:b, vx:(i%2 ? 1 : -1)*rand(3, 9), vy:rand(-4, -1), life:0.5, max:0.5, size:rand(5, 10), color: i%3 ? 'rgba(17,17,17,.7)' : 'rgba(255,255,255,.9)' }); break;
     case 'shatter': for (let i=0;i<14;i++) { const an = rand(Math.PI, TAU), sp = rand(2, 8); G.particles.push({ type:'drop', x:a, y:b, vx:Math.cos(an)*sp, vy:Math.sin(an)*sp - 2, life:0.7, max:0.7, size:rand(4, 9), color: c === 'ice' ? (i%2 ? '#c9e9ff' : '#8091ff') : (i%3 ? '#ffffff' : '#d0d0d0') }); } break;
   }
 }
@@ -1570,7 +1636,7 @@ class MockPeer extends Emitter {
   destroy(){ for (const c of [...this.conns.values()]) c.close(); this.dead = true; BC.removeEventListener('message', this._h); }
 }
 
-const Net = { role:null, peer:null, conns:new Map(), host:null, lobby:null, inputs:new Map(), counters:{ j:0, p:0, g:0 }, prevHeld:{}, lastSend:0, lastInput:'', joinTimer:0 };
+const Net = { role:null, peer:null, conns:new Map(), host:null, lobby:null, inputs:new Map(), counters:{ j:0, p:0, g:0, s:0 }, prevHeld:{}, lastSend:0, lastInput:'', joinTimer:0 };
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ', PREFIX = 'fight4fun-room-';
 const genCode = () => Array.from({ length:4 }, () => CODE_CHARS[(Math.random()*CODE_CHARS.length)|0]).join('');
 function makePeer(id) {
@@ -1634,7 +1700,7 @@ function hostOnData(conn, d) {
   if (!Net.conns.has(id)) return;
   if (d.t === 'pick') return lobbyPick(id, d.ch);
   if (d.t === 'team') { const pl = L.players.find(p => p.id === id); if (pl && pl.ch) { L.teams[pl.ch] = 1 - (L.teams[pl.ch] || 0); broadcastLobby(); } return; }
-  if (d.t === 'i') { Net.inputs.set(id, { x:Math.max(-1, Math.min(1, +d.x || 0)), d:!!d.d, j:+d.j || 0, p:+d.p || 0, g:+d.g || 0 }); return; }
+  if (d.t === 'i') { Net.inputs.set(id, { x:Math.max(-1, Math.min(1, +d.x || 0)), d:!!d.d, j:+d.j || 0, p:+d.p || 0, g:+d.g || 0, s:+d.s || 0 }); return; }
   if (d.t === 'bye') return hostDrop(id);
 }
 function lobbyPick(id, ch) {
@@ -1690,10 +1756,10 @@ function hostStartMatch() {
 function hostToLobby() { G.online = null; netBroadcast({ t:'tolobby' }); openLobby(); broadcastLobby(); }
 function endRoom(msg) { netBroadcast({ t:'bye' }); endNet(msg); }
 function netInput(p) {
-  const r = Net.inputs.get(p.control.slice(4)) || { x:0, d:false, j:0, p:0, g:0 };
-  const s = p.netSeen || { j:r.j, p:r.p, g:r.g };
-  p.netSeen = { j:r.j, p:r.p, g:r.g };
-  return { x:r.x, down:r.d, jumpP:r.j > s.j, punchP:r.p > s.p, grabP:r.g > s.g };
+  const r = Net.inputs.get(p.control.slice(4)) || { x:0, d:false, j:0, p:0, g:0, s:0 };
+  const s = p.netSeen || { j:r.j, p:r.p, g:r.g, s:r.s };
+  p.netSeen = { j:r.j, p:r.p, g:r.g, s:r.s };
+  return { x:r.x, down:r.d, jumpP:r.j > s.j, punchP:r.p > s.p, grabP:r.g > s.g, specialP:(r.s || 0) > (s.s || 0) };
 }
 
 // ----- client -----
@@ -1769,9 +1835,9 @@ function clientSmooth(dt) {
 function clientSendInput(now) {
   if (!Net.host || !Net.host.open) return;
   const h = readHeld('local'), pr = Net.prevHeld, c = Net.counters;
-  if (h.jump && !pr.jump) c.j++; if (h.punch && !pr.punch) c.p++; if (h.grab && !pr.grab) c.g++;
+  if (h.jump && !pr.jump) c.j++; if (h.punch && !pr.punch) c.p++; if (h.grab && !pr.grab) c.g++; if (h.special && !pr.special) c.s++;
   Net.prevHeld = h;
-  const msg = { t:'i', x:h.x, d:h.down ? 1 : 0, j:c.j, p:c.p, g:c.g }, key = msg.x + ',' + msg.d + ',' + c.j + ',' + c.p + ',' + c.g;
+  const msg = { t:'i', x:h.x, d:h.down ? 1 : 0, j:c.j, p:c.p, g:c.g, s:c.s }, key = msg.x + ',' + msg.d + ',' + c.j + ',' + c.p + ',' + c.g + ',' + c.s;
   if (key !== Net.lastInput || now - Net.lastSend > 250) { try { Net.host.send(msg); } catch (e) {} Net.lastInput = key; Net.lastSend = now; }
 }
 
