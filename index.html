@@ -251,7 +251,7 @@ input:focus-visible{outline:4px solid var(--yellow);outline-offset:2px}
       <section>
         <h3>Tips</h3>
         <ul class="tips">
-          <li>Special moves: Shocked Circle rolls into people (35 damage), and Yelling Square jumps up and slams down on anyone close by (45). If they miss, they do a silly flip or a dusty crash instead.</li>
+          <li>Special moves: Shocked Circle rolls into people (35 damage). Yelling Square jumps up and slams down on anyone close by (45). Angry Triangle flips into the air and lands with spike waves that shoot along the ground both ways (30 each). If they miss, they do a silly flip or a dusty crash instead.</li>
           <li>Got grabbed? Mash punch, jump or grab to wriggle free.</li>
           <li>Knocked off the edge? Use your double jump and steer back to the island.</li>
           <li>Throwing a dizzy fighter sends them much farther than throwing an awake one.</li>
@@ -419,7 +419,7 @@ const BODYFONT = '"Patrick Hand","Comic Sans MS",cursive';
 // Mason's six characters (names are placeholders until he picks real ones)
 const CHARS = [
   { id:'star',    name:'Cool Star',      color:C.purple, shape:'star5',   trait:'Balanced, and way too cool', speed:1.0,  power:1.0,  weight:1.0,  jump:1.0 },
-  { id:'tri',     name:'Angry Triangle', color:C.red,    shape:'tri',     trait:'Hits the hardest',           speed:0.95, power:1.3,  weight:1.05, jump:0.95 },
+  { id:'tri',     name:'Angry Triangle', color:C.red,    shape:'tri',     trait:'Hits the hardest. Special: flips and makes spike waves', speed:0.95, power:1.3,  weight:1.05, jump:0.95 },
   { id:'circle',  name:'Shocked Circle', color:C.blue,   shape:'circle',  trait:'Fastest roller. Special: rolls into you', speed:1.25, power:0.85, weight:0.85, jump:1.0 },
   { id:'diamond', name:'Sly Diamond',    color:C.green,  shape:'diamond', trait:'Jumps the highest',          speed:1.05, power:0.95, weight:0.95, jump:1.2 },
   { id:'square',  name:'Yelling Square', color:C.orange, shape:'square',  trait:'Heavy. Special: jumps and slams down', speed:0.85, power:1.15, weight:1.45, jump:0.92 },
@@ -559,6 +559,7 @@ const sfx = {
   fall(){ tone(1200,300,0.5,'sine',0.06); },
   crack(){ noise(0.18,5000,0.14,'highpass'); },
   roll(){ tone(180,520,0.45,'sawtooth',0.05); },
+  quake(){ tone(90,40,0.5,'square',0.14); noise(0.4,700,0.22); },
   slam(){ tone(140,40,0.45,'square',0.14); noise(0.35,500,0.28); },
   honk(){ tone(330,330,0.22,'square',0.08); tone(262,262,0.3,'square',0.08,0.26); },
   tweet(){ for (let i=0;i<4;i++) tone(2200 + (i%2)*500, 3200, 0.07, 'sine', 0.06, i*0.11); },
@@ -728,7 +729,7 @@ function startRound() {
   } else {
     xs.push(...ffaXs(n)); xs.sort(() => Math.random() - 0.5);
   }
-  G.hazards = []; G.hzT = 3; G.hzCar = 4.5; G.hzBird = 7; G.hzZap = 3;
+  G.hazards = []; G.waves = []; G.hzT = 3; G.hzCar = 4.5; G.hzBird = 7; G.hzZap = 3;
   G.fighters = G.lineup.map((l, i) => { const f = makeFighter(l.ch, l.control, xs[i], i); f.team = l.team || 0; f.tag = l.tag || (l.control === 'cpu' ? 'CPU' : CTRL[l.control].tag); return f; });
   Composite.add(G.engine.world, G.fighters.map(f => f.body));
   ev('clear'); G.banner = null; G.phase = 'countdown'; G.timer = 3; G.lastCount = 4; G.goT = 0; G.champ = null;
@@ -860,6 +861,7 @@ function aiInput(p) {
   if (dy > 90 && !onIsland && Math.random() < 0.02) inp.down = true;
   if (p.grounded > 0 && (p.specCD || 0) <= 0 && t.ko <= 0) {
     if (SPECIALS[p.ch.id] === 'roll' && Math.abs(dy) < 45 && Math.abs(dx) > 110 && Math.abs(dx) < 420 && Math.random() < 0.03) { p.facing = Math.sign(dx); inp.specialP = true; }
+    if (SPECIALS[p.ch.id] === 'quake' && Math.abs(dy) < 40 && Math.abs(dx) > 60 && Math.abs(dx) < 320 && Math.random() < 0.03) inp.specialP = true;
     if (SPECIALS[p.ch.id] === 'slam' && Math.abs(dx) < 160 && Math.abs(dy) < 60 && Math.random() < 0.03) inp.specialP = true;
   }
   if (p.grounded > 0 && Math.random() < 0.003) inp.jumpP = true;
@@ -950,11 +952,12 @@ function updateHazards() {
 }
 
 // ---------- special moves (from Mason's drawings) ----------
-const SPECIALS = { circle:'roll', square:'slam' };
+const SPECIALS = { circle:'roll', square:'slam', tri:'quake' };
 function startSpecial(p, grounded) {
   const kind = SPECIALS[p.ch.id]; if (!kind || !grounded) return;
   const b = p.body;
   if (kind === 'roll') { p.special = { kind, t:0 }; p.specCD = 3; ev('sfx','roll'); }
+  else if (kind === 'quake') { p.special = { kind, t:0, phase:'up' }; p.specCD = 4.5; Body.setVelocity(b, { x:b.velocity.x*0.3, y:-16 }); p.grounded = 0; ev('sfx','jump'); }
   else { p.special = { kind, t:0, phase:'up' }; p.specCD = 4; Body.setVelocity(b, { x:b.velocity.x*0.4, y:-21 }); p.grounded = 0; ev('sfx','jump'); ev('puff', b.position.x, b.position.y + p.r); }
 }
 function hurt(q, dmg) {
@@ -968,6 +971,38 @@ function specialHit(p, q, dmg, vx, vy, word) {
   q.hitstun = 0.55; q.flash = 0.15; q.special = null; q.lastHitBy = p;
   hurt(q, dmg);
   ev('burst', q.body.position.x, q.body.position.y, C.yellow, 10); ev('pop', q.body.position.x, q.body.position.y - 50, word, C.yellow); ev('sfx','bonk'); ev('shake', 9);
+}
+function surfaceTop(x, y) {
+  let best = y, bd = 1e9;
+  for (const gp of MAP.ground) if (x >= gp.x1 - 4 && x <= gp.x2 + 4 && gp.top > y - 60 && gp.top < y + 10 && Math.abs(gp.top - y) < bd) { bd = Math.abs(gp.top - y); best = gp.top; }
+  for (const c of G.clouds) if (x >= c.bounds.min.x && x <= c.bounds.max.x && c.bounds.min.y > y - 60 && c.bounds.min.y < y + 10 && Math.abs(c.bounds.min.y - y) < bd) { bd = Math.abs(c.bounds.min.y - y); best = c.bounds.min.y; }
+  return best;
+}
+function onSurface(x, y) {
+  return MAP.ground.some(gp => Math.abs(gp.top - y) < 22 && x >= gp.x1 - 4 && x <= gp.x2 + 4) || G.clouds.some(c => Math.abs(c.bounds.min.y - y) < 22 && x >= c.bounds.min.x && x <= c.bounds.max.x);
+}
+function updateWaves() {
+  for (const w of G.waves) {
+    w.x += w.dir*12; w.dist += 12;
+    const owner = G.fighters[w.owner];
+    for (const q of G.fighters) {
+      if (!q.alive || q === owner || w.hit.includes(q.idx) || (owner && allies(owner, q))) continue;
+      if (Math.abs(q.body.position.x - w.x) < q.r + 10 && Math.abs(q.body.bounds.max.y - w.y) < 30) { w.hit.push(q.idx); specialHit(owner, q, 30, w.dir*9, -12, 'SPIKE!'); }
+    }
+    if (w.dist > 380 || !onSurface(w.x, w.y)) w.dead = true;
+  }
+  G.waves = G.waves.filter(w => !w.dead);
+}
+function drawWaves() {
+  for (const w of G.waves || []) {
+    const owner = G.fighters[w.owner], k = 1 - w.dist/400, h = 28*Math.max(0.3, k);
+    g.save(); g.translate(w.x, w.y); g.scale(w.dir, 1);
+    g.beginPath(); g.moveTo(-70, 0);
+    for (let i=0;i<=7;i++) g.lineTo(-70 + i*10, i%2 ? -h*(0.4 + i/12) : 0);
+    g.lineTo(0, 0); g.closePath();
+    g.fillStyle = owner ? owner.ch.color : C.red; g.globalAlpha = Math.max(0.3, k); g.fill();
+    g.strokeStyle = C.ink; g.lineWidth = 3; g.stroke(); g.globalAlpha = 1; g.restore();
+  }
 }
 function runSpecial(p, inp, grounded) {
   const sp = p.special, b = p.body; sp.t += DT;
@@ -983,6 +1018,22 @@ function runSpecial(p, inp, grounded) {
   if (sp.kind === 'loop') {
     Body.setAngularVelocity(b, -p.facing*0.32);
     if (sp.t > 0.25 && grounded || sp.t > 0.9) p.special = null;
+    return;
+  }
+  if (sp.kind === 'quake') {
+    if (sp.phase === 'up') {
+      Body.setAngularVelocity(b, p.facing*0.42);
+      if (b.velocity.y > 0 || sp.t > 0.6) { sp.phase = 'down'; sp.t = 0; Body.setVelocity(b, { x:b.velocity.x*0.3, y:20 }); }
+      return;
+    }
+    const ang = wrap(b.angle); Body.setAngularVelocity(b, b.angularVelocity*0.7 - ang*0.2);
+    if (b.velocity.y < 18 && !grounded) Body.setVelocity(b, { x:b.velocity.x, y:20 });
+    if ((grounded && sp.t > 0.04) || sp.t > 1.5) {
+      p.special = null;
+      const y = surfaceTop(b.position.x, b.bounds.max.y);
+      for (const dir of [-1, 1]) G.waves.push({ x:b.position.x + dir*p.r*0.8, y, dir, dist:0, owner:p.idx, hit:[] });
+      ev('dust', b.position.x, y); ev('sfx','quake'); ev('shake', 9);
+    }
     return;
   }
   // slam: jump up, then come down hard
@@ -1081,6 +1132,7 @@ function step() {
   }
   Engine.update(G.engine, STEP);
   updateHazards();
+  updateWaves();
   for (const p of G.fighters) {
     if (!p.alive) continue;
     p.grounded -= DT;
@@ -1445,6 +1497,7 @@ function frame(now) {
   if (G.state === 'fight') {
     drawArena(t);
     drawHazards(t);
+    drawWaves();
     for (const p of G.fighters) if (p.alive && !p.grabbing) drawFighter(p, t);
     for (const p of G.fighters) if (p.alive && p.grabbing) drawFighter(p, t);
     drawParticles(G.paused ? 0 : dt); drawHUD(); drawOverlayText();
@@ -1608,7 +1661,7 @@ const HZ_CODES = ['ice','snow','car','bird','zap'];
 const r1 = v => Math.round(v*10)/10, r2 = v => Math.round(v*100)/100;
 function snapshot() {
   const f = G.fighters.map(p => { const b = p.body; return [r1(b.position.x), r1(b.position.y), r2(b.angle), p.alive ? 1 : 0, p.ko > 0 ? r1(p.ko) : 0, Math.round(p.dizzy), p.facing, r2(p.punchAnim), p.flash > 0 ? r2(p.flash) : 0, p.grabbing ? p.grabbing.idx : -1, r2(p.squash)]; });
-  return { t:'s', ph:G.phase, tm:r2(G.timer), go:r2(G.goT), bn:G.banner, w:G.wins, f, c:G.clouds.map(c => r1(c.position.x)), hz:(G.hazards || []).map(h => [HZ_CODES.indexOf(h.type), r1(h.x), r1(h.y), r2(Math.max(0, h.warn)), h.type === 'car' ? h.dir*10 + (h.dir > 0 ? h.c : -h.c) : h.type === 'bird' ? h.dir : h.type === 'zap' ? h.wire : 0]), e:NETEV.splice(0) };
+  return { t:'s', ph:G.phase, tm:r2(G.timer), go:r2(G.goT), bn:G.banner, w:G.wins, f, c:G.clouds.map(c => r1(c.position.x)), hz:(G.hazards || []).map(h => [HZ_CODES.indexOf(h.type), r1(h.x), r1(h.y), r2(Math.max(0, h.warn)), h.type === 'car' ? h.dir*10 + (h.dir > 0 ? h.c : -h.c) : h.type === 'bird' ? h.dir : h.type === 'zap' ? h.wire : 0]), wv:(G.waves || []).map(w => [r1(w.x), r1(w.y), w.dir, Math.round(w.dist), w.owner]), e:NETEV.splice(0) };
 }
 
 // A stand-in for PeerJS that talks between browser tabs, used for testing with ?mock=1
@@ -1808,7 +1861,7 @@ function clientStart(d) {
   const me = 'net:' + (Net.peer && Net.peer.id);
   G.fighters = d.lineup.map((l, i) => ({ ch:CHAR[l.ch], control:l.control, tag:l.tag, team:l.team || 0, idx:i, r:38, me:l.control === me, body:{ position:{ x:800, y:560 }, angle:0 }, tgt:null, seen:false,
     alive:true, ko:0, dizzy:0, facing:1, punchAnim:0, flash:0, grabbing:null, squash:0 }));
-  MAP = MAPS[d.map] || MAPS.cloud; G.clouds = ledgeObjs(MAP); G.hazards = [];
+  MAP = MAPS[d.map] || MAPS.cloud; G.clouds = ledgeObjs(MAP); G.hazards = []; G.waves = [];
   G.state = 'fight'; showScreen(null); cv.focus();
 }
 function applySnap(s) {
@@ -1821,6 +1874,7 @@ function applySnap(s) {
     p.alive = !!a[3]; p.ko = a[4]; p.dizzy = a[5]; p.facing = a[6]; p.punchAnim = a[7]; p.flash = a[8]; p.grabbing = a[9] >= 0 ? G.fighters[a[9]] : null; p.squash = a[10];
   });
   if (s.c) s.c.forEach((x, i) => { if (G.clouds[i]) G.clouds[i].tx = x; });
+  G.waves = (s.wv || []).map(a => ({ x:a[0], y:a[1], dir:a[2], dist:a[3], owner:a[4] }));
   G.hazards = (s.hz || []).map(a => { const type = HZ_CODES[a[0]] || 'ice'; return { type, x:a[1], y:a[2], warn:a[3], r: type === 'snow' ? 36 : 24, dir: type === 'car' ? Math.sign(a[4]) : a[4], c: Math.abs(a[4]) % 10, wire:a[4], live:a[2], ph:a[3] ? 0 : (a[1]|0) % 7 }; });
   for (const e of s.e || []) runEv(...e);
 }
