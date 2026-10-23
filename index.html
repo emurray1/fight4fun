@@ -1737,10 +1737,16 @@ function drawShop(t) {
   g.fillStyle = C.ink; g.beginPath(); g.roundRect ? g.roundRect(kx - 72, 450, 144, 160, 18) : g.rect(kx - 72, 450, 144, 160); g.fill();
   g.save(); g.translate(kx + 66, 470); g.rotate(-0.5 + Math.sin(t*5)*0.35); g.beginPath(); g.roundRect ? g.roundRect(-22, -130, 44, 140, 20) : g.rect(-22, -130, 44, 140); g.fill(); g.restore();
   g.fillStyle = C.grey; g.strokeStyle = C.ink; g.lineWidth = 5; g.beginPath(); g.arc(kx, 395, 58, 0, TAU); g.fill(); g.stroke();
-  g.fillStyle = C.white; for (const ex of [-20, 20]) { g.beginPath(); g.arc(kx + ex, 385, 12, 0, TAU); g.fill(); }
-  g.fillStyle = C.ink; for (const ex of [-18, 22]) { g.beginPath(); g.arc(kx + ex, 387, 5, 0, TAU); g.fill(); }
-  g.lineWidth = 6; g.beginPath(); g.moveTo(kx - 30, 360); g.quadraticCurveTo(kx - 18, 350, kx - 6, 362); g.stroke();
+  // sunglasses: two dark lenses with a bridge, and a little shine on each
+  g.fillStyle = C.ink; g.lineWidth = 5;
+  for (const ex of [-21, 21]) { g.beginPath(); g.roundRect ? g.roundRect(kx + ex - 17, 376, 34, 24, 8) : g.rect(kx + ex - 17, 376, 34, 24); g.fill(); }
+  g.beginPath(); g.moveTo(kx - 6, 382); g.lineTo(kx + 6, 382); g.moveTo(kx - 38, 382); g.lineTo(kx - 56, 376); g.moveTo(kx + 38, 382); g.lineTo(kx + 56, 376); g.stroke();
+  g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineWidth = 3;
+  for (const ex of [-21, 21]) { g.beginPath(); g.moveTo(kx + ex - 9, 394); g.lineTo(kx + ex + 1, 381); g.stroke(); }
+  g.strokeStyle = C.ink; g.lineWidth = 6; g.beginPath(); g.moveTo(kx - 30, 364); g.quadraticCurveTo(kx - 18, 354, kx - 6, 366); g.stroke();
   g.beginPath(); g.ellipse(kx, 418, 20, 11, 0, 0, Math.PI); g.fill();
+  // and the shop's own cool hat
+  g.save(); g.translate(kx, 395); drawHat(g, 58, -58, 1); g.restore();
   // counter: dark top, light front with scribbly wood lines, and the shopkeeper's other hand resting on it
   g.fillStyle = C.brown; g.fillRect(960, 600, 580, SHOP_FLOOR - 600);
   g.strokeStyle = BEAM; g.lineWidth = 9;
@@ -1749,9 +1755,9 @@ function drawShop(t) {
   g.fillStyle = C.ink; g.beginPath(); g.roundRect ? g.roundRect(kx - 170, 548, 120, 44, 18) : g.rect(kx - 170, 548, 120, 44); g.fill();
   // the shop sign hangs from the beam on two ropes and swings a little
   g.save(); g.translate(kx - 10, 110); g.rotate(Math.sin(t*1.4)*0.05);
-  g.strokeStyle = '#ff9a5c'; g.lineWidth = 6; g.beginPath(); g.moveTo(-50, 0); g.lineTo(-44, 150); g.moveTo(50, 0); g.lineTo(44, 150); g.stroke();
-  g.fillStyle = '#7a5236'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(-82, 146, 164, 66); g.strokeRect(-82, 146, 164, 66);
-  g.fillStyle = C.ink; g.font = `52px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('shop', 0, 180);
+  g.strokeStyle = '#ff9a5c'; g.lineWidth = 6; g.beginPath(); g.moveTo(-50, 0); g.lineTo(-46, 64); g.moveTo(50, 0); g.lineTo(46, 64); g.stroke();
+  g.fillStyle = '#7a5236'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(-82, 60, 164, 66); g.strokeRect(-82, 60, 164, 66);
+  g.fillStyle = C.ink; g.font = `52px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('shop', 0, 94);
   g.restore();
   // what the shopkeeper says
   const say = SHOP.msgT > 0 ? SHOP.msg : SHOP.near ? 'Ooh, good choice!' : SHOP.nearKeeper ? 'Hello! Press punch to chat with me.' : 'Hi! Walk up to the hat, or come over and talk to me!';
