@@ -1752,6 +1752,12 @@ function drawShop(t) {
   g.strokeStyle = BEAM; g.lineWidth = 9;
   for (let i=0;i<4;i++) { const y = 640 + i*34; g.beginPath(); g.moveTo(968, y); g.bezierCurveTo(1110, y - 26 + i*9, 1300, y + 30 - i*11, 1532, y - 6); g.stroke(); }
   g.fillStyle = BEAM; g.beginPath(); g.roundRect ? g.roundRect(940, 570, 620, 46, 23) : g.rect(940, 570, 620, 46); g.fill();
+  // a sign nailed to the front of the counter
+  g.save(); g.translate(1250, 694); g.rotate(-0.025);
+  g.fillStyle = '#f3e2c7'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(-200, -42, 400, 84); g.strokeRect(-200, -42, 400, 84);
+  g.fillStyle = C.ink; for (const nx of [-186, 186]) { g.beginPath(); g.arc(nx, -28, 5, 0, TAU); g.fill(); }
+  g.font = `60px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('fighty shop', 0, 2, 350);
+  g.restore();
   g.fillStyle = C.ink; g.beginPath(); g.roundRect ? g.roundRect(kx - 170, 548, 120, 44, 18) : g.rect(kx - 170, 548, 120, 44); g.fill();
   // the shop sign hangs from the beam on two ropes and swings a little
   g.save(); g.translate(kx - 10, 110); g.rotate(Math.sin(t*1.4)*0.05);
