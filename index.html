@@ -609,6 +609,11 @@ const KEEPER2_HEX_LINES = [
   () => 'Why did the shop get a second floor? It wanted to level up! ...Did I say it weird? I like you, Hexstar.',
   () => 'You are my favourite nervous friend!',
 ];
+// when Grumpy Shuriken walks in asking "Have you seen Goofy Sparkle?", the first shopkeeper answers (twice, a few seconds apart)
+const SHURIKEN_REPLIES = [
+  { at:1.3, lines:['Goofy Sparkle? The little one with the propeller hat? He was just here getting a lollipop!', 'Hmm, I saw him zoom past with his propeller spinning! Wheee!'] },
+  { at:4.9, lines:['Why are you looking for him? Are you two playing hide and seek? Hehe!', 'Don\'t be grumpy! He always comes back for more lollipops.', 'Maybe he\'s upstairs? He likes the pink shop!'] },
+];
 // after Hexstar's "beep boop baap!" they carry on like nothing happened
 const IGNORE_BEEP_LINES = ['Anyway... as I was saying...', 'So! Nice weather today, huh?', '*keeps tidying the counter*', 'Mm-hmm. Yep. Shop stuff.'];
 const IGNORE_BEEP2_LINES = ['Anyway... um... nice shop, right?', '*keeps smiling*', 'So... um... hi again!', '*fixes her bow*'];
@@ -2024,7 +2029,11 @@ function shopStep(dt) {
       shopSay(lines[Math.floor(Math.random()*lines.length)], null, 3);
     }
   }
-  SHOP.laughT = Math.max(0, (SHOP.laughT || 0) - dt); SHOP.enterT = Math.max(0, (SHOP.enterT || 0) - dt); SHOP.keeperLaughT = Math.max(0, (SHOP.keeperLaughT || 0) - dt);
+  SHOP.laughT = Math.max(0, (SHOP.laughT || 0) - dt); SHOP.enterT = Math.max(0, (SHOP.enterT || 0) - dt);
+  SHOP.enterClock = (SHOP.enterClock || 0) + dt; // the first shopkeeper answers Shuriken's question, a moment after he asks
+  for (const rp of SHOP.replies || []) if (!rp.done && SHOP.enterClock >= rp.at && SHOP.floor === 1 && CHARS[SHOP.who].id === 'shuriken') {
+    rp.done = true; shopSay(rp.lines[Math.floor(Math.random()*rp.lines.length)], null, 3.4);
+  } SHOP.keeperLaughT = Math.max(0, (SHOP.keeperLaughT || 0) - dt);
   SHOP.msgT = Math.max(0, SHOP.msgT - dt); SHOP.echoT = Math.max(0, (SHOP.echoT || 0) - dt);
   const v = SHOP.visit; // talk, notice you, run to the stairs, climb up and away
   if (v) {
@@ -2113,7 +2122,7 @@ function drawFightyFloor(t) { // downstairs: the fighty shop
     drawShyKeeper(v.x, t, { friend:chatting || friend, close:chatting || friend ? 0 : 1, lookX:chatting ? 3 : -3, walking:v.phase === 'run' || v.phase === 'climb',
       alpha:v.phase === 'climb' ? Math.max(0, 1 - v.t) : 1, lift:v.phase === 'climb' ? v.t*330 : 0 });
     const vs = { talk:'...and then the circle rolled right off the island! Hehe...',
-      notice:kid ? 'Oh! Hi little one! I have to go back upstairs. Bye bye, sweetie!' : hex ? 'Oh! Hexstar! *trips over nothing* H-hi! I like you! Bye!' : friend ? `Oh! Hi ${CHARS[SHOP.who].name}! Come visit me upstairs!` : 'Oh! S-someone is here! Um... b-bye!',
+      notice:kid ? 'Oh! Hi little one! I have to go back upstairs. Bye bye, sweetie!' : hex ? 'Oh! Hexstar! *trips over nothing* H-hi! I like you! Bye!' : CHARS[SHOP.who].id === 'shuriken' ? 'Um... I think he went... that way? *points everywhere* B-bye!' : friend ? `Oh! Hi ${CHARS[SHOP.who].name}! Come visit me upstairs!` : 'Oh! S-someone is here! Um... b-bye!',
       run:kid ? 'Bye bye!' : friend ? 'See you up there!' : 'Eep!' }[v.phase];
     if (vs) drawBubble(vs, v.x - 40, 520, v.x - 6);
   }
@@ -2409,6 +2418,7 @@ function openShop() {
   SHOP.visit = { x:860, phase:'talk', t:0 }; // the shy shopkeeper is downstairs chatting when you come in, then hurries back up
   SHOP.enterT = 3.5; // what you say as you walk in (Grumpy Shuriken is looking for Goofy Sparkle)
   if (SHOP.who == null) SHOP.who = Math.max(0, mine);
+  SHOP.enterClock = 0; SHOP.replies = CHARS[SHOP.who].id === 'shuriken' ? SHURIKEN_REPLIES.map(r => ({ ...r })) : [];
   openPage('shop'); renderShopCard(true); cv.focus();
 }
 function shopSay(text, sound, secs = 3.5) { SHOP.msg = text; SHOP.msgT = secs; if (sound && sfx[sound]) sfx[sound](); }
