@@ -2175,9 +2175,23 @@ function drawFightyFloor(t) { // downstairs: the fighty shop
   const weird = isHex(); // around Nervous Hexstar they sway back and forth a bit oddly
   g.save(); g.translate(SHOP.keeperScaredT > 0 ? Math.sin(t*60)*4 : 0, SHOP.keeperLaughT > 0 ? -Math.abs(Math.sin(t*18))*10 : 0); // shakes when scared
   if (weird) { g.translate(kx, 610); g.rotate(Math.sin(t*3)*0.08); g.translate(-kx, -610); }
-  g.fillStyle = C.ink; g.beginPath(); g.roundRect ? g.roundRect(kx - 72, 450, 144, 160, 18) : g.rect(kx - 72, 450, 144, 160); g.fill();
-  g.save(); g.translate(kx + 66, 470); g.rotate(-0.5 + Math.sin(t*5)*0.35); g.beginPath(); g.roundRect ? g.roundRect(-22, -130, 44, 140, 20) : g.rect(-22, -130, 44, 140); g.fill(); g.restore();
-  g.fillStyle = C.grey; g.strokeStyle = C.ink; g.lineWidth = 5; g.beginPath(); g.arc(kx, 395, 58, 0, TAU); g.fill(); g.stroke();
+  // body: rounded shoulders in black clothes, a white collar and a red tie, and a brown shop apron with a pocket and a name tag
+  g.fillStyle = C.ink; g.beginPath(); g.moveTo(kx - 78, 610); g.lineTo(kx - 74, 492); g.quadraticCurveTo(kx - 70, 448, kx - 30, 446); g.lineTo(kx + 30, 446);
+  g.quadraticCurveTo(kx + 70, 448, kx + 74, 492); g.lineTo(kx + 78, 610); g.closePath(); g.fill();
+  g.fillStyle = C.white; for (const s of [-1, 1]) { g.beginPath(); g.moveTo(kx + s*28, 448); g.lineTo(kx + s*3, 448); g.lineTo(kx + s*6, 480); g.closePath(); g.fill(); }
+  g.fillStyle = C.red; g.fillRect(kx - 7, 452, 14, 12);
+  g.beginPath(); g.moveTo(kx - 8, 463); g.lineTo(kx + 8, 463); g.lineTo(kx + 12, 528); g.lineTo(kx, 544); g.lineTo(kx - 12, 528); g.closePath(); g.fill();
+  g.strokeStyle = '#a0703f'; g.lineWidth = 8; g.beginPath(); g.moveTo(kx - 46, 504); g.lineTo(kx - 34, 452); g.moveTo(kx + 46, 504); g.lineTo(kx + 34, 452); g.stroke();
+  g.fillStyle = '#a0703f'; g.strokeStyle = '#5a3a1e'; g.lineWidth = 3; g.fillRect(kx - 54, 500, 108, 110); g.strokeRect(kx - 54, 500, 108, 110);
+  g.strokeRect(kx - 34, 548, 34, 24); // pocket
+  g.fillStyle = '#f3e2c7'; g.fillRect(kx + 8, 512, 40, 18); g.strokeRect(kx + 8, 512, 40, 18);
+  g.fillStyle = C.ink; g.font = `14px ${BODYFONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('fighty', kx + 28, 522, 36);
+  // the waving arm, with a hand
+  g.save(); g.translate(kx + 66, 470); g.rotate(-0.5 + Math.sin(t*5)*0.35);
+  g.fillStyle = C.ink; g.beginPath(); g.roundRect ? g.roundRect(-22, -118, 44, 128, 20) : g.rect(-22, -118, 44, 128); g.fill();
+  g.fillStyle = C.grey; g.strokeStyle = C.ink; g.lineWidth = 4; g.beginPath(); g.arc(0, -126, 21, 0, TAU); g.fill(); g.stroke(); g.restore();
+  g.fillStyle = C.grey; g.strokeStyle = C.ink; g.lineWidth = 4; for (const s of [-1, 1]) { g.beginPath(); g.arc(kx + s*57, 400, 13, 0, TAU); g.fill(); g.stroke(); } // ears
+  g.lineWidth = 5; g.beginPath(); g.arc(kx, 395, 58, 0, TAU); g.fill(); g.stroke();
   // sunglasses: two dark lenses with a bridge, and a little shine on each
   g.fillStyle = C.ink; g.lineWidth = 5;
   for (const ex of [-21, 21]) { g.beginPath(); g.roundRect ? g.roundRect(kx + ex - 17, 376, 34, 24, 8) : g.rect(kx + ex - 17, 376, 34, 24); g.fill(); }
@@ -2185,7 +2199,9 @@ function drawFightyFloor(t) { // downstairs: the fighty shop
   g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineWidth = 3;
   for (const ex of [-21, 21]) { g.beginPath(); g.moveTo(kx + ex - 9, 394); g.lineTo(kx + ex + 1, 381); g.stroke(); }
   g.strokeStyle = C.ink; g.lineWidth = 6; g.beginPath(); g.moveTo(kx - 30, 364); g.quadraticCurveTo(kx - 18, 354, kx - 6, 366); g.stroke();
-  g.beginPath(); g.ellipse(kx, 418, 20, 11, 0, 0, Math.PI); g.fill();
+  // a big friendly grin with teeth
+  g.fillStyle = C.ink; g.beginPath(); g.moveTo(kx - 28, 410); g.quadraticCurveTo(kx, 448, kx + 28, 410); g.closePath(); g.fill();
+  g.fillStyle = C.white; g.beginPath(); g.moveTo(kx - 24, 411); g.lineTo(kx + 24, 411); g.lineTo(kx + 20, 419); g.lineTo(kx - 20, 419); g.closePath(); g.fill();
   // and the shop's own cool hat
   g.save(); g.translate(kx, 395); drawHat(g, 58, -58, 1); g.restore();
   g.restore();
@@ -2204,7 +2220,8 @@ function drawFightyFloor(t) { // downstairs: the fighty shop
   g.fillStyle = C.ink; for (const nx of [-186, 186]) { g.beginPath(); g.arc(nx, -28, 5, 0, TAU); g.fill(); }
   g.font = `60px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('fighty shop', 0, 2, 350);
   g.restore();
-  g.fillStyle = C.ink; g.beginPath(); g.roundRect ? g.roundRect(kx - 170, 548, 120, 44, 18) : g.rect(kx - 170, 548, 120, 44); g.fill();
+  g.fillStyle = C.ink; g.beginPath(); g.roundRect ? g.roundRect(kx - 160, 548, 110, 44, 18) : g.rect(kx - 160, 548, 110, 44); g.fill();
+  g.fillStyle = C.grey; g.strokeStyle = C.ink; g.lineWidth = 4; g.beginPath(); g.ellipse(kx - 168, 568, 22, 18, 0, 0, TAU); g.fill(); g.stroke(); // hand resting on the counter
   // the shop sign hangs from the beam on two ropes and swings a little
   g.save(); g.translate(kx - 10, 110); g.rotate(Math.sin(t*1.4)*0.05);
   g.strokeStyle = '#ff9a5c'; g.lineWidth = 6; g.beginPath(); g.moveTo(-50, 0); g.lineTo(-46, 64); g.moveTo(50, 0); g.lineTo(46, 64); g.stroke();
@@ -2323,16 +2340,38 @@ function drawLittleHeart(x, y, s) {
 }
 function drawShyKeeper(kx, t, { friend, close, lookX, walking = false, alpha = 1, lift = 0, wiggle = 0 }) {
   g.save(); g.globalAlpha = alpha; g.translate(wiggle, -lift - (walking ? Math.abs(Math.sin(t*14))*7 : 0));
-  g.fillStyle = C.purple; g.strokeStyle = C.ink; g.lineWidth = 8; g.lineJoin = 'round';
-  g.beginPath(); g.moveTo(kx - 40, 600); g.lineTo(kx + 40, 600); g.lineTo(kx + 46, SHOP_FLOOR - 4); g.lineTo(kx - 52, SHOP_FLOOR - 4); g.closePath(); g.fill(); g.stroke();
-  const wave = Math.sin(t*3)*4;
-  g.fillStyle = C.ink; g.fillRect(kx - 102, 668 + wave, 62, 30);
-  if (friend) { g.save(); g.translate(kx + 44, 683); g.rotate(-1.1 + Math.sin(t*8)*0.35); g.fillRect(0, -15, 66, 30); g.restore(); } // waving hi
-  else g.fillRect(kx + 40, 668 - wave, 62, 30);
-  g.beginPath(); g.moveTo(kx - 44, 650); g.lineTo(kx, 683); g.lineTo(kx - 44, 716); g.closePath(); g.moveTo(kx + 44, 650); g.lineTo(kx, 683); g.lineTo(kx + 44, 716); g.closePath(); g.fill();
+  // little shoes, then a purple dress that flares out at the bottom, with a white collar
+  g.fillStyle = C.ink; for (const sx of [-22, 22]) { g.beginPath(); g.ellipse(kx + sx, SHOP_FLOOR - 6, 16, 8, 0, 0, TAU); g.fill(); }
+  g.fillStyle = C.purple; g.strokeStyle = C.ink; g.lineWidth = 6; g.lineJoin = 'round';
+  g.beginPath(); g.moveTo(kx - 34, 600); g.lineTo(kx + 34, 600); g.lineTo(kx + 40, 688);
+  g.quadraticCurveTo(kx + 68, 735, kx + 64, SHOP_FLOOR - 14); g.quadraticCurveTo(kx, SHOP_FLOOR + 2, kx - 64, SHOP_FLOOR - 14); g.quadraticCurveTo(kx - 68, 735, kx - 40, 688);
+  g.closePath(); g.fill(); g.stroke();
+  g.fillStyle = C.white; g.lineWidth = 3; for (const s of [-1, 1]) { g.beginPath(); g.moveTo(kx, 602); g.quadraticCurveTo(kx + s*26, 600, kx + s*24, 620); g.quadraticCurveTo(kx + s*10, 622, kx, 602); g.fill(); g.stroke(); }
+  // soft black arms with round hands (one waves when she's happy)
+  const wave = Math.sin(t*3)*4, arm = (x1, y1, x2, y2) => { g.strokeStyle = C.ink; g.lineWidth = 20; g.lineCap = 'round'; g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke(); };
+  arm(kx - 32, 628, kx - 84, 690 + wave);
+  if (friend) { const a = -1.1 + Math.sin(t*8)*0.35; arm(kx + 32, 628, kx + 32 + Math.cos(a)*72, 628 + Math.sin(a)*72); } // waving hi
+  else arm(kx + 32, 628, kx + 84, 690 - wave);
+  // her bow: two loops, a knot and two little tails
+  g.fillStyle = C.ink;
+  for (const s of [-1, 1]) {
+    g.beginPath(); g.ellipse(kx + s*20, 652, 20, 12, s*0.35, 0, TAU); g.fill();
+    g.beginPath(); g.moveTo(kx + s*4, 656); g.lineTo(kx + s*18, 684); g.lineTo(kx + s*8, 680); g.closePath(); g.fill();
+  }
+  g.fillStyle = '#555'; g.beginPath(); g.ellipse(kx - 22, 648, 7, 3, -0.3, 0, TAU); g.ellipse(kx + 22, 648, 7, 3, 0.3, 0, TAU); g.fill();
+  g.fillStyle = C.ink; g.beginPath(); g.arc(kx, 653, 8, 0, TAU); g.fill();
   const peek = Math.sin(t*0.9) > 0.85 ? 1 : 0;
   g.save(); g.translate(kx + 10, 600); g.rotate(friend ? Math.sin(t*2)*0.06 : 0.12 + close*0.18); g.translate(0, -30 + close*4);
-  g.fillStyle = C.grey; g.lineWidth = 3; g.beginPath(); g.arc(0, 0, 36, 0, TAU); g.fill(); g.stroke();
+  const HAIR = '#3b2a2a';
+  for (const s of [-1, 1]) { // two little pigtails with pink bands, behind her head
+    g.fillStyle = HAIR; g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.ellipse(s*40, 8 + Math.sin(t*2 + s)*2, 13, 17, s*0.4, 0, TAU); g.fill(); g.stroke();
+    g.fillStyle = '#ff7aa8'; g.beginPath(); g.arc(s*31, -2, 5, 0, TAU); g.fill();
+  }
+  g.fillStyle = C.grey; g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.arc(0, 0, 36, 0, TAU); g.fill(); g.stroke();
+  // bangs that hang over her forehead (shy people hide behind their hair)
+  g.fillStyle = HAIR; g.beginPath(); g.arc(0, 0, 37, Math.PI*1.02, Math.PI*1.98);
+  for (let i=0;i<=6;i++) g.lineTo(34 - i*11.3, i % 2 ? -13 : -19);
+  g.closePath(); g.fill(); g.stroke();
   const look = friend ? { x:lookX, y:0 } : peek ? { x:-3, y:0 } : { x:3 + close*2, y:3 };
   g.fillStyle = C.white; for (const ex of [-12, 10]) { g.beginPath(); g.arc(ex, -8, 7, 0, TAU); g.fill(); }
   g.fillStyle = C.ink; for (const ex of [-12, 10]) { g.beginPath(); g.arc(ex + look.x, -8 + look.y, 3.5, 0, TAU); g.fill(); }
