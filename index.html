@@ -145,6 +145,8 @@ kbd{font-family:var(--body);border:2px solid var(--ink);border-bottom-width:4px;
 .shop-card .price{background:var(--yellow);padding:0 8px;font-size:26px}
 .shop-card .row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}
 .shop-card .btn{font-size:24px;padding:4px 18px}
+.wearing{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;border-top:3px dashed var(--grey);padding-top:8px;margin-top:2px}
+.wearing button{font-family:var(--body);font-size:18px;border:3px solid var(--ink);background:var(--yellow);padding:0 10px}
 #gameQuit{position:fixed;left:calc(14px + env(safe-area-inset-left,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));font-size:24px;padding:4px 20px;border:3px solid var(--paper);z-index:5}
 .quit-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
 .btn.red{background:var(--maroon);color:var(--paper)}
@@ -507,20 +509,29 @@ for (const c of CHARS) { if (!setup.slots[c.id]) setup.slots[c.id] = 'off'; if (
 const saveSetup = () => { try { localStorage.setItem('fff-setup', JSON.stringify(setup)); } catch (e) {} };
 
 // ---------- shop: coins from fights buy things to wear ----------
-const ITEMS = [{ id:'coolhat', name:'Cool hat', price:25, desc:'A tilted black top hat. Very cool.' }];
+// `not` lists fighters who can't wear an item (Cool Star already has its own shades)
+const ITEMS = [
+  { id:'shades', name:'Sunglasses', price:20, desc:'Dark shades with a shine. So cool.', not:['star'] },
+  { id:'coolhat', name:'Cool hat', price:25, desc:'A tilted black top hat. Very cool.' },
+];
 const shop = { coins:0, owned:{}, wear:{} };
 try { const s = JSON.parse(localStorage.getItem('fff-shop') || 'null'); if (s) Object.assign(shop, s); } catch (e) {}
+// older saves kept only the hat, as wear:{ fighter:true }; now it's wear:{ item:{ fighter:true } }
+for (const [k, v] of Object.entries(shop.wear)) if (typeof v === 'boolean') { (shop.wear.coolhat = shop.wear.coolhat || {})[k] = v; delete shop.wear[k]; }
 const saveShop = () => { try { localStorage.setItem('fff-shop', JSON.stringify(shop)); } catch (e) {} };
-const wearsHat = ch => !!(shop.owned.coolhat && shop.wear[ch.id]);
+const canWear = (it, ch) => !(it.not && it.not.includes(ch.id));
+const wears = (id, ch) => !!(shop.owned[id] && shop.wear[id] && shop.wear[id][ch.id]);
+const looks = ch => ({ hat:wears('coolhat', ch), glasses:wears('shades', ch) && ch.id !== 'star' });
 // the shop room: you walk a fighter up to a stand to buy what's on it
 const SHOP = { who:null, x:240, y:0, vy:0, facing:1, near:null, nearKeeper:false, talk:-1, prev:{}, msg:'', msgT:0, key:'' };
-const SHOP_FLOOR = 770, STANDS = [{ item:'coolhat', x:620 }], KEEPER_X = 1260;
+const SHOP_FLOOR = 770, STANDS = [{ item:'shades', x:400 }, { item:'coolhat', x:700 }], KEEPER_X = 1260;
 // what the shopkeeper says when you talk to them, one line each time you press punch
 const KEEPER_LINES = [
   () => 'Hi! Welcome to my shop. I sell things to buy and wear.',
   () => `You have ${shop.coins} coins. ` + (shop.owned.coolhat ? 'Save them up for new stuff!' : shop.coins >= 25 ? 'That is enough for the cool hat!' : `The cool hat costs 25, so you need ${25 - shop.coins} more.`),
   () => 'Finish a fight to get 10 coins. Win it and I give you 15 more!',
   () => shop.owned.coolhat ? 'That cool hat looks great on you!' : 'The cool hat is my favourite. Go have a look!',
+  () => shop.owned.shades ? 'Nice sunglasses! Now we match.' : 'Do you like my sunglasses? I sell them too!',
   () => 'Psst... Yelling Square is really heavy. Hard to throw!',
   () => 'Knocked off the edge? Double jump to get back!',
   () => 'Why did the circle win the fight? It was well-rounded!',
@@ -601,6 +612,21 @@ function drawFace(g, ch, r, o = {}) {
       dot(-0.15,-0.05,0.08); g.lineWidth = 0.08; line(0.08,-0.06,0.26,-0.06);
       g.lineWidth = 0.11; line(-0.22,0.24,0.24,0.22); break;
   }
+  if (o.glasses && EYES[ch.id]) drawGlasses(g, EYES[ch.id]);
+  g.restore();
+}
+// where each fighter's eyes are (in face units), so the shop's sunglasses sit on them
+const EYES = { tri:[[-0.17,0.06],[0.17,0.06]], circle:[[-0.2,-0.2],[0.2,-0.2]], diamond:[[-0.18,-0.04],[0.18,-0.04]], square:[[-0.18,-0.04],[0.18,-0.04]], sparkle:[[-0.17,-0.08],[0.17,-0.08]],
+  hex:[[-0.29,-0.15],[0.11,-0.15]], heart:[[-0.28,0.18],[0.18,-0.32]], shuriken:[[-0.15,-0.05],[0.17,-0.06]] };
+function drawGlasses(g, [a, b]) { // the sunglasses from the shop, drawn in face units between two eyes
+  const d = Math.hypot(b[0] - a[0], b[1] - a[1]), lw = Math.min(0.3, d*0.8), lh = 0.2;
+  g.save(); g.translate((a[0] + b[0])/2, (a[1] + b[1])/2); g.rotate(Math.atan2(b[1] - a[1], b[0] - a[0]));
+  g.fillStyle = C.ink; g.strokeStyle = C.ink; g.lineWidth = 0.05; g.lineCap = 'round';
+  for (const s of [-1, 1]) { g.beginPath(); g.roundRect ? g.roundRect(s*d/2 - lw/2, -lh/2, lw, lh, 0.06) : g.rect(s*d/2 - lw/2, -lh/2, lw, lh); g.fill(); }
+  g.beginPath(); g.moveTo(-d/2, -0.04); g.lineTo(d/2, -0.04);
+  g.moveTo(-d/2 - lw/2, -0.05); g.lineTo(-d/2 - lw/2 - 0.12, -0.1); g.moveTo(d/2 + lw/2, -0.05); g.lineTo(d/2 + lw/2 + 0.12, -0.1); g.stroke();
+  g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineWidth = 0.03;
+  for (const s of [-1, 1]) { g.beginPath(); g.moveTo(s*d/2 - lw*0.3, lh*0.28); g.lineTo(s*d/2 - lw*0.02, -lh*0.28); g.stroke(); }
   g.restore();
 }
 function drawCharacter(g, ch, r, o = {}) {
@@ -631,7 +657,7 @@ function charCanvas(ch, px, o = {}) {
   const g = c.getContext('2d'); g.scale(d, d);
   const tall = o.crown || o.hat, r = px*(tall ? 0.27 : 0.33);
   g.translate(px/2, px*(tall ? 0.62 : 0.53));
-  drawCharacter(g, ch, r, { facing:1, ko:o.ko, hat:o.hat && !o.crown });
+  drawCharacter(g, ch, r, { facing:1, ko:o.ko, hat:o.hat && !o.crown, glasses:o.glasses });
   if (o.crown) drawCrown(g, r, -TOPS[ch.shape]*r);
   return c;
 }
@@ -1643,7 +1669,7 @@ function drawStar(x, y, r, fill, stroke) {
 function drawFighter(p, t) {
   const b = p.body, x = b.position.x, y = b.position.y;
   g.save(); g.translate(x, y); g.rotate(b.angle); g.scale(1 + p.squash*0.6, 1 - p.squash);
-  drawCharacter(g, p.ch, p.r, { facing:p.facing, ko:p.ko > 0, flash:p.flash, hat:!G.online && wearsHat(p.ch) });
+  drawCharacter(g, p.ch, p.r, { facing:p.facing, ko:p.ko > 0, flash:p.flash, ...(G.online ? {} : looks(p.ch)) });
   g.restore();
   const fistR = p.r*0.3;
   const fist = (fx, fy) => { g.beginPath(); g.arc(fx, fy, fistR, 0, TAU); g.fillStyle = p.ch.color; g.fill(); g.lineWidth = 3.5; g.strokeStyle = C.ink; g.stroke(); };
@@ -1766,7 +1792,7 @@ function drawShop(t) {
   g.fillStyle = C.ink; g.font = `52px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('shop', 0, 94);
   g.restore();
   // what the shopkeeper says
-  const say = SHOP.msgT > 0 ? SHOP.msg : SHOP.near ? 'Ooh, good choice!' : SHOP.nearKeeper ? 'Hello! Press punch to chat with me.' : 'Hi! Walk up to the hat, or come over and talk to me!';
+  const say = SHOP.msgT > 0 ? SHOP.msg : SHOP.near ? 'Ooh, good choice!' : SHOP.nearKeeper ? 'Hello! Press punch to chat with me.' : 'Hi! Have a look around, or come over and talk to me!';
   g.font = `30px ${BODYFONT}`;
   const lines = [], words = say.split(' '); let line = '';
   for (const w of words) { const next = line ? line + ' ' + w : w; if (line && g.measureText(next).width > 440) { lines.push(line); line = w; } else line = next; }
@@ -1781,7 +1807,9 @@ function drawShop(t) {
     const it = ITEMS.find(i => i.id === st.item), top = SHOP_FLOOR - 170;
     g.fillStyle = BEAM; g.fillRect(st.x - 12, top, 24, 170); g.beginPath(); g.ellipse(st.x, SHOP_FLOOR, 60, 12, 0, 0, TAU); g.fill();
     g.fillRect(st.x - 80, top - 14, 160, 18);
-    g.save(); g.translate(st.x, top - 14 + Math.sin(t*2)*3); drawHat(g, 64, -6.4, 1); g.restore();
+    g.save(); g.translate(st.x, top - 14 + Math.sin(t*2)*3);
+    if (it.id === 'coolhat') drawHat(g, 64, -6.4, 1); else { g.translate(0, -16); g.scale(130, 130); drawGlasses(g, [[-0.2, 0], [0.2, 0]]); }
+    g.restore();
     const owned = shop.owned[it.id], label = owned ? 'yours!' : `${it.price} coins`;
     g.font = `26px ${BODYFONT}`; const tw = g.measureText(label).width + 24;
     g.fillStyle = owned ? C.green : C.yellow; g.strokeStyle = C.ink; g.lineWidth = 3; g.fillRect(st.x - tw/2, top + 20, tw, 36); g.strokeRect(st.x - tw/2, top + 20, tw, 36);
@@ -1792,7 +1820,7 @@ function drawShop(t) {
   const ch = CHARS[SHOP.who], r = 50, moving = Math.abs(SHOP.prev.x || 0) > 0 && SHOP.y === 0;
   const bottom = ch.shape === 'circle' ? r : Math.max(...shapeVerts(ch.shape, r, true).map(v => v.y));
   g.save(); g.translate(SHOP.x, SHOP_FLOOR - bottom + SHOP.y - (moving ? Math.abs(Math.sin(t*12))*8 : 0)); g.rotate(moving ? Math.sin(t*12)*0.08 : 0);
-  drawCharacter(g, ch, r, { facing:SHOP.facing, hat:wearsHat(ch) }); g.restore();
+  drawCharacter(g, ch, r, { facing:SHOP.facing, ...looks(ch) }); g.restore();
 }
 let lastT = performance.now(), acc = 0;
 function frame(now) {
@@ -1855,7 +1883,7 @@ function renderRoster() {
   for (const ch of CHARS) {
     const ctl = CTRL[setup.slots[ch.id]] || CTRL.off;
     const card = document.createElement('div'); card.className = 'card' + (ctl.kind === 'off' ? ' off' : '');
-    card.appendChild(charCanvas(ch, 92, { hat:wearsHat(ch) }));
+    card.appendChild(charCanvas(ch, 92, looks(ch)));
     card.insertAdjacentHTML('beforeend', `<h4>${ch.name}</h4><p>${ch.trait}</p>`);
     const b = document.createElement('button'); b.className = 'ctl'; b.id = 'ctl-' + ch.id; b.dataset.kind = ctl.kind; b.textContent = ctl.label;
     b.title = 'Click to change who plays this character';
@@ -1880,7 +1908,7 @@ function drawMapPreview() {
   try {
     drawSky(0, map); drawArena(0, ledgeObjs(map), false);
     const on = CHARS.filter(ch => setup.slots[ch.id] !== 'off'), xs = ffaXs(on.length);
-    on.forEach((ch, i) => { const gp = groundAt(xs[i]) || map.ground[0]; m.save(); m.translate(xs[i], gp.top - 40); drawCharacter(m, ch, 36, { facing:1, hat:wearsHat(ch) }); m.restore(); });
+    on.forEach((ch, i) => { const gp = groundAt(xs[i]) || map.ground[0]; m.save(); m.translate(xs[i], gp.top - 40); drawCharacter(m, ch, 36, { facing:1, ...looks(ch) }); m.restore(); });
   } finally { g = oldG; MAP = oldMap; }
   $('mapDesc').textContent = map.name + ': ' + map.desc;
 }
@@ -1951,18 +1979,37 @@ function shopSay(text, sound, secs = 3.5) { SHOP.msg = text; SHOP.msgT = secs; i
 function shopTalk() { SHOP.talk = (SHOP.talk + 1) % KEEPER_LINES.length; shopSay(KEEPER_LINES[SHOP.talk](), 'count', 6); renderShopCard(true); }
 function shopAct(id) {
   const it = ITEMS.find(i => i.id === id), ch = CHARS[SHOP.who];
-  if (!shop.owned[id]) {
+  const w = shop.wear[id] = shop.wear[id] || {};
+  if (!canWear(it, ch)) shopSay(`${ch.name} already has cool shades! Try a different fighter.`, 'bonk');
+  else if (!shop.owned[id]) {
     if (shop.coins < it.price) shopSay(`You need ${it.price - shop.coins} more coins. Go win some fights!`, 'bonk');
-    else { shop.coins -= it.price; shop.owned[id] = true; shop.wear[ch.id] = true; saveShop(); shopSay(`Thanks! ${ch.name} looks so cool.`, 'win'); }
-  } else { shop.wear[ch.id] = !shop.wear[ch.id]; saveShop(); shopSay(shop.wear[ch.id] ? `Looking cool, ${ch.name}!` : 'Hat off. Come back any time!', 'grab'); }
+    else { shop.coins -= it.price; shop.owned[id] = true; w[ch.id] = true; saveShop(); shopSay(`Thanks! ${ch.name} looks so cool.`, 'win'); }
+  } else { w[ch.id] = !w[ch.id]; saveShop(); shopSay(w[ch.id] ? `Looking cool, ${ch.name}!` : `${it.name} off. Come back any time!`, 'grab'); }
   renderShopCard(true);
 }
 function renderShopCard(force) {
   const ch = CHARS[SHOP.who], st = SHOP.near, it = st && ITEMS.find(i => i.id === st.item);
-  const key = [shop.coins, ch.id, it && it.id, it && shop.owned[it.id], it && shop.wear[ch.id], SHOP.nearKeeper].join('|');
+  const key = [shop.coins, ch.id, it && it.id, it && shop.owned[it.id], ITEMS.map(i => wears(i.id, ch)).join(), SHOP.nearKeeper].join('|');
   if (!force && key === SHOP.key) return;
   SHOP.key = key; $('coinCount').textContent = shop.coins; $('shopWho').textContent = ch.name;
-  const k = (pl, a) => keyName(KEYMAP[pl][a][0]), card = $('shopCard');
+  const card = $('shopCard'); fillShopCard(card, ch, it);
+  // what this fighter has on, with a button to take each thing off from anywhere in the shop
+  if (!ITEMS.some(i => shop.owned[i.id])) return;
+  const row = document.createElement('div'); row.className = 'wearing';
+  const on = ITEMS.filter(i => wears(i.id, ch) && canWear(i, ch));
+  if (!on.length) row.textContent = `${ch.name} isn't wearing anything from the shop.`;
+  else {
+    row.append(`${ch.name} is wearing:`);
+    for (const i of on) {
+      const b = document.createElement('button'); b.id = 'off-' + i.id; b.textContent = `${i.name} ✕`; b.title = `Take the ${i.name.toLowerCase()} off`;
+      b.onclick = () => { shop.wear[i.id][ch.id] = false; saveShop(); shopSay(`${i.name} off. Come back any time!`, 'grab'); renderShopCard(true); cv.focus(); };
+      row.append(b);
+    }
+  }
+  card.append(row);
+}
+function fillShopCard(card, ch, it) {
+  const k = (pl, a) => keyName(KEYMAP[pl][a][0]);
   const press = `or press <kbd>${k('p1','punch')}</kbd> / <kbd>${k('p2','punch')}</kbd> / <kbd>X</kbd>`;
   if (!it && SHOP.nearKeeper) {
     card.innerHTML = `<h3>The shopkeeper</h3><p>Want to chat? Each time you talk, the shopkeeper says something new.</p><div class="row"></div>`;
@@ -1975,8 +2022,9 @@ function renderShopCard(force) {
     card.innerHTML = `<h3>Welcome to the shop!</h3><p>Walk with <kbd>${k('p1','l')}</kbd> <kbd>${k('p1','r')}</kbd> or <kbd>${k('p2','l')}</kbd> <kbd>${k('p2','r')}</kbd> and jump with <kbd>${k('p1','u')}</kbd> or <kbd>${k('p2','u')}</kbd>. Walk up to something to buy it.</p><p class="note">Finish a fight to earn 10 coins. Win it with a person (not the computer) to get 15 more. More things are coming soon!</p>`;
     return;
   }
-  const owned = shop.owned[it.id], on = shop.wear[ch.id];
-  card.innerHTML = `<h3>${it.name} <span class="price">${owned ? 'yours!' : it.price + ' coins'}</span></h3><p>${it.desc}${owned ? ' Hats show up in fights on this computer.' : ''}</p><div class="row"></div>`;
+  const owned = shop.owned[it.id], on = wears(it.id, ch);
+  card.innerHTML = `<h3>${it.name} <span class="price">${owned ? 'yours!' : it.price + ' coins'}</span></h3><p>${it.desc}${owned ? ' It shows up in fights on this computer.' : ''}</p><div class="row"></div>`;
+  if (!canWear(it, ch)) { card.querySelector('.row').innerHTML = `<p>${ch.name} already has cool shades, so these don't go on it. Pick a different fighter with ◀ ▶ at the top.</p>`; return; }
   const b = document.createElement('button'); b.className = 'btn'; b.id = 'shopAct';
   b.textContent = !owned ? `buy for ${it.price} coins` : on ? `take it off ${ch.name}` : `put it on ${ch.name}`;
   b.onclick = () => { shopAct(it.id); cv.focus(); };
