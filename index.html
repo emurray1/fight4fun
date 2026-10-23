@@ -155,7 +155,10 @@ kbd{font-family:var(--body);border:2px solid var(--ink);border-bottom-width:4px;
 .who-pick b{font-family:var(--display);font-weight:400;font-size:26px;min-width:150px;text-align:center}
 .who-pick button{font-size:20px;border:3px solid var(--ink);background:var(--soft);padding:0 10px}
 .shop-bar .back{position:static;font-size:24px;padding:2px 18px}
-.shop-card{align-self:center;width:min(640px,100%);padding:10px 16px 14px;display:flex;flex-direction:column;gap:6px}
+.shop-card{align-self:center;width:min(640px,100%);padding:10px 16px 14px;display:flex;flex-direction:column;gap:6px;position:relative}
+.shop-card .card-x{position:absolute;top:4px;right:6px;font-size:22px;line-height:1;border:3px solid var(--ink);background:var(--soft);padding:0 8px;z-index:1}
+.shop-card .card-x + h3{padding-right:44px}
+.shop-card-open{pointer-events:auto;align-self:center;font-size:22px;padding:2px 18px}
 .shop-card h3{font-family:var(--display);font-weight:400;font-size:32px;margin:0;line-height:1;display:flex;justify-content:space-between;align-items:center;gap:10px}
 .shop-card p{margin:0;line-height:1.3}
 .shop-card .price{background:var(--yellow);padding:0 8px;font-size:26px}
@@ -345,6 +348,7 @@ html.xmas .fff span{border-color:#1b7a34;color:#c8102e}
     <button class="btn back" data-back>back</button>
   </header>
   <div id="shopCard" class="shop-card" role="status"></div>
+  <button id="shopCardOpen" class="btn shop-card-open" hidden>show info ▲</button>
 </div>
 
 <div id="settings" class="screen" hidden>
@@ -3003,6 +3007,7 @@ document.querySelectorAll('[data-back]').forEach(b => b.onclick = () => { if (ba
 $('howBtn').onclick = () => { audioOn(); openPage('howto'); };
 $('setBtn').onclick = () => { audioOn(); openPage('settings'); };
 $('shopBtn').onclick = () => { audioOn(); openShop(); };
+$('shopCardOpen').onclick = () => { SHOP.cardClosed = false; renderShopCard(true); cv.focus(); };
 $('shopPrev').onclick = () => { SHOP.who = (SHOP.who + CHARS.length - 1) % CHARS.length; renderShopCard(true); };
 $('shopNext').onclick = () => { SHOP.who = (SHOP.who + 1) % CHARS.length; renderShopCard(true); };
 function openShop() {
@@ -3135,6 +3140,11 @@ function renderShopCard(force) {
   if (!force && key === SHOP.key) return;
   SHOP.key = key; $('coinCount').textContent = shop.coins; $('shopWho').textContent = ch.name;
   const card = $('shopCard'); fillShopCard(card, ch, it);
+  // a ✕ to close this pop-up (it stays closed until you click "show info"; punch still works without it)
+  card.hidden = !!SHOP.cardClosed; $('shopCardOpen').hidden = !SHOP.cardClosed;
+  const x = document.createElement('button'); x.className = 'card-x'; x.id = 'shopCardClose'; x.textContent = '✕'; x.title = 'Close'; x.setAttribute('aria-label', 'Close this pop-up');
+  x.onclick = () => { SHOP.cardClosed = true; renderShopCard(true); cv.focus(); };
+  card.prepend(x);
   // what this fighter has on, with a button to take each thing off from anywhere in the shop
   if (!ITEMS.some(i => shop.owned[i.id])) return;
   const row = document.createElement('div'); row.className = 'wearing';
