@@ -128,14 +128,23 @@ kbd{font-family:var(--body);border:2px solid var(--ink);border-bottom-width:4px;
 .set-grid .setting>span{font-family:var(--display);font-size:26px;line-height:1}
 .set-grid .setting small{font-size:16px;color:#444}
 .page-foot{display:flex;justify-content:center;gap:14px;flex-wrap:wrap}
-.shop-art{display:block;width:100%;height:auto;border:4px solid var(--ink)}
-.coins b{font-family:var(--display);font-weight:400;font-size:34px;background:var(--yellow);padding:0 8px}
-.shop-items{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px}
-.shop-item{border:4px solid var(--ink);padding:12px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
-.shop-item h3{margin:0}
-.wear-grid{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
-.wear-grid button{display:flex;flex-direction:column;align-items:center;width:84px;padding:4px;border:3px solid var(--ink);background:var(--paper);font-family:var(--body);font-size:15px;line-height:1.1}
-.wear-grid button[aria-pressed="true"]{background:var(--yellow)}
+/* the shop is a room drawn on the game canvas; this bar and card sit on top of it */
+#shop.shop-hud{justify-content:space-between;align-items:stretch;pointer-events:none;overflow:hidden}
+.shop-bar,.shop-card{pointer-events:auto;background:var(--paper);border:4px solid var(--ink);box-shadow:6px 6px 0 rgba(15,61,28,.35)}
+.shop-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;padding:6px 14px}
+.shop-bar h2{font-family:var(--display);font-weight:400;font-size:48px;margin:0 auto 0 0;line-height:1}
+.coin-chip{font-size:22px}
+.coin-chip b{font-family:var(--display);font-weight:400;font-size:34px;background:var(--yellow);padding:0 8px}
+.who-pick{display:flex;align-items:center;gap:6px;font-size:20px}
+.who-pick b{font-family:var(--display);font-weight:400;font-size:26px;min-width:150px;text-align:center}
+.who-pick button{font-size:20px;border:3px solid var(--ink);background:var(--soft);padding:0 10px}
+.shop-bar .back{position:static;font-size:24px;padding:2px 18px}
+.shop-card{align-self:center;width:min(640px,100%);padding:10px 16px 14px;display:flex;flex-direction:column;gap:6px}
+.shop-card h3{font-family:var(--display);font-weight:400;font-size:32px;margin:0;line-height:1;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.shop-card p{margin:0;line-height:1.3}
+.shop-card .price{background:var(--yellow);padding:0 8px;font-size:26px}
+.shop-card .row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}
+.shop-card .btn{font-size:24px;padding:4px 18px}
 #gameQuit{position:fixed;left:calc(14px + env(safe-area-inset-left,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));font-size:24px;padding:4px 20px;border:3px solid var(--paper);z-index:5}
 .quit-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
 .btn.red{background:var(--maroon);color:var(--paper)}
@@ -298,18 +307,14 @@ input:focus-visible{outline:4px solid var(--yellow);outline-offset:2px}
   </div>
 </div>
 
-<div id="shop" class="screen" hidden>
-  <div class="panel page">
-    <header class="whois"><h2>shop</h2><button class="btn back" data-back>back</button></header>
-    <div class="page-body">
-      <img class="shop-art" src="shop.png" alt="The shop: a grey fighter waves from behind a wooden counter under a hanging shop sign.">
-      <p class="coins">You have <b id="coinCount">0</b> coins. Finish a fight to earn 10 coins. Win it with a person (not the computer) to get 15 more.</p>
-      <div id="shopItems" class="shop-items"></div>
-      <p id="shopMsg" class="msg" role="status"></p>
-      <p>More coming soon!</p>
-      <div class="page-foot"><button class="btn grey" data-back>back</button></div>
-    </div>
-  </div>
+<div id="shop" class="screen shop-hud" hidden>
+  <header class="shop-bar">
+    <h2>shop</h2>
+    <div class="coin-chip"><b id="coinCount">0</b> coins</div>
+    <div class="who-pick"><span>shopping as</span><button id="shopPrev" aria-label="Previous fighter">◀</button><b id="shopWho"></b><button id="shopNext" aria-label="Next fighter">▶</button></div>
+    <button class="btn back" data-back>back</button>
+  </header>
+  <div id="shopCard" class="shop-card" role="status"></div>
 </div>
 
 <div id="settings" class="screen" hidden>
@@ -507,6 +512,9 @@ const shop = { coins:0, owned:{}, wear:{} };
 try { const s = JSON.parse(localStorage.getItem('fff-shop') || 'null'); if (s) Object.assign(shop, s); } catch (e) {}
 const saveShop = () => { try { localStorage.setItem('fff-shop', JSON.stringify(shop)); } catch (e) {} };
 const wearsHat = ch => !!(shop.owned.coolhat && shop.wear[ch.id]);
+// the shop room: you walk a fighter up to a stand to buy what's on it
+const SHOP = { who:null, x:240, y:0, vy:0, facing:1, near:null, prev:{}, msg:'', msgT:0, key:'' };
+const SHOP_FLOOR = 770, STANDS = [{ item:'coolhat', x:620 }];
 
 // ---------- shapes & faces ----------
 function regular(n, R, start = -Math.PI/2) { const v=[]; for (let i=0;i<n;i++){ const a=start+i*TAU/n; v.push({x:Math.cos(a)*R, y:Math.sin(a)*R}); } return v; }
@@ -721,9 +729,10 @@ addEventListener('resize', resize); resize();
 const keys = new Set();
 const GAME_KEYS = new Set(['KeyH','Semicolon','Quote','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','KeyW','KeyA','KeyS','KeyD','KeyF','KeyG','KeyK','KeyL','Slash','Period']);
 addEventListener('keydown', e => {
-  if (G.state === 'fight' && (GAME_KEYS.has(e.code) || boundKeys().has(e.code))) e.preventDefault();
+  if ((G.state === 'fight' || G.state === 'shop') && (GAME_KEYS.has(e.code) || boundKeys().has(e.code)) && !(e.target.closest && e.target.closest('button'))) e.preventDefault();
   if (e.repeat) return;
   keys.add(e.code);
+  if (e.code === 'Escape' && G.state === 'shop') $('shop').querySelector('[data-back]').click();
   if (e.code === 'Escape' && G.state === 'fight') { if (!$('quitAsk').hidden) closeQuit(); else if (G.online) openQuit(); else togglePause(); }
   if (e.code === 'KeyM' && !boundKeys().has('KeyM')) { setup.sound = !setup.sound; saveSetup(); musicUpdate(); }
 });
@@ -1692,25 +1701,91 @@ function drawOverlayText() {
     g.font = `34px ${BODYFONT}`; g.fillStyle = C.white; g.fillText(G.banner.sub, W/2, 442);
   }
 }
+function shopStep(dt) {
+  const h = readHeld('local'), pr = SHOP.prev, ch = CHARS[SHOP.who]; SHOP.prev = h;
+  SHOP.x = Math.max(70, Math.min(W - 70, SHOP.x + h.x*430*ch.speed*dt)); if (h.x) SHOP.facing = h.x;
+  SHOP.vy += 2600*dt; SHOP.y = Math.min(0, SHOP.y + SHOP.vy*dt); if (SHOP.y === 0) SHOP.vy = 0;
+  if (h.jump && !pr.jump && SHOP.y === 0) { SHOP.vy = -1000*ch.jump; sfx.jump(); }
+  SHOP.near = STANDS.find(s => Math.abs(s.x - SHOP.x) < 110) || null;
+  if (h.punch && !pr.punch && SHOP.near) shopAct(SHOP.near.item);
+  SHOP.msgT = Math.max(0, SHOP.msgT - dt);
+  renderShopCard();
+}
+function drawShop(t) {
+  const BEAM = '#4f3427';
+  g.fillStyle = C.white; g.fillRect(0, 0, W, H);
+  g.fillStyle = BEAM; g.fillRect(0, 0, W, 110);
+  // wooden floor
+  g.fillStyle = C.brown; g.fillRect(0, SHOP_FLOOR, W, H - SHOP_FLOOR);
+  g.strokeStyle = BEAM; g.lineWidth = 8; g.lineCap = 'round';
+  for (const y of [SHOP_FLOOR + 4, SHOP_FLOOR + 50, SHOP_FLOOR + 96]) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
+  g.lineWidth = 5; for (let i=0;i<12;i++) { const x = (i*157 + (i%2)*70) % W, y = SHOP_FLOOR + (i%2 ? 50 : 4); g.beginPath(); g.moveTo(x, y); g.lineTo(x, y + 46); g.stroke(); }
+  // shopkeeper behind the counter, waving
+  const kx = 1260;
+  g.fillStyle = C.ink; g.beginPath(); g.roundRect ? g.roundRect(kx - 72, 450, 144, 160, 18) : g.rect(kx - 72, 450, 144, 160); g.fill();
+  g.save(); g.translate(kx + 66, 470); g.rotate(-0.5 + Math.sin(t*5)*0.35); g.beginPath(); g.roundRect ? g.roundRect(-22, -130, 44, 140, 20) : g.rect(-22, -130, 44, 140); g.fill(); g.restore();
+  g.fillStyle = C.grey; g.strokeStyle = C.ink; g.lineWidth = 5; g.beginPath(); g.arc(kx, 395, 58, 0, TAU); g.fill(); g.stroke();
+  g.fillStyle = C.white; for (const ex of [-20, 20]) { g.beginPath(); g.arc(kx + ex, 385, 12, 0, TAU); g.fill(); }
+  g.fillStyle = C.ink; for (const ex of [-18, 22]) { g.beginPath(); g.arc(kx + ex, 387, 5, 0, TAU); g.fill(); }
+  g.lineWidth = 6; g.beginPath(); g.moveTo(kx - 30, 360); g.quadraticCurveTo(kx - 18, 350, kx - 6, 362); g.stroke();
+  g.beginPath(); g.ellipse(kx, 418, 20, 11, 0, 0, Math.PI); g.fill();
+  // counter: dark top, light front with scribbly wood lines, and the shopkeeper's other hand resting on it
+  g.fillStyle = C.brown; g.fillRect(960, 600, 580, SHOP_FLOOR - 600);
+  g.strokeStyle = BEAM; g.lineWidth = 9;
+  for (let i=0;i<4;i++) { const y = 640 + i*34; g.beginPath(); g.moveTo(968, y); g.bezierCurveTo(1110, y - 26 + i*9, 1300, y + 30 - i*11, 1532, y - 6); g.stroke(); }
+  g.fillStyle = BEAM; g.beginPath(); g.roundRect ? g.roundRect(940, 570, 620, 46, 23) : g.rect(940, 570, 620, 46); g.fill();
+  g.fillStyle = C.ink; g.beginPath(); g.roundRect ? g.roundRect(kx - 170, 548, 120, 44, 18) : g.rect(kx - 170, 548, 120, 44); g.fill();
+  // the shop sign hangs from the beam on two ropes and swings a little
+  g.save(); g.translate(kx - 10, 110); g.rotate(Math.sin(t*1.4)*0.05);
+  g.strokeStyle = '#ff9a5c'; g.lineWidth = 6; g.beginPath(); g.moveTo(-50, 0); g.lineTo(-44, 150); g.moveTo(50, 0); g.lineTo(44, 150); g.stroke();
+  g.fillStyle = '#7a5236'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(-82, 146, 164, 66); g.strokeRect(-82, 146, 164, 66);
+  g.fillStyle = C.ink; g.font = `52px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('shop', 0, 180);
+  g.restore();
+  // what the shopkeeper says
+  const say = SHOP.msgT > 0 ? SHOP.msg : SHOP.near ? 'Ooh, good choice!' : 'Hi! Walk up to the hat and press punch!';
+  g.font = `30px ${BODYFONT}`; const bw = Math.min(520, g.measureText(say).width + 44), bx = kx - 90 - bw, by = 300;
+  g.fillStyle = C.white; g.strokeStyle = C.ink; g.lineWidth = 4;
+  g.beginPath(); g.roundRect ? g.roundRect(bx, by, bw, 62, 18) : g.rect(bx, by, bw, 62); g.moveTo(bx + bw - 30, by + 62); g.lineTo(kx - 60, by + 80); g.lineTo(bx + bw - 6, by + 40); g.fill(); g.stroke();
+  g.fillStyle = C.ink; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(say, bx + bw/2, by + 32, bw - 24);
+  // stands with things to buy
+  for (const st of STANDS) {
+    const it = ITEMS.find(i => i.id === st.item), top = SHOP_FLOOR - 170;
+    g.fillStyle = BEAM; g.fillRect(st.x - 12, top, 24, 170); g.beginPath(); g.ellipse(st.x, SHOP_FLOOR, 60, 12, 0, 0, TAU); g.fill();
+    g.fillRect(st.x - 80, top - 14, 160, 18);
+    g.save(); g.translate(st.x, top - 14 + Math.sin(t*2)*3); drawHat(g, 64, -6.4, 1); g.restore();
+    const owned = shop.owned[it.id], label = owned ? 'yours!' : `${it.price} coins`;
+    g.font = `26px ${BODYFONT}`; const tw = g.measureText(label).width + 24;
+    g.fillStyle = owned ? C.green : C.yellow; g.strokeStyle = C.ink; g.lineWidth = 3; g.fillRect(st.x - tw/2, top + 20, tw, 36); g.strokeRect(st.x - tw/2, top + 20, tw, 36);
+    g.fillStyle = C.ink; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(label, st.x, top + 39);
+    if (SHOP.near === st) { const ay = top - 150 + Math.sin(t*6)*8; g.fillStyle = C.yellow; g.strokeStyle = C.ink; g.lineWidth = 4; g.beginPath(); g.moveTo(st.x - 22, ay); g.lineTo(st.x + 22, ay); g.lineTo(st.x, ay + 26); g.closePath(); g.fill(); g.stroke(); }
+  }
+  // you
+  const ch = CHARS[SHOP.who], r = 50, moving = Math.abs(SHOP.prev.x || 0) > 0 && SHOP.y === 0;
+  const bottom = ch.shape === 'circle' ? r : Math.max(...shapeVerts(ch.shape, r, true).map(v => v.y));
+  g.save(); g.translate(SHOP.x, SHOP_FLOOR - bottom + SHOP.y - (moving ? Math.abs(Math.sin(t*12))*8 : 0)); g.rotate(moving ? Math.sin(t*12)*0.08 : 0);
+  drawCharacter(g, ch, r, { facing:SHOP.facing, hat:wearsHat(ch) }); g.restore();
+}
 let lastT = performance.now(), acc = 0;
 function frame(now) {
   const dt = Math.min(0.1, (now - lastT)/1000); lastT = now;
   if (G.online === 'client' && G.state === 'fight') { clientSmooth(dt); clientSendInput(now); }
   else if (G.state === 'fight' && !G.paused) { acc += dt*1000; let n = 0; while (acc >= STEP && n < 6) { step(); acc -= STEP; n++; } if (n === 6) acc = 0; }
+  else if (G.state === 'shop') shopStep(dt);
   G.shake *= 0.85; if (!setup.shake) G.shake = 0;
   const sx = (Math.random() - 0.5)*G.shake*scale, sy = (Math.random() - 0.5)*G.shake*scale;
   g.setTransform(1,0,0,1,0,0); g.fillStyle = C.blue; g.fillRect(0, 0, cv.width, cv.height);
   g.setTransform(scale, 0, 0, scale, ox + sx, oy + sy);
   const t = now/1000;
-  drawSky(t, G.state === 'fight' ? MAP : null);
-  if (G.state === 'fight') {
+  if (G.state === 'shop') drawShop(t);
+  else if (G.state === 'fight') {
+    drawSky(t, MAP);
     drawArena(t);
     drawHazards(t);
     drawWaves();
     for (const p of G.fighters) if (p.alive && !p.grabbing) drawFighter(p, t);
     for (const p of G.fighters) if (p.alive && p.grabbing) drawFighter(p, t);
     drawParticles(G.paused ? 0 : dt); drawHUD(); drawOverlayText();
-  } else drawMenuGround();
+  } else { drawSky(t, null); drawMenuGround(); }
   requestAnimationFrame(frame);
 }
 
@@ -1830,39 +1905,44 @@ function renderSettings() {
   renderSeg('tagsSeg', ONOFF, 'tags');
 }
 let backTo = 'title';
-function openPage(id) { backTo = G.state; G.state = id; waitingKey = null; if (id === 'settings') renderSettings(); if (id === 'shop') renderShop(); if (id === 'keys') { renderKeys(); $('keysMsg').textContent = ''; } fillKeyLabels(); showScreen(id); $(id).scrollTop = 0; $(id).querySelector('[data-back]').focus(); }
+function openPage(id) { backTo = G.state; G.state = id; waitingKey = null; if (id === 'settings') renderSettings(); if (id === 'keys') { renderKeys(); $('keysMsg').textContent = ''; } fillKeyLabels(); showScreen(id); $(id).scrollTop = 0; $(id).querySelector('[data-back]').focus(); }
 document.querySelectorAll('[data-back]').forEach(b => b.onclick = () => { if (backTo === 'setup') openSetup(); else { G.state = 'title'; showScreen('title'); $('okBtn').focus(); } });
 $('howBtn').onclick = () => { audioOn(); openPage('howto'); };
 $('setBtn').onclick = () => { audioOn(); openPage('settings'); };
-$('shopBtn').onclick = () => { audioOn(); $('shopMsg').textContent = ''; openPage('shop'); };
-function renderShop() {
-  $('coinCount').textContent = shop.coins;
-  const box = $('shopItems'); box.innerHTML = '';
-  for (const it of ITEMS) {
-    const card = document.createElement('div'); card.className = 'shop-item';
-    card.appendChild(charCanvas(CHAR.circle, 120, { hat:true }));
-    card.insertAdjacentHTML('beforeend', `<h3>${it.name}</h3><p>${it.desc}</p>`);
-    if (!shop.owned[it.id]) {
-      const b = document.createElement('button'); b.className = 'btn'; b.id = 'buy-' + it.id; b.textContent = `buy for ${it.price} coins`;
-      b.onclick = () => {
-        if (shop.coins < it.price) { $('shopMsg').textContent = `You need ${it.price - shop.coins} more coins. Play some fights to earn them!`; return; }
-        shop.coins -= it.price; shop.owned[it.id] = true; saveShop(); renderShop();
-        $('shopMsg').textContent = `You got the ${it.name.toLowerCase()}! Now click the fighters who should wear it.`; if (sfx.win) sfx.win();
-      };
-      card.appendChild(b);
-    } else {
-      card.insertAdjacentHTML('beforeend', '<p class="note">You own it! Click a fighter to put it on or take it off. Hats show up in fights on this computer.</p>');
-      const grid = document.createElement('div'); grid.className = 'wear-grid';
-      for (const ch of CHARS) {
-        const b = document.createElement('button'); b.id = 'wear-' + ch.id; b.setAttribute('aria-pressed', String(!!shop.wear[ch.id]));
-        b.appendChild(charCanvas(ch, 64, { hat:!!shop.wear[ch.id] })); b.append(ch.name);
-        b.onclick = () => { shop.wear[ch.id] = !shop.wear[ch.id]; saveShop(); renderShop(); $('wear-' + ch.id).focus(); };
-        grid.appendChild(b);
-      }
-      card.appendChild(grid);
-    }
-    box.appendChild(card);
+$('shopBtn').onclick = () => { audioOn(); openShop(); };
+$('shopPrev').onclick = () => { SHOP.who = (SHOP.who + CHARS.length - 1) % CHARS.length; renderShopCard(true); };
+$('shopNext').onclick = () => { SHOP.who = (SHOP.who + 1) % CHARS.length; renderShopCard(true); };
+function openShop() {
+  const mine = CHARS.findIndex(ch => (CTRL[setup.slots[ch.id]] || CTRL.off).kind === 'human');
+  Object.assign(SHOP, { x:240, y:0, vy:0, facing:1, near:null, prev:readHeld('local'), msg:'', msgT:0 });
+  if (SHOP.who == null) SHOP.who = Math.max(0, mine);
+  openPage('shop'); renderShopCard(true); cv.focus();
+}
+function shopSay(text, sound) { SHOP.msg = text; SHOP.msgT = 3.5; if (sound && sfx[sound]) sfx[sound](); }
+function shopAct(id) {
+  const it = ITEMS.find(i => i.id === id), ch = CHARS[SHOP.who];
+  if (!shop.owned[id]) {
+    if (shop.coins < it.price) shopSay(`You need ${it.price - shop.coins} more coins. Go win some fights!`, 'bonk');
+    else { shop.coins -= it.price; shop.owned[id] = true; shop.wear[ch.id] = true; saveShop(); shopSay(`Thanks! ${ch.name} looks so cool.`, 'win'); }
+  } else { shop.wear[ch.id] = !shop.wear[ch.id]; saveShop(); shopSay(shop.wear[ch.id] ? `Looking cool, ${ch.name}!` : 'Hat off. Come back any time!', 'grab'); }
+  renderShopCard(true);
+}
+function renderShopCard(force) {
+  const ch = CHARS[SHOP.who], st = SHOP.near, it = st && ITEMS.find(i => i.id === st.item);
+  const key = [shop.coins, ch.id, it && it.id, it && shop.owned[it.id], it && shop.wear[ch.id]].join('|');
+  if (!force && key === SHOP.key) return;
+  SHOP.key = key; $('coinCount').textContent = shop.coins; $('shopWho').textContent = ch.name;
+  const k = (pl, a) => keyName(KEYMAP[pl][a][0]), card = $('shopCard');
+  if (!it) {
+    card.innerHTML = `<h3>Welcome to the shop!</h3><p>Walk with <kbd>${k('p1','l')}</kbd> <kbd>${k('p1','r')}</kbd> or <kbd>${k('p2','l')}</kbd> <kbd>${k('p2','r')}</kbd> and jump with <kbd>${k('p1','u')}</kbd> or <kbd>${k('p2','u')}</kbd>. Walk up to something to buy it.</p><p class="note">Finish a fight to earn 10 coins. Win it with a person (not the computer) to get 15 more. More things are coming soon!</p>`;
+    return;
   }
+  const owned = shop.owned[it.id], on = shop.wear[ch.id];
+  card.innerHTML = `<h3>${it.name} <span class="price">${owned ? 'yours!' : it.price + ' coins'}</span></h3><p>${it.desc}${owned ? ' Hats show up in fights on this computer.' : ''}</p><div class="row"></div>`;
+  const b = document.createElement('button'); b.className = 'btn'; b.id = 'shopAct';
+  b.textContent = !owned ? `buy for ${it.price} coins` : on ? `take it off ${ch.name}` : `put it on ${ch.name}`;
+  b.onclick = () => { shopAct(it.id); cv.focus(); };
+  card.querySelector('.row').append(b, Object.assign(document.createElement('span'), { innerHTML:`or press <kbd>${k('p1','punch')}</kbd> / <kbd>${k('p2','punch')}</kbd> / <kbd>X</kbd>` }));
 }
 let waitingKey = null;
 function renderKeys() {

@@ -32,7 +32,9 @@ Every fighter has 200 hp. When it runs out, they get dizzy and can be thrown.
 
 Every fight you finish earns 10 coins, and 15 more if a person (not the computer) wins it. Spend coins in the **shop** on the main menu.
 
-- **Cool hat (25 coins):** a tilted black top hat. After you buy it, click the fighters who should wear it.
+The shop is a room you walk around in. Walk your fighter up to a stand and press punch to buy what's on it, or punch again to put it on or take it off. Use the arrows at the top to pick which fighter you're shopping as. The grey shopkeeper behind the counter talks to you while you shop.
+
+- **Cool hat (25 coins):** a tilted black top hat.
 
 Coins and hats are saved in your browser. Hats show up in fights on your own computer, but not in online fights yet.
 
