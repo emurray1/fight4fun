@@ -352,7 +352,7 @@ html.xmas .fff span{border-color:#1b7a34;color:#c8102e}
     <div class="page-body">
       <div class="set-grid">
         <div class="setting"><span>Sound</span><div class="seg" id="soundSeg"></div><small>You can also press M during a fight.</small></div>
-        <div class="setting"><span>Menu music</span><div class="seg" id="musicSeg"></div><small>A silly polka that plays on the menus.</small></div>
+        <div class="setting"><span>Menu music</span><div class="seg" id="musicSeg"></div><small>A silly polka on the menus. It turns spooky for Halloween and jingly for Christmas.</small></div>
         <div class="setting"><span>Volume</span><div class="seg" id="volSeg"></div></div>
         <div class="setting"><span>Rounds to win</span><div class="seg" id="setRoundsSeg"></div><small>How many rounds you need to win the fight.</small></div>
         <div class="setting"><span>Map</span><div class="seg" id="setMapSeg"></div><small>Cloud Island, or Mason's Snowy Hills with falling ice and snow.</small></div>
@@ -914,22 +914,73 @@ const TUNE = [ // [note, length in eighth notes], 16 bars of 2/4
 ];
 const CHORDS = ['C','C','G','G7','G7','G7','C','C','F','F','C','C','G','G7','C','C'];
 const CH = { C:['C3','G2',['C4','E4','G4']], G:['G2','D3',['B3','D4','G4']], G7:['G2','D3',['B3','D4','F4']], F:['F2','C3',['A3','C4','F4']] };
-const MEL = {}; { let t = 0; for (const [n, l] of TUNE) { MEL[t] = [n, l]; t += l; } }
+// Halloween: an original spooky tune in A minor, slower, with ghostly wobbly notes
+const SPOOKY_TUNE = [
+  ['A4',1],['C5',1],['E5',1],['C5',1], ['B4',1],['C5',1],['A4',2], ['G#4',1],['B4',1],['E5',1],['B4',1], ['D5',1],['C5',1],['B4',2],
+  ['D5',1],['F5',1],['A5',1],['F5',1], ['E5',1],['F5',1],['D5',2], ['E5',1],['D5',1],['C5',1],['B4',1], ['A4',2],['R',1],['E4',1],
+  ['A4',1],['E5',1],['A5',1],['E5',1], ['F5',1],['E5',1],['C5',2], ['D5',1],['A4',1],['D5',1],['F5',1], ['E5',2],['G#4',2],
+  ['C5',1],['E5',1],['A5',1],['G5',1], ['F5',1],['E5',1],['D5',1],['F5',1], ['E5',1],['D5',1],['B4',1],['G#4',1], ['A4',3],['R',1],
+];
+const SPOOKY_CHORDS = ['Am','Am','E','E','Dm','Dm','E7','Am','Am','F','Dm','E','Am','Dm','E7','Am'];
+const SPOOKY_CH = { Am:['A2','E3',['A3','C4','E4']], E:['E2','B2',['G#3','B3','E4']], E7:['E2','B2',['G#3','D4','E4']], Dm:['D3','A2',['D4','F4','A4']], F:['F2','C3',['A3','C4','F4']] };
+// Christmas: an original jingly tune in G major, with sleigh bells
+const XMAS_TUNE = [
+  ['B4',1],['D5',1],['G5',1],['D5',1], ['B4',1],['D5',1],['G5',2], ['E5',1],['G5',1],['C6',1],['G5',1], ['E5',2],['C5',2],
+  ['F#5',1],['A5',1],['D6',1],['A5',1], ['F#5',1],['E5',1],['D5',2], ['G5',1],['F#5',1],['E5',1],['D5',1], ['B4',2],['R',1],['D5',1],
+  ['E5',1],['G5',1],['B5',1],['G5',1], ['E5',1],['F#5',1],['G5',2], ['E5',1],['G5',1],['C6',1],['B5',1], ['A5',2],['G5',2],
+  ['F#5',1],['A5',1],['D6',1],['C6',1], ['B5',1],['A5',1],['F#5',1],['D5',1], ['G5',1],['B5',1],['D6',1],['B5',1], ['G5',3],['R',1],
+];
+const XMAS_CHORDS = ['G','G','C','C','D','D','G','G','Em','Em','C','C','D','D7','G','G'];
+const XMAS_CH = { G:['G2','D3',['B3','D4','G4']], C:['C3','G2',['C4','E4','G4']], D:['D3','A2',['D4','F#4','A4']], D7:['D3','A2',['C4','F#4','A4']], Em:['E2','B2',['E4','G4','B4']] };
+const melMap = tune => { const m = {}; let t = 0; for (const [n, l] of tune) { m[t] = [n, l]; t += l; } return m; };
 function mNote(f, t, dur, type, vol) {
   const o = AC.createOscillator(), gn = AC.createGain(); o.type = type; o.frequency.setValueAtTime(f, t);
   gn.gain.setValueAtTime(0.0001, t); gn.gain.exponentialRampToValueAtTime(vol, t + 0.008); gn.gain.exponentialRampToValueAtTime(0.0001, t + dur);
   o.connect(gn).connect(Music.gain); o.start(t); o.stop(t + dur + 0.02);
 }
-function musicTick() {
-  const E = 60/138/2;
-  while (Music.next < AC.currentTime + 0.2) {
-    const t = Music.next, st = Music.step, chord = CH[CHORDS[(st/4)|0]];
-    const m = MEL[st];
+function mGlide(f1, f2, t, dur, vol) {
+  const o = AC.createOscillator(), gn = AC.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(f1, t); o.frequency.exponentialRampToValueAtTime(f2, t + dur);
+  gn.gain.setValueAtTime(vol, t); gn.gain.exponentialRampToValueAtTime(0.0001, t + dur); o.connect(gn).connect(Music.gain); o.start(t); o.stop(t + dur);
+}
+let bellBuf = null;
+function mBell(t, vol) { // a tiny burst of high noise, like a sleigh bell
+  if (!bellBuf) { bellBuf = AC.createBuffer(1, Math.floor(AC.sampleRate*0.08), AC.sampleRate); const d = bellBuf.getChannelData(0); for (let i=0;i<d.length;i++) d[i] = Math.random()*2 - 1; }
+  const s = AC.createBufferSource(), f = AC.createBiquadFilter(), gn = AC.createGain(); s.buffer = bellBuf; f.type = 'highpass'; f.frequency.value = 6500;
+  gn.gain.setValueAtTime(vol, t); gn.gain.exponentialRampToValueAtTime(0.0001, t + 0.07); s.connect(f).connect(gn).connect(Music.gain); s.start(t); s.stop(t + 0.08);
+}
+// each song: tempo, tune and chords, and how one eighth-note step is played
+const SONGS = {
+  polka:{ bpm:138, mel:melMap(TUNE), chords:CHORDS, ch:CH, play(st, t, E, m, chord) {
     if (m && m[0] !== 'R') { const f = hz(m[0]); mNote(f, t, m[1]*E*0.85, 'square', 0.05); mNote(f*2, t, 0.06, 'triangle', 0.025); }
     if (st % 4 === 0) mNote(hz(chord[0]), t, 0.2, 'triangle', 0.22);
     if (st % 4 === 2) mNote(hz(chord[1]), t, 0.2, 'triangle', 0.18);
     if (st % 2 === 1) { for (const n of chord[2]) mNote(hz(n), t, 0.09, 'square', 0.018); mNote(1700, t, 0.035, 'sine', 0.05); }
-    if (st === 63) { const o = AC.createOscillator(), gn = AC.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(500, t); o.frequency.exponentialRampToValueAtTime(1400, t + E); gn.gain.setValueAtTime(0.04, t); gn.gain.exponentialRampToValueAtTime(0.0001, t + E); o.connect(gn).connect(Music.gain); o.start(t); o.stop(t + E); }
+    if (st === 63) mGlide(500, 1400, t, E, 0.04);
+  } },
+  spooky:{ bpm:112, mel:melMap(SPOOKY_TUNE), chords:SPOOKY_CHORDS, ch:SPOOKY_CH, play(st, t, E, m, chord) {
+    if (m && m[0] !== 'R') { const f = hz(m[0]); mNote(f, t, m[1]*E*0.95, 'triangle', 0.07); mNote(f*1.007, t, m[1]*E*0.95, 'sine', 0.035); } // two voices slightly out of tune sound ghostly
+    if (st % 4 === 0) mNote(hz(chord[0]), t, 0.45, 'sine', 0.25);
+    if (st % 4 === 2) mNote(hz(chord[1]), t, 0.35, 'sine', 0.18);
+    if (st % 2 === 1) for (const n of chord[2]) mNote(hz(n), t, 0.16, 'triangle', 0.02);
+    if (st === 62) mGlide(900, 280, t, E*2.4, 0.05); // ooooo...
+  } },
+  xmas:{ bpm:144, mel:melMap(XMAS_TUNE), chords:XMAS_CHORDS, ch:XMAS_CH, play(st, t, E, m, chord) {
+    if (m && m[0] !== 'R') { const f = hz(m[0]); mNote(f, t, m[1]*E*0.8, 'triangle', 0.07); mNote(f*2, t, 0.18, 'sine', 0.035); } // a little bell on top of each note
+    if (st % 4 === 0) mNote(hz(chord[0]), t, 0.22, 'triangle', 0.22);
+    if (st % 4 === 2) mNote(hz(chord[1]), t, 0.22, 'triangle', 0.18);
+    if (st % 2 === 1) for (const n of chord[2]) mNote(hz(n), t, 0.09, 'square', 0.014);
+    mBell(t, st % 2 ? 0.05 : 0.025); // sleigh bells on every step
+    if (st === 63) [0, 1, 2, 3].forEach(i => mNote(hz(['G5','B5','D6','G6'][i]), t + i*E/3, 0.4, 'sine', 0.04)); // ding-ding-ding-ding
+  } },
+};
+const songNow = () => spooky() ? 'spooky' : xmas() ? 'xmas' : 'polka';
+function musicTick() {
+  const want = songNow();
+  if (Music.song !== want) { Music.song = want; Music.step = 0; }
+  const song = SONGS[want], E = 60/song.bpm/2;
+  while (Music.next < AC.currentTime + 0.2) {
+    const t = Music.next, st = Music.step;
+    song.play(st, t, E, song.mel[st], song.ch[song.chords[(st/4)|0]]);
     Music.next += E; Music.step = (st + 1) % 64;
   }
 }
