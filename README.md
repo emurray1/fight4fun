@@ -32,7 +32,9 @@ Every fighter has 200 hp. When it runs out, they get dizzy and can be thrown.
 
 Every fight you finish earns 10 coins, and 15 more if a person (not the computer) wins it. Spend coins in the **shop** on the main menu.
 
-The shop is a room you walk around in. Walk your fighter up to a stand and press punch to buy what's on it, or punch again to put it on or take it off. You can also take things off from anywhere in the shop with the ✕ buttons at the bottom. Use the arrows at the top to pick which fighter you're shopping as. To talk to the grey shopkeeper, walk up to the counter and press punch. Each time you press it, they say something new: tips, how many coins you need, and a joke.
+The shop is a room you walk around in. Walk your fighter up to a stand and press punch to buy what's on it, or punch again to put it on or take it off. You can also take things off from anywhere in the shop with the ✕ buttons at the bottom. Use the arrows at the top to pick which fighter you're shopping as. The shop has two floors. Downstairs is the fighty shop. Take the stairs on the left (walk up and press punch) to reach the pink **funny fun shop** on the 2nd floor, where things go when downstairs runs out of room. Its shopkeeper is very shy, but she'll chat if you talk to her.
+
+To talk to the grey shopkeeper, walk up to the counter and press punch. Each time you press it, they say something new: tips, how many coins you need, and a joke.
 
 - **Sunglasses (20 coins):** dark shades with a shine. Every fighter can wear them except Cool Star, who already has its own.
 - **Cool hat (25 coins):** a tilted black top hat.

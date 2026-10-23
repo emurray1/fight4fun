@@ -523,9 +523,24 @@ const canWear = (it, ch) => !(it.not && it.not.includes(ch.id));
 const wears = (id, ch) => !!(shop.owned[id] && shop.wear[id] && shop.wear[id][ch.id]);
 const looks = ch => ({ hat:wears('coolhat', ch), glasses:wears('shades', ch) && ch.id !== 'star' });
 // the shop room: you walk a fighter up to a stand to buy what's on it
-const SHOP = { who:null, x:240, y:0, vy:0, facing:1, near:null, nearKeeper:false, talk:-1, prev:{}, msg:'', msgT:0, key:'' };
-const SHOP_FLOOR = 770, STANDS = [{ item:'shades', x:400 }, { item:'coolhat', x:700 }], KEEPER_X = 1260;
-// what the shopkeeper says when you talk to them, one line each time you press punch
+const SHOP = { who:null, floor:1, x:280, y:0, vy:0, facing:1, near:null, nearKeeper:false, nearStairs:false, talk:{ 1:-1, 2:-1 }, prev:{}, msg:'', msgT:0, key:'' };
+// two floors: the fighty shop downstairs, and the pink funny fun shop upstairs for things that don't fit downstairs
+const SHOP_FLOOR = 770, KEEPERS = { 1:1260, 2:1180 }, STAIRS_X = { 1:130, 2:330 };
+const STAND_SPOTS = { 1:[400, 700], 2:[530, 830, 1420] };
+const STANDS = (() => {
+  const free = { 1:[...STAND_SPOTS[1]], 2:[...STAND_SPOTS[2]] }, out = [];
+  for (const it of ITEMS) { const f = free[1].length ? 1 : 2; if (free[f].length) out.push({ item:it.id, floor:f, x:free[f].shift() }); }
+  return out;
+})();
+// what each shopkeeper says when you talk to them, one line each time you press punch
+const KEEPER2_LINES = [ // she's shy
+  () => 'Oh! Um... h-hi. Welcome to the funny fun shop...',
+  () => STANDS.some(s => s.floor === 2) ? 'Um... you can look at my stuff... if you want.' : 'It is empty up here... sorry. New things come up when downstairs runs out of room.',
+  () => 'I tied this bow myself... do you like it? You don\'t have to say yes...',
+  () => 'Your outfit is... really nice. *blushes*',
+  () => 'Um... why did the shop get a second floor? ...It wanted to level up. Hehe...',
+  () => '...',
+];
 const KEEPER_LINES = [
   () => 'Hi! Welcome to my shop. I sell things to buy and wear.',
   () => `You have ${shop.coins} coins. ` + (shop.owned.coolhat ? 'Save them up for new stuff!' : shop.coins >= 25 ? 'That is enough for the cool hat!' : `The cool hat costs 25, so you need ${25 - shop.coins} more.`),
@@ -1743,14 +1758,16 @@ function shopStep(dt) {
   SHOP.x = Math.max(70, Math.min(W - 70, SHOP.x + h.x*430*ch.speed*dt)); if (h.x) SHOP.facing = h.x;
   SHOP.vy += 2600*dt; SHOP.y = Math.min(0, SHOP.y + SHOP.vy*dt); if (SHOP.y === 0) SHOP.vy = 0;
   if (h.jump && !pr.jump && SHOP.y === 0) { SHOP.vy = -1000*ch.jump; sfx.jump(); }
-  SHOP.near = STANDS.find(s => Math.abs(s.x - SHOP.x) < 110) || null;
-  SHOP.nearKeeper = !SHOP.near && Math.abs(KEEPER_X - SHOP.x) < 220;
-  if (h.punch && !pr.punch) { if (SHOP.near) shopAct(SHOP.near.item); else if (SHOP.nearKeeper) shopTalk(); }
+  const f = SHOP.floor;
+  SHOP.near = STANDS.find(s => s.floor === f && Math.abs(s.x - SHOP.x) < 110) || null;
+  SHOP.nearStairs = !SHOP.near && Math.abs(STAIRS_X[f] - SHOP.x) < 100;
+  SHOP.nearKeeper = !SHOP.near && !SHOP.nearStairs && Math.abs(KEEPERS[f] - SHOP.x) < 220;
+  if (h.punch && !pr.punch) { if (SHOP.near) shopAct(SHOP.near.item); else if (SHOP.nearStairs) shopStairs(); else if (SHOP.nearKeeper) shopTalk(); }
   SHOP.msgT = Math.max(0, SHOP.msgT - dt);
   renderShopCard();
 }
-function drawShop(t) {
-  const BEAM = '#4f3427';
+const BEAM = '#4f3427', PINK = '#ffaec9', PINK_DARK = '#e2799f';
+function drawFightyFloor(t) { // downstairs: the fighty shop
   g.fillStyle = C.white; g.fillRect(0, 0, W, H);
   g.fillStyle = BEAM; g.fillRect(0, 0, W, 110);
   // wooden floor
@@ -1759,7 +1776,7 @@ function drawShop(t) {
   for (const y of [SHOP_FLOOR + 4, SHOP_FLOOR + 50, SHOP_FLOOR + 96]) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
   g.lineWidth = 5; for (let i=0;i<12;i++) { const x = (i*157 + (i%2)*70) % W, y = SHOP_FLOOR + (i%2 ? 50 : 4); g.beginPath(); g.moveTo(x, y); g.lineTo(x, y + 46); g.stroke(); }
   // shopkeeper behind the counter, waving
-  const kx = KEEPER_X;
+  const kx = KEEPERS[1];
   g.fillStyle = C.ink; g.beginPath(); g.roundRect ? g.roundRect(kx - 72, 450, 144, 160, 18) : g.rect(kx - 72, 450, 144, 160); g.fill();
   g.save(); g.translate(kx + 66, 470); g.rotate(-0.5 + Math.sin(t*5)*0.35); g.beginPath(); g.roundRect ? g.roundRect(-22, -130, 44, 140, 20) : g.rect(-22, -130, 44, 140); g.fill(); g.restore();
   g.fillStyle = C.grey; g.strokeStyle = C.ink; g.lineWidth = 5; g.beginPath(); g.arc(kx, 395, 58, 0, TAU); g.fill(); g.stroke();
@@ -1792,20 +1809,78 @@ function drawShop(t) {
   g.fillStyle = C.ink; g.font = `52px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('shop', 0, 94);
   g.restore();
   // what the shopkeeper says
-  const say = SHOP.msgT > 0 ? SHOP.msg : SHOP.near ? 'Ooh, good choice!' : SHOP.nearKeeper ? 'Hello! Press punch to chat with me.' : 'Hi! Have a look around, or come over and talk to me!';
+  // stairs up to the funny fun shop, on the left
+  const sx = STAIRS_X[1];
+  g.fillStyle = '#2b1b13'; g.fillRect(sx - 100, 110, 76, 260);
+  g.fillStyle = C.brown; g.strokeStyle = BEAM; g.lineWidth = 5; g.beginPath(); g.moveTo(sx + 100, SHOP_FLOOR);
+  for (let i=1;i<=7;i++) { g.lineTo(sx + 100 - (i - 1)*28, SHOP_FLOOR - i*58); g.lineTo(sx + 100 - i*28, SHOP_FLOOR - i*58); }
+  g.lineTo(sx + 100 - 7*28, SHOP_FLOOR); g.closePath(); g.fill(); g.stroke();
+  drawFloorSign(sx + 60, 250, '2nd floor ↑', PINK);
+  const say = SHOP.msgT > 0 ? SHOP.msg : SHOP.near ? 'Ooh, good choice!' : SHOP.nearKeeper ? 'Hello! Press punch to chat with me.' : SHOP.nearStairs ? 'Those stairs go up to the funny fun shop!' : 'Hi! Have a look around, or come over and talk to me!';
+  drawBubble(say, kx - 115, 360, kx - 60);
+  if (SHOP.nearKeeper) drawPointer(kx + 150, 395, t);
+}
+function drawBubble(say, right, bottom, tipX) { // a speech bubble that ends at `right`, with its tail pointing to tipX
   g.font = `30px ${BODYFONT}`;
   const lines = [], words = say.split(' '); let line = '';
   for (const w of words) { const next = line ? line + ' ' + w : w; if (line && g.measureText(next).width > 440) { lines.push(line); line = w; } else line = next; }
   lines.push(line);
-  const bw = Math.max(...lines.map(l => g.measureText(l).width)) + 44, bh = 26 + lines.length*36, bx = kx - 115 - bw, by = 360 - bh;
+  const bw = Math.max(...lines.map(l => g.measureText(l).width)) + 44, bh = 26 + lines.length*36, bx = right - bw, by = bottom - bh;
   g.fillStyle = C.white; g.strokeStyle = C.ink; g.lineWidth = 4;
-  g.beginPath(); g.roundRect ? g.roundRect(bx, by, bw, bh, 18) : g.rect(bx, by, bw, bh); g.moveTo(bx + bw - 30, by + bh); g.lineTo(kx - 60, by + bh + 18); g.lineTo(bx + bw - 6, by + bh - 22); g.fill(); g.stroke();
+  g.beginPath(); g.roundRect ? g.roundRect(bx, by, bw, bh, 18) : g.rect(bx, by, bw, bh); g.moveTo(bx + bw - 30, by + bh); g.lineTo(tipX, by + bh + 18); g.lineTo(bx + bw - 6, by + bh - 22); g.fill(); g.stroke();
   g.fillStyle = C.ink; g.textAlign = 'center'; g.textBaseline = 'middle'; lines.forEach((l, i) => g.fillText(l, bx + bw/2, by + 31 + i*36));
-  if (SHOP.nearKeeper) { const ax = kx + 150 + Math.sin(t*6)*8, ay = 395; g.fillStyle = C.yellow; g.strokeStyle = C.ink; g.lineWidth = 4; g.beginPath(); g.moveTo(ax + 26, ay - 22); g.lineTo(ax + 26, ay + 22); g.lineTo(ax, ay); g.closePath(); g.fill(); g.stroke(); }
-  // stands with things to buy
+}
+function drawPointer(x, y, t) { // a bouncing yellow arrow pointing left at a shopkeeper
+  const ax = x + Math.sin(t*6)*8; g.fillStyle = C.yellow; g.strokeStyle = C.ink; g.lineWidth = 4;
+  g.beginPath(); g.moveTo(ax + 26, y - 22); g.lineTo(ax + 26, y + 22); g.lineTo(ax, y); g.closePath(); g.fill(); g.stroke();
+}
+function drawFloorSign(x, y, text, color) {
+  g.font = `30px ${BODYFONT}`; const w = g.measureText(text).width + 30;
+  g.fillStyle = color; g.strokeStyle = C.ink; g.lineWidth = 3; g.fillRect(x - w/2, y - 24, w, 48); g.strokeRect(x - w/2, y - 24, w, 48);
+  g.fillStyle = C.ink; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, x, y + 1);
+}
+function drawFunnyFloor(t) { // upstairs: the pink funny fun shop
+  g.fillStyle = C.white; g.fillRect(0, 0, W, H);
+  g.fillStyle = PINK;
+  g.beginPath(); g.roundRect ? g.roundRect(70, -60, 1460, 210, 80) : g.rect(70, -60, 1460, 210); g.fill();
+  g.fillRect(110, 140, 90, SHOP_FLOOR - 140);
+  g.fillRect(60, SHOP_FLOOR, 1480, H - SHOP_FLOOR);
+  g.fillStyle = C.ink; g.font = `48px ${BODYFONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('funny fun shop', 800, SHOP_FLOOR + 66);
+  // stairs going back down: a dark gap in the floor with steps and a little rail
+  const sx = STAIRS_X[2];
+  g.fillStyle = '#5c2a3d'; g.fillRect(sx - 70, SHOP_FLOOR, 140, 60);
+  g.strokeStyle = PINK_DARK; g.lineWidth = 6; for (let i=0;i<4;i++) { const y = SHOP_FLOOR + 10 + i*14; g.beginPath(); g.moveTo(sx - 64 + i*10, y); g.lineTo(sx + 64 - i*10, y); g.stroke(); }
+  g.strokeStyle = C.ink; g.lineWidth = 5; g.beginPath(); g.moveTo(sx - 70, SHOP_FLOOR); g.lineTo(sx - 70, SHOP_FLOOR - 70); g.lineTo(sx + 70, SHOP_FLOOR - 70); g.lineTo(sx + 70, SHOP_FLOOR); g.stroke();
+  drawFloorSign(sx, SHOP_FLOOR - 120, '1st floor ↓', '#f3e2c7');
+  // the funny fun shopkeeper: grey head, purple dress, black arms with a bow in the middle
+  const kx = KEEPERS[2];
+  g.fillStyle = C.purple; g.strokeStyle = C.ink; g.lineWidth = 8; g.lineJoin = 'round';
+  g.beginPath(); g.moveTo(kx - 40, 600); g.lineTo(kx + 40, 600); g.lineTo(kx + 46, SHOP_FLOOR - 4); g.lineTo(kx - 52, SHOP_FLOOR - 4); g.closePath(); g.fill(); g.stroke();
+  const wave = Math.sin(t*3)*4;
+  g.fillStyle = C.ink; g.fillRect(kx - 102, 668 + wave, 62, 30); g.fillRect(kx + 40, 668 - wave, 62, 30);
+  g.beginPath(); g.moveTo(kx - 44, 650); g.lineTo(kx, 683); g.lineTo(kx - 44, 716); g.closePath(); g.moveTo(kx + 44, 650); g.lineTo(kx, 683); g.lineTo(kx + 44, 716); g.closePath(); g.fill();
+  // she's shy: head tucked down, eyes looking at the floor, pink cheeks; she turns away more when you come close
+  const close = Math.max(0, 1 - Math.abs(SHOP.x - kx)/500), peek = Math.sin(t*0.9) > 0.85 ? 1 : 0;
+  g.save(); g.translate(kx + 10, 600); g.rotate(0.12 + close*0.18); g.translate(0, -30 + close*4);
+  g.fillStyle = C.grey; g.lineWidth = 3; g.beginPath(); g.arc(0, 0, 36, 0, TAU); g.fill(); g.stroke();
+  const look = peek ? { x:-3, y:0 } : { x:3 + close*2, y:3 };
+  g.fillStyle = C.white; for (const ex of [-12, 10]) { g.beginPath(); g.arc(ex, -8, 7, 0, TAU); g.fill(); }
+  g.fillStyle = C.ink; for (const ex of [-12, 10]) { g.beginPath(); g.arc(ex + look.x, -8 + look.y, 3.5, 0, TAU); g.fill(); }
+  g.fillStyle = `rgba(255,105,150,${0.45 + close*0.4})`; for (const ex of [-20, 20]) { g.beginPath(); g.ellipse(ex, 8, 9 + close*3, 5 + close*2, 0, 0, TAU); g.fill(); }
+  g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.moveTo(-6, 16); g.quadraticCurveTo(-1, 13, 3, 17); g.quadraticCurveTo(7, 21, 11, 17); g.stroke();
+  g.restore();
+  const empty = !STANDS.some(s => s.floor === 2);
+  const say = SHOP.msgT > 0 ? SHOP.msg : SHOP.near ? 'Ooh... good choice...' : SHOP.nearKeeper ? 'Oh! Um... you want to talk to me? Press punch...' : SHOP.nearStairs ? 'Those stairs go back down...' : empty ? 'H-hi... nothing up here yet...' : 'Um... welcome...';
+  drawBubble(say, kx - 40, 520, kx - 6);
+  if (SHOP.nearKeeper) drawPointer(kx + 70, 566, t);
+}
+function drawShop(t) {
+  if (SHOP.floor === 2) drawFunnyFloor(t); else drawFightyFloor(t);
+  // stands with things to buy on this floor
   for (const st of STANDS) {
+    if (st.floor !== SHOP.floor) continue;
     const it = ITEMS.find(i => i.id === st.item), top = SHOP_FLOOR - 170;
-    g.fillStyle = BEAM; g.fillRect(st.x - 12, top, 24, 170); g.beginPath(); g.ellipse(st.x, SHOP_FLOOR, 60, 12, 0, 0, TAU); g.fill();
+    g.fillStyle = st.floor === 2 ? PINK_DARK : BEAM; g.fillRect(st.x - 12, top, 24, 170); g.beginPath(); g.ellipse(st.x, SHOP_FLOOR, 60, 12, 0, 0, TAU); g.fill();
     g.fillRect(st.x - 80, top - 14, 160, 18);
     g.save(); g.translate(st.x, top - 14 + Math.sin(t*2)*3);
     if (it.id === 'coolhat') drawHat(g, 64, -6.4, 1); else { g.translate(0, -16); g.scale(130, 130); drawGlasses(g, [[-0.2, 0], [0.2, 0]]); }
@@ -1971,12 +2046,20 @@ $('shopPrev').onclick = () => { SHOP.who = (SHOP.who + CHARS.length - 1) % CHARS
 $('shopNext').onclick = () => { SHOP.who = (SHOP.who + 1) % CHARS.length; renderShopCard(true); };
 function openShop() {
   const mine = CHARS.findIndex(ch => (CTRL[setup.slots[ch.id]] || CTRL.off).kind === 'human');
-  Object.assign(SHOP, { x:240, y:0, vy:0, facing:1, near:null, prev:readHeld('local'), msg:'', msgT:0 });
+  Object.assign(SHOP, { floor:1, x:280, y:0, vy:0, facing:1, near:null, nearKeeper:false, nearStairs:false, prev:readHeld('local'), msg:'', msgT:0 });
   if (SHOP.who == null) SHOP.who = Math.max(0, mine);
   openPage('shop'); renderShopCard(true); cv.focus();
 }
 function shopSay(text, sound, secs = 3.5) { SHOP.msg = text; SHOP.msgT = secs; if (sound && sfx[sound]) sfx[sound](); }
-function shopTalk() { SHOP.talk = (SHOP.talk + 1) % KEEPER_LINES.length; shopSay(KEEPER_LINES[SHOP.talk](), 'count', 6); renderShopCard(true); }
+function shopTalk() {
+  const f = SHOP.floor, lines = f === 2 ? KEEPER2_LINES : KEEPER_LINES;
+  SHOP.talk[f] = (SHOP.talk[f] + 1) % lines.length; shopSay(lines[SHOP.talk[f]](), 'count', 6); renderShopCard(true);
+}
+function shopStairs() {
+  SHOP.floor = 3 - SHOP.floor; Object.assign(SHOP, { x:STAIRS_X[SHOP.floor] + 110, y:0, vy:0, facing:1, near:null, nearKeeper:false, nearStairs:false });
+  shopSay(SHOP.floor === 2 ? 'Oh! Someone came upstairs... h-hi.' : 'Welcome back to the fighty shop!', 'jump');
+  renderShopCard(true);
+}
 function shopAct(id) {
   const it = ITEMS.find(i => i.id === id), ch = CHARS[SHOP.who];
   const w = shop.wear[id] = shop.wear[id] || {};
@@ -1989,7 +2072,7 @@ function shopAct(id) {
 }
 function renderShopCard(force) {
   const ch = CHARS[SHOP.who], st = SHOP.near, it = st && ITEMS.find(i => i.id === st.item);
-  const key = [shop.coins, ch.id, it && it.id, it && shop.owned[it.id], ITEMS.map(i => wears(i.id, ch)).join(), SHOP.nearKeeper].join('|');
+  const key = [shop.coins, ch.id, it && it.id, it && shop.owned[it.id], ITEMS.map(i => wears(i.id, ch)).join(), SHOP.nearKeeper, SHOP.nearStairs, SHOP.floor].join('|');
   if (!force && key === SHOP.key) return;
   SHOP.key = key; $('coinCount').textContent = shop.coins; $('shopWho').textContent = ch.name;
   const card = $('shopCard'); fillShopCard(card, ch, it);
@@ -2011,11 +2094,25 @@ function renderShopCard(force) {
 function fillShopCard(card, ch, it) {
   const k = (pl, a) => keyName(KEYMAP[pl][a][0]);
   const press = `or press <kbd>${k('p1','punch')}</kbd> / <kbd>${k('p2','punch')}</kbd> / <kbd>X</kbd>`;
+  if (!it && SHOP.nearStairs) {
+    const up = SHOP.floor === 1;
+    card.innerHTML = `<h3>Stairs</h3><p>${up ? 'Go up to the 2nd floor: the funny fun shop. Things that don\'t fit down here go up there.' : 'Go back down to the 1st floor: the fighty shop.'}</p><div class="row"></div>`;
+    const b = document.createElement('button'); b.className = 'btn'; b.id = 'shopStairs'; b.textContent = up ? 'go upstairs' : 'go downstairs';
+    b.onclick = () => { shopStairs(); cv.focus(); };
+    card.querySelector('.row').append(b, Object.assign(document.createElement('span'), { innerHTML:press }));
+    return;
+  }
   if (!it && SHOP.nearKeeper) {
-    card.innerHTML = `<h3>The shopkeeper</h3><p>Want to chat? Each time you talk, the shopkeeper says something new.</p><div class="row"></div>`;
-    const b = document.createElement('button'); b.className = 'btn'; b.id = 'shopTalk'; b.textContent = SHOP.talk < 0 ? 'say hi' : 'keep talking';
+    card.innerHTML = SHOP.floor === 2 ? `<h3>The funny fun shopkeeper</h3><p>She's a bit shy, but she'd like to chat. Each time you talk, she says something new.</p><div class="row"></div>`
+      : `<h3>The shopkeeper</h3><p>Want to chat? Each time you talk, the shopkeeper says something new.</p><div class="row"></div>`;
+    const b = document.createElement('button'); b.className = 'btn'; b.id = 'shopTalk'; b.textContent = SHOP.talk[SHOP.floor] < 0 ? 'say hi' : 'keep talking';
     b.onclick = () => { shopTalk(); cv.focus(); };
     card.querySelector('.row').append(b, Object.assign(document.createElement('span'), { innerHTML:press }));
+    return;
+  }
+  if (!it && SHOP.floor === 2) {
+    const empty = !STANDS.some(s => s.floor === 2);
+    card.innerHTML = `<h3>Welcome to the funny fun shop!</h3><p>This is the 2nd floor. ${empty ? 'Nothing is up here yet. When the fighty shop downstairs runs out of room, new things come up here.' : 'Walk up to something to buy it.'}</p><p class="note">The stairs on the left go back down.</p>`;
     return;
   }
   if (!it) {
