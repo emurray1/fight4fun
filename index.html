@@ -89,18 +89,33 @@ kbd{font-family:var(--body);border:2px solid var(--ink);border-bottom-width:4px;
 .pause-card p{margin:0;font-size:18px}
 
 /* ---------- results ---------- */
-.res-row{display:flex;align-items:center;gap:20px;width:min(1200px,100%);flex-wrap:wrap;justify-content:center}
-.res-left{display:flex;align-items:center;gap:14px}
 .disband{width:200px;height:150px;border-radius:22px;background:var(--maroon);position:relative;font-family:var(--display);font-size:30px;color:var(--ink);display:flex;flex-direction:column;justify-content:space-between;padding:4px 0 6px;
   background-image:linear-gradient(to top right,transparent calc(50% - 3px),#fff calc(50% - 3px),#fff calc(50% + 3px),transparent calc(50% + 3px)),linear-gradient(to bottom right,transparent calc(50% - 3px),#fff calc(50% - 3px),#fff calc(50% + 3px),transparent calc(50% + 3px))}
 .disband:hover{filter:brightness(1.15)}
-.arrow{flex:1 1 360px;max-width:560px;min-height:210px;background:var(--ink);clip-path:polygon(0 22%,68% 26%,68% 0,100% 55%,68% 100%,68% 82%,0 76%);display:flex;flex-direction:column;justify-content:center;padding:0 12% 0 18px;overflow:hidden}
-.arrow span{font-family:var(--display);color:var(--yellow);font-size:30px;line-height:1.05;white-space:nowrap}
-.winbox{background:var(--grey);padding:16px 16px 10px;display:flex;flex-direction:column;align-items:center;gap:2px}
-.winbox div{font-family:var(--display);font-size:30px;line-height:1}
-.losers{display:flex;flex-direction:column;align-items:flex-start;gap:6px;align-self:flex-start;margin-left:max(0px,calc((100vw - 1200px)/2))}
-#loserRow{display:flex;flex-wrap:wrap;gap:6px}
-.loser-label{background:var(--ink);color:var(--red,#ed1c24);font-family:var(--display);font-size:34px;padding:2px 60px 2px 30px;transform:rotate(3deg)}
+/* the winner stands on a tall gold step; everyone else on lower steps with dizzy faces */
+.res-banner{display:flex;flex-direction:column;align-items:center;transform:rotate(-2deg)}
+.res-banner span{font-family:var(--display);font-size:clamp(56px,10vw,96px);line-height:.9;color:var(--yellow);-webkit-text-stroke:3px var(--ink);text-shadow:5px 5px 0 var(--ink);animation:pop .5s ease-out}
+.res-banner b{font-family:var(--display);font-weight:400;font-size:36px;background:var(--ink);color:var(--paper);padding:2px 22px;margin-top:6px}
+@keyframes pop{0%{transform:scale(.3)}70%{transform:scale(1.15)}100%{transform:scale(1)}}
+.podium{display:flex;align-items:flex-end;justify-content:center;gap:8px;flex-wrap:wrap;width:min(1100px,100%)}
+.pcol{display:flex;flex-direction:column;align-items:center;min-width:120px}
+.pcol.place-1{min-width:210px}
+.pcol .who{display:flex;flex-wrap:wrap;justify-content:center}
+.pcol.place-1 .who{filter:drop-shadow(0 0 14px #fff6a0)}
+.pcol.place-1 canvas{animation:bounce 1s ease-in-out infinite}
+@keyframes bounce{50%{transform:translateY(-12px)}}
+.pcol .nm{font-size:18px;background:var(--paper);padding:0 6px;margin:2px 0 4px;text-align:center;line-height:1.15}
+.pblock{width:100%;border:4px solid var(--ink);display:flex;flex-direction:column;align-items:center;gap:4px;padding-top:6px;font-family:var(--display);font-size:42px;line-height:1}
+.pblock small{font-family:var(--body);font-size:17px}
+.place-1 .pblock{height:170px;background:linear-gradient(#ffe766,#f0b400)}
+.place-2 .pblock{height:120px;background:linear-gradient(#f4f4f4,#b9b9b9)}
+.place-3 .pblock{height:92px;background:linear-gradient(#f3b98a,#c27a3a)}
+.place-4 .pblock{height:64px;background:#9a9a9a}
+.loser-label{background:var(--ink);color:var(--red,#ed1c24);font-family:var(--display);font-size:30px;padding:2px 40px;transform:rotate(3deg);margin-top:-6px}
+.confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden}
+.confetti i{position:absolute;top:-20px;width:10px;height:16px;animation:fall linear infinite}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
+.btn.go{background:var(--yellow)}
 .res-actions{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
 
 /* ---------- title menu, how-to, settings, quit ---------- */
@@ -199,15 +214,17 @@ html.spooky .whois{color:var(--paper)}
 html.spooky .whois .btn{color:var(--ink)}
 html.spooky .fff span{border-color:#ff9a1f;color:#ff9a1f}
 .spooky-note{margin:0;font-family:var(--display);font-size:30px;color:#d9480f}
+/* ---------- Christmas (all of December, or from settings) ---------- */
+html.xmas .title-card .band{background:#c8102e}
+html.xmas .fff span{border-color:#1b7a34;color:#c8102e}
+.xmas-note{margin:0;font-family:var(--display);font-size:30px;color:#1b7a34}
 
 @media (max-width:820px){
   .setup-body{grid-template-columns:minmax(0,1fr)}
   .fff{flex-direction:row}
   .fff span,.fff span:nth-child(2){width:80px;height:70px}
-  .arrow{min-height:150px}
-  .arrow span{font-size:22px}
 }
-@media (prefers-reduced-motion:reduce){.title-chars canvas{animation:none}.btn{transition:none}}
+@media (prefers-reduced-motion:reduce){.title-chars canvas,.pcol canvas,.res-banner span{animation:none}.confetti{display:none}.btn{transition:none}}
 </style>
 
 </head>
@@ -220,6 +237,7 @@ html.spooky .fff span{border-color:#ff9a1f;color:#ff9a1f}
     <div class="band"></div>
     <h1><mark>fight</mark> for<br><mark>fun</mark> <span class="smile">:D</span></h1>
     <p id="spookyNote" class="spooky-note" hidden>🎃 Happy Halloween! 🦇</p>
+    <p id="xmasNote" class="xmas-note" hidden>🎄 Merry Christmas! 🎁</p>
     <div class="title-chars" id="titleChars"></div>
     <button id="okBtn" class="btn grey">OK</button>
     <div class="menu"><button id="onlineBtn" class="btn">play online</button><button id="howBtn" class="btn">how to play</button><button id="keysBtn" class="btn">controls</button><button id="setBtn" class="btn">settings</button><button id="shopBtn" class="btn">shop</button></div>
@@ -343,6 +361,7 @@ html.spooky .fff span{border-color:#ff9a1f;color:#ff9a1f}
         <div class="setting"><span>Screen shake</span><div class="seg" id="shakeSeg"></div><small>The screen wobbles on big hits.</small></div>
         <div class="setting"><span>Name tags</span><div class="seg" id="tagsSeg"></div><small>Shows P1, P2 or CPU over each fighter.</small></div>
         <div class="setting"><span>Halloween</span><div class="seg" id="spookySeg"></div><small>A spooky night sky with bats and pumpkins.</small></div>
+        <div class="setting"><span>Christmas</span><div class="seg" id="xmasSeg"></div><small>Falling snow, Christmas trees and twinkly lights.</small></div>
       </div>
       <div class="page-foot"><button id="testSound" class="btn">test sound</button><button class="btn grey" data-back>done</button></div>
     </div>
@@ -432,18 +451,11 @@ html.spooky .fff span{border-color:#ff9a1f;color:#ff9a1f}
 </div>
 
 <div id="results" class="screen" hidden>
-  <div class="res-row">
-    <div class="res-left">
-      <button id="leaveBtn" class="btn black">leave</button>
-      <button id="disbandBtn" class="disband" aria-label="Disband team"><span>disband</span><span>team</span></button>
-    </div>
-    <div class="arrow" aria-hidden="true">
-      <span>winner winner winner winner</span><span>winner winner winner winner</span><span>winner winner winner winner</span><span>winner winner winner winner</span>
-    </div>
-    <div class="winbox"><div id="winCanvas"></div><div id="winName"></div></div>
-  </div>
-  <div class="losers"><div id="loserRow"></div><div class="loser-label">losers losers</div></div>
-  <div class="res-actions"><button id="rematchBtn" class="btn grey">rematch</button></div>
+  <div id="confetti" class="confetti" aria-hidden="true"></div>
+  <div class="res-banner"><span>winner!</span><b id="winName"></b></div>
+  <div id="podium" class="podium"></div>
+  <div class="loser-label">losers losers</div>
+  <div class="res-actions"><button id="rematchBtn" class="btn go">rematch</button><button id="leaveBtn" class="btn black">leave</button><button id="disbandBtn" class="btn red">disband team</button></div>
   <p id="coinNote" class="res-note"></p>
   <p id="resNote" class="res-note"></p>
 </div>
@@ -513,12 +525,15 @@ const DIFF = { easy:{ punch:0.3, cd:0.9, mash:0.06, label:'Easy' }, normal:{ pun
 const MAX_HP = 200; // health points: when they run out, you get dizzy
 const TOPS = { star5:1.15, star4:1.25, tri:1.3, diamond:1.15, square:0.85, circle:1, star6:1.15, heart:0.75, shuriken:1.2 };
 
-const setup = { slots:{ star:'cpu', tri:'p1', circle:'cpu', diamond:'off', square:'cpu', sparkle:'off' }, rounds:3, diff:'normal', mode:'ffa', map:'cloud', teams:{ star:0, tri:1, circle:0, diamond:1, square:1, sparkle:0, hex:0, heart:1, shuriken:0 }, sound:true, music:true, volume:1, shake:true, tags:true, halloween:'auto' };
+const setup = { slots:{ star:'cpu', tri:'p1', circle:'cpu', diamond:'off', square:'cpu', sparkle:'off' }, rounds:3, diff:'normal', mode:'ffa', map:'cloud', teams:{ star:0, tri:1, circle:0, diamond:1, square:1, sparkle:0, hex:0, heart:1, shuriken:0 }, sound:true, music:true, volume:1, shake:true, tags:true, halloween:'auto', christmas:'auto' };
 try { const s = JSON.parse(localStorage.getItem('fff-setup') || 'null'); if (s && s.slots) Object.assign(setup, s); } catch (e) {}
 for (const c of CHARS) { if (!setup.slots[c.id]) setup.slots[c.id] = 'off'; if (setup.teams[c.id] == null) setup.teams[c.id] = 0; }
 const saveSetup = () => { try { localStorage.setItem('fff-setup', JSON.stringify(setup)); } catch (e) {} };
-// the Halloween theme is on all of October (or always, or never, from settings)
-const spooky = () => setup.halloween === 'on' || (setup.halloween === 'auto' && new Date().getMonth() === 9);
+// holiday themes: Halloween all of October and Christmas all of December (or always, or never, from settings).
+// "Always" beats the other theme's month; if both are set to Always, Halloween wins.
+const month = () => new Date().getMonth();
+const spooky = () => setup.halloween === 'on' || (setup.halloween === 'auto' && month() === 9 && setup.christmas !== 'on');
+const xmas = () => !spooky() && (setup.christmas === 'on' || (setup.christmas === 'auto' && month() === 11));
 
 // ---------- shop: coins from fights buy things to wear ----------
 // `not` lists fighters who can't wear an item (Cool Star already has its own shades)
@@ -1566,6 +1581,42 @@ function drawSky(t, map) {
     for (let i=-20, x=-3400 + off; x < W + 3400; x += 170, i++) { g.beginPath(); g.arc(x, 110 + (i%2)*18, 95, 0, TAU); g.fill(); }
   }
   if (spooky()) drawBats(t);
+  else if (xmas() && id !== 'snow') drawSnowfall(t);
+}
+// ---------- Christmas ----------
+function drawSnowfall(t) {
+  g.fillStyle = 'rgba(255,255,255,.9)';
+  for (let i=0;i<70;i++) {
+    const sp = 30 + (i%5)*12, x = ((i*151.3 + Math.sin(t*0.7 + i)*40) % W + W) % W, y = ((i*83 + t*sp) % (H + 60)) - 30;
+    g.beginPath(); g.arc(x, y, 2 + (i%3)*1.3, 0, TAU); g.fill();
+  }
+}
+const BULBS = ['#ff3b3b', '#ffd23f', '#3bd16f', '#3b8cff', '#ff7ae0'];
+function drawLights(x1, x2, y, t) { // a string of twinkly Christmas lights hanging in little dips
+  g.strokeStyle = '#1f3d1f'; g.lineWidth = 3; g.beginPath(); g.moveTo(x1, y);
+  for (let x=x1; x<x2; x+=80) g.quadraticCurveTo(x + 40, y + 26, x + 80, y);
+  g.stroke();
+  for (let i=0, x=x1 + 40; x<x2; x+=80, i++) {
+    const on = Math.sin(t*3 + i*1.3) > -0.3;
+    g.fillStyle = BULBS[i % BULBS.length]; g.globalAlpha = on ? 1 : 0.35;
+    g.beginPath(); g.ellipse(x, y + 22, 8, 12, 0, 0, TAU); g.fill(); g.globalAlpha = 1;
+    g.fillStyle = '#555'; g.fillRect(x - 5, y + 8, 10, 6);
+  }
+}
+function drawXmasTree(x, y, s, t) { // a Christmas tree standing on (x, y), with twinkly lights and a star on top
+  g.fillStyle = '#6b3d1f'; g.fillRect(x - s*0.12, y - s*0.3, s*0.24, s*0.3);
+  g.fillStyle = '#1f7a3a';
+  for (let k=0;k<3;k++) { const w = s*(0.75 - k*0.18), by = y - s*0.25 - k*s*0.42; g.beginPath(); g.moveTo(x - w, by); g.lineTo(x + w, by); g.lineTo(x, by - s*0.6); g.closePath(); g.fill(); }
+  for (let i=0;i<7;i++) { const lx = x + Math.sin(i*2.4)*s*0.4*(1 - i/9), ly = y - s*0.35 - i*s*0.15;
+    g.fillStyle = BULBS[i % BULBS.length]; g.globalAlpha = Math.sin(t*4 + i) > -0.2 ? 1 : 0.4; g.beginPath(); g.arc(lx, ly, Math.max(2, s*0.05), 0, TAU); g.fill(); }
+  g.globalAlpha = 1; g.fillStyle = '#ffd23f'; g.beginPath();
+  for (let i=0;i<10;i++) { const a = -Math.PI/2 + i*Math.PI/5, rr = i%2 ? s*0.07 : s*0.17; g.lineTo(x + Math.cos(a)*rr, y - s*1.62 + Math.sin(a)*rr); }
+  g.closePath(); g.fill();
+}
+function drawWreath(x, y, r) {
+  g.strokeStyle = '#1f7a3a'; g.lineWidth = r*0.45; g.beginPath(); g.arc(x, y, r, 0, TAU); g.stroke();
+  g.fillStyle = '#d12a2a'; for (let i=0;i<6;i++) { const a = i*TAU/6 + 0.3; g.beginPath(); g.arc(x + Math.cos(a)*r, y + Math.sin(a)*r, r*0.12, 0, TAU); g.fill(); }
+  g.beginPath(); g.moveTo(x, y + r); g.lineTo(x - r*0.45, y + r*1.45); g.lineTo(x - r*0.1, y + r*1.1); g.lineTo(x + r*0.1, y + r*1.1); g.lineTo(x + r*0.45, y + r*1.45); g.closePath(); g.fill();
 }
 // ---------- Halloween ----------
 function drawNightSky(t) { // dark purple, twinkling stars and a big moon
@@ -1810,10 +1861,11 @@ function drawRoadHazard(h, t) {
   }
 }
 function drawMenuGround(t = 0) {
-  const night = spooky();
-  g.fillStyle = night ? '#1d1430' : C.forest; g.beginPath(); g.moveTo(-3000, H+3000); g.lineTo(-3000, 720);
+  const night = spooky(), snowy = xmas();
+  g.fillStyle = night ? '#1d1430' : snowy ? '#dfeefc' : C.forest; g.beginPath(); g.moveTo(-3000, H+3000); g.lineTo(-3000, 720);
   g.bezierCurveTo(200, 640, 420, 650, 640, 760); g.bezierCurveTo(900, 700, 1300, 620, W+3000, 700); g.lineTo(W+3000, H+3000); g.fill();
-  g.fillStyle = night ? '#33264a' : C.green; g.beginPath(); g.moveTo(-3000, H+3000); g.lineTo(-3000, 800);
+  if (snowy) for (const [tx, ty, s] of [[90, 732, 90], [1250, 676, 110], [1480, 700, 80]]) drawXmasTree(tx, ty, s, t);
+  g.fillStyle = night ? '#33264a' : snowy ? C.white : C.green; g.beginPath(); g.moveTo(-3000, H+3000); g.lineTo(-3000, 800);
   g.bezierCurveTo(300, 760, 500, 790, 700, 830); g.bezierCurveTo(1000, 780, 1300, 760, W+3000, 790); g.lineTo(W+3000, H+3000); g.fill();
   if (night) for (const [px, py, s] of [[160, 808, 34], [470, 812, 26], [1180, 790, 30], [1460, 796, 38]]) drawPumpkin(px, py, s, t);
 }
@@ -1995,6 +2047,7 @@ function drawFightyFloor(t) { // downstairs: the fighty shop
   g.lineTo(sx + 100 - 7*28, SHOP_FLOOR); g.closePath(); g.fill(); g.stroke();
   drawFloorSign(sx + 60, 318, '2nd floor ↑', PINK);
   if (spooky()) { drawWeb(W, 110, 150, -1); drawWeb(sx - 24, 110, 90, 1); drawPumpkin(1040, 570, 30, t); drawPumpkin(sx + 150, SHOP_FLOOR, 26, t); }
+  if (xmas()) { drawLights(sx - 24, W, 110, t); drawWreath(560, 230, 42); drawXmasTree(sx + 160, SHOP_FLOOR, 110, t); }
   // her quiet answer floats down the stairs a moment after the shout, then fades
   if (SHOP.echoT > 0 && SHOP.echoT < 3.6) {
     g.save(); g.globalAlpha = Math.min(1, SHOP.echoT*2, (3.6 - SHOP.echoT)*2);
@@ -2018,7 +2071,7 @@ function drawFightyFloor(t) { // downstairs: the fighty shop
   }
   const say = SHOP.msgT > 0 ? SHOP.msg : v && v.phase === 'talk' ? 'Haha! That is so funny!' : v && v.phase !== 'climb' ? (isKid() ? 'She loves little kids! She works upstairs.' : isFriend() ? 'Aww, she likes you! She works upstairs.' : 'Aww, she is so shy. She works upstairs!')
     : isKid() && SHOP.msgT <= 0 ? (SHOP.near ? 'Ooh, that might be a bit big for you! Hehe.' : SHOP.nearKeeper ? 'Hi there, little buddy! Want to chat? Press punch!' : SHOP.nearStairs ? 'Careful on the stairs, little one!' : spooky() ? 'Don\'t be scared, little one! The pumpkins are just pretend!' : 'Oh! A little one! Hello there, sweetie!')
-    : SHOP.near ? 'Ooh, good choice!' : SHOP.nearKeeper ? 'Hello! Press punch to chat with me.' : SHOP.nearStairs ? 'Those stairs go up to the funny fun shop!' : spooky() ? 'Happy Halloween! Boo! Have a look around!' : 'Hi! Have a look around, or come over and talk to me!';
+    : SHOP.near ? 'Ooh, good choice!' : SHOP.nearKeeper ? 'Hello! Press punch to chat with me.' : SHOP.nearStairs ? 'Those stairs go up to the funny fun shop!' : spooky() ? 'Happy Halloween! Boo! Have a look around!' : xmas() ? 'Ho ho ho! Merry Christmas! Have a look around!' : 'Hi! Have a look around, or come over and talk to me!';
   drawBubble(say, kx - 115, 360, kx - 60);
   if (SHOP.nearKeeper) drawPointer(kx + 150, 395, t);
 }
@@ -2055,13 +2108,14 @@ function drawFunnyFloor(t) { // upstairs: the pink funny fun shop
   g.strokeStyle = C.ink; g.lineWidth = 5; g.beginPath(); g.moveTo(sx - 70, SHOP_FLOOR); g.lineTo(sx - 70, SHOP_FLOOR - 70); g.lineTo(sx + 70, SHOP_FLOOR - 70); g.lineTo(sx + 70, SHOP_FLOOR); g.stroke();
   drawFloorSign(sx, SHOP_FLOOR - 120, '1st floor ↓', '#f3e2c7');
   if (spooky()) { drawWeb(200, 150, 130, 1); drawWeb(1500, 150, 130, -1); drawPumpkin(470, SHOP_FLOOR, 30, t); drawPumpkin(1400, SHOP_FLOOR, 24, t); }
+  if (xmas()) { drawLights(200, 1520, 150, t); drawXmasTree(1420, SHOP_FLOOR, 120, t); }
   const kx = KEEPERS[2], kid = isKid(), friend = isFriend() || kid;
   drawShyKeeper(kx, t, { friend, close:friend ? 0 : Math.max(0, 1 - Math.abs(SHOP.x - kx)/500), lookX:Math.sign(SHOP.x - kx)*3, lift:SHOP.keeperLaughT > 0 ? Math.abs(Math.sin(t*18))*8 : 0 });
   const empty = !STANDS.some(s => s.floor === 2);
   const say = SHOP.msgT > 0 ? SHOP.msg
     : kid ? (SHOP.near ? 'Ooh, so cute for a little one!' : SHOP.nearKeeper ? 'Hi little one! Want to talk? Press punch!' : SHOP.nearStairs ? 'Hold the rail going down, okay?' : spooky() ? 'Aww, it\'s okay sweetie, they\'re just decorations! You\'re so brave!' : 'Aww, hi sweetie! Come here!')
     : friend ? (SHOP.near ? 'Ooh, that would look so cute on you!' : SHOP.nearKeeper ? `${CHARS[SHOP.who].name}! Want to chat? Press punch!` : SHOP.nearStairs ? 'Aww, leaving already? Come back soon!' : `Hi ${CHARS[SHOP.who].name}! Come say hi!`)
-    : SHOP.near ? 'Ooh... good choice...' : SHOP.nearKeeper ? 'Oh! Um... you want to talk to me? Press punch...' : SHOP.nearStairs ? 'Those stairs go back down...' : empty ? 'H-hi... nothing up here yet...' : 'Um... welcome...';
+    : SHOP.near ? 'Ooh... good choice...' : SHOP.nearKeeper ? 'Oh! Um... you want to talk to me? Press punch...' : SHOP.nearStairs ? 'Those stairs go back down...' : xmas() ? 'M-merry Christmas... *blushes*' : empty ? 'H-hi... nothing up here yet...' : 'Um... welcome...';
   drawBubble(say, kx - 40, 520, kx - 6);
   if (SHOP.nearKeeper) drawPointer(kx + 70, 566, t);
 }
@@ -2149,7 +2203,10 @@ function frame(now) {
 
 // ---------- menus ----------
 const $ = id => document.getElementById(id);
-function applyTheme() { document.documentElement.classList.toggle('spooky', spooky()); $('spookyNote').hidden = !spooky(); }
+function applyTheme() {
+  document.documentElement.classList.toggle('spooky', spooky()); $('spookyNote').hidden = !spooky();
+  document.documentElement.classList.toggle('xmas', xmas()); $('xmasNote').hidden = !xmas();
+}
 applyTheme();
 const screens = ['title','setup','pause','results','howto','settings','quitAsk','online','lobby','keys','shop'];
 function showScreen(id) { for (const s of screens) $(s).hidden = s !== id; $('gameQuit').hidden = !(id === null && G.state === 'fight'); musicUpdate(); }
@@ -2227,16 +2284,29 @@ function openSetup() {
 function showResults() {
   G.state = 'results'; G.paused = false;
   const champ = G.champ, teamWin = G.mode === 'teams';
-  if (teamWin) {
-    const mates = G.fighters.filter(f => f.team === champ.team);
-    $('winCanvas').replaceChildren(...mates.map(f => charCanvas(f.ch, mates.length > 2 ? 110 : 150, { crown:true })));
-    $('winName').textContent = TEAMS[champ.team].name; $('winName').style.color = TEAMS[champ.team].dark;
-  } else {
-    $('winCanvas').replaceChildren(charCanvas(champ.ch, 200, { crown:true }));
-    $('winName').textContent = champ.ch.name; $('winName').style.color = '';
-  }
+  const winners = teamWin ? G.fighters.filter(f => f.team === champ.team) : [champ];
   const losers = teamWin ? G.fighters.filter(f => f.team !== champ.team) : G.fighters.filter(f => f !== champ).sort((a, b) => (G.wins[b.ch.id] || 0) - (G.wins[a.ch.id] || 0));
-  $('loserRow').replaceChildren(...losers.map(f => charCanvas(f.ch, 66, { ko:true })));
+  $('winName').textContent = (teamWin ? TEAMS[champ.team].name : champ.ch.name) + ' wins!';
+  $('winName').style.background = teamWin ? TEAMS[champ.team].color : '';
+  // one podium step per place: the winner (or winning team) on 1, losers on 2, 3, 4... in order of round wins
+  const step = (fs, place, name) => {
+    const c = document.createElement('div'); c.className = 'pcol place-' + Math.min(place, 4);
+    const who = document.createElement('div'); who.className = 'who';
+    const px = place === 1 ? (fs.length > 2 ? 96 : fs.length > 1 ? 120 : 170) : (fs.length > 2 ? 56 : 78);
+    who.append(...fs.map(f => charCanvas(f.ch, px, { ...(G.online ? {} : looks(f.ch)), crown:place === 1, ko:place !== 1 })));
+    const wins = G.wins[winKey(fs[0])] || 0;
+    const nm = Object.assign(document.createElement('div'), { className:'nm', textContent:name });
+    const blk = document.createElement('div'); blk.className = 'pblock'; blk.innerHTML = `${place}<small>${wins ? '★'.repeat(wins) : 'no wins'}</small>`;
+    c.append(who, nm, blk); return c;
+  };
+  const steps = teamWin ? [step(losers, 2, TEAMS[1 - champ.team].name), step(winners, 1, TEAMS[champ.team].name)]
+    : losers.map((f, i) => step([f], i + 2, f.ch.name));
+  if (!teamWin) steps.splice(Math.min(1, steps.length), 0, step(winners, 1, champ.ch.name)); // 2nd, 1st, 3rd, 4th...
+  $('podium').replaceChildren(...steps.filter(s => s.querySelector('canvas')));
+  $('confetti').replaceChildren(...Array.from({ length:40 }, (_, i) => {
+    const e = document.createElement('i'); e.style.left = Math.random()*100 + '%'; e.style.background = BULBS[i % BULBS.length];
+    e.style.animationDuration = (2.5 + Math.random()*2.5) + 's'; e.style.animationDelay = (-Math.random()*4) + 's'; return e;
+  }));
   const on = G.online;
   // coins: 10 for finishing a fight, 15 more when a person on this computer is on the winning side
   const won = (teamWin ? G.fighters.filter(f => f.team === champ.team) : [champ]).some(f => on ? (f.me || f.control === 'local') : f.tag !== 'CPU');
@@ -2264,6 +2334,7 @@ function renderSettings() {
   renderSeg('shakeSeg', ONOFF, 'shake');
   renderSeg('tagsSeg', ONOFF, 'tags');
   renderSeg('spookySeg', [['auto','In October'],['on','Always'],['off','Off']], 'halloween', applyTheme);
+  renderSeg('xmasSeg', [['auto','In December'],['on','Always'],['off','Off']], 'christmas', applyTheme);
 }
 let backTo = 'title';
 function openPage(id) { backTo = G.state; G.state = id; waitingKey = null; if (id === 'settings') renderSettings(); if (id === 'keys') { renderKeys(); $('keysMsg').textContent = ''; } fillKeyLabels(); showScreen(id); $(id).scrollTop = 0; $(id).querySelector('[data-back]').focus(); }

@@ -45,6 +45,10 @@ Coins and things you buy are saved in your browser. They show up in fights on yo
 
 All through October the game gets spooky: a purple night sky with a moon, stars and bats, jack-o'-lanterns on the hills, and cobwebs and pumpkins in the shop. Change it under **Halloween** in settings: In October, Always or Off.
 
+## Christmas
+
+All through December snow falls on every map, the menu hills turn snowy with Christmas trees, and the shop gets twinkly lights, a wreath and Christmas trees. Change it under **Christmas** in settings: In December, Always or Off. If both themes are set to Always, Halloween wins.
+
 ## Play online
 
 1. Click **play online**, type your name and click **host**.
