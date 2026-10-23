@@ -1765,7 +1765,7 @@ function shopStep(dt) {
   SHOP.nearStairs = !SHOP.near && Math.abs(STAIRS_X[f] - SHOP.x) < 100;
   SHOP.nearKeeper = !SHOP.near && !SHOP.nearStairs && Math.abs(KEEPERS[f] - SHOP.x) < 220;
   if (h.punch && !pr.punch) { if (SHOP.near) shopAct(SHOP.near.item); else if (SHOP.nearStairs) shopStairs(); else if (SHOP.nearKeeper) shopTalk(); }
-  SHOP.msgT = Math.max(0, SHOP.msgT - dt);
+  SHOP.msgT = Math.max(0, SHOP.msgT - dt); SHOP.echoT = Math.max(0, (SHOP.echoT || 0) - dt);
   renderShopCard();
 }
 const BEAM = '#4f3427', PINK = '#ffaec9', PINK_DARK = '#e2799f';
@@ -1817,7 +1817,17 @@ function drawFightyFloor(t) { // downstairs: the fighty shop
   g.fillStyle = C.brown; g.strokeStyle = BEAM; g.lineWidth = 5; g.beginPath(); g.moveTo(sx + 100, SHOP_FLOOR);
   for (let i=1;i<=7;i++) { g.lineTo(sx + 100 - (i - 1)*28, SHOP_FLOOR - i*58); g.lineTo(sx + 100 - i*28, SHOP_FLOOR - i*58); }
   g.lineTo(sx + 100 - 7*28, SHOP_FLOOR); g.closePath(); g.fill(); g.stroke();
-  drawFloorSign(sx + 60, 250, '2nd floor ↑', PINK);
+  drawFloorSign(sx + 60, 318, '2nd floor ↑', PINK);
+  // her quiet answer floats down the stairs a moment after the shout, then fades
+  if (SHOP.echoT > 0 && SHOP.echoT < 3.6) {
+    g.save(); g.globalAlpha = Math.min(1, SHOP.echoT*2, (3.6 - SHOP.echoT)*2);
+    const ey = 190 + (3.6 - SHOP.echoT)*8;
+    g.font = `italic 46px ${BODYFONT}`; const ew = g.measureText('thank you.. um').width + 50;
+    g.fillStyle = '#fff0f5'; g.strokeStyle = PINK_DARK; g.lineWidth = 5;
+    g.beginPath(); g.roundRect ? g.roundRect(sx - 30, ey - 38, ew, 76, 26) : g.rect(sx - 30, ey - 38, ew, 76); g.moveTo(sx - 16, ey - 26); g.lineTo(sx - 62, ey - 64); g.lineTo(sx + 14, ey - 38); g.fill(); g.stroke();
+    g.fillStyle = '#7a2d4c'; g.textAlign = 'left'; g.textBaseline = 'middle'; g.fillText('thank you.. um', sx - 5, ey + 2);
+    g.restore();
+  }
   const say = SHOP.msgT > 0 ? SHOP.msg : SHOP.near ? 'Ooh, good choice!' : SHOP.nearKeeper ? 'Hello! Press punch to chat with me.' : SHOP.nearStairs ? 'Those stairs go up to the funny fun shop!' : 'Hi! Have a look around, or come over and talk to me!';
   drawBubble(say, kx - 115, 360, kx - 60);
   if (SHOP.nearKeeper) drawPointer(kx + 150, 395, t);
@@ -2048,17 +2058,20 @@ $('shopPrev').onclick = () => { SHOP.who = (SHOP.who + CHARS.length - 1) % CHARS
 $('shopNext').onclick = () => { SHOP.who = (SHOP.who + 1) % CHARS.length; renderShopCard(true); };
 function openShop() {
   const mine = CHARS.findIndex(ch => (CTRL[setup.slots[ch.id]] || CTRL.off).kind === 'human');
-  Object.assign(SHOP, { floor:1, x:280, y:0, vy:0, facing:1, near:null, nearKeeper:false, nearStairs:false, prev:readHeld('local'), msg:'', msgT:0 });
+  Object.assign(SHOP, { floor:1, x:280, y:0, vy:0, facing:1, near:null, nearKeeper:false, nearStairs:false, prev:readHeld('local'), msg:'', msgT:0, echoT:0 });
   if (SHOP.who == null) SHOP.who = Math.max(0, mine);
   openPage('shop'); renderShopCard(true); cv.focus();
 }
 function shopSay(text, sound, secs = 3.5) { SHOP.msg = text; SHOP.msgT = secs; if (sound && sfx[sound]) sfx[sound](); }
 function shopTalk() {
   const f = SHOP.floor, lines = f === 2 ? KEEPER2_LINES : KEEPER_LINES;
-  SHOP.talk[f] = (SHOP.talk[f] + 1) % lines.length; shopSay(lines[SHOP.talk[f]](), 'count', 6); renderShopCard(true);
+  const text = lines[(SHOP.talk[f] = (SHOP.talk[f] + 1) % lines.length)]();
+  shopSay(text, 'count', 6); renderShopCard(true);
+  // when the shopkeeper shouts something nice upstairs, the shy shopkeeper answers quietly down the stairs
+  if (text.startsWith('*shouts upstairs*')) SHOP.echoT = 5;
 }
 function shopStairs() {
-  SHOP.floor = 3 - SHOP.floor; Object.assign(SHOP, { x:STAIRS_X[SHOP.floor] + 110, y:0, vy:0, facing:1, near:null, nearKeeper:false, nearStairs:false });
+  SHOP.floor = 3 - SHOP.floor; Object.assign(SHOP, { x:STAIRS_X[SHOP.floor] + 110, y:0, vy:0, facing:1, near:null, nearKeeper:false, nearStairs:false, echoT:0 });
   shopSay(SHOP.floor === 2 ? 'Oh! Someone came upstairs... h-hi.' : 'Welcome back to the fighty shop!', 'jump');
   renderShopCard(true);
 }
