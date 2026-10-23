@@ -192,6 +192,14 @@ input:focus-visible{outline:4px solid var(--yellow);outline-offset:2px}
 .res-note{margin:0;font-size:19px;background:var(--paper);padding:2px 10px}
 .res-note:empty{display:none}
 
+/* ---------- Halloween (all of October, or from settings) ---------- */
+html.spooky{--sky:#2b1745;--yellow:#ff9a1f}
+html.spooky .title-card .band{background:#ff7518}
+html.spooky .whois{color:var(--paper)}
+html.spooky .whois .btn{color:var(--ink)}
+html.spooky .fff span{border-color:#ff9a1f;color:#ff9a1f}
+.spooky-note{margin:0;font-family:var(--display);font-size:30px;color:#d9480f}
+
 @media (max-width:820px){
   .setup-body{grid-template-columns:minmax(0,1fr)}
   .fff{flex-direction:row}
@@ -211,6 +219,7 @@ input:focus-visible{outline:4px solid var(--yellow);outline-offset:2px}
   <div class="title-card">
     <div class="band"></div>
     <h1><mark>fight</mark> for<br><mark>fun</mark> <span class="smile">:D</span></h1>
+    <p id="spookyNote" class="spooky-note" hidden>🎃 Happy Halloween! 🦇</p>
     <div class="title-chars" id="titleChars"></div>
     <button id="okBtn" class="btn grey">OK</button>
     <div class="menu"><button id="onlineBtn" class="btn">play online</button><button id="howBtn" class="btn">how to play</button><button id="keysBtn" class="btn">controls</button><button id="setBtn" class="btn">settings</button><button id="shopBtn" class="btn">shop</button></div>
@@ -333,6 +342,7 @@ input:focus-visible{outline:4px solid var(--yellow);outline-offset:2px}
         <div class="setting"><span>Computer players</span><div class="seg" id="setDiffSeg"></div><small>How good the computer fighters are.</small></div>
         <div class="setting"><span>Screen shake</span><div class="seg" id="shakeSeg"></div><small>The screen wobbles on big hits.</small></div>
         <div class="setting"><span>Name tags</span><div class="seg" id="tagsSeg"></div><small>Shows P1, P2 or CPU over each fighter.</small></div>
+        <div class="setting"><span>Halloween</span><div class="seg" id="spookySeg"></div><small>A spooky night sky with bats and pumpkins.</small></div>
       </div>
       <div class="page-foot"><button id="testSound" class="btn">test sound</button><button class="btn grey" data-back>done</button></div>
     </div>
@@ -503,10 +513,12 @@ const DIFF = { easy:{ punch:0.3, cd:0.9, mash:0.06, label:'Easy' }, normal:{ pun
 const MAX_HP = 200; // health points: when they run out, you get dizzy
 const TOPS = { star5:1.15, star4:1.25, tri:1.3, diamond:1.15, square:0.85, circle:1, star6:1.15, heart:0.75, shuriken:1.2 };
 
-const setup = { slots:{ star:'cpu', tri:'p1', circle:'cpu', diamond:'off', square:'cpu', sparkle:'off' }, rounds:3, diff:'normal', mode:'ffa', map:'cloud', teams:{ star:0, tri:1, circle:0, diamond:1, square:1, sparkle:0, hex:0, heart:1, shuriken:0 }, sound:true, music:true, volume:1, shake:true, tags:true };
+const setup = { slots:{ star:'cpu', tri:'p1', circle:'cpu', diamond:'off', square:'cpu', sparkle:'off' }, rounds:3, diff:'normal', mode:'ffa', map:'cloud', teams:{ star:0, tri:1, circle:0, diamond:1, square:1, sparkle:0, hex:0, heart:1, shuriken:0 }, sound:true, music:true, volume:1, shake:true, tags:true, halloween:'auto' };
 try { const s = JSON.parse(localStorage.getItem('fff-setup') || 'null'); if (s && s.slots) Object.assign(setup, s); } catch (e) {}
 for (const c of CHARS) { if (!setup.slots[c.id]) setup.slots[c.id] = 'off'; if (setup.teams[c.id] == null) setup.teams[c.id] = 0; }
 const saveSetup = () => { try { localStorage.setItem('fff-setup', JSON.stringify(setup)); } catch (e) {} };
+// the Halloween theme is on all of October (or always, or never, from settings)
+const spooky = () => setup.halloween === 'on' || (setup.halloween === 'auto' && new Date().getMonth() === 9);
 
 // ---------- shop: coins from fights buy things to wear ----------
 // `not` lists fighters who can't wear an item (Cool Star already has its own shades)
@@ -1528,13 +1540,58 @@ function step() {
 // ---------- drawing ----------
 function roundRect(x, y, w, h, r) { g.beginPath(); g.roundRect ? g.roundRect(x, y, w, h, r) : g.rect(x, y, w, h); }
 function drawSky(t, map) {
-  if (map && map.id === 'snow') return drawSnowSky(t);
-  if (map && map.id === 'road') return drawRoadSky(t);
-  if (map && map.id === 'lava') return drawLavaSky(t);
-  g.fillStyle = C.blue; g.fillRect(-3000, -3000, W + 6000, H + 6000);
-  g.fillStyle = C.white; g.fillRect(-3000, -3000, W + 6000, 3110);
-  const off = (t*12) % 170;
-  for (let i=-20, x=-3400 + off; x < W + 3400; x += 170, i++) { g.beginPath(); g.arc(x, 110 + (i%2)*18, 95, 0, TAU); g.fill(); }
+  const id = map && map.id;
+  if (id === 'snow') drawSnowSky(t);
+  else if (id === 'road') drawRoadSky(t);
+  else if (id === 'lava') drawLavaSky(t);
+  else {
+    const night = spooky();
+    if (night) drawNightSky(t); else { g.fillStyle = C.blue; g.fillRect(-3000, -3000, W + 6000, H + 6000); }
+    g.fillStyle = night ? '#3a2a52' : C.white; g.fillRect(-3000, -3000, W + 6000, 3110);
+    const off = (t*12) % 170;
+    for (let i=-20, x=-3400 + off; x < W + 3400; x += 170, i++) { g.beginPath(); g.arc(x, 110 + (i%2)*18, 95, 0, TAU); g.fill(); }
+  }
+  if (spooky()) drawBats(t);
+}
+// ---------- Halloween ----------
+function drawNightSky(t) { // dark purple, twinkling stars and a big moon
+  const sky = g.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#1a0e2e'); sky.addColorStop(1, '#4a2a6a');
+  g.fillStyle = sky; g.fillRect(-3000, -3000, W + 6000, H + 6000);
+  for (let i=0;i<60;i++) { g.fillStyle = `rgba(255,255,230,${0.4 + 0.5*Math.abs(Math.sin(t*1.5 + i*1.7))})`; g.beginPath(); g.arc((i*263.7) % W, 200 + (i*97.3) % 420, 1.5 + (i%3), 0, TAU); g.fill(); }
+  g.fillStyle = '#fff6c8'; g.beginPath(); g.arc(1290, 260, 80, 0, TAU); g.fill();
+  g.fillStyle = 'rgba(120,100,60,.15)'; for (const [cx, cy, cr] of [[1265, 240, 16], [1310, 285, 11], [1320, 232, 8]]) { g.beginPath(); g.arc(cx, cy, cr, 0, TAU); g.fill(); }
+}
+function drawBats(t) {
+  g.fillStyle = '#140a1f';
+  for (let i=0;i<5;i++) {
+    const x = ((t*(90 + i*15) + i*420) % (W + 400)) - 200, y = 240 + i*55 + Math.sin(t*1.7 + i)*35, s = 16 + (i%3)*6, flap = Math.sin(t*12 + i*2);
+    g.save(); g.translate(x, y);
+    for (const sx of [-1, 1]) { g.beginPath(); g.moveTo(0, 0); g.lineTo(sx*s*1.8, -s*(0.3 + 0.6*flap)); g.lineTo(sx*s*1.35, s*0.15); g.lineTo(sx*s*0.95, -s*0.02); g.lineTo(sx*s*0.55, s*0.28); g.closePath(); g.fill(); }
+    g.beginPath(); g.ellipse(0, 0, s*0.32, s*0.42, 0, 0, TAU); g.fill();
+    g.beginPath(); g.moveTo(-s*0.25, -s*0.3); g.lineTo(-s*0.15, -s*0.62); g.lineTo(0, -s*0.32); g.lineTo(s*0.15, -s*0.62); g.lineTo(s*0.25, -s*0.3); g.fill();
+    g.fillStyle = '#ffd23f'; g.fillRect(-s*0.14, -s*0.18, s*0.08, s*0.08); g.fillRect(s*0.06, -s*0.18, s*0.08, s*0.08); g.fillStyle = '#140a1f';
+    g.restore();
+  }
+}
+function drawPumpkin(x, y, s, t) { // a jack-o'-lantern sitting on (x, y), with a flickering glow inside
+  g.save(); g.translate(x, y - s*0.75);
+  g.fillStyle = '#2f7a2f'; g.fillRect(-s*0.1, -s*1.0, s*0.2, s*0.35);
+  g.fillStyle = C.orange; g.strokeStyle = '#8a3c00'; g.lineWidth = Math.max(2, s*0.07);
+  g.beginPath(); g.ellipse(0, 0, s, s*0.78, 0, 0, TAU); g.fill(); g.stroke();
+  g.beginPath(); g.ellipse(0, 0, s*0.45, s*0.78, 0, 0, TAU); g.stroke();
+  g.fillStyle = `rgb(255,${190 + Math.floor(40*Math.abs(Math.sin(t*9 + x)))},60)`;
+  for (const sx of [-1, 1]) { g.beginPath(); g.moveTo(sx*s*0.5, -s*0.08); g.lineTo(sx*s*0.18, -s*0.08); g.lineTo(sx*s*0.34, -s*0.4); g.closePath(); g.fill(); }
+  g.beginPath(); g.moveTo(-s*0.55, s*0.15);
+  for (let i=1;i<=6;i++) g.lineTo(-s*0.55 + i*s*0.183, s*0.15 + (i%2 ? s*0.14 : 0));
+  g.lineTo(s*0.4, s*0.42); g.lineTo(-s*0.4, s*0.42); g.closePath(); g.fill();
+  g.restore();
+}
+function drawWeb(x, y, size, dir) { // a cobweb in a corner; dir 1 = top-left corner, -1 = top-right
+  g.save(); g.translate(x, y); g.scale(dir, 1); g.strokeStyle = 'rgba(120,120,120,.75)'; g.lineWidth = 2;
+  const angs = [0, 0.4, 0.8, 1.17, Math.PI/2];
+  for (const a of angs) { g.beginPath(); g.moveTo(0, 0); g.lineTo(Math.cos(a)*size, Math.sin(a)*size); g.stroke(); }
+  for (let k=1;k<=4;k++) { const d = size*k/4.4; g.beginPath(); angs.forEach((a, i) => { const px = Math.cos(a)*d, py = Math.sin(a)*d; if (i) g.quadraticCurveTo(Math.cos(a - 0.2)*d*0.8, Math.sin(a - 0.2)*d*0.8, px, py); else g.moveTo(px, py); }); g.stroke(); }
+  g.restore();
 }
 // Snowy Hills, from Mason's drawing
 const ICE = '#8091ff', ICE_HI = '#b3bcff', ROCK = '#b0b0b0', ROCK_DK = '#8c8c8c', STORM = '#d0d0d0';
@@ -1738,11 +1795,13 @@ function drawRoadHazard(h, t) {
     g.restore();
   }
 }
-function drawMenuGround() {
-  g.fillStyle = C.forest; g.beginPath(); g.moveTo(-3000, H+3000); g.lineTo(-3000, 720);
+function drawMenuGround(t = 0) {
+  const night = spooky();
+  g.fillStyle = night ? '#1d1430' : C.forest; g.beginPath(); g.moveTo(-3000, H+3000); g.lineTo(-3000, 720);
   g.bezierCurveTo(200, 640, 420, 650, 640, 760); g.bezierCurveTo(900, 700, 1300, 620, W+3000, 700); g.lineTo(W+3000, H+3000); g.fill();
-  g.fillStyle = C.green; g.beginPath(); g.moveTo(-3000, H+3000); g.lineTo(-3000, 800);
+  g.fillStyle = night ? '#33264a' : C.green; g.beginPath(); g.moveTo(-3000, H+3000); g.lineTo(-3000, 800);
   g.bezierCurveTo(300, 760, 500, 790, 700, 830); g.bezierCurveTo(1000, 780, 1300, 760, W+3000, 790); g.lineTo(W+3000, H+3000); g.fill();
+  if (night) for (const [px, py, s] of [[160, 808, 34], [470, 812, 26], [1180, 790, 30], [1460, 796, 38]]) drawPumpkin(px, py, s, t);
 }
 function drawArena(t, clouds = G.clouds, live = true) { if (MAP.id === 'snow') drawSnowArena(t, clouds, live); else if (MAP.id === 'lava') drawLavaArena(t, clouds, live); else if (MAP.id === 'road') drawRoadArena(t, clouds, live); else drawCloudArena(t, clouds); }
 function drawCloudArena(t, clouds) {
@@ -1921,6 +1980,7 @@ function drawFightyFloor(t) { // downstairs: the fighty shop
   for (let i=1;i<=7;i++) { g.lineTo(sx + 100 - (i - 1)*28, SHOP_FLOOR - i*58); g.lineTo(sx + 100 - i*28, SHOP_FLOOR - i*58); }
   g.lineTo(sx + 100 - 7*28, SHOP_FLOOR); g.closePath(); g.fill(); g.stroke();
   drawFloorSign(sx + 60, 318, '2nd floor ↑', PINK);
+  if (spooky()) { drawWeb(W, 110, 150, -1); drawWeb(sx - 24, 110, 90, 1); drawPumpkin(1040, 570, 30, t); drawPumpkin(sx + 150, SHOP_FLOOR, 26, t); }
   // her quiet answer floats down the stairs a moment after the shout, then fades
   if (SHOP.echoT > 0 && SHOP.echoT < 3.6) {
     g.save(); g.globalAlpha = Math.min(1, SHOP.echoT*2, (3.6 - SHOP.echoT)*2);
@@ -1944,7 +2004,7 @@ function drawFightyFloor(t) { // downstairs: the fighty shop
   }
   const say = SHOP.msgT > 0 ? SHOP.msg : v && v.phase === 'talk' ? 'Haha! That is so funny!' : v && v.phase !== 'climb' ? (isKid() ? 'She loves little kids! She works upstairs.' : isFriend() ? 'Aww, she likes you! She works upstairs.' : 'Aww, she is so shy. She works upstairs!')
     : isKid() && SHOP.msgT <= 0 ? (SHOP.near ? 'Ooh, that might be a bit big for you! Hehe.' : SHOP.nearKeeper ? 'Hi there, little buddy! Want to chat? Press punch!' : SHOP.nearStairs ? 'Careful on the stairs, little one!' : 'Oh! A little one! Hello there, sweetie!')
-    : SHOP.near ? 'Ooh, good choice!' : SHOP.nearKeeper ? 'Hello! Press punch to chat with me.' : SHOP.nearStairs ? 'Those stairs go up to the funny fun shop!' : 'Hi! Have a look around, or come over and talk to me!';
+    : SHOP.near ? 'Ooh, good choice!' : SHOP.nearKeeper ? 'Hello! Press punch to chat with me.' : SHOP.nearStairs ? 'Those stairs go up to the funny fun shop!' : spooky() ? 'Happy Halloween! Boo! Have a look around!' : 'Hi! Have a look around, or come over and talk to me!';
   drawBubble(say, kx - 115, 360, kx - 60);
   if (SHOP.nearKeeper) drawPointer(kx + 150, 395, t);
 }
@@ -1980,6 +2040,7 @@ function drawFunnyFloor(t) { // upstairs: the pink funny fun shop
   g.strokeStyle = PINK_DARK; g.lineWidth = 6; for (let i=0;i<4;i++) { const y = SHOP_FLOOR + 10 + i*14; g.beginPath(); g.moveTo(sx - 64 + i*10, y); g.lineTo(sx + 64 - i*10, y); g.stroke(); }
   g.strokeStyle = C.ink; g.lineWidth = 5; g.beginPath(); g.moveTo(sx - 70, SHOP_FLOOR); g.lineTo(sx - 70, SHOP_FLOOR - 70); g.lineTo(sx + 70, SHOP_FLOOR - 70); g.lineTo(sx + 70, SHOP_FLOOR); g.stroke();
   drawFloorSign(sx, SHOP_FLOOR - 120, '1st floor ↓', '#f3e2c7');
+  if (spooky()) { drawWeb(200, 150, 130, 1); drawWeb(1500, 150, 130, -1); drawPumpkin(470, SHOP_FLOOR, 30, t); drawPumpkin(1400, SHOP_FLOOR, 24, t); }
   const kx = KEEPERS[2], kid = isKid(), friend = isFriend() || kid;
   drawShyKeeper(kx, t, { friend, close:friend ? 0 : Math.max(0, 1 - Math.abs(SHOP.x - kx)/500), lookX:Math.sign(SHOP.x - kx)*3, lift:SHOP.keeperLaughT > 0 ? Math.abs(Math.sin(t*18))*8 : 0 });
   const empty = !STANDS.some(s => s.floor === 2);
@@ -2053,7 +2114,7 @@ function frame(now) {
   else if (G.state === 'shop') shopStep(dt);
   G.shake *= 0.85; if (!setup.shake) G.shake = 0;
   const sx = (Math.random() - 0.5)*G.shake*scale, sy = (Math.random() - 0.5)*G.shake*scale;
-  g.setTransform(1,0,0,1,0,0); g.fillStyle = C.blue; g.fillRect(0, 0, cv.width, cv.height);
+  g.setTransform(1,0,0,1,0,0); g.fillStyle = spooky() ? '#1a0e2e' : C.blue; g.fillRect(0, 0, cv.width, cv.height);
   g.setTransform(scale, 0, 0, scale, ox + sx, oy + sy);
   const t = now/1000;
   if (G.state === 'shop') drawShop(t);
@@ -2065,12 +2126,14 @@ function frame(now) {
     for (const p of G.fighters) if (p.alive && !p.grabbing) drawFighter(p, t);
     for (const p of G.fighters) if (p.alive && p.grabbing) drawFighter(p, t);
     drawParticles(G.paused ? 0 : dt); drawHUD(); drawOverlayText();
-  } else { drawSky(t, null); drawMenuGround(); }
+  } else { drawSky(t, null); drawMenuGround(t); }
   requestAnimationFrame(frame);
 }
 
 // ---------- menus ----------
 const $ = id => document.getElementById(id);
+function applyTheme() { document.documentElement.classList.toggle('spooky', spooky()); $('spookyNote').hidden = !spooky(); }
+applyTheme();
 const screens = ['title','setup','pause','results','howto','settings','quitAsk','online','lobby','keys','shop'];
 function showScreen(id) { for (const s of screens) $(s).hidden = s !== id; $('gameQuit').hidden = !(id === null && G.state === 'fight'); musicUpdate(); }
 function openQuit() {
@@ -2183,6 +2246,7 @@ function renderSettings() {
   renderSeg('setMapSeg', MAPLIST, 'map');
   renderSeg('shakeSeg', ONOFF, 'shake');
   renderSeg('tagsSeg', ONOFF, 'tags');
+  renderSeg('spookySeg', [['auto','In October'],['on','Always'],['off','Off']], 'halloween', applyTheme);
 }
 let backTo = 'title';
 function openPage(id) { backTo = G.state; G.state = id; waitingKey = null; if (id === 'settings') renderSettings(); if (id === 'keys') { renderKeys(); $('keysMsg').textContent = ''; } fillKeyLabels(); showScreen(id); $(id).scrollTop = 0; $(id).querySelector('[data-back]').focus(); }

@@ -41,6 +41,10 @@ To talk to the grey shopkeeper, walk up to the counter and press punch. Each tim
 
 Coins and things you buy are saved in your browser. They show up in fights on your own computer, but not in online fights yet.
 
+## Halloween
+
+All through October the game gets spooky: a purple night sky with a moon, stars and bats, jack-o'-lanterns on the hills, and cobwebs and pumpkins in the shop. Change it under **Halloween** in settings: In October, Always or Off.
+
 ## Play online
 
 1. Click **play online**, type your name and click **host**.
