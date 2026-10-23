@@ -2287,10 +2287,10 @@ function drawFloorSign(x, y, text, color) {
 function drawFunnyFloor(t) { // upstairs: the funny fun shop, built like the fighty shop downstairs but pink
   drawWoodRoom('#fff0f5', PINK_DARK, PINK);
   // the shop's name on a sign hanging from the beam
-  g.save(); g.translate(700, 110); g.rotate(Math.sin(t*1.4 + 1)*0.04);
-  g.strokeStyle = '#ff9a5c'; g.lineWidth = 6; g.beginPath(); g.moveTo(-120, 0); g.lineTo(-116, 64); g.moveTo(120, 0); g.lineTo(116, 64); g.stroke();
-  g.fillStyle = PINK; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(-190, 60, 380, 66); g.strokeRect(-190, 60, 380, 66);
-  g.fillStyle = C.ink; g.font = `50px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('funny fun shop', 0, 94, 350);
+  g.save(); g.translate(KEEPERS[2] - 10, 110); g.rotate(Math.sin(t*1.4 + 1)*0.05); // a "shop" sign hanging from the beam, like downstairs
+  g.strokeStyle = '#ff9a5c'; g.lineWidth = 6; g.beginPath(); g.moveTo(-50, 0); g.lineTo(-46, 64); g.moveTo(50, 0); g.lineTo(46, 64); g.stroke();
+  g.fillStyle = PINK; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(-82, 60, 164, 66); g.strokeRect(-82, 60, 164, 66);
+  g.fillStyle = C.ink; g.font = `52px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('shop', 0, 94);
   g.restore();
   // stairs going back down: a dark gap in the floor with steps and a little rail
   const sx = STAIRS_X[2];
@@ -2298,8 +2298,8 @@ function drawFunnyFloor(t) { // upstairs: the funny fun shop, built like the fig
   g.strokeStyle = PINK_DARK; g.lineWidth = 6; for (let i=0;i<4;i++) { const y = SHOP_FLOOR + 10 + i*14; g.beginPath(); g.moveTo(sx - 64 + i*10, y); g.lineTo(sx + 64 - i*10, y); g.stroke(); }
   g.strokeStyle = C.ink; g.lineWidth = 5; g.beginPath(); g.moveTo(sx - 70, SHOP_FLOOR); g.lineTo(sx - 70, SHOP_FLOOR - 70); g.lineTo(sx + 70, SHOP_FLOOR - 70); g.lineTo(sx + 70, SHOP_FLOOR); g.stroke();
   drawFloorSign(sx, SHOP_FLOOR - 120, '1st floor ↓', '#f3e2c7');
-  if (spooky()) { drawWeb(0, 110, 150, 1); drawWeb(W, 110, 150, -1); drawPumpkin(470, SHOP_FLOOR, 30, t); drawPumpkin(990, SHOP_FLOOR, 24, t); }
-  if (xmas()) { drawLights(0, W, 110, t); drawXmasTree(980, SHOP_FLOOR, 110, t); }
+  if (spooky()) { drawWeb(0, 110, 150, 1); drawWeb(W, 110, 150, -1); drawPumpkin(470, SHOP_FLOOR, 30, t); drawPumpkin(690, SHOP_FLOOR, 24, t); }
+  if (xmas()) { drawLights(0, W, 110, t); drawXmasTree(680, SHOP_FLOOR, 100, t); }
   // a ladder up to the 3rd floor, with a sign nobody listens to
   g.strokeStyle = '#6b4a2f'; g.lineWidth = 9;
   g.beginPath(); g.moveTo(LADDER_X - 34, SHOP_FLOOR); g.lineTo(LADDER_X - 30, 110); g.moveTo(LADDER_X + 34, SHOP_FLOOR); g.lineTo(LADDER_X + 30, 110); g.stroke();
@@ -2321,6 +2321,17 @@ function drawFunnyFloor(t) { // upstairs: the funny fun shop, built like the fig
   const scared3 = SHOP.keeperScaredT > 0; // asked about the 3rd floor: she shakes and hides her face
   drawShyKeeper(kx, t, { friend:friend && !scared3, close:scared3 ? 1 : friend ? 0 : Math.max(0, 1 - Math.abs(SHOP.x - kx)/500), lookX:Math.sign(SHOP.x - kx)*3, lift:SHOP.keeperLaughT > 0 ? Math.abs(Math.sin(t*18))*8 : 0,
     wiggle:scared3 ? Math.sin(t*60)*4 : hex ? Math.sin(t*5)*8 : 0 });
+  // a pink counter in front of her, a bit lower than downstairs so she can peek over it, with the shop's name on the front
+  const ct = 650;
+  g.fillStyle = PINK; g.fillRect(960, ct + 30, 460, SHOP_FLOOR - ct - 30);
+  g.strokeStyle = PINK_DARK; g.lineWidth = 8; g.lineCap = 'round';
+  for (let i=0;i<2;i++) { const y = ct + 52 + i*30; g.beginPath(); g.moveTo(968, y); g.bezierCurveTo(1080, y - 18 + i*8, 1260, y + 20 - i*9, 1412, y - 4); g.stroke(); }
+  g.fillStyle = PINK_DARK; g.beginPath(); g.roundRect ? g.roundRect(940, ct, 500, 40, 20) : g.rect(940, ct, 500, 40); g.fill();
+  g.save(); g.translate(1190, ct + 76); g.rotate(-0.025);
+  g.fillStyle = '#f3e2c7'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(-180, -30, 360, 60); g.strokeRect(-180, -30, 360, 60);
+  g.fillStyle = C.ink; for (const nx of [-166, 166]) { g.beginPath(); g.arc(nx, -18, 5, 0, TAU); g.fill(); }
+  g.font = `46px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('funny fun shop', 0, 2, 320);
+  g.restore();
   const empty = !STANDS.some(s => s.floor === 2);
   const say = SHOP.msgT > 0 ? SHOP.msg
     : SHOP.nearStairs && SHOP.stairTo === 3 ? 'D-don\'t go up there... please...'
