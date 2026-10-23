@@ -2024,7 +2024,7 @@ function shopStep(dt) {
       shopSay(lines[Math.floor(Math.random()*lines.length)], null, 3);
     }
   }
-  SHOP.laughT = Math.max(0, (SHOP.laughT || 0) - dt); SHOP.keeperLaughT = Math.max(0, (SHOP.keeperLaughT || 0) - dt);
+  SHOP.laughT = Math.max(0, (SHOP.laughT || 0) - dt); SHOP.enterT = Math.max(0, (SHOP.enterT || 0) - dt); SHOP.keeperLaughT = Math.max(0, (SHOP.keeperLaughT || 0) - dt);
   SHOP.msgT = Math.max(0, SHOP.msgT - dt); SHOP.echoT = Math.max(0, (SHOP.echoT || 0) - dt);
   const v = SHOP.visit; // talk, notice you, run to the stairs, climb up and away
   if (v) {
@@ -2232,6 +2232,7 @@ function drawShop(t) {
   const above = SHOP_FLOOR - bottom - 80 + SHOP.y;
   if (laughing) drawBubble('Hahaha!', SHOP.x + 70, above, SHOP.x + 20);
   else if (ch.id === 'hex' && SHOP.beepT > 0) drawBubble('beep boop baap!', SHOP.x + 110, above, SHOP.x + 20);
+  else if (ch.id === 'shuriken' && SHOP.enterT > 0) drawBubble('Have you seen Goofy Sparkle?', SHOP.x + 160, above, SHOP.x + 20);
   else if (scared && t % 6 < 2.6) drawBubble(SCARED_LINES[Math.floor(t/6) % SCARED_LINES.length], SHOP.x + 120, above - (bottom > 60 ? 20 : 0), SHOP.x + 20);
   else if (excited && t % 5 < 2.6) drawBubble(EXCITED_LINES[Math.floor(t/5) % EXCITED_LINES.length], SHOP.x + 120, above - 24, SHOP.x + 20);
 }
@@ -2406,6 +2407,7 @@ function openShop() {
   const mine = CHARS.findIndex(ch => (CTRL[setup.slots[ch.id]] || CTRL.off).kind === 'human');
   Object.assign(SHOP, { floor:1, x:280, y:0, vy:0, facing:1, near:null, nearKeeper:false, nearStairs:false, prev:readHeld('local'), msg:'', msgT:0, echoT:0 });
   SHOP.visit = { x:860, phase:'talk', t:0 }; // the shy shopkeeper is downstairs chatting when you come in, then hurries back up
+  SHOP.enterT = 3.5; // what you say as you walk in (Grumpy Shuriken is looking for Goofy Sparkle)
   if (SHOP.who == null) SHOP.who = Math.max(0, mine);
   openPage('shop'); renderShopCard(true); cv.focus();
 }
