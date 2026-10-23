@@ -768,7 +768,11 @@ function drawFace(g, ch, r, o = {}) {
       }
       g.fillStyle = 'rgba(255,60,120,.45)'; oval(-0.52, 0.26, 0.11, 0.065); oval(0.52, 0.26, 0.11, 0.065); g.fillStyle = C.ink;
       g.lineWidth = 0.07; g.beginPath(); g.moveTo(-0.15, 0.3); g.quadraticCurveTo(0, 0.46, 0.15, 0.3); g.stroke(); break;
-    case 'shuriken': // grumpy
+    case 'shuriken': // grumpy (but happy when he finds Goofy Sparkle)
+      if (o.happy) {
+        g.lineWidth = 0.08; for (const ex of [-0.15, 0.17]) { g.beginPath(); g.arc(ex, -0.02, 0.08, Math.PI*1.1, Math.PI*1.9); g.stroke(); }
+        g.beginPath(); g.moveTo(-0.22, 0.14); g.quadraticCurveTo(0.02, 0.42, 0.25, 0.14); g.closePath(); g.fill(); break;
+      }
       line(-0.3,-0.3,-0.04,-0.14); line(0.1,-0.32,0.28,-0.22);
       dot(-0.15,-0.05,0.08); g.lineWidth = 0.08; line(0.08,-0.06,0.26,-0.06);
       g.lineWidth = 0.11; line(-0.22,0.24,0.24,0.22); break;
@@ -2030,6 +2034,8 @@ function shopStep(dt) {
     }
   }
   SHOP.laughT = Math.max(0, (SHOP.laughT || 0) - dt); SHOP.enterT = Math.max(0, (SHOP.enterT || 0) - dt);
+  SHOP.foundT = (SHOP.foundT || 0) + dt;
+  if (SHOP.foundReply && SHOP.foundT >= 5.4) { SHOP.foundReply = false; if (SHOP.floor === 2) shopSay('Aww... you found your friend! *happy blush*', null, 4); }
   SHOP.enterClock = (SHOP.enterClock || 0) + dt; // the first shopkeeper answers Shuriken's question, a moment after he asks
   for (const rp of SHOP.replies || []) if (!rp.done && SHOP.enterClock >= rp.at && SHOP.floor === 1 && CHARS[SHOP.who].id === 'shuriken') {
     rp.done = true; shopSay(rp.lines[Math.floor(Math.random()*rp.lines.length)], null, 3.4);
@@ -2167,6 +2173,14 @@ function drawFunnyFloor(t) { // upstairs: the pink funny fun shop
   drawFloorSign(sx, SHOP_FLOOR - 120, '1st floor ↓', '#f3e2c7');
   if (spooky()) { drawWeb(200, 150, 130, 1); drawWeb(1500, 150, 130, -1); drawPumpkin(470, SHOP_FLOOR, 30, t); drawPumpkin(1400, SHOP_FLOOR, 24, t); }
   if (xmas()) { drawLights(200, 1520, 150, t); drawXmasTree(1420, SHOP_FLOOR, 120, t); }
+  if (SHOP.sparkleHere) { // Goofy Sparkle, found! He bounces, and hearts float up when Shuriken is close
+    const sx2 = 780, r = 50, bottom = Math.max(...shapeVerts('star4', r, true).map(v => v.y));
+    g.save(); g.translate(sx2, SHOP_FLOOR - bottom - Math.abs(Math.sin(t*6))*14); g.rotate(Math.sin(t*6)*0.08);
+    drawCharacter(g, CHAR.sparkle, r, { facing:SHOP.x < sx2 ? -1 : 1 }); g.restore();
+    if (Math.abs(SHOP.x - sx2) < 220) for (let i=0;i<3;i++) { const p = (t*0.6 + i/3) % 1; g.save(); g.globalAlpha = 1 - p; drawLittleHeart((SHOP.x + sx2)/2 + (i - 1)*40, SHOP_FLOOR - 210 - p*90, 14); g.restore(); }
+    const ft = SHOP.foundT;
+    if (ft > 2.6 && ft < 5.4) drawBubble('Shuriken! You found me! Hehe! Hide and seek is fun!', sx2 + 220, SHOP_FLOOR - 190, sx2 + 10);
+  }
   const kx = KEEPERS[2], kid = isKid(), hex = isHex(), friend = isFriend() || kid || hex;
   drawShyKeeper(kx, t, { friend, close:friend ? 0 : Math.max(0, 1 - Math.abs(SHOP.x - kx)/500), lookX:Math.sign(SHOP.x - kx)*3, lift:SHOP.keeperLaughT > 0 ? Math.abs(Math.sin(t*18))*8 : 0, wiggle:hex ? Math.sin(t*5)*8 : 0 });
   const empty = !STANDS.some(s => s.floor === 2);
@@ -2175,7 +2189,7 @@ function drawFunnyFloor(t) { // upstairs: the pink funny fun shop
     : kid ? (SHOP.near ? 'Ooh, so cute for a little one!' : SHOP.nearKeeper ? 'Hi little one! Want to talk? Press punch!' : SHOP.nearStairs ? 'Hold the rail going down, okay?' : spooky() ? 'Aww, it\'s okay sweetie, they\'re just decorations! You\'re so brave!' : xmas() ? 'Aww, you\'re so excited, sweetie! Merry Christmas!' : 'Aww, hi sweetie! Come here!')
     : friend ? (SHOP.near ? 'Ooh, that would look so cute on you!' : SHOP.nearKeeper ? `${CHARS[SHOP.who].name}! Want to chat? Press punch!` : SHOP.nearStairs ? 'Aww, leaving already? Come back soon!' : `Hi ${CHARS[SHOP.who].name}! Come say hi!`)
     : SHOP.near ? 'Ooh... good choice...' : SHOP.nearKeeper ? 'Oh! Um... you want to talk to me? Press punch...' : SHOP.nearStairs ? 'Those stairs go back down...' : xmas() ? 'M-merry Christmas... *blushes*' : empty ? 'H-hi... nothing up here yet...' : 'Um... welcome...';
-  drawBubble(say, kx - 40, 520, kx - 6);
+  if (!(SHOP.sparkleHere && SHOP.foundT < 5.4 && SHOP.msgT <= 0)) drawBubble(say, kx - 40, 520, kx - 6); // quiet while Shuriken and Goofy Sparkle say hi
   if (SHOP.nearKeeper) drawPointer(kx + 70, 566, t);
 }
 // the funny fun shopkeeper: grey head, purple dress, black arms with a bow in the middle, standing on the floor at kx.
@@ -2235,13 +2249,15 @@ function drawShop(t) {
   const laughing = SHOP.laughT > 0, hop = (moving ? Math.abs(Math.sin(t*12))*8 : 0) + (laughing ? Math.abs(Math.sin(t*16))*12 : 0);
   const scared = !laughing && spooky() && ch.id === 'sparkle'; // the Halloween decorations scare him, but he's brave and stays
   const excited = !laughing && xmas() && ch.id === 'sparkle'; // and he thinks Christmas is SO cool, so he hops with excitement
-  const yay = excited && SHOP.y === 0 && !moving ? Math.abs(Math.sin(t*7))*22 : 0;
+  const found = ch.id === 'shuriken' && SHOP.floor === 2 && SHOP.sparkleHere; // Shuriken is happy he found Goofy Sparkle
+  const yay = (excited || (found && SHOP.foundT < 4)) && SHOP.y === 0 && !moving ? Math.abs(Math.sin(t*7))*22 : 0;
   g.save(); g.translate(SHOP.x + (scared ? Math.sin(t*55)*2.5 : 0), SHOP_FLOOR - bottom + SHOP.y - hop - yay); g.rotate(moving ? Math.sin(t*12)*0.08 : laughing ? Math.sin(t*16)*0.1 : excited ? Math.sin(t*7)*0.12 : 0);
-  drawCharacter(g, ch, r, { facing:SHOP.facing, ...looks(ch), scared, excited }); g.restore();
+  drawCharacter(g, ch, r, { facing:SHOP.facing, ...looks(ch), scared, excited, happy:found }); g.restore();
   const above = SHOP_FLOOR - bottom - 80 + SHOP.y;
   if (laughing) drawBubble('Hahaha!', SHOP.x + 70, above, SHOP.x + 20);
   else if (ch.id === 'hex' && SHOP.beepT > 0) drawBubble('beep boop baap!', SHOP.x + 110, above, SHOP.x + 20);
-  else if (ch.id === 'shuriken' && SHOP.enterT > 0) drawBubble('Have you seen Goofy Sparkle?', SHOP.x + 160, above, SHOP.x + 20);
+  else if (ch.id === 'shuriken' && SHOP.enterT > 0 && SHOP.floor === 1) drawBubble('Have you seen Goofy Sparkle?', SHOP.x + 160, above, SHOP.x + 20);
+  else if (found && SHOP.foundT > 0.2 && SHOP.foundT < 2.6) drawBubble('Goofy Sparkle! I FOUND you!', SHOP.x + 160, above - 24, SHOP.x + 20);
   else if (scared && t % 6 < 2.6) drawBubble(SCARED_LINES[Math.floor(t/6) % SCARED_LINES.length], SHOP.x + 120, above - (bottom > 60 ? 20 : 0), SHOP.x + 20);
   else if (excited && t % 5 < 2.6) drawBubble(EXCITED_LINES[Math.floor(t/5) % EXCITED_LINES.length], SHOP.x + 120, above - 24, SHOP.x + 20);
 }
@@ -2453,6 +2469,13 @@ function shopLaugh() { // you laugh at the joke, and the shopkeeper is happy you
 }
 function shopStairs() {
   SHOP.floor = 3 - SHOP.floor; Object.assign(SHOP, { x:STAIRS_X[SHOP.floor] + 110, y:0, vy:0, facing:1, near:null, nearKeeper:false, nearStairs:false, echoT:0, visit:null });
+  // sometimes Grumpy Shuriken finds Goofy Sparkle hiding upstairs in the pink shop
+  const lookingForSparkle = SHOP.floor === 2 && CHARS[SHOP.who].id === 'shuriken';
+  SHOP.sparkleHere = lookingForSparkle && Math.random() < 0.5; SHOP.foundT = 0; // a 50/50 chance
+  if (lookingForSparkle) { // if he's here, the shopkeeper speaks last, once Shuriken and Goofy Sparkle have said hi
+    if (SHOP.sparkleHere) { SHOP.foundReply = true; SHOP.msgT = 0; if (sfx.win) sfx.win(); } else shopSay('Um... Goofy Sparkle isn\'t up here right now... sorry.', 'jump', 4);
+    renderShopCard(true); return;
+  }
   shopSay(SHOP.floor === 1 ? (isKid() ? 'Welcome back, little one! Careful on those stairs!' : 'Welcome back to the fighty shop!')
     : isKid() ? 'Aww, a little one came upstairs! Hi sweetie!' : isHex() ? 'H-hexstar came upstairs! *wiggles* Hi! I like you!' : isFriend() ? `${CHARS[SHOP.who].name}! Hi hi! I am so happy you came up!` : 'Oh! Someone came upstairs... h-hi.', 'jump');
   renderShopCard(true);
