@@ -1000,7 +1000,7 @@ function musicTick() {
   }
 }
 function musicUpdate() {
-  const want = !!AC && setup.sound && setup.music && MENU_STATES.has(G.state);
+  const want = !!AC && setup.sound && setup.music && MENU_STATES.has(G.state) && !(G.state === 'shop' && SHOP.floor === 3); // silent in the dark attic
   if (AC && !Music.gain) { Music.gain = AC.createGain(); Music.gain.connect(AC.destination); }
   if (Music.gain) Music.gain.gain.setTargetAtTime(want ? 0.7*setup.volume : 0, AC.currentTime, 0.05);
   if (want && !Music.timer) { Music.next = AC.currentTime + 0.08; Music.step = 0; Music.timer = setInterval(musicTick, 50); musicTick(); }
@@ -2631,7 +2631,7 @@ function shopLaugh() { // you laugh at the joke, and the shopkeeper is happy you
 }
 function shopStairs() {
   const from = SHOP.floor, to = SHOP.stairTo || (from === 1 ? 2 : 1), back = STAIRS.find(s => s.floor === to && s.to === from);
-  SHOP.floor = to; Object.assign(SHOP, { x:back.x + (back.x > W/2 ? -110 : 110), y:0, vy:0, facing:back.x > W/2 ? -1 : 1, near:null, nearKeeper:false, nearStairs:false, stairTo:0, echoT:0, visit:null, sparkleHere:false, msgT:0 });
+  SHOP.floor = to; musicUpdate(); Object.assign(SHOP, { x:back.x + (back.x > W/2 ? -110 : 110), y:0, vy:0, facing:back.x > W/2 ? -1 : 1, near:null, nearKeeper:false, nearStairs:false, stairTo:0, echoT:0, visit:null, sparkleHere:false, msgT:0 });
   if (to === 3) { SHOP.eyes = { x:1250, y:420, gone:0, fade:0 }; SHOP.atticSay = 'It\'s so dark up here...'; SHOP.atticSayT = 3; renderShopCard(true); return; }
   if (from === 3) { shopSay('Y-you went up there?! Are you okay?!', 'jump', 4); renderShopCard(true); return; }
   // sometimes Grumpy Shuriken finds Goofy Sparkle hiding upstairs in the pink shop
