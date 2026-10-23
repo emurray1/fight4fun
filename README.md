@@ -47,6 +47,8 @@ To talk to the grey shopkeeper, walk up to the counter and press punch. Each tim
 - **Super cape (30 coins):** a bright red cape that flutters behind you.
 - **Glow goggles (free!):** up on the dark 3rd floor. Take them and the eyes and goggles turn red, the eyes shout "GET OUT!!!", push you back down the stairs and take the goggles back. Nobody gets to keep them.
 
+**Easter egg:** 1 time in 10 when you open the shop, the YouTuber **SMI7Y** (a squishy bag of milk with headphones) is hanging out in front of the counter on the 1st floor. Walk up and press punch to say hi, and SMI7Y gives you their **SMI7Y headphones** (gaming headphones with a mic) for free. They aren't on a stand, so put them on or take them off with the buttons at the bottom of the shop. To always see SMI7Y, add `?smi7y` to the end of the game's address.
+
 Coins and things you buy are saved in your browser. They show up in fights on your own computer, but not in online fights yet.
 
 ## Halloween

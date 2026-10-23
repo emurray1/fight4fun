@@ -544,6 +544,8 @@ const ITEMS = [
   { id:'cape', name:'Super cape', price:30, desc:'A bright red cape that flutters behind you. Super!' },
   // free, up in the dark attic... but taking them makes the eyes push you back downstairs
   { id:'goggles', name:'Glow goggles', price:0, desc:'Spooky goggles that glow in the dark. Free! ...what could go wrong?', floor:3 },
+  // an easter egg: not on a stand. SMI7Y (a YouTuber) is visiting the shop 1 time in 10, and gives these away
+  { id:'headphones', name:'SMI7Y headphones', price:0, desc:'Gaming headphones with a mic, a gift from SMI7Y!', gift:true },
 ];
 const shop = { coins:0, owned:{}, wear:{} };
 try { const s = JSON.parse(localStorage.getItem('fff-shop') || 'null'); if (s) Object.assign(shop, s); } catch (e) {}
@@ -552,7 +554,7 @@ for (const [k, v] of Object.entries(shop.wear)) if (typeof v === 'boolean') { (s
 const saveShop = () => { try { localStorage.setItem('fff-shop', JSON.stringify(shop)); } catch (e) {} };
 const canWear = (it, ch) => !(it.not && it.not.includes(ch.id));
 const wears = (id, ch) => !!(shop.owned[id] && shop.wear[id] && shop.wear[id][ch.id]);
-const looks = ch => ({ hat:wears('coolhat', ch), glasses:wears('shades', ch) && ch.id !== 'star', cape:wears('cape', ch) });
+const looks = ch => ({ hat:wears('coolhat', ch), glasses:wears('shades', ch) && ch.id !== 'star', cape:wears('cape', ch), headphones:wears('headphones', ch) });
 // the shop room: you walk a fighter up to a stand to buy what's on it
 const SHOP = { who:null, floor:1, x:280, y:0, vy:0, facing:1, near:null, nearKeeper:false, nearStairs:false, talk:{ 1:-1, 2:-1, 4:-1 }, prev:{}, msg:'', msgT:0, key:'' };
 // two floors: the fighty shop downstairs, and the funny fun shop upstairs for things that don't fit downstairs
@@ -565,7 +567,7 @@ const STAIRS = [{ floor:1, x:STAIRS_X[1], to:2 }, { floor:2, x:STAIRS_X[2], to:1
 const STAND_SPOTS = { 1:[390, 610, 830], 2:[530, 830], 3:[800] };
 const STANDS = (() => { // items fill the 1st floor, then the 2nd; an item can also ask for a floor of its own
   const free = { 1:[...STAND_SPOTS[1]], 2:[...STAND_SPOTS[2]], 3:[...STAND_SPOTS[3]] }, out = [];
-  for (const it of ITEMS) { const f = it.floor || (free[1].length ? 1 : 2); if (free[f].length) out.push({ item:it.id, floor:f, x:free[f].shift() }); }
+  for (const it of ITEMS) { if (it.gift) continue; const f = it.floor || (free[1].length ? 1 : 2); if (free[f].length) out.push({ item:it.id, floor:f, x:free[f].shift() }); }
   return out;
 })();
 // what each shopkeeper says when you talk to them, one line each time you press punch
@@ -888,6 +890,7 @@ function drawCharacter(g, ch, r, o = {}) {
   }
   if (o.flash > 0) { g.fillStyle = `rgba(255,255,255,${Math.min(0.8, o.flash*6)})`; shapePath(g, ch.shape, r); g.fill(); }
   drawFace(g, ch, r, o);
+  if (o.headphones) drawHeadphones(g, r, -TOPS[ch.shape]*r, !!o.hat);
   if (o.hat) drawHat(g, r, -TOPS[ch.shape]*r, o.facing || 1);
   if (robot) g.restore();
 }
@@ -901,6 +904,16 @@ function drawCape(g, r, facing, t, bottom = r) { // the super cape from the shop
   g.quadraticCurveTo(-0.95*r + back, (top + b)/2, -0.55*r, top);
   g.closePath(); g.fill(); g.stroke();
   g.fillStyle = 'rgba(255,255,255,.25)'; g.beginPath(); g.ellipse(-0.5*r + back*0.5, (top + b)/2, 0.06*r, 0.3*r, 0.15, 0, TAU); g.fill(); // a little shine
+  g.restore();
+}
+function drawHeadphones(g, r, topY, hat) { // SMI7Y's gaming headphones: a band over the top, big ear cups and a little mic
+  const band = hat ? topY + r*0.25 : topY - r*0.06, ex = 0.9*r, ey = -0.1*r;
+  g.save(); g.lineCap = 'round'; g.strokeStyle = C.ink; g.lineWidth = r*0.2;
+  g.beginPath(); g.moveTo(-ex, ey); g.quadraticCurveTo(-ex, band, 0, band); g.quadraticCurveTo(ex, band, ex, ey); g.stroke();
+  g.strokeStyle = '#2ee6a6'; g.lineWidth = r*0.09; g.stroke(); // a bright green stripe along the band
+  for (const s of [-1, 1]) { g.fillStyle = C.ink; g.beginPath(); g.ellipse(s*ex, ey, r*0.2, r*0.28, 0, 0, TAU); g.fill(); g.fillStyle = '#2ee6a6'; g.beginPath(); g.ellipse(s*ex, ey, r*0.09, r*0.14, 0, 0, TAU); g.fill(); }
+  g.strokeStyle = C.ink; g.lineWidth = r*0.06; g.beginPath(); g.moveTo(ex, ey + r*0.15); g.quadraticCurveTo(ex*0.85, r*0.5, r*0.35, r*0.45); g.stroke(); // the mic arm
+  g.fillStyle = '#ff4d4d'; g.beginPath(); g.arc(r*0.33, r*0.45, r*0.08, 0, TAU); g.fill();
   g.restore();
 }
 function drawBeanie(g, r, t) { // Goofy Sparkle's striped propeller beanie, sitting on his top point
@@ -937,7 +950,7 @@ function charCanvas(ch, px, o = {}) {
   const g = c.getContext('2d'); g.scale(d, d);
   const tall = o.crown || o.hat, r = px*(tall ? 0.27 : 0.33);
   g.translate(px/2, px*(tall ? 0.62 : 0.53));
-  drawCharacter(g, ch, r, { facing:1, ko:o.ko, hat:o.hat && !o.crown, glasses:o.glasses, cape:o.cape, beanie:!o.crown });
+  drawCharacter(g, ch, r, { facing:1, ko:o.ko, hat:o.hat && !o.crown, glasses:o.glasses, cape:o.cape, headphones:o.headphones, beanie:!o.crown });
   if (o.crown) drawCrown(g, r, -TOPS[ch.shape]*r);
   return c;
 }
@@ -2208,7 +2221,10 @@ function shopStep(dt) {
   }
   chaseStep(dt);
   if (f === 3) atticStep(dt);
-  if (h.punch && !pr.punch) { if (SHOP.near) shopAct(SHOP.near.item); else if (SHOP.nearStairs) shopStairs(); else if (SHOP.nearKeeper) shopTalk(); }
+  SHOP.nearSmi = f === 1 && SHOP.smi7y && !SHOP.near && !SHOP.nearStairs && Math.abs(SMI7Y_X - SHOP.x) < 70;
+  if (SHOP.nearSmi) SHOP.nearKeeper = false;
+  SHOP.smiSayT = Math.max(0, (SHOP.smiSayT || 0) - dt);
+  if (h.punch && !pr.punch) { if (SHOP.near) shopAct(SHOP.near.item); else if (SHOP.nearStairs) shopStairs(); else if (SHOP.nearSmi) smiTalk(); else if (SHOP.nearKeeper) shopTalk(); }
   if (h.grab && !pr.grab && SHOP.nearKeeper) shopLaugh();
   if (isHex()) { // Hexstar says "beep boop baap!" now and then (or when you press special), and the shopkeepers act like he never said it
     SHOP.beepCD = (SHOP.beepCD ?? 3) - dt; SHOP.beepT = Math.max(0, (SHOP.beepT || 0) - dt);
@@ -2799,6 +2815,7 @@ function drawShop(t) {
     g.fillStyle = C.ink; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(label, st.x, top + 39);
     if (SHOP.near === st) { const ay = top - 150 + Math.sin(t*6)*8; g.fillStyle = C.yellow; g.strokeStyle = C.ink; g.lineWidth = 4; g.beginPath(); g.moveTo(st.x - 22, ay); g.lineTo(st.x + 22, ay); g.lineTo(st.x, ay + 26); g.closePath(); g.fill(); g.stroke(); }
   }
+  if (SHOP.floor === 1 && SHOP.smi7y) drawSmi7y(t);
   // you
   const ch = CHARS[SHOP.who], r = 50, moving = Math.abs(SHOP.prev.x || 0) > 0 && SHOP.y === 0;
   const bottom = ch.shape === 'circle' ? r : Math.max(...shapeVerts(ch.shape, r, true).map(v => v.y));
@@ -2994,6 +3011,9 @@ function openShop() {
   SHOP.visit = { x:860, phase:'talk', t:0 }; // the shy shopkeeper is downstairs chatting when you come in, then hurries back up
   SHOP.enterT = 3.5; // what you say as you walk in (Grumpy Shuriken is looking for Goofy Sparkle)
   if (SHOP.who == null) SHOP.who = Math.max(0, mine);
+  // easter egg: 1 time in 10, the YouTuber SMI7Y is hanging out on the 1st floor (add ?smi7y to the address to always see them)
+  SHOP.smi7y = Math.random() < 0.1 || /[?&]smi7y\b/i.test(location.search); SHOP.nearSmi = false;
+  SHOP.smiSay = SHOP.smi7y ? 'Yo! It\'s SMI7Y! Come say hi!' : ''; SHOP.smiSayT = SHOP.smi7y ? 4 : 0; SHOP.smiTalk = -1;
   SHOP.enterClock = 0; SHOP.replies = CHARS[SHOP.who].id === 'shuriken' ? SHURIKEN_REPLIES.map(r => ({ ...r })) : [];
   openPage('shop'); renderShopCard(true); cv.focus();
 }
@@ -3015,6 +3035,48 @@ function shopTalk() {
   if (text.startsWith('*shouts upstairs*')) SHOP.echoT = 5;
 }
 const jokeOpen = () => !!SHOP.joke && SHOP.msgT > 0;
+// ---------- easter egg: SMI7Y, a YouTuber, visiting the fighty shop ----------
+const SMI7Y_X = 1200; // in front of the counter
+const SMI7Y_LINES = [
+  () => 'Hey, it\'s SMI7Y! Don\'t forget to like and subscribe! Haha, just kidding... unless?',
+  () => 'I\'m just here filming a video about the coolest shop ever.',
+  () => `Have you met ${BOSS_NAME} up in the office? Yeah... don\'t go up there.`,
+  () => `${CHARS[SHOP.who].name}, you're looking awesome today!`,
+];
+function smiTalk() { // the first time, SMI7Y gives you their headphones
+  const ch = CHARS[SHOP.who], w = shop.wear.headphones = shop.wear.headphones || {};
+  if (!shop.owned.headphones) {
+    shop.owned.headphones = true; w[ch.id] = true; saveShop();
+    SHOP.smiSay = `Hey ${ch.name}! You found me! Here, have my gaming headphones. You're welcome!`; SHOP.smiSayT = 5; if (sfx.win) sfx.win();
+  } else if (!w[ch.id]) {
+    w[ch.id] = true; saveShop(); SHOP.smiSay = 'Put the headphones on! Now you look like a real gamer!'; SHOP.smiSayT = 4; if (sfx.grab) sfx.grab();
+  } else { SHOP.smiSay = SMI7Y_LINES[(SHOP.smiTalk = (SHOP.smiTalk + 1) % SMI7Y_LINES.length)](); SHOP.smiSayT = 4.5; if (sfx.count) sfx.count(); }
+  renderShopCard(true);
+}
+function drawSmi7y(t) { // SMI7Y is a bag of milk: a squishy white pouch with a sealed top, a blue label, a happy face and headphones
+  const x = SMI7Y_X, hop = Math.abs(Math.sin(t*3))*6, squish = 1 + Math.sin(t*6)*0.03, f = SHOP.x < x ? -1 : 1;
+  g.save(); g.translate(x, SHOP_FLOOR - hop); g.scale(1/squish, squish); // feet on the floor; it wobbles like a full milk bag
+  const w = 58, h = 150; // half-width, height
+  g.fillStyle = '#f7f9fc'; g.strokeStyle = C.ink; g.lineWidth = 5; g.lineJoin = 'round';
+  g.beginPath(); g.moveTo(-w*0.8, -h + 14); g.lineTo(w*0.8, -h + 14); // the top, just under the seal
+  g.quadraticCurveTo(w*1.05, -h*0.55, w, -24); g.quadraticCurveTo(w*0.95, 0, 0, 0); g.quadraticCurveTo(-w*0.95, 0, -w, -24); // bulging sides and a round squishy bottom
+  g.quadraticCurveTo(-w*1.05, -h*0.55, -w*0.8, -h + 14); g.closePath(); g.fill(); g.stroke();
+  g.fillStyle = '#e4e9f1'; g.fillRect(-w*0.85, -h, w*1.7, 16); g.strokeRect(-w*0.85, -h, w*1.7, 16); // the crimped seal along the top
+  g.strokeStyle = '#b8c2d1'; g.lineWidth = 2; for (let i=-4;i<=4;i++) { g.beginPath(); g.moveTo(i*w*0.18, -h + 2); g.lineTo(i*w*0.18, -h + 14); g.stroke(); }
+  g.fillStyle = 'rgba(255,255,255,.9)'; g.beginPath(); g.ellipse(-w*0.6, -h*0.55, 6, 26, 0.1, 0, TAU); g.fill(); // a shiny plastic glint
+  g.fillStyle = '#2f6fd6'; g.beginPath(); g.moveTo(-w*0.98, -58); g.quadraticCurveTo(0, -48, w*0.98, -58); g.lineTo(w*0.92, -22); g.quadraticCurveTo(0, -12, -w*0.92, -22); g.closePath(); g.fill(); // blue milk label
+  g.fillStyle = C.white; g.font = `20px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('SMI7Y', 0, -36);
+  g.fillStyle = '#e9f0ff'; g.font = `12px ${BODYFONT}`; g.fillText('2% fun', 0, -62); // like the % on a milk bag
+  // the face
+  g.fillStyle = C.ink; for (const s of [-1, 1]) { g.beginPath(); g.ellipse(s*17 + f*5, -h*0.62, 6, 9, 0, 0, TAU); g.fill(); }
+  g.fillStyle = C.white; for (const s of [-1, 1]) { g.beginPath(); g.arc(s*17 + f*7, -h*0.62 - 3, 2.5, 0, TAU); g.fill(); }
+  g.strokeStyle = C.ink; g.lineWidth = 4; g.lineCap = 'round'; g.beginPath(); g.arc(f*5, -h*0.5, 13, 0.15*Math.PI, 0.85*Math.PI); g.stroke(); // big smile
+  g.fillStyle = '#ffb3c7'; for (const s of [-1, 1]) { g.beginPath(); g.ellipse(s*32 + f*5, -h*0.5, 7, 4, 0, 0, TAU); g.fill(); } // rosy cheeks
+  g.translate(0, -h*0.6); drawHeadphones(g, 52, -h*0.4 - 6, false); // headphones over the top of the bag
+  g.restore();
+  if (SHOP.smiSayT > 0) drawBubble(SHOP.smiSay, x - 40, SHOP_FLOOR - 200, x - 10);
+  else if (SHOP.nearSmi) drawBubble(shop.owned.headphones ? 'Hey again! Press punch to chat!' : 'Psst! Press punch, I have something for you!', x - 40, SHOP_FLOOR - 200, x - 10);
+}
 function shopAsk3() {
   const lines = ASK3_LINES[SHOP.floor]; if (!lines) return;
   SHOP.joke = false; SHOP.keeperScaredT = 3; shopSay(lines[Math.floor(Math.random()*lines.length)], 'warn', 4); renderShopCard(true);
@@ -3069,7 +3131,7 @@ function shopAct(id) {
 }
 function renderShopCard(force) {
   const ch = CHARS[SHOP.who], st = SHOP.near, it = st && ITEMS.find(i => i.id === st.item);
-  const key = [shop.coins, ch.id, it && it.id, it && shop.owned[it.id], ITEMS.map(i => wears(i.id, ch)).join(), SHOP.nearKeeper, SHOP.nearStairs, SHOP.stairTo, SHOP.floor, jokeOpen(), !!SHOP.revealed].join('|');
+  const key = [shop.coins, ch.id, it && it.id, it && shop.owned[it.id], ITEMS.map(i => wears(i.id, ch)).join(), SHOP.nearKeeper, SHOP.nearStairs, SHOP.stairTo, SHOP.floor, jokeOpen(), !!SHOP.revealed, SHOP.nearSmi].join('|');
   if (!force && key === SHOP.key) return;
   SHOP.key = key; $('coinCount').textContent = shop.coins; $('shopWho').textContent = ch.name;
   const card = $('shopCard'); fillShopCard(card, ch, it);
@@ -3086,6 +3148,11 @@ function renderShopCard(force) {
       row.append(b);
     }
   }
+  for (const i of ITEMS.filter(i => i.gift && shop.owned[i.id] && !wears(i.id, ch))) { // gifts aren't on a stand, so you put them on from here
+    const b = document.createElement('button'); b.id = 'on-' + i.id; b.textContent = `put on ${i.name}`;
+    b.onclick = () => { (shop.wear[i.id] = shop.wear[i.id] || {})[ch.id] = true; saveShop(); shopSay(`Looking cool, ${ch.name}!`, 'grab'); renderShopCard(true); cv.focus(); };
+    row.append(' ', b);
+  }
   card.append(row);
 }
 function fillShopCard(card, ch, it) {
@@ -3100,6 +3167,14 @@ function fillShopCard(card, ch, it) {
     card.innerHTML = `<h3>${lift ? 'Elevator' : to === 3 ? 'Ladder' : 'Stairs'}</h3><p>${text}</p><div class="row"></div>`;
     const b = document.createElement('button'); b.className = 'btn'; b.id = 'shopStairs'; b.textContent = lift ? (up ? 'ride up' : 'ride down') : to === 3 ? 'climb up... if you dare' : up ? 'go upstairs' : 'go downstairs';
     b.onclick = () => { shopStairs(); cv.focus(); };
+    card.querySelector('.row').append(b, Object.assign(document.createElement('span'), { innerHTML:press }));
+    return;
+  }
+  if (!it && SHOP.nearSmi) {
+    const got = shop.owned.headphones;
+    card.innerHTML = `<h3>SMI7Y</h3><p>${got ? 'The YouTuber SMI7Y is visiting the shop! Say hi again.' : 'Whoa, the YouTuber SMI7Y is visiting the shop! They only show up sometimes. Say hi... they might have a present for you!'}</p><div class="row"></div>`;
+    const b = document.createElement('button'); b.className = 'btn'; b.id = 'smiTalk'; b.textContent = got ? 'chat' : 'say hi';
+    b.onclick = () => { smiTalk(); cv.focus(); };
     card.querySelector('.row').append(b, Object.assign(document.createElement('span'), { innerHTML:press }));
     return;
   }
