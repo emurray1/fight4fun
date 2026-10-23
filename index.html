@@ -2480,8 +2480,8 @@ function atticPush() { // the eyes don't like you taking things: they rush over,
   Object.assign(e, { x:SHOP.x + 170, y:SHOP_FLOOR - 190, gone:0, fade:1, angry:true });
   SHOP.pushT = 1.1; SHOP.atticSayT = 0; if (sfx.rumble) sfx.rumble();
 }
-// ---------- the chase: after the boss fight, %#@% chases you down the shop's dark office archives (like Honcho's chase in Doors) ----------
-// The lights go out, he unfolds out of a pile of papers as a tall paper man, and you run right, jumping the numbered file boxes
+// ---------- the chase: after the boss fight, %#@% chases you through a glitched-out world (like Honcho's chase in Doors) ----------
+// He climbs out of a glitchy hole in the floor, and you run right, jumping the glitch cubes
 // (he floats straight through them). Everything glitches. Get into the glitchy rift at the end and it zaps shut. If he catches you, he throws you out.
 const CHASE_LEN = 5600, CRATE_H = 70, CRATES = [1000, 1750, 2500, 3200, 3900, 4600];
 const onCrate = x => CRATES.some(cx => Math.abs(x - cx) < 70);
@@ -2503,7 +2503,7 @@ function chaseStep(dt) {
   SHOP.cam = Math.max(0, Math.min(CHASE_LEN - W, SHOP.x - 700));
   if (c.done) { c.doneT += dt; if (c.doneT > 1.6) chaseOut(false); return; } // the rift zapped shut: you're safe
   if (SHOP.x > CHASE_LEN - 230) { c.done = true; c.doneT = 0; if (sfx.slam) sfx.slam(); c.say = 'NOOO! Next time...!'; c.sayT = 2; return; }
-  if (c.t < 2.6) { c.rise = Math.min(1, Math.max(0, (c.t - 1.2)/1.2)); return; } // the eyes open, then he rises out of the goo
+  if (c.t < 2.6) { c.rise = Math.min(1, Math.max(0, (c.t - 1.2)/1.2)); return; } // a moment, then he climbs out of the hole
   c.x += (SHOP.x > c.x ? 1 : -1) * 0.8*430*CHARS[SHOP.who].speed*dt; // a bit slower than you, so only the boxes let him catch up...
   c.zapT = Math.max(0, (c.zapT || 0) - dt); c.nextZap = (c.nextZap == null ? 3 : c.nextZap) - dt;
   if (c.nextZap <= 0) { c.nextZap = 2.5 + Math.random()*2; c.zapT = 0.3; c.x += Math.sign(SHOP.x - c.x)*100; if (sfx.zap) sfx.zap(); } // ...but now and then he glitches forward!
@@ -2512,45 +2512,54 @@ function chaseStep(dt) {
 }
 function drawChaseFloor(t) { // the hallway, in world coordinates (the camera is applied by drawShop)
   const c = SHOP.chase || { t:9, rise:1 };
-  g.fillStyle = '#2c3538'; g.fillRect(0, 0, CHASE_LEN, H); // dim grey-green office archive walls
-  g.fillStyle = '#263033'; g.fillRect(0, SHOP_FLOOR - 120, CHASE_LEN, 120);
-  g.fillStyle = '#151b1d'; g.fillRect(0, 0, CHASE_LEN, 90); g.fillStyle = '#3a3f3a'; g.fillRect(0, SHOP_FLOOR, CHASE_LEN, H - SHOP_FLOOR); // ceiling and carpet
-  g.strokeStyle = '#30352f'; g.lineWidth = 3; for (let x = 0; x < CHASE_LEN; x += 60) { g.beginPath(); g.moveTo(x, SHOP_FLOOR); g.lineTo(x - 40, H); g.stroke(); }
-  // filing cabinets all along the wall, with papers pinned up above them
-  for (let i=0, x=160; x < CHASE_LEN - 300; x += 230, i++) {
-    g.fillStyle = '#4f5a5e'; g.strokeStyle = '#1c2224'; g.lineWidth = 4; g.fillRect(x - 60, SHOP_FLOOR - 330, 120, 330); g.strokeRect(x - 60, SHOP_FLOOR - 330, 120, 330);
-    for (let d=0; d<4; d++) { const y = SHOP_FLOOR - 320 + d*80, open = (i*3 + d) % 7 === 0 ? 14 : 0; g.fillStyle = '#5f6b70'; g.fillRect(x - 52 - open, y, 104, 70); g.strokeRect(x - 52 - open, y, 104, 70);
-      g.fillStyle = '#e8e4d6'; g.fillRect(x - 18 - open, y + 12, 36, 14); g.fillStyle = '#20282b'; g.fillRect(x - 14 - open, y + 40, 28, 7); if (open) { g.fillStyle = '#efeade'; g.fillRect(x - 46 - open, y - 6, 92, 10); } }
-    if (i % 2) { g.save(); g.translate(x + 20, SHOP_FLOOR - 420); g.rotate(Math.sin(i*7)*0.15); g.fillStyle = '#e8e4d6'; g.fillRect(-30, -38, 60, 76); g.strokeStyle = '#7f9ab0'; g.lineWidth = 2;
-      for (let l=0; l<5; l++) { g.beginPath(); g.moveTo(-22, -24 + l*12); g.lineTo(22, -24 + l*12); g.stroke(); } g.fillStyle = '#c33'; g.beginPath(); g.arc(0, -32, 5, 0, TAU); g.fill(); g.restore(); }
+  const RED = '#ed1c24', BLUE = '#00a2e8', PURPLE = '#a349a4', GLITCH = [RED, BLUE, PURPLE];
+  g.fillStyle = '#07040d'; g.fillRect(0, 0, CHASE_LEN, H); // a dark glitch void
+  // a glowing grid in the background, with rows that slip sideways now and then
+  g.strokeStyle = 'rgba(0,255,230,.12)'; g.lineWidth = 2;
+  for (let y = 40; y < SHOP_FLOOR; y += 60) { const slip = Math.sin(t*3 + y) > 0.92 ? Math.sin(t*70)*40 : 0; g.beginPath(); g.moveTo(slip, y); g.lineTo(CHASE_LEN + slip, y); g.stroke(); }
+  for (let x = 0; x < CHASE_LEN; x += 60) { g.beginPath(); g.moveTo(x, 40); g.lineTo(x, SHOP_FLOOR); g.stroke(); }
+  // big broken chunks of pixels floating in the void, flickering and jumping about
+  for (let i=0; i<70; i++) {
+    const x = 60 + (i*331) % (CHASE_LEN - 100), y = 70 + (i*137) % 560, sz = 20 + (i*47) % 90;
+    if (Math.sin(t*(1.5 + i % 4) + i*2.3) < -0.6) continue; // blinked out
+    const jx = Math.sin(t*4 + i) > 0.85 ? Math.sin(t*90 + i)*30 : 0;
+    g.fillStyle = GLITCH[i % 3]; g.globalAlpha = 0.25 + 0.25*((i*7) % 3); g.fillRect(x + jx, y + Math.sin(t*1.3 + i)*10, sz, sz*(0.3 + (i % 5)*0.2));
   }
-  // flickering ceiling lights (they go out one by one when the chase starts)
-  for (let i=0, x=300; x < CHASE_LEN; x += 520, i++) {
-    const on = c.t < 0.4 + (i % 5)*0.3 ? 1 : (Math.sin(t*(17 + i*3)) > 0.6 ? 0.9 : Math.sin(t*2 + i) > 0.2 ? 0.35 : 0.05);
-    g.fillStyle = '#2b3335'; g.fillRect(x - 90, 90, 180, 16); g.fillStyle = `rgba(220,240,255,${on})`; g.fillRect(x - 80, 106, 160, 10);
-    const glow = g.createRadialGradient(x, 110, 10, x, 110, 380); glow.addColorStop(0, `rgba(200,230,255,${on*0.14})`); glow.addColorStop(1, 'rgba(200,230,255,0)'); g.fillStyle = glow; g.fillRect(x - 380, 90, 760, 600);
+  g.globalAlpha = 1;
+  // glitchy code-ish text stuck in the void
+  g.font = `26px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  for (let i=0; i<14; i++) { if (Math.sin(t*2.2 + i*1.7) < 0) continue; g.fillStyle = GLITCH[i % 3];
+    g.fillText(['ERR0R', `${BOSS_NAME}`, '#@%&!', 'NO ESCAPE', '01001', 'RUN'][i % 6], 300 + i*390 + Math.sin(t*50 + i)*4, 160 + (i*113) % 360); }
+  // the floor: glowing tiles, some of them broken and flickering
+  g.fillStyle = '#120a1e'; g.fillRect(0, SHOP_FLOOR, CHASE_LEN, H - SHOP_FLOOR);
+  for (let i=0, x=0; x < CHASE_LEN; x += 80, i++) {
+    const flick = Math.sin(t*6 + i*1.3) > 0.7; g.fillStyle = flick ? GLITCH[i % 3] : '#1f1233';
+    g.fillRect(x + 2, SHOP_FLOOR + 2, 76, 34); g.fillStyle = '#170d27'; g.fillRect(x + 2, SHOP_FLOOR + 40, 76, H - SHOP_FLOOR - 40);
   }
-  // papers flying down the hallway
-  for (let i=0;i<26;i++) { const x = ((i*431 - t*(180 + (i % 5)*40)) % CHASE_LEN + CHASE_LEN) % CHASE_LEN, y = 180 + (i*83) % 520 + Math.sin(t*3 + i)*30;
-    g.save(); g.translate(x, y); g.rotate(t*(i % 2 ? 3 : -2) + i); g.scale(1, Math.sin(t*5 + i)); g.fillStyle = '#e8e4d6'; g.fillRect(-16, -20, 32, 40); g.restore(); }
-  // numbered file boxes to jump over
-  for (const [n, cx] of CRATES.entries()) { g.fillStyle = '#b08a5a'; g.strokeStyle = '#3e2c18'; g.lineWidth = 4; g.fillRect(cx - 50, SHOP_FLOOR - CRATE_H, 100, CRATE_H); g.strokeRect(cx - 50, SHOP_FLOOR - CRATE_H, 100, CRATE_H);
-    g.fillStyle = '#8f6c42'; g.fillRect(cx - 50, SHOP_FLOOR - CRATE_H, 100, 14); g.fillStyle = '#efeade'; g.fillRect(cx - 24, SHOP_FLOOR - CRATE_H + 24, 48, 30);
-    g.fillStyle = C.ink; g.font = `22px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(String([12, 7, 31, 4, 19, 26][n]).padStart(2, '0'), cx, SHOP_FLOOR - CRATE_H + 40); }
+  g.fillStyle = '#00ffe1'; g.fillRect(0, SHOP_FLOOR - 3, CHASE_LEN, 4); // the glowing edge of the floor
+  // glitch cubes to jump over
+  for (const [n, cx] of CRATES.entries()) {
+    const col = GLITCH[n % 3], jx = Math.sin(t*5 + n) > 0.8 ? Math.sin(t*80)*6 : 0;
+    g.fillStyle = col; g.fillRect(cx - 50 + jx, SHOP_FLOOR - CRATE_H, 100, CRATE_H);
+    g.fillStyle = 'rgba(0,0,0,.35)'; for (let k=0;k<4;k++) g.fillRect(cx - 50 + jx, SHOP_FLOOR - CRATE_H + k*18 + ((t*40) % 18), 100, 5); // scrolling stripes
+    g.strokeStyle = '#fff'; g.lineWidth = 3; g.strokeRect(cx - 50 + jx, SHOP_FLOOR - CRATE_H, 100, CRATE_H);
+    g.fillStyle = GLITCH[(n + 1) % 3]; g.fillRect(cx - 50 - jx*2, SHOP_FLOOR - CRATE_H - 10, 40, 8); // a broken bit sticking off the top
+  }
   // the glitchy rift at the end: get into it and you're out (it zaps shut behind you)
   const dx = CHASE_LEN - 170;
   if (!c.done) for (let i=0;i<14;i++) { const y = SHOP_FLOOR - 300 + i*22, w = 50 + Math.abs(Math.sin(t*20 + i*1.7))*60, j = Math.sin(t*33 + i*5)*14;
     g.fillStyle = ['#00ffe1', '#ff2bd6', '#ffffff'][i % 3]; g.fillRect(dx - w/2 + j, y, w, 18); }
   if (!c.done) { g.fillStyle = C.white; g.font = `40px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('→', dx + Math.sin(t*40)*4, SHOP_FLOOR - 340); }
-  // the big pile of papers he unfolds out of
+  // the glitchy hole in the floor he climbs out of
   const px = SHOP.chase ? SHOP.chase.startX : 120;
-  for (let i=0;i<16;i++) { g.save(); g.translate(px + ((i*37) % 200) - 100, SHOP_FLOOR - 6 - (i % 4)*8); g.rotate(Math.sin(i*3)*0.5); g.fillStyle = i % 3 ? '#e8e4d6' : '#d6d0bd'; g.fillRect(-30, -8, 60, 16); g.restore(); }
+  g.fillStyle = '#000'; g.fillRect(px - 130, SHOP_FLOOR - 4, 260, 14);
+  for (let i=0;i<14;i++) { g.fillStyle = GLITCH[i % 3]; g.fillRect(px - 130 + ((i*41 + t*200) % 260), SHOP_FLOOR - 10 - ((i*13 + t*90) % 40), 10 + (i % 3)*6, 6); } // pixels fizzing up out of it
 }
-function drawChaser(t) { // %#@% unfolding out of the paper pile, then running after you
+function drawChaser(t) { // %#@% climbing out of the glitchy hole, then running after you
   const c = SHOP.chase; if (!c || SHOP.floor !== 5 || !c.rise) return;
-  // drawn like Mason's picture of him: see drawGlitchMan. He climbs up out of the paper pile, head first
+  // drawn like Mason's picture of him: see drawGlitchMan. He climbs up out of the hole, head first
   const running = c.t >= 2.6 && !c.done, f = SHOP.x >= c.x ? 1 : -1, S = 0.62, TALL = 770*S, sink = (1 - c.rise)*TALL, bob = running ? Math.abs(Math.sin(t*12))*12 : 0;
-  g.save(); g.beginPath(); g.rect(c.x - 300, 0, 600, SHOP_FLOOR); g.clip(); // the floor hides whatever is still in the pile
+  g.save(); g.beginPath(); g.rect(c.x - 300, 0, 600, SHOP_FLOOR); g.clip(); // the floor hides whatever is still in the hole
   g.translate(c.x + (Math.sin(t*5.3) > 0.6 ? Math.sin(t*90)*30 : 0), SHOP_FLOOR + sink - bob); // he glitches and twitches
   if (Math.sin(t*4.1) > 0.8) g.globalAlpha = 0.45 + 0.55*Math.abs(Math.sin(t*70));
   g.scale(f, 1); drawGlitchMan(g, t, S, { legs:true, sw:running ? Math.sin(t*12) : 0 });
@@ -2595,8 +2604,11 @@ function drawChaseOverlay(t) { // cold flickering light, quick blackouts and dar
   g.fillStyle = `rgba(0,8,14,${flick})`; g.fillRect(0, 0, W, H);
   const v = g.createRadialGradient(W/2, H/2, 260, W/2, H/2, 900); v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,.75)');
   g.fillStyle = v; g.fillRect(0, 0, W, H);
-  // glitches: strips of the screen jump sideways, the colours split, and static flickers
-  const burst = Math.sin(t*3.1) > 0.2 || Math.sin(t*7.7) > 0.8 || (SHOP.chase && SHOP.chase.zapT > 0);
+  drawGlitches(t, SHOP.chase && SHOP.chase.zapT > 0);
+  const c = SHOP.chase; if (c && c.t < 2.6) { g.fillStyle = C.white; g.font = `64px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.globalAlpha = Math.min(1, c.t); g.fillText('RUN!', W/2, 200); g.globalAlpha = 1; }
+}
+function drawGlitches(t, zap) { // strips of the screen jump sideways, the colours split, and static flickers (the chase and the boss fight)
+  const burst = Math.sin(t*3.1) > 0.2 || Math.sin(t*7.7) > 0.8 || zap;
   if (burst) {
     for (let i=0;i<7;i++) { g.fillStyle = ['#ed1c24', '#00a2e8', '#a349a4'][i % 3]; g.globalAlpha = 0.55; // red, blue and purple blocks like the ones on him
       g.fillRect(((t*1300 + i*347) % (W + 200)) - 100, ((t*830 + i*191) % H), 60 + (i*53) % 160, 16 + (i*29) % 50); } g.globalAlpha = 1;
@@ -2606,7 +2618,14 @@ function drawChaseOverlay(t) { // cold flickering light, quick blackouts and dar
     g.globalCompositeOperation = 'lighter'; g.fillStyle = 'rgba(255,0,80,.12)'; g.fillRect(Math.sin(t*50)*10, 0, W, H); g.fillStyle = 'rgba(0,255,230,.10)'; g.fillRect(-Math.sin(t*50)*10, 0, W, H); g.globalCompositeOperation = 'source-over';
     g.fillStyle = 'rgba(255,255,255,.18)'; for (let i=0;i<120;i++) g.fillRect(Math.random()*W, Math.random()*H, 3 + Math.random()*10, 2);
   }
-  const c = SHOP.chase; if (c && c.t < 2.6) { g.fillStyle = C.white; g.font = `64px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.globalAlpha = Math.min(1, c.t); g.fillText('RUN!', W/2, 200); g.globalAlpha = 1; }
+}
+function drawBossSky(t) { // the boss fight's sky: dark and glitched, with %#@%'s red, blue and purple blocks blinking in and out
+  g.fillStyle = 'rgba(14,4,24,.72)'; g.fillRect(0, 0, W, H);
+  for (let i=0;i<22;i++) { const on = Math.sin(t*(2 + i % 5) + i*1.9) > 0.3; if (!on) continue;
+    g.fillStyle = ['#ed1c24', '#00a2e8', '#a349a4'][i % 3]; g.globalAlpha = 0.35 + 0.3*Math.abs(Math.sin(t*9 + i));
+    const x = (i*263 + (Math.sin(t*20 + i) > 0.9 ? Math.sin(t*90)*40 : 0)) % W, y = 40 + (i*151) % 420; g.fillRect(x, y, 30 + (i*37) % 110, 14 + (i*23) % 40); }
+  g.globalAlpha = 1;
+  g.strokeStyle = 'rgba(0,255,230,.08)'; g.lineWidth = 2; for (let y = ((t*60) % 24); y < H; y += 24) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); } // scan lines
 }
 function carryStep(dt) { // returns true while the shy shopkeeper lifts Goofy Sparkle off the attic ladder (you can't move)
   if (!SHOP.carry) return false;
@@ -2814,13 +2833,13 @@ function frame(now) {
   const t = now/1000;
   if (G.state === 'shop') drawShop(t);
   else if (G.state === 'fight') {
-    drawSky(t, MAP);
+    drawSky(t, MAP); if (G.boss) drawBossSky(t);
     drawArena(t);
     drawHazards(t);
     drawWaves();
     for (const p of G.fighters) if (p.alive && !p.grabbing) drawFighter(p, t);
     for (const p of G.fighters) if (p.alive && p.grabbing) drawFighter(p, t);
-    drawParticles(G.paused ? 0 : dt); drawHUD(); drawOverlayText();
+    drawParticles(G.paused ? 0 : dt); if (G.boss) drawGlitches(t); drawHUD(); drawOverlayText();
   } else { drawSky(t, null); drawMenuGround(t); }
   requestAnimationFrame(frame);
 }
@@ -3107,7 +3126,7 @@ function fillShopCard(card, ch, it) {
     return;
   }
   if (!it && SHOP.floor === 5) {
-    card.innerHTML = `<h3>RUN!</h3><p>${BOSS_NAME} is chasing you! Run right and jump into the glitchy rift at the end. Jump over the boxes (he floats right through them). If he catches you, he throws you out!</p>`;
+    card.innerHTML = `<h3>RUN!</h3><p>${BOSS_NAME} is chasing you! Run right and jump into the glitchy rift at the end. Jump over the glitch cubes (he floats right through them). If he catches you, he throws you out!</p>`;
     return;
   }
   if (!it && SHOP.floor === 4) {
