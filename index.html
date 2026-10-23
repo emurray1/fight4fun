@@ -2122,7 +2122,7 @@ function drawOverlayText() {
 function shopStep(dt) {
   const h = readHeld('local'), pr = SHOP.prev, ch = CHARS[SHOP.who]; SHOP.prev = h;
   SHOP.youSayT = Math.max(0, (SHOP.youSayT || 0) - dt);
-  if (pushStep(dt)) { SHOP.msgT = Math.max(0, SHOP.msgT - dt); renderShopCard(); return; }
+  if (pushStep(dt) || carryStep(dt)) { SHOP.msgT = Math.max(0, SHOP.msgT - dt); renderShopCard(); return; }
   SHOP.x = Math.max(70, Math.min(W - 70, SHOP.x + h.x*430*ch.speed*dt)); if (h.x) SHOP.facing = h.x;
   SHOP.vy += 2600*dt; SHOP.y = Math.min(0, SHOP.y + SHOP.vy*dt); if (SHOP.y === 0) SHOP.vy = 0;
   if (h.jump && !pr.jump && SHOP.y === 0) { SHOP.vy = -1000*ch.jump; sfx.jump(); }
@@ -2353,6 +2353,20 @@ function atticPush() { // the eyes don't like you taking things: they rush over,
   const e = SHOP.eyes || (SHOP.eyes = {});
   Object.assign(e, { x:SHOP.x + 170, y:SHOP_FLOOR - 190, gone:0, fade:1, angry:true });
   SHOP.pushT = 1.1; SHOP.atticSayT = 0; if (sfx.rumble) sfx.rumble();
+}
+function carryStep(dt) { // returns true while the shy shopkeeper lifts Goofy Sparkle off the attic ladder (you can't move)
+  if (!SHOP.carry) return false;
+  const t = SHOP.carryT += dt;
+  if (t < 1) SHOP.y = -t*220; // he starts climbing...
+  else if (t < 2.2) { // ...and she lifts him off and sets him down next to her
+    const p = (t - 1)/1.2; SHOP.x = LADDER_X + (1320 - LADDER_X)*p; SHOP.y = -220*(1 - p) - Math.sin(p*Math.PI)*60;
+    if (!SHOP.youSayT) { SHOP.youSay = 'Wheee! Put me down!'; SHOP.youSayT = 1.2; }
+  } else {
+    SHOP.carry = false; SHOP.y = 0; SHOP.x = 1320;
+    shopSay('Hehe, you can stay down here with me instead!', null, 4);
+    SHOP.youSay = 'Aww... I wanted to see the attic!'; SHOP.youSayT = 3;
+  }
+  return true;
 }
 function pushStep(dt) { // returns true while you're being pushed (you can't move)
   if (SHOP.pushT > 0) { SHOP.pushT -= dt; if (SHOP.pushT <= 0) { SHOP.pushing = true; if (sfx.throw) sfx.throw(); } return true; }
@@ -2627,7 +2641,7 @@ $('shopPrev').onclick = () => { SHOP.who = (SHOP.who + CHARS.length - 1) % CHARS
 $('shopNext').onclick = () => { SHOP.who = (SHOP.who + 1) % CHARS.length; renderShopCard(true); };
 function openShop() {
   const mine = CHARS.findIndex(ch => (CTRL[setup.slots[ch.id]] || CTRL.off).kind === 'human');
-  Object.assign(SHOP, { floor:1, x:280, y:0, vy:0, facing:1, near:null, nearKeeper:false, nearStairs:false, prev:readHeld('local'), msg:'', msgT:0, echoT:0 });
+  Object.assign(SHOP, { floor:1, x:280, y:0, vy:0, facing:1, near:null, nearKeeper:false, nearStairs:false, prev:readHeld('local'), msg:'', msgT:0, echoT:0, carry:false, pushT:0, pushing:false, youSayT:0 });
   SHOP.visit = { x:860, phase:'talk', t:0 }; // the shy shopkeeper is downstairs chatting when you come in, then hurries back up
   SHOP.enterT = 3.5; // what you say as you walk in (Grumpy Shuriken is looking for Goofy Sparkle)
   if (SHOP.who == null) SHOP.who = Math.max(0, mine);
@@ -2670,6 +2684,10 @@ function shopLaugh() { // you laugh at the joke, and the shopkeeper is happy you
 }
 function shopStairs() {
   const from = SHOP.floor, to = SHOP.stairTo || (from === 1 ? 2 : 1), back = STAIRS.find(s => s.floor === to && s.to === from);
+  if (to === 3 && isKid()) { // the shy shopkeeper thinks the attic is too scary for Goofy Sparkle, so she lifts him off the ladder
+    Object.assign(SHOP, { carry:true, carryT:0, x:LADDER_X, facing:-1 });
+    shopSay('Whoa! Not up there, sweetie! The 3rd floor is too scary for little ones.', 'jump', 4.5); renderShopCard(true); return;
+  }
   SHOP.floor = to; musicUpdate(); Object.assign(SHOP, { x:back.x + (back.x > W/2 ? -110 : 110), y:0, vy:0, facing:back.x > W/2 ? -1 : 1, near:null, nearKeeper:false, nearStairs:false, stairTo:0, echoT:0, visit:null, sparkleHere:false, msgT:0 });
   if (to === 3) { SHOP.eyes = { x:1250, y:420, gone:0, fade:0 }; SHOP.atticSay = 'It\'s so dark up here...'; SHOP.atticSayT = 3; renderShopCard(true); return; }
   if (from === 3) { shopSay('Y-you went up there?! Are you okay?!', 'jump', 4); renderShopCard(true); return; }
