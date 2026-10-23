@@ -540,6 +540,8 @@ const xmas = () => !spooky() && (setup.christmas === 'on' || (setup.christmas ==
 const ITEMS = [
   { id:'shades', name:'Sunglasses', price:20, desc:'Dark shades with a shine. So cool.', not:['star'] },
   { id:'coolhat', name:'Cool hat', price:25, desc:'A tilted black top hat. Very cool.' },
+  // free, up in the dark attic... but taking them makes the eyes push you back downstairs
+  { id:'goggles', name:'Glow goggles', price:0, desc:'Spooky goggles that glow in the dark. Free! ...what could go wrong?', floor:3 },
 ];
 const shop = { coins:0, owned:{}, wear:{} };
 try { const s = JSON.parse(localStorage.getItem('fff-shop') || 'null'); if (s) Object.assign(shop, s); } catch (e) {}
@@ -556,10 +558,10 @@ const SHOP_FLOOR = 770, KEEPERS = { 1:1260, 2:1180 }, STAIRS_X = { 1:130, 2:330 
 // a ladder from the pink shop goes up to the dark 3rd floor, which the shopkeepers don't like to talk about
 const LADDER_X = 1480, ATTIC_STAIRS_X = 220;
 const STAIRS = [{ floor:1, x:STAIRS_X[1], to:2 }, { floor:2, x:STAIRS_X[2], to:1 }, { floor:2, x:LADDER_X, to:3 }, { floor:3, x:ATTIC_STAIRS_X, to:2 }];
-const STAND_SPOTS = { 1:[400, 700], 2:[530, 830] };
-const STANDS = (() => {
-  const free = { 1:[...STAND_SPOTS[1]], 2:[...STAND_SPOTS[2]] }, out = [];
-  for (const it of ITEMS) { const f = free[1].length ? 1 : 2; if (free[f].length) out.push({ item:it.id, floor:f, x:free[f].shift() }); }
+const STAND_SPOTS = { 1:[400, 700], 2:[530, 830], 3:[800] };
+const STANDS = (() => { // items fill the 1st floor, then the 2nd; an item can also ask for a floor of its own
+  const free = { 1:[...STAND_SPOTS[1]], 2:[...STAND_SPOTS[2]], 3:[...STAND_SPOTS[3]] }, out = [];
+  for (const it of ITEMS) { const f = it.floor || (free[1].length ? 1 : 2); if (free[f].length) out.push({ item:it.id, floor:f, x:free[f].shift() }); }
   return out;
 })();
 // what each shopkeeper says when you talk to them, one line each time you press punch
@@ -791,10 +793,15 @@ function drawFace(g, ch, r, o = {}) {
 // where each fighter's eyes are (in face units), so the shop's sunglasses sit on them
 const EYES = { tri:[[-0.17,0.06],[0.17,0.06]], circle:[[-0.2,-0.2],[0.2,-0.2]], diamond:[[-0.18,-0.04],[0.18,-0.04]], square:[[-0.18,-0.04],[0.18,-0.04]], sparkle:[[-0.18,-0.1],[0.18,-0.1]],
   hex:[[-0.29,-0.15],[0.11,-0.15]], heart:[[-0.3,0.04],[0.3,0.04]], shuriken:[[-0.15,-0.05],[0.17,-0.06]] };
-function drawGlasses(g, [a, b]) { // the sunglasses from the shop, drawn in face units between two eyes
-  const d = Math.hypot(b[0] - a[0], b[1] - a[1]), lw = Math.min(0.3, d*0.8), lh = 0.2;
+function drawGlasses(g, [a, b], glow = false, lens = '#e8ff6a') { // the sunglasses from the shop (or, with glow, the round glow goggles), drawn in face units between two eyes
+  const d = Math.hypot(b[0] - a[0], b[1] - a[1]), lw = Math.min(0.3, d*0.8), lh = glow ? lw : 0.2;
   g.save(); g.translate((a[0] + b[0])/2, (a[1] + b[1])/2); g.rotate(Math.atan2(b[1] - a[1], b[0] - a[0]));
   g.fillStyle = C.ink; g.strokeStyle = C.ink; g.lineWidth = 0.05; g.lineCap = 'round';
+  if (glow) { // round green lenses with a thick dark rim
+    for (const s of [-1, 1]) { g.fillStyle = lens; g.beginPath(); g.arc(s*d/2, 0, lw/2, 0, TAU); g.fill(); g.lineWidth = 0.07; g.stroke(); g.fillStyle = 'rgba(255,255,255,.7)'; g.beginPath(); g.arc(s*d/2 - lw*0.15, -lw*0.15, lw*0.09, 0, TAU); g.fill(); }
+    g.lineWidth = 0.05; g.beginPath(); g.moveTo(-d/2 + lw/2, 0); g.lineTo(d/2 - lw/2, 0); g.moveTo(-d/2 - lw/2, 0); g.lineTo(-d/2 - lw/2 - 0.14, -0.03); g.moveTo(d/2 + lw/2, 0); g.lineTo(d/2 + lw/2 + 0.14, -0.03); g.stroke();
+    g.restore(); return;
+  }
   for (const s of [-1, 1]) { g.beginPath(); g.roundRect ? g.roundRect(s*d/2 - lw/2, -lh/2, lw, lh, 0.06) : g.rect(s*d/2 - lw/2, -lh/2, lw, lh); g.fill(); }
   g.beginPath(); g.moveTo(-d/2, -0.04); g.lineTo(d/2, -0.04);
   g.moveTo(-d/2 - lw/2, -0.05); g.lineTo(-d/2 - lw/2 - 0.12, -0.1); g.moveTo(d/2 + lw/2, -0.05); g.lineTo(d/2 + lw/2 + 0.12, -0.1); g.stroke();
@@ -2075,6 +2082,8 @@ function drawOverlayText() {
 }
 function shopStep(dt) {
   const h = readHeld('local'), pr = SHOP.prev, ch = CHARS[SHOP.who]; SHOP.prev = h;
+  SHOP.youSayT = Math.max(0, (SHOP.youSayT || 0) - dt);
+  if (pushStep(dt)) { SHOP.msgT = Math.max(0, SHOP.msgT - dt); renderShopCard(); return; }
   SHOP.x = Math.max(70, Math.min(W - 70, SHOP.x + h.x*430*ch.speed*dt)); if (h.x) SHOP.facing = h.x;
   SHOP.vy += 2600*dt; SHOP.y = Math.min(0, SHOP.y + SHOP.vy*dt); if (SHOP.y === 0) SHOP.vy = 0;
   if (h.jump && !pr.jump && SHOP.y === 0) { SHOP.vy = -1000*ch.jump; sfx.jump(); }
@@ -2301,9 +2310,26 @@ function drawShyKeeper(kx, t, { friend, close, lookX, walking = false, alpha = 1
 }
 // ---------- the 3rd floor: a dark, dusty attic where glowing eyes watch you ----------
 const EYE_SPOTS = [[1250, 420], [560, 470], [1450, 330], [950, 360], [760, 300]];
+function atticPush() { // the eyes don't like you taking things: they rush over, glare red, and shove you back down the stairs
+  const e = SHOP.eyes || (SHOP.eyes = {});
+  Object.assign(e, { x:SHOP.x + 170, y:SHOP_FLOOR - 190, gone:0, fade:1, angry:true });
+  SHOP.pushT = 1.1; SHOP.atticSayT = 0; if (sfx.rumble) sfx.rumble();
+}
+function pushStep(dt) { // returns true while you're being pushed (you can't move)
+  if (SHOP.pushT > 0) { SHOP.pushT -= dt; if (SHOP.pushT <= 0) { SHOP.pushing = true; if (sfx.throw) sfx.throw(); } return true; }
+  if (!SHOP.pushing) return false;
+  SHOP.x -= 950*dt; SHOP.facing = 1; if (SHOP.eyes) SHOP.eyes.x = SHOP.x + 170;
+  if (SHOP.x <= ATTIC_STAIRS_X + 30) {
+    SHOP.pushing = false; if (SHOP.eyes) SHOP.eyes.angry = false;
+    SHOP.stairTo = 2; shopStairs(); shopSay('Eep! Did they PUSH you?! ...and they took the goggles back?! Those eyes are SO scary!', 'bonk', 4.5);
+    SHOP.youSay = 'They took the goggles back!!'; SHOP.youSayT = 2.8;
+  }
+  return true;
+}
 function atticStep(dt) {
   const e = SHOP.eyes; if (!e) return;
   SHOP.atticSayT = Math.max(0, (SHOP.atticSayT || 0) - dt);
+  if (e.angry) return;
   if (e.gone > 0) { // hiding; then they open again somewhere far from you
     e.gone -= dt; e.fade = Math.max(0, e.fade - dt*4);
     if (e.gone <= 0) { const far = EYE_SPOTS.filter(s => Math.abs(s[0] - SHOP.x) > 400), s = far[Math.floor(Math.random()*far.length)] || EYE_SPOTS[0]; e.x = s[0]; e.y = s[1]; }
@@ -2342,13 +2368,17 @@ function drawAtticDark(t) { // darkness everywhere except near the bulb, then th
   g.fillStyle = dark; g.fillRect(0, 0, W, H);
   const e = SHOP.eyes;
   if (e && e.fade > 0) {
-    const blink = t % 3.4 < 0.14 ? 0.12 : 1;
-    g.save(); g.globalAlpha = e.fade; g.shadowColor = '#e8ff6a'; g.shadowBlur = 24;
+    const blink = e.angry ? 1 : t % 3.4 < 0.14 ? 0.12 : 1, col = e.angry ? '#ff3b3b' : '#e8ff6a', size = e.angry ? 1.4 : 1;
+    g.save(); g.globalAlpha = e.fade; g.shadowColor = col; g.shadowBlur = 24;
     for (const dx of [-28, 28]) {
-      g.fillStyle = '#e8ff6a'; g.beginPath(); g.ellipse(e.x + dx, e.y, 22, 14*blink, 0, 0, TAU); g.fill();
-      g.shadowBlur = 0; g.fillStyle = '#000'; g.beginPath(); g.ellipse(e.x + dx + Math.sign(SHOP.x - e.x)*4, e.y, 4, 11*blink, 0, 0, TAU); g.fill(); g.shadowBlur = 24;
+      const ex = e.x + dx*size;
+      g.fillStyle = col; g.beginPath(); g.ellipse(ex, e.y, 22*size, 14*blink*size, 0, 0, TAU); g.fill();
+      g.shadowBlur = 0; g.fillStyle = '#000'; g.beginPath(); g.ellipse(ex + Math.sign(SHOP.x - e.x)*4, e.y, 4*size, 11*blink*size, 0, 0, TAU); g.fill();
+      if (e.angry) { g.fillStyle = '#000'; g.beginPath(); g.moveTo(ex - 26*size, e.y - 18*size); g.lineTo(ex + 26*size, e.y - 18*size); g.lineTo(ex + (dx > 0 ? -26 : 26)*size, e.y - 2*size); g.closePath(); g.fill(); } // angry slanted lids
+      g.shadowBlur = 24;
     }
     g.restore();
+    if (e.angry) drawBubble('GET OUT!!!', e.x + 120, e.y - 40, e.x + 20);
   }
   if (SHOP.atticSayT > 0) drawBubble(SHOP.atticSay, SHOP.x + 140, SHOP_FLOOR - 150 + SHOP.y, SHOP.x + 20);
 }
@@ -2358,12 +2388,12 @@ function drawShop(t) {
   for (const st of STANDS) {
     if (st.floor !== SHOP.floor) continue;
     const it = ITEMS.find(i => i.id === st.item), top = SHOP_FLOOR - 170;
-    g.fillStyle = st.floor === 2 ? PINK_DARK : BEAM; g.fillRect(st.x - 12, top, 24, 170); g.beginPath(); g.ellipse(st.x, SHOP_FLOOR, 60, 12, 0, 0, TAU); g.fill();
+    g.fillStyle = st.floor === 2 ? PINK_DARK : st.floor === 3 ? '#4a3626' : BEAM; g.fillRect(st.x - 12, top, 24, 170); g.beginPath(); g.ellipse(st.x, SHOP_FLOOR, 60, 12, 0, 0, TAU); g.fill();
     g.fillRect(st.x - 80, top - 14, 160, 18);
     g.save(); g.translate(st.x, top - 14 + Math.sin(t*2)*3);
-    if (it.id === 'coolhat') drawHat(g, 64, -6.4, 1); else { g.translate(0, -16); g.scale(130, 130); drawGlasses(g, [[-0.2, 0], [0.2, 0]]); }
+    if (it.id === 'coolhat') drawHat(g, 64, -6.4, 1); else { g.translate(0, -16); g.scale(130, 130); drawGlasses(g, [[-0.2, 0], [0.2, 0]], it.id === 'goggles', SHOP.pushT > 0 || SHOP.pushing ? '#ff3b3b' : '#e8ff6a'); } // the goggles turn red when the eyes get angry
     g.restore();
-    const owned = shop.owned[it.id], label = owned ? 'yours!' : `${it.price} coins`;
+    const owned = shop.owned[it.id], label = owned ? 'yours!' : it.price ? `${it.price} coins` : 'FREE!';
     g.font = `26px ${BODYFONT}`; const tw = g.measureText(label).width + 24;
     g.fillStyle = owned ? C.green : C.yellow; g.strokeStyle = C.ink; g.lineWidth = 3; g.fillRect(st.x - tw/2, top + 20, tw, 36); g.strokeRect(st.x - tw/2, top + 20, tw, 36);
     g.fillStyle = C.ink; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(label, st.x, top + 39);
@@ -2380,7 +2410,8 @@ function drawShop(t) {
   g.save(); g.translate(SHOP.x + (scared ? Math.sin(t*55)*2.5 : 0), SHOP_FLOOR - bottom + SHOP.y - hop - yay); g.rotate(moving ? Math.sin(t*12)*0.08 : laughing ? Math.sin(t*16)*0.1 : excited ? Math.sin(t*7)*0.12 : 0);
   drawCharacter(g, ch, r, { facing:SHOP.facing, ...looks(ch), scared, excited, happy:found }); g.restore();
   const above = SHOP_FLOOR - bottom - 80 + SHOP.y;
-  if (laughing) drawBubble('Hahaha!', SHOP.x + 70, above, SHOP.x + 20);
+  if (SHOP.youSayT > 0) drawBubble(SHOP.youSay, SHOP.x + 120, above, SHOP.x + 20);
+  else if (laughing) drawBubble('Hahaha!', SHOP.x + 70, above, SHOP.x + 20);
   else if (ch.id === 'hex' && SHOP.beepT > 0) drawBubble('beep boop baap!', SHOP.x + 110, above, SHOP.x + 20);
   else if (ch.id === 'shuriken' && SHOP.enterT > 0 && SHOP.floor === 1) drawBubble('Have you seen Goofy Sparkle?', SHOP.x + 160, above, SHOP.x + 20);
   else if (found && SHOP.foundT > 0.2 && SHOP.foundT < 2.6) drawBubble('Goofy Sparkle! I FOUND you!', SHOP.x + 160, above - 24, SHOP.x + 20);
@@ -2617,6 +2648,7 @@ function shopStairs() {
 function shopAct(id) {
   const it = ITEMS.find(i => i.id === id), ch = CHARS[SHOP.who];
   const w = shop.wear[id] = shop.wear[id] || {};
+  if (id === 'goggles') { atticPush(); renderShopCard(true); return; } // you never get to keep them: the eyes push you out and take them back
   if (!canWear(it, ch)) shopSay(`${ch.name} already has cool shades! Try a different fighter.`, 'bonk');
   else if (!shop.owned[id]) {
     if (shop.coins < it.price) shopSay(`You need ${it.price - shop.coins} more coins. Go win some fights!`, 'bonk');
@@ -2693,10 +2725,10 @@ function fillShopCard(card, ch, it) {
     return;
   }
   const owned = shop.owned[it.id], on = wears(it.id, ch);
-  card.innerHTML = `<h3>${it.name} <span class="price">${owned ? 'yours!' : it.price + ' coins'}</span></h3><p>${it.desc}${owned ? ' It shows up in fights on this computer.' : ''}</p><div class="row"></div>`;
+  card.innerHTML = `<h3>${it.name} <span class="price">${owned ? 'yours!' : it.price ? it.price + ' coins' : 'FREE!'}</span></h3><p>${it.desc}${owned ? ' It shows up in fights on this computer.' : ''}</p><div class="row"></div>`;
   if (!canWear(it, ch)) { card.querySelector('.row').innerHTML = `<p>${ch.name} already has cool shades, so these don't go on it. Pick a different fighter with ◀ ▶ at the top.</p>`; return; }
   const b = document.createElement('button'); b.className = 'btn'; b.id = 'shopAct';
-  b.textContent = !owned ? `buy for ${it.price} coins` : on ? `take it off ${ch.name}` : `put it on ${ch.name}`;
+  b.textContent = !owned ? (it.price ? `buy for ${it.price} coins` : 'take it (free!)') : on ? `take it off ${ch.name}` : `put it on ${ch.name}`;
   b.onclick = () => { shopAct(it.id); cv.focus(); };
   card.querySelector('.row').append(b, Object.assign(document.createElement('span'), { innerHTML:press }));
 }

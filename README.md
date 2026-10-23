@@ -40,6 +40,7 @@ To talk to the grey shopkeeper, walk up to the counter and press punch. Each tim
 
 - **Sunglasses (20 coins):** dark shades with a shine. Every fighter can wear them except Cool Star, who already has its own.
 - **Cool hat (25 coins):** a tilted black top hat.
+- **Glow goggles (free!):** up on the dark 3rd floor. Take them and the eyes and goggles turn red, the eyes shout "GET OUT!!!", push you back down the stairs and take the goggles back. Nobody gets to keep them.
 
 Coins and things you buy are saved in your browser. They show up in fights on your own computer, but not in online fights yet.
 
