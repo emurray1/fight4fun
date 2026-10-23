@@ -129,6 +129,13 @@ kbd{font-family:var(--body);border:2px solid var(--ink);border-bottom-width:4px;
 .set-grid .setting small{font-size:16px;color:#444}
 .page-foot{display:flex;justify-content:center;gap:14px;flex-wrap:wrap}
 .shop-art{display:block;width:100%;height:auto;border:4px solid var(--ink)}
+.coins b{font-family:var(--display);font-weight:400;font-size:34px;background:var(--yellow);padding:0 8px}
+.shop-items{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px}
+.shop-item{border:4px solid var(--ink);padding:12px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
+.shop-item h3{margin:0}
+.wear-grid{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.wear-grid button{display:flex;flex-direction:column;align-items:center;width:84px;padding:4px;border:3px solid var(--ink);background:var(--paper);font-family:var(--body);font-size:15px;line-height:1.1}
+.wear-grid button[aria-pressed="true"]{background:var(--yellow)}
 #gameQuit{position:fixed;left:calc(14px + env(safe-area-inset-left,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));font-size:24px;padding:4px 20px;border:3px solid var(--paper);z-index:5}
 .quit-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
 .btn.red{background:var(--maroon);color:var(--paper)}
@@ -295,8 +302,11 @@ input:focus-visible{outline:4px solid var(--yellow);outline-offset:2px}
   <div class="panel page">
     <header class="whois"><h2>shop</h2><button class="btn back" data-back>back</button></header>
     <div class="page-body">
-      <img class="shop-art" src="shop.png" alt="The shop: a grey fighter waves from behind a wooden counter under a hanging shop sign. Things to buy and wear.">
-      <p>Coming soon!</p>
+      <img class="shop-art" src="shop.png" alt="The shop: a grey fighter waves from behind a wooden counter under a hanging shop sign.">
+      <p class="coins">You have <b id="coinCount">0</b> coins. Finish a fight to earn 10 coins. Win it with a person (not the computer) to get 15 more.</p>
+      <div id="shopItems" class="shop-items"></div>
+      <p id="shopMsg" class="msg" role="status"></p>
+      <p>More coming soon!</p>
       <div class="page-foot"><button class="btn grey" data-back>back</button></div>
     </div>
   </div>
@@ -417,6 +427,7 @@ input:focus-visible{outline:4px solid var(--yellow);outline-offset:2px}
   </div>
   <div class="losers"><div id="loserRow"></div><div class="loser-label">losers losers</div></div>
   <div class="res-actions"><button id="rematchBtn" class="btn grey">rematch</button></div>
+  <p id="coinNote" class="res-note"></p>
   <p id="resNote" class="res-note"></p>
 </div>
 
@@ -489,6 +500,13 @@ const setup = { slots:{ star:'cpu', tri:'p1', circle:'cpu', diamond:'off', squar
 try { const s = JSON.parse(localStorage.getItem('fff-setup') || 'null'); if (s && s.slots) Object.assign(setup, s); } catch (e) {}
 for (const c of CHARS) { if (!setup.slots[c.id]) setup.slots[c.id] = 'off'; if (setup.teams[c.id] == null) setup.teams[c.id] = 0; }
 const saveSetup = () => { try { localStorage.setItem('fff-setup', JSON.stringify(setup)); } catch (e) {} };
+
+// ---------- shop: coins from fights buy things to wear ----------
+const ITEMS = [{ id:'coolhat', name:'Cool hat', price:25, desc:'A tilted black top hat. Very cool.' }];
+const shop = { coins:0, owned:{}, wear:{} };
+try { const s = JSON.parse(localStorage.getItem('fff-shop') || 'null'); if (s) Object.assign(shop, s); } catch (e) {}
+const saveShop = () => { try { localStorage.setItem('fff-shop', JSON.stringify(shop)); } catch (e) {} };
+const wearsHat = ch => !!(shop.owned.coolhat && shop.wear[ch.id]);
 
 // ---------- shapes & faces ----------
 function regular(n, R, start = -Math.PI/2) { const v=[]; for (let i=0;i<n;i++){ const a=start+i*TAU/n; v.push({x:Math.cos(a)*R, y:Math.sin(a)*R}); } return v; }
@@ -571,6 +589,16 @@ function drawCharacter(g, ch, r, o = {}) {
   shapePath(g, ch.shape, r); g.fill(); g.stroke();
   if (o.flash > 0) { g.fillStyle = `rgba(255,255,255,${Math.min(0.8, o.flash*6)})`; shapePath(g, ch.shape, r); g.fill(); }
   drawFace(g, ch, r, o);
+  if (o.hat) drawHat(g, r, -TOPS[ch.shape]*r, o.facing || 1);
+}
+function drawHat(g, r, topY, facing) { // the cool hat from the shop
+  const w = r*0.95, h = r*0.95;
+  g.save(); g.translate(0, topY + r*0.1); g.rotate(-0.2*facing);
+  g.lineWidth = Math.max(2, r*0.06); g.strokeStyle = '#555'; g.fillStyle = C.ink;
+  g.beginPath(); g.rect(-w*0.95, -r*0.12, w*1.9, r*0.14); g.rect(-w/2, -h, w, h - r*0.1); g.fill(); g.stroke();
+  g.fillStyle = C.red; g.fillRect(-w/2, -h*0.42, w, h*0.2);
+  g.fillStyle = 'rgba(255,255,255,.35)'; g.fillRect(-w*0.34, -h*0.9, w*0.12, h*0.4);
+  g.restore();
 }
 function drawCrown(g, r, topY) {
   const w = r*0.9, h = r*0.6, y = topY - 4;
@@ -582,9 +610,9 @@ function charCanvas(ch, px, o = {}) {
   const c = document.createElement('canvas'), d = Math.min(2, window.devicePixelRatio || 1);
   c.width = px*d; c.height = px*d; c.style.width = c.style.height = px + 'px';
   const g = c.getContext('2d'); g.scale(d, d);
-  const r = px*(o.crown ? 0.27 : 0.33);
-  g.translate(px/2, px*(o.crown ? 0.62 : 0.53));
-  drawCharacter(g, ch, r, { facing:1, ko:o.ko });
+  const tall = o.crown || o.hat, r = px*(tall ? 0.27 : 0.33);
+  g.translate(px/2, px*(tall ? 0.62 : 0.53));
+  drawCharacter(g, ch, r, { facing:1, ko:o.ko, hat:o.hat && !o.crown });
   if (o.crown) drawCrown(g, r, -TOPS[ch.shape]*r);
   return c;
 }
@@ -1595,7 +1623,7 @@ function drawStar(x, y, r, fill, stroke) {
 function drawFighter(p, t) {
   const b = p.body, x = b.position.x, y = b.position.y;
   g.save(); g.translate(x, y); g.rotate(b.angle); g.scale(1 + p.squash*0.6, 1 - p.squash);
-  drawCharacter(g, p.ch, p.r, { facing:p.facing, ko:p.ko > 0, flash:p.flash });
+  drawCharacter(g, p.ch, p.r, { facing:p.facing, ko:p.ko > 0, flash:p.flash, hat:!G.online && wearsHat(p.ch) });
   g.restore();
   const fistR = p.r*0.3;
   const fist = (fx, fy) => { g.beginPath(); g.arc(fx, fy, fistR, 0, TAU); g.fillStyle = p.ch.color; g.fill(); g.lineWidth = 3.5; g.strokeStyle = C.ink; g.stroke(); };
@@ -1723,7 +1751,7 @@ function renderRoster() {
   for (const ch of CHARS) {
     const ctl = CTRL[setup.slots[ch.id]] || CTRL.off;
     const card = document.createElement('div'); card.className = 'card' + (ctl.kind === 'off' ? ' off' : '');
-    card.appendChild(charCanvas(ch, 92));
+    card.appendChild(charCanvas(ch, 92, { hat:wearsHat(ch) }));
     card.insertAdjacentHTML('beforeend', `<h4>${ch.name}</h4><p>${ch.trait}</p>`);
     const b = document.createElement('button'); b.className = 'ctl'; b.id = 'ctl-' + ch.id; b.dataset.kind = ctl.kind; b.textContent = ctl.label;
     b.title = 'Click to change who plays this character';
@@ -1748,7 +1776,7 @@ function drawMapPreview() {
   try {
     drawSky(0, map); drawArena(0, ledgeObjs(map), false);
     const on = CHARS.filter(ch => setup.slots[ch.id] !== 'off'), xs = ffaXs(on.length);
-    on.forEach((ch, i) => { const gp = groundAt(xs[i]) || map.ground[0]; m.save(); m.translate(xs[i], gp.top - 40); drawCharacter(m, ch, 36, { facing:1 }); m.restore(); });
+    on.forEach((ch, i) => { const gp = groundAt(xs[i]) || map.ground[0]; m.save(); m.translate(xs[i], gp.top - 40); drawCharacter(m, ch, 36, { facing:1, hat:wearsHat(ch) }); m.restore(); });
   } finally { g = oldG; MAP = oldMap; }
   $('mapDesc').textContent = map.name + ': ' + map.desc;
 }
@@ -1775,6 +1803,10 @@ function showResults() {
   const losers = teamWin ? G.fighters.filter(f => f.team !== champ.team) : G.fighters.filter(f => f !== champ).sort((a, b) => (G.wins[b.ch.id] || 0) - (G.wins[a.ch.id] || 0));
   $('loserRow').replaceChildren(...losers.map(f => charCanvas(f.ch, 66, { ko:true })));
   const on = G.online;
+  // coins: 10 for finishing a fight, 15 more when a person on this computer is on the winning side
+  const won = (teamWin ? G.fighters.filter(f => f.team === champ.team) : [champ]).some(f => on ? (f.me || f.control === 'local') : f.tag !== 'CPU');
+  const earned = 10 + (won ? 15 : 0); shop.coins += earned; saveShop();
+  $('coinNote').textContent = `+${earned} coins${won ? ' (10 for the fight, 15 for winning)' : ' for the fight'}. You have ${shop.coins} coins to spend in the shop.`;
   if (on === 'host') netBroadcast({ t:'results', champ: teamWin ? -1 : champ.idx, team: teamWin ? champ.team : null, w:G.wins });
   $('rematchBtn').hidden = on === 'client'; $('disbandBtn').hidden = on === 'client';
   $('resNote').textContent = on === 'client' ? 'Waiting for the host to pick what happens next.' : on === 'host' ? 'Leave takes everyone back to the team screen. Disband team ends it for everyone.' : '';
@@ -1798,11 +1830,40 @@ function renderSettings() {
   renderSeg('tagsSeg', ONOFF, 'tags');
 }
 let backTo = 'title';
-function openPage(id) { backTo = G.state; G.state = id; waitingKey = null; if (id === 'settings') renderSettings(); if (id === 'keys') { renderKeys(); $('keysMsg').textContent = ''; } fillKeyLabels(); showScreen(id); $(id).scrollTop = 0; $(id).querySelector('[data-back]').focus(); }
+function openPage(id) { backTo = G.state; G.state = id; waitingKey = null; if (id === 'settings') renderSettings(); if (id === 'shop') renderShop(); if (id === 'keys') { renderKeys(); $('keysMsg').textContent = ''; } fillKeyLabels(); showScreen(id); $(id).scrollTop = 0; $(id).querySelector('[data-back]').focus(); }
 document.querySelectorAll('[data-back]').forEach(b => b.onclick = () => { if (backTo === 'setup') openSetup(); else { G.state = 'title'; showScreen('title'); $('okBtn').focus(); } });
 $('howBtn').onclick = () => { audioOn(); openPage('howto'); };
 $('setBtn').onclick = () => { audioOn(); openPage('settings'); };
-$('shopBtn').onclick = () => { audioOn(); openPage('shop'); };
+$('shopBtn').onclick = () => { audioOn(); $('shopMsg').textContent = ''; openPage('shop'); };
+function renderShop() {
+  $('coinCount').textContent = shop.coins;
+  const box = $('shopItems'); box.innerHTML = '';
+  for (const it of ITEMS) {
+    const card = document.createElement('div'); card.className = 'shop-item';
+    card.appendChild(charCanvas(CHAR.circle, 120, { hat:true }));
+    card.insertAdjacentHTML('beforeend', `<h3>${it.name}</h3><p>${it.desc}</p>`);
+    if (!shop.owned[it.id]) {
+      const b = document.createElement('button'); b.className = 'btn'; b.id = 'buy-' + it.id; b.textContent = `buy for ${it.price} coins`;
+      b.onclick = () => {
+        if (shop.coins < it.price) { $('shopMsg').textContent = `You need ${it.price - shop.coins} more coins. Play some fights to earn them!`; return; }
+        shop.coins -= it.price; shop.owned[it.id] = true; saveShop(); renderShop();
+        $('shopMsg').textContent = `You got the ${it.name.toLowerCase()}! Now click the fighters who should wear it.`; if (sfx.win) sfx.win();
+      };
+      card.appendChild(b);
+    } else {
+      card.insertAdjacentHTML('beforeend', '<p class="note">You own it! Click a fighter to put it on or take it off. Hats show up in fights on this computer.</p>');
+      const grid = document.createElement('div'); grid.className = 'wear-grid';
+      for (const ch of CHARS) {
+        const b = document.createElement('button'); b.id = 'wear-' + ch.id; b.setAttribute('aria-pressed', String(!!shop.wear[ch.id]));
+        b.appendChild(charCanvas(ch, 64, { hat:!!shop.wear[ch.id] })); b.append(ch.name);
+        b.onclick = () => { shop.wear[ch.id] = !shop.wear[ch.id]; saveShop(); renderShop(); $('wear-' + ch.id).focus(); };
+        grid.appendChild(b);
+      }
+      card.appendChild(grid);
+    }
+    box.appendChild(card);
+  }
+}
 let waitingKey = null;
 function renderKeys() {
   for (const pl of ['p1','p2']) {

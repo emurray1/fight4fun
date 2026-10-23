@@ -28,6 +28,14 @@ Every fighter has 200 hp. When it runs out, they get dizzy and can be thrown.
 - **Roadside Fights:** three floors. Cars on the road (50), birds on the sidewalk (15) and zapping power lines on top (5), each with its own caution sign and warning sound.
 - **Lava Rocks:** black rocks in a lava sea. Lava burns your hp every second (jump out!), and lava geysers blast up between the rocks on a timer.
 
+## Shop
+
+Every fight you finish earns 10 coins, and 15 more if a person (not the computer) wins it. Spend coins in the **shop** on the main menu.
+
+- **Cool hat (25 coins):** a tilted black top hat. After you buy it, click the fighters who should wear it.
+
+Coins and hats are saved in your browser. Hats show up in fights on your own computer, but not in online fights yet.
+
 ## Play online
 
 1. Click **play online**, type your name and click **host**.
