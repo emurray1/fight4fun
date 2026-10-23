@@ -592,6 +592,23 @@ const KEEPER2_KID_LINES = [
 ];
 // what Goofy Sparkle says in the shop when Halloween scares him (he stays anyway)
 const SCARED_LINES = ['Eek! A pumpkin!', 'B-bats?! I\'m not scared... okay, a little.', 'I\'m brave! I\'m staying!', 'Is that a real spider web?!', 'I\'m not going anywhere! *shaking*'];
+// both shopkeepers get a bit weird around Nervous Hexstar, but they really like him
+const isHex = () => CHARS[SHOP.who].id === 'hex';
+const KEEPER_HEX_LINES = [
+  () => 'Oh! Hexstar! Hi! Hello! Hi! ...why did I say hi three times?',
+  () => '*does a weird little dance* I don\'t know why I did that. You\'re just so cool, Hexstar!',
+  () => 'Your big blue glasses are AMAZING. Can I... touch them? No? Okay. Haha. Ha.',
+  () => 'Why did the circle win the fight? It was well-rounded! ...Hexstar, you are my favourite customer.',
+  () => 'I made you a friendship bracelet! It is just a piece of string. I like you!',
+  () => 'Don\'t be nervous, Hexstar! Now I am nervous too! We are nervous together!',
+];
+const KEEPER2_HEX_LINES = [
+  () => 'Oh! H-hexstar! *hides behind her bow* ...hi! I like your six points!',
+  () => 'We are both nervous! Nervous buddies! *high five* ...*misses*',
+  () => 'Do you want to... count the clouds with me? There are none. It is a shop. Hehe...',
+  () => 'Why did the shop get a second floor? It wanted to level up! ...Did I say it weird? I like you, Hexstar.',
+  () => 'You are my favourite nervous friend!',
+];
 // ...and what he says when he sees the Christmas update (he thinks it's SO cool)
 const EXCITED_LINES = ['WOW! Christmas lights! SO COOL!', 'Is Santa coming?! IS HE?!', 'SNOW! Look at all the SNOW!', 'This is the BEST update EVER!', 'A Christmas tree! Can I put the star on top?!'];
 // talking to her as Angry Triangle: she's shy at first, and on the last of these lines she opens up and they become friends
@@ -2018,7 +2035,9 @@ function drawFightyFloor(t) { // downstairs: the fighty shop
   g.lineWidth = 5; for (let i=0;i<12;i++) { const x = (i*157 + (i%2)*70) % W, y = SHOP_FLOOR + (i%2 ? 50 : 4); g.beginPath(); g.moveTo(x, y); g.lineTo(x, y + 46); g.stroke(); }
   // shopkeeper behind the counter, waving (and bouncing when laughing)
   const kx = KEEPERS[1];
+  const weird = isHex(); // around Nervous Hexstar they sway back and forth a bit oddly
   g.save(); g.translate(0, SHOP.keeperLaughT > 0 ? -Math.abs(Math.sin(t*18))*10 : 0);
+  if (weird) { g.translate(kx, 610); g.rotate(Math.sin(t*3)*0.08); g.translate(-kx, -610); }
   g.fillStyle = C.ink; g.beginPath(); g.roundRect ? g.roundRect(kx - 72, 450, 144, 160, 18) : g.rect(kx - 72, 450, 144, 160); g.fill();
   g.save(); g.translate(kx + 66, 470); g.rotate(-0.5 + Math.sin(t*5)*0.35); g.beginPath(); g.roundRect ? g.roundRect(-22, -130, 44, 140, 20) : g.rect(-22, -130, 44, 140); g.fill(); g.restore();
   g.fillStyle = C.grey; g.strokeStyle = C.ink; g.lineWidth = 5; g.beginPath(); g.arc(kx, 395, 58, 0, TAU); g.fill(); g.stroke();
@@ -2033,6 +2052,10 @@ function drawFightyFloor(t) { // downstairs: the fighty shop
   // and the shop's own cool hat
   g.save(); g.translate(kx, 395); drawHat(g, 58, -58, 1); g.restore();
   g.restore();
+  if (weird) { // a puzzled "?!" and a little heart float over their head
+    g.font = `40px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = C.ink; g.fillText('?!', kx + 78, 300 + Math.sin(t*4)*6);
+    drawLittleHeart(kx + 112, 280 - Math.abs(Math.sin(t*2))*10, 11);
+  }
   // counter: dark top, light front with scribbly wood lines, and the shopkeeper's other hand resting on it
   g.fillStyle = C.brown; g.fillRect(960, 600, 580, SHOP_FLOOR - 600);
   g.strokeStyle = BEAM; g.lineWidth = 9;
@@ -2074,15 +2097,16 @@ function drawFightyFloor(t) { // downstairs: the fighty shop
   // the shy shopkeeper visiting from upstairs
   const v = SHOP.visit;
   if (v) {
-    const kid = isKid(), friend = isFriend() || kid, chatting = v.phase === 'talk';
+    const kid = isKid(), hex = isHex(), friend = isFriend() || kid || hex, chatting = v.phase === 'talk';
     drawShyKeeper(v.x, t, { friend:chatting || friend, close:chatting || friend ? 0 : 1, lookX:chatting ? 3 : -3, walking:v.phase === 'run' || v.phase === 'climb',
       alpha:v.phase === 'climb' ? Math.max(0, 1 - v.t) : 1, lift:v.phase === 'climb' ? v.t*330 : 0 });
     const vs = { talk:'...and then the circle rolled right off the island! Hehe...',
-      notice:kid ? 'Oh! Hi little one! I have to go back upstairs. Bye bye, sweetie!' : friend ? `Oh! Hi ${CHARS[SHOP.who].name}! Come visit me upstairs!` : 'Oh! S-someone is here! Um... b-bye!',
+      notice:kid ? 'Oh! Hi little one! I have to go back upstairs. Bye bye, sweetie!' : hex ? 'Oh! Hexstar! *trips over nothing* H-hi! I like you! Bye!' : friend ? `Oh! Hi ${CHARS[SHOP.who].name}! Come visit me upstairs!` : 'Oh! S-someone is here! Um... b-bye!',
       run:kid ? 'Bye bye!' : friend ? 'See you up there!' : 'Eep!' }[v.phase];
     if (vs) drawBubble(vs, v.x - 40, 520, v.x - 6);
   }
-  const say = SHOP.msgT > 0 ? SHOP.msg : v && v.phase === 'talk' ? 'Haha! That is so funny!' : v && v.phase !== 'climb' ? (isKid() ? 'She loves little kids! She works upstairs.' : isFriend() ? 'Aww, she likes you! She works upstairs.' : 'Aww, she is so shy. She works upstairs!')
+  const say = SHOP.msgT > 0 ? SHOP.msg : v && v.phase === 'talk' ? 'Haha! That is so funny!' : v && v.phase !== 'climb' ? (isKid() ? 'She loves little kids! She works upstairs.' : isHex() ? 'Haha... we get a bit weird around Hexstar. We like him!' : isFriend() ? 'Aww, she likes you! She works upstairs.' : 'Aww, she is so shy. She works upstairs!')
+    : isHex() && SHOP.msgT <= 0 ? (SHOP.near ? 'Ooh! That would look... so weird and great on you!' : SHOP.nearKeeper ? 'Hexstar! Talk to me! Or don\'t! Either is fine! Hehe!' : SHOP.nearStairs ? 'Bye Hexstar! I mean, see you! I mean... have fun!' : 'Hexstar! *waves both arms* Hi hi hi!')
     : isKid() && SHOP.msgT <= 0 ? (SHOP.near ? 'Ooh, that might be a bit big for you! Hehe.' : SHOP.nearKeeper ? 'Hi there, little buddy! Want to chat? Press punch!' : SHOP.nearStairs ? 'Careful on the stairs, little one!' : spooky() ? 'Don\'t be scared, little one! The pumpkins are just pretend!' : xmas() ? 'Ho ho ho! Somebody REALLY loves Christmas!' : 'Oh! A little one! Hello there, sweetie!')
     : SHOP.near ? 'Ooh, good choice!' : SHOP.nearKeeper ? 'Hello! Press punch to chat with me.' : SHOP.nearStairs ? 'Those stairs go up to the funny fun shop!' : spooky() ? 'Happy Halloween! Boo! Have a look around!' : xmas() ? 'Ho ho ho! Merry Christmas! Have a look around!' : 'Hi! Have a look around, or come over and talk to me!';
   drawBubble(say, kx - 115, 360, kx - 60);
@@ -2122,10 +2146,11 @@ function drawFunnyFloor(t) { // upstairs: the pink funny fun shop
   drawFloorSign(sx, SHOP_FLOOR - 120, '1st floor ↓', '#f3e2c7');
   if (spooky()) { drawWeb(200, 150, 130, 1); drawWeb(1500, 150, 130, -1); drawPumpkin(470, SHOP_FLOOR, 30, t); drawPumpkin(1400, SHOP_FLOOR, 24, t); }
   if (xmas()) { drawLights(200, 1520, 150, t); drawXmasTree(1420, SHOP_FLOOR, 120, t); }
-  const kx = KEEPERS[2], kid = isKid(), friend = isFriend() || kid;
-  drawShyKeeper(kx, t, { friend, close:friend ? 0 : Math.max(0, 1 - Math.abs(SHOP.x - kx)/500), lookX:Math.sign(SHOP.x - kx)*3, lift:SHOP.keeperLaughT > 0 ? Math.abs(Math.sin(t*18))*8 : 0 });
+  const kx = KEEPERS[2], kid = isKid(), hex = isHex(), friend = isFriend() || kid || hex;
+  drawShyKeeper(kx, t, { friend, close:friend ? 0 : Math.max(0, 1 - Math.abs(SHOP.x - kx)/500), lookX:Math.sign(SHOP.x - kx)*3, lift:SHOP.keeperLaughT > 0 ? Math.abs(Math.sin(t*18))*8 : 0, wiggle:hex ? Math.sin(t*5)*8 : 0 });
   const empty = !STANDS.some(s => s.floor === 2);
   const say = SHOP.msgT > 0 ? SHOP.msg
+    : hex ? (SHOP.near ? 'Ooh, so cool! Like you!' : SHOP.nearKeeper ? 'Want to talk? I am being weird. Sorry. I like you!' : SHOP.nearStairs ? 'Bye bye, nervous buddy!' : 'H-hexstar! *wiggles* Hi!')
     : kid ? (SHOP.near ? 'Ooh, so cute for a little one!' : SHOP.nearKeeper ? 'Hi little one! Want to talk? Press punch!' : SHOP.nearStairs ? 'Hold the rail going down, okay?' : spooky() ? 'Aww, it\'s okay sweetie, they\'re just decorations! You\'re so brave!' : xmas() ? 'Aww, you\'re so excited, sweetie! Merry Christmas!' : 'Aww, hi sweetie! Come here!')
     : friend ? (SHOP.near ? 'Ooh, that would look so cute on you!' : SHOP.nearKeeper ? `${CHARS[SHOP.who].name}! Want to chat? Press punch!` : SHOP.nearStairs ? 'Aww, leaving already? Come back soon!' : `Hi ${CHARS[SHOP.who].name}! Come say hi!`)
     : SHOP.near ? 'Ooh... good choice...' : SHOP.nearKeeper ? 'Oh! Um... you want to talk to me? Press punch...' : SHOP.nearStairs ? 'Those stairs go back down...' : xmas() ? 'M-merry Christmas... *blushes*' : empty ? 'H-hi... nothing up here yet...' : 'Um... welcome...';
@@ -2135,8 +2160,12 @@ function drawFunnyFloor(t) { // upstairs: the pink funny fun shop
 // the funny fun shopkeeper: grey head, purple dress, black arms with a bow in the middle, standing on the floor at kx.
 // She's shy: head tucked down, eyes looking at the floor, pink cheeks, turning away more as `close` goes to 1.
 // As a `friend` she holds her head up, looks toward lookX, smiles and waves, with little hearts floating up.
-function drawShyKeeper(kx, t, { friend, close, lookX, walking = false, alpha = 1, lift = 0 }) {
-  g.save(); g.globalAlpha = alpha; g.translate(0, -lift - (walking ? Math.abs(Math.sin(t*14))*7 : 0));
+function drawLittleHeart(x, y, s) {
+  g.fillStyle = '#ff6fa5'; g.beginPath(); g.moveTo(x, y + s);
+  g.bezierCurveTo(x - s*1.6, y - s*0.2, x - s*0.6, y - s*1.3, x, y - s*0.4); g.bezierCurveTo(x + s*0.6, y - s*1.3, x + s*1.6, y - s*0.2, x, y + s); g.fill();
+}
+function drawShyKeeper(kx, t, { friend, close, lookX, walking = false, alpha = 1, lift = 0, wiggle = 0 }) {
+  g.save(); g.globalAlpha = alpha; g.translate(wiggle, -lift - (walking ? Math.abs(Math.sin(t*14))*7 : 0));
   g.fillStyle = C.purple; g.strokeStyle = C.ink; g.lineWidth = 8; g.lineJoin = 'round';
   g.beginPath(); g.moveTo(kx - 40, 600); g.lineTo(kx + 40, 600); g.lineTo(kx + 46, SHOP_FLOOR - 4); g.lineTo(kx - 52, SHOP_FLOOR - 4); g.closePath(); g.fill(); g.stroke();
   const wave = Math.sin(t*3)*4;
@@ -2376,7 +2405,7 @@ function shopTalk() {
     if (opened) { shop.friends = { ...shop.friends, tri:true }; saveShop(); SHOP.talk[2] = -1; }
     SHOP.joke = false; shopSay(TRI_OPENING_LINES[SHOP.triStep](), opened ? 'win' : 'count', 6); renderShopCard(true); return;
   }
-  const lines = isKid() ? (f === 1 ? KEEPER_KID_LINES : KEEPER2_KID_LINES)
+  const lines = isKid() ? (f === 1 ? KEEPER_KID_LINES : KEEPER2_KID_LINES) : isHex() ? (f === 1 ? KEEPER_HEX_LINES : KEEPER2_HEX_LINES)
     : f === 1 ? KEEPER_LINES : !isFriend() ? KEEPER2_LINES : id === 'tri' ? TRI_FRIEND_LINES : KEEPER2_FRIEND_LINES;
   const text = lines[(SHOP.talk[f] = (SHOP.talk[f] + 1) % lines.length)]();
   SHOP.joke = /why did/i.test(text); // after a joke you can laugh at it
@@ -2390,6 +2419,8 @@ function shopLaugh() { // you laugh at the joke, and the shopkeeper is happy you
   SHOP.joke = false; SHOP.laughT = 1.6; SHOP.keeperLaughT = 1.8;
   const name = CHARS[SHOP.who].name, replies = isKid() ? (SHOP.floor === 1 ? ['Hahaha! You are such a giggly little kid!', 'Hoho! Kids always get my jokes!']
       : ['Hehe! You have the cutest little laugh, sweetie!', 'Aww, you giggled! Hehe!'])
+    : isHex() ? (SHOP.floor === 1 ? ['HAHA! You laughed! I am so happy I could do a cartwheel! *does not*', 'Hexstar laughed at my joke! Best day ever! Haha... ha.']
+      : ['Hehe! You laughed! Nervous buddies laugh together!', 'Y-you laughed! *happy wiggle*'])
     : SHOP.floor === 1 ? ['HAHAHA! You get it! I am so funny!', 'Hahaha! Good one, right?', 'Hoho! I knew you would laugh!']
     : isFriend() ? [`Hehehe! Yay, you laughed, ${name}!`, 'Hahaha! Stop, my bow will fall off!', 'Haha! I love making you laugh!']
     : ['Y-you laughed! Hehe... *happy blush*', 'Hihi... you thought it was funny...?', 'Pfft... hehe... thank you...'];
@@ -2398,7 +2429,7 @@ function shopLaugh() { // you laugh at the joke, and the shopkeeper is happy you
 function shopStairs() {
   SHOP.floor = 3 - SHOP.floor; Object.assign(SHOP, { x:STAIRS_X[SHOP.floor] + 110, y:0, vy:0, facing:1, near:null, nearKeeper:false, nearStairs:false, echoT:0, visit:null });
   shopSay(SHOP.floor === 1 ? (isKid() ? 'Welcome back, little one! Careful on those stairs!' : 'Welcome back to the fighty shop!')
-    : isKid() ? 'Aww, a little one came upstairs! Hi sweetie!' : isFriend() ? `${CHARS[SHOP.who].name}! Hi hi! I am so happy you came up!` : 'Oh! Someone came upstairs... h-hi.', 'jump');
+    : isKid() ? 'Aww, a little one came upstairs! Hi sweetie!' : isHex() ? 'H-hexstar came upstairs! *wiggles* Hi! I like you!' : isFriend() ? `${CHARS[SHOP.who].name}! Hi hi! I am so happy you came up!` : 'Oh! Someone came upstairs... h-hi.', 'jump');
   renderShopCard(true);
 }
 function shopAct(id) {
@@ -2445,6 +2476,7 @@ function fillShopCard(card, ch, it) {
   }
   if (!it && SHOP.nearKeeper) {
     card.innerHTML = isKid() ? `<h3>${SHOP.floor === 2 ? 'The funny fun shopkeeper' : 'The shopkeeper'}</h3><p>${SHOP.floor === 2 ? 'She isn\'t shy with little kids. She thinks Goofy Sparkle is a kid and talks like a babysitter!' : 'The shopkeeper thinks Goofy Sparkle is a little kid!'} Each time you talk, they say something new.</p><div class="row"></div>`
+      : isHex() ? `<h3>${SHOP.floor === 2 ? 'The funny fun shopkeeper' : 'The shopkeeper'}</h3><p>${SHOP.floor === 2 ? 'She acts a bit weird around Nervous Hexstar, but she really likes him!' : 'The shopkeeper acts a bit weird around Nervous Hexstar, but really likes him!'} Each time you talk, they say something new.</p><div class="row"></div>`
       : SHOP.floor === 2 ? `<h3>The funny fun shopkeeper</h3><p>${isFriend() ? (ch.id === 'tri' ? 'She opened up to Angry Triangle. They\'re friends now!' : 'She isn\'t shy with Lovely Heart. They\'re best friends!')
       : ch.id === 'tri' ? 'She\'s shy with Angry Triangle, but if you keep talking to her, she might open up.' : 'She\'s a bit shy, but she\'d like to chat.'} Each time you talk, she says something new.</p><div class="row"></div>`
       : `<h3>The shopkeeper</h3><p>Want to chat? Each time you talk, the shopkeeper says something new.</p><div class="row"></div>`;
