@@ -513,8 +513,19 @@ try { const s = JSON.parse(localStorage.getItem('fff-shop') || 'null'); if (s) O
 const saveShop = () => { try { localStorage.setItem('fff-shop', JSON.stringify(shop)); } catch (e) {} };
 const wearsHat = ch => !!(shop.owned.coolhat && shop.wear[ch.id]);
 // the shop room: you walk a fighter up to a stand to buy what's on it
-const SHOP = { who:null, x:240, y:0, vy:0, facing:1, near:null, prev:{}, msg:'', msgT:0, key:'' };
-const SHOP_FLOOR = 770, STANDS = [{ item:'coolhat', x:620 }];
+const SHOP = { who:null, x:240, y:0, vy:0, facing:1, near:null, nearKeeper:false, talk:-1, prev:{}, msg:'', msgT:0, key:'' };
+const SHOP_FLOOR = 770, STANDS = [{ item:'coolhat', x:620 }], KEEPER_X = 1260;
+// what the shopkeeper says when you talk to them, one line each time you press punch
+const KEEPER_LINES = [
+  () => 'Hi! Welcome to my shop. I sell things to buy and wear.',
+  () => `You have ${shop.coins} coins. ` + (shop.owned.coolhat ? 'Save them up for new stuff!' : shop.coins >= 25 ? 'That is enough for the cool hat!' : `The cool hat costs 25, so you need ${25 - shop.coins} more.`),
+  () => 'Finish a fight to get 10 coins. Win it and I give you 15 more!',
+  () => shop.owned.coolhat ? 'That cool hat looks great on you!' : 'The cool hat is my favourite. Go have a look!',
+  () => 'Psst... Yelling Square is really heavy. Hard to throw!',
+  () => 'Knocked off the edge? Double jump to get back!',
+  () => 'Why did the circle win the fight? It was well-rounded!',
+  () => 'More things are coming soon. I am still unpacking the boxes!',
+];
 
 // ---------- shapes & faces ----------
 function regular(n, R, start = -Math.PI/2) { const v=[]; for (let i=0;i<n;i++){ const a=start+i*TAU/n; v.push({x:Math.cos(a)*R, y:Math.sin(a)*R}); } return v; }
@@ -1707,7 +1718,8 @@ function shopStep(dt) {
   SHOP.vy += 2600*dt; SHOP.y = Math.min(0, SHOP.y + SHOP.vy*dt); if (SHOP.y === 0) SHOP.vy = 0;
   if (h.jump && !pr.jump && SHOP.y === 0) { SHOP.vy = -1000*ch.jump; sfx.jump(); }
   SHOP.near = STANDS.find(s => Math.abs(s.x - SHOP.x) < 110) || null;
-  if (h.punch && !pr.punch && SHOP.near) shopAct(SHOP.near.item);
+  SHOP.nearKeeper = !SHOP.near && Math.abs(KEEPER_X - SHOP.x) < 220;
+  if (h.punch && !pr.punch) { if (SHOP.near) shopAct(SHOP.near.item); else if (SHOP.nearKeeper) shopTalk(); }
   SHOP.msgT = Math.max(0, SHOP.msgT - dt);
   renderShopCard();
 }
@@ -1721,7 +1733,7 @@ function drawShop(t) {
   for (const y of [SHOP_FLOOR + 4, SHOP_FLOOR + 50, SHOP_FLOOR + 96]) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
   g.lineWidth = 5; for (let i=0;i<12;i++) { const x = (i*157 + (i%2)*70) % W, y = SHOP_FLOOR + (i%2 ? 50 : 4); g.beginPath(); g.moveTo(x, y); g.lineTo(x, y + 46); g.stroke(); }
   // shopkeeper behind the counter, waving
-  const kx = 1260;
+  const kx = KEEPER_X;
   g.fillStyle = C.ink; g.beginPath(); g.roundRect ? g.roundRect(kx - 72, 450, 144, 160, 18) : g.rect(kx - 72, 450, 144, 160); g.fill();
   g.save(); g.translate(kx + 66, 470); g.rotate(-0.5 + Math.sin(t*5)*0.35); g.beginPath(); g.roundRect ? g.roundRect(-22, -130, 44, 140, 20) : g.rect(-22, -130, 44, 140); g.fill(); g.restore();
   g.fillStyle = C.grey; g.strokeStyle = C.ink; g.lineWidth = 5; g.beginPath(); g.arc(kx, 395, 58, 0, TAU); g.fill(); g.stroke();
@@ -1742,11 +1754,16 @@ function drawShop(t) {
   g.fillStyle = C.ink; g.font = `52px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('shop', 0, 180);
   g.restore();
   // what the shopkeeper says
-  const say = SHOP.msgT > 0 ? SHOP.msg : SHOP.near ? 'Ooh, good choice!' : 'Hi! Walk up to the hat and press punch!';
-  g.font = `30px ${BODYFONT}`; const bw = Math.min(520, g.measureText(say).width + 44), bx = kx - 90 - bw, by = 300;
+  const say = SHOP.msgT > 0 ? SHOP.msg : SHOP.near ? 'Ooh, good choice!' : SHOP.nearKeeper ? 'Hello! Press punch to chat with me.' : 'Hi! Walk up to the hat, or come over and talk to me!';
+  g.font = `30px ${BODYFONT}`;
+  const lines = [], words = say.split(' '); let line = '';
+  for (const w of words) { const next = line ? line + ' ' + w : w; if (line && g.measureText(next).width > 440) { lines.push(line); line = w; } else line = next; }
+  lines.push(line);
+  const bw = Math.max(...lines.map(l => g.measureText(l).width)) + 44, bh = 26 + lines.length*36, bx = kx - 115 - bw, by = 360 - bh;
   g.fillStyle = C.white; g.strokeStyle = C.ink; g.lineWidth = 4;
-  g.beginPath(); g.roundRect ? g.roundRect(bx, by, bw, 62, 18) : g.rect(bx, by, bw, 62); g.moveTo(bx + bw - 30, by + 62); g.lineTo(kx - 60, by + 80); g.lineTo(bx + bw - 6, by + 40); g.fill(); g.stroke();
-  g.fillStyle = C.ink; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(say, bx + bw/2, by + 32, bw - 24);
+  g.beginPath(); g.roundRect ? g.roundRect(bx, by, bw, bh, 18) : g.rect(bx, by, bw, bh); g.moveTo(bx + bw - 30, by + bh); g.lineTo(kx - 60, by + bh + 18); g.lineTo(bx + bw - 6, by + bh - 22); g.fill(); g.stroke();
+  g.fillStyle = C.ink; g.textAlign = 'center'; g.textBaseline = 'middle'; lines.forEach((l, i) => g.fillText(l, bx + bw/2, by + 31 + i*36));
+  if (SHOP.nearKeeper) { const ax = kx + 150 + Math.sin(t*6)*8, ay = 395; g.fillStyle = C.yellow; g.strokeStyle = C.ink; g.lineWidth = 4; g.beginPath(); g.moveTo(ax + 26, ay - 22); g.lineTo(ax + 26, ay + 22); g.lineTo(ax, ay); g.closePath(); g.fill(); g.stroke(); }
   // stands with things to buy
   for (const st of STANDS) {
     const it = ITEMS.find(i => i.id === st.item), top = SHOP_FLOOR - 170;
@@ -1918,7 +1935,8 @@ function openShop() {
   if (SHOP.who == null) SHOP.who = Math.max(0, mine);
   openPage('shop'); renderShopCard(true); cv.focus();
 }
-function shopSay(text, sound) { SHOP.msg = text; SHOP.msgT = 3.5; if (sound && sfx[sound]) sfx[sound](); }
+function shopSay(text, sound, secs = 3.5) { SHOP.msg = text; SHOP.msgT = secs; if (sound && sfx[sound]) sfx[sound](); }
+function shopTalk() { SHOP.talk = (SHOP.talk + 1) % KEEPER_LINES.length; shopSay(KEEPER_LINES[SHOP.talk](), 'count', 6); renderShopCard(true); }
 function shopAct(id) {
   const it = ITEMS.find(i => i.id === id), ch = CHARS[SHOP.who];
   if (!shop.owned[id]) {
@@ -1929,10 +1947,18 @@ function shopAct(id) {
 }
 function renderShopCard(force) {
   const ch = CHARS[SHOP.who], st = SHOP.near, it = st && ITEMS.find(i => i.id === st.item);
-  const key = [shop.coins, ch.id, it && it.id, it && shop.owned[it.id], it && shop.wear[ch.id]].join('|');
+  const key = [shop.coins, ch.id, it && it.id, it && shop.owned[it.id], it && shop.wear[ch.id], SHOP.nearKeeper].join('|');
   if (!force && key === SHOP.key) return;
   SHOP.key = key; $('coinCount').textContent = shop.coins; $('shopWho').textContent = ch.name;
   const k = (pl, a) => keyName(KEYMAP[pl][a][0]), card = $('shopCard');
+  const press = `or press <kbd>${k('p1','punch')}</kbd> / <kbd>${k('p2','punch')}</kbd> / <kbd>X</kbd>`;
+  if (!it && SHOP.nearKeeper) {
+    card.innerHTML = `<h3>The shopkeeper</h3><p>Want to chat? Each time you talk, the shopkeeper says something new.</p><div class="row"></div>`;
+    const b = document.createElement('button'); b.className = 'btn'; b.id = 'shopTalk'; b.textContent = SHOP.talk < 0 ? 'say hi' : 'keep talking';
+    b.onclick = () => { shopTalk(); cv.focus(); };
+    card.querySelector('.row').append(b, Object.assign(document.createElement('span'), { innerHTML:press }));
+    return;
+  }
   if (!it) {
     card.innerHTML = `<h3>Welcome to the shop!</h3><p>Walk with <kbd>${k('p1','l')}</kbd> <kbd>${k('p1','r')}</kbd> or <kbd>${k('p2','l')}</kbd> <kbd>${k('p2','r')}</kbd> and jump with <kbd>${k('p1','u')}</kbd> or <kbd>${k('p2','u')}</kbd>. Walk up to something to buy it.</p><p class="note">Finish a fight to earn 10 coins. Win it with a person (not the computer) to get 15 more. More things are coming soon!</p>`;
     return;
@@ -1942,7 +1968,7 @@ function renderShopCard(force) {
   const b = document.createElement('button'); b.className = 'btn'; b.id = 'shopAct';
   b.textContent = !owned ? `buy for ${it.price} coins` : on ? `take it off ${ch.name}` : `put it on ${ch.name}`;
   b.onclick = () => { shopAct(it.id); cv.focus(); };
-  card.querySelector('.row').append(b, Object.assign(document.createElement('span'), { innerHTML:`or press <kbd>${k('p1','punch')}</kbd> / <kbd>${k('p2','punch')}</kbd> / <kbd>X</kbd>` }));
+  card.querySelector('.row').append(b, Object.assign(document.createElement('span'), { innerHTML:press }));
 }
 let waitingKey = null;
 function renderKeys() {

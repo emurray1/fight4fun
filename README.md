@@ -32,7 +32,7 @@ Every fighter has 200 hp. When it runs out, they get dizzy and can be thrown.
 
 Every fight you finish earns 10 coins, and 15 more if a person (not the computer) wins it. Spend coins in the **shop** on the main menu.
 
-The shop is a room you walk around in. Walk your fighter up to a stand and press punch to buy what's on it, or punch again to put it on or take it off. Use the arrows at the top to pick which fighter you're shopping as. The grey shopkeeper behind the counter talks to you while you shop.
+The shop is a room you walk around in. Walk your fighter up to a stand and press punch to buy what's on it, or punch again to put it on or take it off. Use the arrows at the top to pick which fighter you're shopping as. To talk to the grey shopkeeper, walk up to the counter and press punch. Each time you press it, they say something new: tips, how many coins you need, and a joke.
 
 - **Cool hat (25 coins):** a tilted black top hat.
 
