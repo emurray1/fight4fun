@@ -553,7 +553,10 @@ const looks = ch => ({ hat:wears('coolhat', ch), glasses:wears('shades', ch) && 
 const SHOP = { who:null, floor:1, x:280, y:0, vy:0, facing:1, near:null, nearKeeper:false, nearStairs:false, talk:{ 1:-1, 2:-1 }, prev:{}, msg:'', msgT:0, key:'' };
 // two floors: the fighty shop downstairs, and the pink funny fun shop upstairs for things that don't fit downstairs
 const SHOP_FLOOR = 770, KEEPERS = { 1:1260, 2:1180 }, STAIRS_X = { 1:130, 2:330 };
-const STAND_SPOTS = { 1:[400, 700], 2:[530, 830, 1420] };
+// a ladder from the pink shop goes up to the dark 3rd floor, which the shopkeepers don't like to talk about
+const LADDER_X = 1480, ATTIC_STAIRS_X = 220;
+const STAIRS = [{ floor:1, x:STAIRS_X[1], to:2 }, { floor:2, x:STAIRS_X[2], to:1 }, { floor:2, x:LADDER_X, to:3 }, { floor:3, x:ATTIC_STAIRS_X, to:2 }];
+const STAND_SPOTS = { 1:[400, 700], 2:[530, 830] };
 const STANDS = (() => {
   const free = { 1:[...STAND_SPOTS[1]], 2:[...STAND_SPOTS[2]] }, out = [];
   for (const it of ITEMS) { const f = free[1].length ? 1 : 2; if (free[f].length) out.push({ item:it.id, floor:f, x:free[f].shift() }); }
@@ -614,6 +617,11 @@ const SHURIKEN_REPLIES = [
   { at:1.3, lines:['Goofy Sparkle? The little one with the propeller hat? He was just here getting a lollipop!', 'Hmm, I saw him zoom past with his propeller spinning! Wheee!'] },
   { at:4.9, lines:['Why are you looking for him? Are you two playing hide and seek? Hehe!', 'Don\'t be grumpy! He always comes back for more lollipops.', 'Maybe he\'s upstairs? He likes the pink shop!'] },
 ];
+// ask either shopkeeper about the 3rd floor and they get scared
+const ASK3_LINES = {
+  1:['The th-th-third floor?! *drops everything* We do NOT talk about the third floor!', 'Third floor? What third floor? There is no third floor! *sweats*', 'Shhh! Not so loud! It might hear you!'],
+  2:['Eep! N-no! Don\'t go up there! *hides behind her bow*', 'The third floor? *shaking* I... I heard something blinking up there...', 'P-please don\'t ask me about that...'],
+};
 // after Hexstar's "beep boop baap!" they carry on like nothing happened
 const IGNORE_BEEP_LINES = ['Anyway... as I was saying...', 'So! Nice weather today, huh?', '*keeps tidying the counter*', 'Mm-hmm. Yep. Shop stuff.'];
 const IGNORE_BEEP2_LINES = ['Anyway... um... nice shop, right?', '*keeps smiling*', 'So... um... hi again!', '*fixes her bow*'];
@@ -2072,8 +2080,10 @@ function shopStep(dt) {
   if (h.jump && !pr.jump && SHOP.y === 0) { SHOP.vy = -1000*ch.jump; sfx.jump(); }
   const f = SHOP.floor;
   SHOP.near = STANDS.find(s => s.floor === f && Math.abs(s.x - SHOP.x) < 110) || null;
-  SHOP.nearStairs = !SHOP.near && Math.abs(STAIRS_X[f] - SHOP.x) < 100;
-  SHOP.nearKeeper = !SHOP.near && !SHOP.nearStairs && Math.abs(KEEPERS[f] - SHOP.x) < 220;
+  const stair = !SHOP.near && STAIRS.find(s => s.floor === f && Math.abs(s.x - SHOP.x) < 100);
+  SHOP.nearStairs = !!stair; SHOP.stairTo = stair ? stair.to : 0;
+  SHOP.nearKeeper = !SHOP.near && !SHOP.nearStairs && !!KEEPERS[f] && Math.abs(KEEPERS[f] - SHOP.x) < 220;
+  if (f === 3) atticStep(dt);
   if (h.punch && !pr.punch) { if (SHOP.near) shopAct(SHOP.near.item); else if (SHOP.nearStairs) shopStairs(); else if (SHOP.nearKeeper) shopTalk(); }
   if (h.grab && !pr.grab && SHOP.nearKeeper) shopLaugh();
   if (isHex()) { // Hexstar says "beep boop baap!" now and then (or when you press special), and the shopkeepers act like he never said it
@@ -2084,7 +2094,7 @@ function shopStep(dt) {
       shopSay(lines[Math.floor(Math.random()*lines.length)], null, 3);
     }
   }
-  SHOP.laughT = Math.max(0, (SHOP.laughT || 0) - dt); SHOP.enterT = Math.max(0, (SHOP.enterT || 0) - dt);
+  SHOP.laughT = Math.max(0, (SHOP.laughT || 0) - dt); SHOP.enterT = Math.max(0, (SHOP.enterT || 0) - dt); SHOP.keeperScaredT = Math.max(0, (SHOP.keeperScaredT || 0) - dt);
   SHOP.foundT = (SHOP.foundT || 0) + dt;
   if (SHOP.foundReply && SHOP.foundT >= 5.4) { SHOP.foundReply = false; if (SHOP.floor === 2) shopSay('Aww... you found your friend! *happy blush*', null, 4); }
   SHOP.enterClock = (SHOP.enterClock || 0) + dt; // the first shopkeeper answers Shuriken's question, a moment after he asks
@@ -2114,7 +2124,7 @@ function drawFightyFloor(t) { // downstairs: the fighty shop
   // shopkeeper behind the counter, waving (and bouncing when laughing)
   const kx = KEEPERS[1];
   const weird = isHex(); // around Nervous Hexstar they sway back and forth a bit oddly
-  g.save(); g.translate(0, SHOP.keeperLaughT > 0 ? -Math.abs(Math.sin(t*18))*10 : 0);
+  g.save(); g.translate(SHOP.keeperScaredT > 0 ? Math.sin(t*60)*4 : 0, SHOP.keeperLaughT > 0 ? -Math.abs(Math.sin(t*18))*10 : 0); // shakes when scared
   if (weird) { g.translate(kx, 610); g.rotate(Math.sin(t*3)*0.08); g.translate(-kx, -610); }
   g.fillStyle = C.ink; g.beginPath(); g.roundRect ? g.roundRect(kx - 72, 450, 144, 160, 18) : g.rect(kx - 72, 450, 144, 160); g.fill();
   g.save(); g.translate(kx + 66, 470); g.rotate(-0.5 + Math.sin(t*5)*0.35); g.beginPath(); g.roundRect ? g.roundRect(-22, -130, 44, 140, 20) : g.rect(-22, -130, 44, 140); g.fill(); g.restore();
@@ -2222,8 +2232,17 @@ function drawFunnyFloor(t) { // upstairs: the pink funny fun shop
   g.strokeStyle = PINK_DARK; g.lineWidth = 6; for (let i=0;i<4;i++) { const y = SHOP_FLOOR + 10 + i*14; g.beginPath(); g.moveTo(sx - 64 + i*10, y); g.lineTo(sx + 64 - i*10, y); g.stroke(); }
   g.strokeStyle = C.ink; g.lineWidth = 5; g.beginPath(); g.moveTo(sx - 70, SHOP_FLOOR); g.lineTo(sx - 70, SHOP_FLOOR - 70); g.lineTo(sx + 70, SHOP_FLOOR - 70); g.lineTo(sx + 70, SHOP_FLOOR); g.stroke();
   drawFloorSign(sx, SHOP_FLOOR - 120, '1st floor ↓', '#f3e2c7');
-  if (spooky()) { drawWeb(200, 150, 130, 1); drawWeb(1500, 150, 130, -1); drawPumpkin(470, SHOP_FLOOR, 30, t); drawPumpkin(1400, SHOP_FLOOR, 24, t); }
-  if (xmas()) { drawLights(200, 1520, 150, t); drawXmasTree(1420, SHOP_FLOOR, 120, t); }
+  if (spooky()) { drawWeb(200, 150, 130, 1); drawWeb(1500, 150, 130, -1); drawPumpkin(470, SHOP_FLOOR, 30, t); drawPumpkin(990, SHOP_FLOOR, 24, t); }
+  if (xmas()) { drawLights(200, 1520, 150, t); drawXmasTree(980, SHOP_FLOOR, 110, t); }
+  // a ladder up to the 3rd floor, with a sign nobody listens to
+  g.strokeStyle = '#6b4a2f'; g.lineWidth = 9;
+  g.beginPath(); g.moveTo(LADDER_X - 34, SHOP_FLOOR); g.lineTo(LADDER_X - 30, 150); g.moveTo(LADDER_X + 34, SHOP_FLOOR); g.lineTo(LADDER_X + 30, 150); g.stroke();
+  g.lineWidth = 6; for (let y = SHOP_FLOOR - 40; y > 170; y -= 56) { g.beginPath(); g.moveTo(LADDER_X - 32, y); g.lineTo(LADDER_X + 32, y); g.stroke(); }
+  g.fillStyle = '#1b1612'; g.fillRect(LADDER_X - 50, 128, 100, 24);
+  g.save(); g.translate(LADDER_X, 470); g.rotate(0.12);
+  g.fillStyle = '#f3e2c7'; g.strokeStyle = C.ink; g.lineWidth = 3; g.fillRect(-72, -26, 144, 52); g.strokeRect(-72, -26, 144, 52);
+  g.fillStyle = C.red; g.font = `30px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('keep out!', 0, 2); g.restore();
+  drawFloorSign(LADDER_X - 30, 260, '3rd floor ↑', '#bbb');
   if (SHOP.sparkleHere) { // Goofy Sparkle, found! He bounces, and hearts float up when Shuriken is close
     const sx2 = 780, r = 50, bottom = Math.max(...shapeVerts('star4', r, true).map(v => v.y));
     g.save(); g.translate(sx2, SHOP_FLOOR - bottom - Math.abs(Math.sin(t*6))*14); g.rotate(Math.sin(t*6)*0.08);
@@ -2233,9 +2252,12 @@ function drawFunnyFloor(t) { // upstairs: the pink funny fun shop
     if (ft > 2.6 && ft < 5.4) drawBubble('Shuriken! You found me! Hehe! Hide and seek is fun!', sx2 + 220, SHOP_FLOOR - 190, sx2 + 10);
   }
   const kx = KEEPERS[2], kid = isKid(), hex = isHex(), friend = isFriend() || kid || hex;
-  drawShyKeeper(kx, t, { friend, close:friend ? 0 : Math.max(0, 1 - Math.abs(SHOP.x - kx)/500), lookX:Math.sign(SHOP.x - kx)*3, lift:SHOP.keeperLaughT > 0 ? Math.abs(Math.sin(t*18))*8 : 0, wiggle:hex ? Math.sin(t*5)*8 : 0 });
+  const scared3 = SHOP.keeperScaredT > 0; // asked about the 3rd floor: she shakes and hides her face
+  drawShyKeeper(kx, t, { friend:friend && !scared3, close:scared3 ? 1 : friend ? 0 : Math.max(0, 1 - Math.abs(SHOP.x - kx)/500), lookX:Math.sign(SHOP.x - kx)*3, lift:SHOP.keeperLaughT > 0 ? Math.abs(Math.sin(t*18))*8 : 0,
+    wiggle:scared3 ? Math.sin(t*60)*4 : hex ? Math.sin(t*5)*8 : 0 });
   const empty = !STANDS.some(s => s.floor === 2);
   const say = SHOP.msgT > 0 ? SHOP.msg
+    : SHOP.nearStairs && SHOP.stairTo === 3 ? 'D-don\'t go up there... please...'
     : hex ? (SHOP.near ? 'Ooh, so cool! Like you!' : SHOP.nearKeeper ? 'Want to talk? I am being weird. Sorry. I like you!' : SHOP.nearStairs ? 'Bye bye, nervous buddy!' : 'H-hexstar! *wiggles* Hi!')
     : kid ? (SHOP.near ? 'Ooh, so cute for a little one!' : SHOP.nearKeeper ? 'Hi little one! Want to talk? Press punch!' : SHOP.nearStairs ? 'Hold the rail going down, okay?' : spooky() ? 'Aww, it\'s okay sweetie, they\'re just decorations! You\'re so brave!' : xmas() ? 'Aww, you\'re so excited, sweetie! Merry Christmas!' : 'Aww, hi sweetie! Come here!')
     : friend ? (SHOP.near ? 'Ooh, that would look so cute on you!' : SHOP.nearKeeper ? `${CHARS[SHOP.who].name}! Want to chat? Press punch!` : SHOP.nearStairs ? 'Aww, leaving already? Come back soon!' : `Hi ${CHARS[SHOP.who].name}! Come say hi!`)
@@ -2277,8 +2299,61 @@ function drawShyKeeper(kx, t, { friend, close, lookX, walking = false, alpha = 1
   }
   g.restore();
 }
+// ---------- the 3rd floor: a dark, dusty attic where glowing eyes watch you ----------
+const EYE_SPOTS = [[1250, 420], [560, 470], [1450, 330], [950, 360], [760, 300]];
+function atticStep(dt) {
+  const e = SHOP.eyes; if (!e) return;
+  SHOP.atticSayT = Math.max(0, (SHOP.atticSayT || 0) - dt);
+  if (e.gone > 0) { // hiding; then they open again somewhere far from you
+    e.gone -= dt; e.fade = Math.max(0, e.fade - dt*4);
+    if (e.gone <= 0) { const far = EYE_SPOTS.filter(s => Math.abs(s[0] - SHOP.x) > 400), s = far[Math.floor(Math.random()*far.length)] || EYE_SPOTS[0]; e.x = s[0]; e.y = s[1]; }
+  } else {
+    e.fade = Math.min(1, e.fade + dt*1.5);
+    if (Math.abs(e.x - SHOP.x) < 330) { e.gone = 4; SHOP.atticSay = 'W-what was that?!'; SHOP.atticSayT = 2.5; if (sfx.fall) sfx.fall(); }
+  }
+}
+function drawAtticFloor(t) {
+  g.fillStyle = '#1e1813'; g.fillRect(0, 0, W, H);
+  g.strokeStyle = '#2a211a'; g.lineWidth = 6; for (let x = 60; x < W; x += 120) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, SHOP_FLOOR); g.stroke(); }
+  g.fillStyle = '#100c09'; g.beginPath(); g.moveTo(0, 0); g.lineTo(560, 0); g.lineTo(0, 380); g.closePath(); g.fill();
+  g.beginPath(); g.moveTo(W, 0); g.lineTo(W - 560, 0); g.lineTo(W, 380); g.closePath(); g.fill();
+  g.fillStyle = '#3a2c22'; g.fillRect(0, SHOP_FLOOR, W, H - SHOP_FLOOR);
+  g.strokeStyle = '#2a1f17'; g.lineWidth = 6; for (const y of [SHOP_FLOOR + 4, SHOP_FLOOR + 50, SHOP_FLOOR + 96]) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
+  // old boxes
+  for (const [bx, by, bw, bh] of [[1180, SHOP_FLOOR, 160, 120], [1205, SHOP_FLOOR - 120, 110, 90], [480, SHOP_FLOOR, 130, 100], [1390, SHOP_FLOOR, 120, 140]]) {
+    g.fillStyle = '#6e5133'; g.strokeStyle = '#2e2116'; g.lineWidth = 4; g.fillRect(bx - bw/2, by - bh, bw, bh); g.strokeRect(bx - bw/2, by - bh, bw, bh);
+    g.fillStyle = '#8a6c48'; g.fillRect(bx - 12, by - bh, 24, bh);
+  }
+  drawWeb(0, 0, 200, 1); drawWeb(W, 0, 200, -1); drawWeb(1270, SHOP_FLOOR - 210, 70, -1);
+  // stairs back down: a hole in the floor with a rail
+  const sx = ATTIC_STAIRS_X;
+  g.fillStyle = '#0b0806'; g.fillRect(sx - 70, SHOP_FLOOR, 140, 60);
+  g.strokeStyle = '#6b4a2f'; g.lineWidth = 5; g.beginPath(); g.moveTo(sx - 70, SHOP_FLOOR); g.lineTo(sx - 70, SHOP_FLOOR - 70); g.lineTo(sx + 70, SHOP_FLOOR - 70); g.lineTo(sx + 70, SHOP_FLOOR); g.stroke();
+  drawFloorSign(sx, SHOP_FLOOR - 120, '2nd floor ↓', '#bbb');
+  // one dim lightbulb swinging on its cord
+  const a = Math.sin(t*1.2)*0.15, bx = 800 + Math.sin(a)*230, by = Math.cos(a)*230;
+  SHOP.bulb = { x:bx, y:by };
+  g.strokeStyle = '#111'; g.lineWidth = 3; g.beginPath(); g.moveTo(800, 0); g.lineTo(bx, by); g.stroke();
+  g.fillStyle = `rgba(255,236,160,${0.75 + Math.sin(t*13)*0.08})`; g.beginPath(); g.arc(bx, by + 14, 16, 0, TAU); g.fill();
+}
+function drawAtticDark(t) { // darkness everywhere except near the bulb, then the glowing eyes on top
+  const b = SHOP.bulb || { x:800, y:230 }, dark = g.createRadialGradient(b.x, b.y, 60, b.x, b.y, 760);
+  dark.addColorStop(0, 'rgba(0,0,0,0)'); dark.addColorStop(0.5, 'rgba(0,0,0,.35)'); dark.addColorStop(1, 'rgba(0,0,0,.88)');
+  g.fillStyle = dark; g.fillRect(0, 0, W, H);
+  const e = SHOP.eyes;
+  if (e && e.fade > 0) {
+    const blink = t % 3.4 < 0.14 ? 0.12 : 1;
+    g.save(); g.globalAlpha = e.fade; g.shadowColor = '#e8ff6a'; g.shadowBlur = 24;
+    for (const dx of [-28, 28]) {
+      g.fillStyle = '#e8ff6a'; g.beginPath(); g.ellipse(e.x + dx, e.y, 22, 14*blink, 0, 0, TAU); g.fill();
+      g.shadowBlur = 0; g.fillStyle = '#000'; g.beginPath(); g.ellipse(e.x + dx + Math.sign(SHOP.x - e.x)*4, e.y, 4, 11*blink, 0, 0, TAU); g.fill(); g.shadowBlur = 24;
+    }
+    g.restore();
+  }
+  if (SHOP.atticSayT > 0) drawBubble(SHOP.atticSay, SHOP.x + 140, SHOP_FLOOR - 150 + SHOP.y, SHOP.x + 20);
+}
 function drawShop(t) {
-  if (SHOP.floor === 2) drawFunnyFloor(t); else drawFightyFloor(t);
+  if (SHOP.floor === 3) drawAtticFloor(t); else if (SHOP.floor === 2) drawFunnyFloor(t); else drawFightyFloor(t);
   // stands with things to buy on this floor
   for (const st of STANDS) {
     if (st.floor !== SHOP.floor) continue;
@@ -2311,6 +2386,7 @@ function drawShop(t) {
   else if (found && SHOP.foundT > 0.2 && SHOP.foundT < 2.6) drawBubble('Goofy Sparkle! I FOUND you!', SHOP.x + 160, above - 24, SHOP.x + 20);
   else if (scared && t % 6 < 2.6) drawBubble(SCARED_LINES[Math.floor(t/6) % SCARED_LINES.length], SHOP.x + 120, above - (bottom > 60 ? 20 : 0), SHOP.x + 20);
   else if (excited && t % 5 < 2.6) drawBubble(EXCITED_LINES[Math.floor(t/5) % EXCITED_LINES.length], SHOP.x + 120, above - 24, SHOP.x + 20);
+  if (SHOP.floor === 3) drawAtticDark(t);
 }
 let lastT = performance.now(), acc = 0;
 function frame(now) {
@@ -2506,6 +2582,10 @@ function shopTalk() {
   if (text.startsWith('*shouts upstairs*')) SHOP.echoT = 5;
 }
 const jokeOpen = () => !!SHOP.joke && SHOP.msgT > 0;
+function shopAsk3() {
+  const lines = ASK3_LINES[SHOP.floor]; if (!lines) return;
+  SHOP.joke = false; SHOP.keeperScaredT = 3; shopSay(lines[Math.floor(Math.random()*lines.length)], 'warn', 4); renderShopCard(true);
+}
 function shopLaugh() { // you laugh at the joke, and the shopkeeper is happy you got it
   if (!jokeOpen()) return;
   SHOP.joke = false; SHOP.laughT = 1.6; SHOP.keeperLaughT = 1.8;
@@ -2519,7 +2599,10 @@ function shopLaugh() { // you laugh at the joke, and the shopkeeper is happy you
   shopSay(replies[Math.floor(Math.random()*replies.length)], 'laugh', 4); renderShopCard(true);
 }
 function shopStairs() {
-  SHOP.floor = 3 - SHOP.floor; Object.assign(SHOP, { x:STAIRS_X[SHOP.floor] + 110, y:0, vy:0, facing:1, near:null, nearKeeper:false, nearStairs:false, echoT:0, visit:null });
+  const from = SHOP.floor, to = SHOP.stairTo || (from === 1 ? 2 : 1), back = STAIRS.find(s => s.floor === to && s.to === from);
+  SHOP.floor = to; Object.assign(SHOP, { x:back.x + (back.x > W/2 ? -110 : 110), y:0, vy:0, facing:back.x > W/2 ? -1 : 1, near:null, nearKeeper:false, nearStairs:false, stairTo:0, echoT:0, visit:null, sparkleHere:false, msgT:0 });
+  if (to === 3) { SHOP.eyes = { x:1250, y:420, gone:0, fade:0 }; SHOP.atticSay = 'It\'s so dark up here...'; SHOP.atticSayT = 3; renderShopCard(true); return; }
+  if (from === 3) { shopSay('Y-you went up there?! Are you okay?!', 'jump', 4); renderShopCard(true); return; }
   // sometimes Grumpy Shuriken finds Goofy Sparkle hiding upstairs in the pink shop
   const lookingForSparkle = SHOP.floor === 2 && CHARS[SHOP.who].id === 'shuriken';
   SHOP.sparkleHere = lookingForSparkle && Math.random() < 0.5; SHOP.foundT = 0; // a 50/50 chance
@@ -2543,7 +2626,7 @@ function shopAct(id) {
 }
 function renderShopCard(force) {
   const ch = CHARS[SHOP.who], st = SHOP.near, it = st && ITEMS.find(i => i.id === st.item);
-  const key = [shop.coins, ch.id, it && it.id, it && shop.owned[it.id], ITEMS.map(i => wears(i.id, ch)).join(), SHOP.nearKeeper, SHOP.nearStairs, SHOP.floor, jokeOpen()].join('|');
+  const key = [shop.coins, ch.id, it && it.id, it && shop.owned[it.id], ITEMS.map(i => wears(i.id, ch)).join(), SHOP.nearKeeper, SHOP.nearStairs, SHOP.stairTo, SHOP.floor, jokeOpen()].join('|');
   if (!force && key === SHOP.key) return;
   SHOP.key = key; $('coinCount').textContent = shop.coins; $('shopWho').textContent = ch.name;
   const card = $('shopCard'); fillShopCard(card, ch, it);
@@ -2566,9 +2649,11 @@ function fillShopCard(card, ch, it) {
   const k = (pl, a) => keyName(KEYMAP[pl][a][0]);
   const press = `or press <kbd>${k('p1','punch')}</kbd> / <kbd>${k('p2','punch')}</kbd> / <kbd>X</kbd>`;
   if (!it && SHOP.nearStairs) {
-    const up = SHOP.floor === 1;
-    card.innerHTML = `<h3>Stairs</h3><p>${up ? 'Go up to the 2nd floor: the funny fun shop. Things that don\'t fit down here go up there.' : 'Go back down to the 1st floor: the fighty shop.'}</p><div class="row"></div>`;
-    const b = document.createElement('button'); b.className = 'btn'; b.id = 'shopStairs'; b.textContent = up ? 'go upstairs' : 'go downstairs';
+    const to = SHOP.stairTo, up = to > SHOP.floor;
+    const text = { 2:SHOP.floor === 1 ? 'Go up to the 2nd floor: the funny fun shop. Things that don\'t fit down here go up there.' : 'Go back down to the 2nd floor: the pink funny fun shop.',
+      1:'Go back down to the 1st floor: the fighty shop.', 3:'Climb up to the 3rd floor. The shopkeepers really don\'t like to talk about it...' }[to];
+    card.innerHTML = `<h3>${to === 3 ? 'Ladder' : 'Stairs'}</h3><p>${text}</p><div class="row"></div>`;
+    const b = document.createElement('button'); b.className = 'btn'; b.id = 'shopStairs'; b.textContent = to === 3 ? 'climb up... if you dare' : up ? 'go upstairs' : 'go downstairs';
     b.onclick = () => { shopStairs(); cv.focus(); };
     card.querySelector('.row').append(b, Object.assign(document.createElement('span'), { innerHTML:press }));
     return;
@@ -2589,11 +2674,18 @@ function fillShopCard(card, ch, it) {
       row.append(lb, Object.assign(document.createElement('span'), { innerHTML:`That was a joke! Laugh, or press <kbd>${k('p1','grab')}</kbd> / <kbd>${k('p2','grab')}</kbd> / <kbd>B</kbd>` }));
       card.append(row);
     }
+    const ask = document.createElement('button'); ask.className = 'btn'; ask.id = 'shopAsk3'; ask.textContent = 'ask about the 3rd floor'; // they get scared
+    ask.onclick = () => { shopAsk3(); cv.focus(); };
+    card.querySelector('.row').append(ask);
+    return;
+  }
+  if (!it && SHOP.floor === 3) {
+    card.innerHTML = '<h3>The 3rd floor...</h3><p>It\'s dark and dusty up here. Something is watching you.</p><p class="note">The stairs on the left go back down.</p>';
     return;
   }
   if (!it && SHOP.floor === 2) {
     const empty = !STANDS.some(s => s.floor === 2);
-    card.innerHTML = `<h3>Welcome to the funny fun shop!</h3><p>This is the 2nd floor. ${empty ? 'Nothing is up here yet. When the fighty shop downstairs runs out of room, new things come up here.' : 'Walk up to something to buy it.'}</p><p class="note">The stairs on the left go back down.</p>`;
+    card.innerHTML = `<h3>Welcome to the funny fun shop!</h3><p>This is the 2nd floor. ${empty ? 'Nothing is up here yet. When the fighty shop downstairs runs out of room, new things come up here.' : 'Walk up to something to buy it.'}</p><p class="note">The stairs on the left go back down. The ladder on the right goes up to the 3rd floor...</p>`;
     return;
   }
   if (!it) {

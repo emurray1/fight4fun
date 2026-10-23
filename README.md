@@ -34,6 +34,8 @@ Every fight you finish earns 10 coins, and 15 more if a person (not the computer
 
 The shop is a room you walk around in. Walk your fighter up to a stand and press punch to buy what's on it, or punch again to put it on or take it off. You can also take things off from anywhere in the shop with the ✕ buttons at the bottom. Use the arrows at the top to pick which fighter you're shopping as. The shop has two floors. Downstairs is the fighty shop. Take the stairs on the left (walk up and press punch) to reach the pink **funny fun shop** on the 2nd floor, where things go when downstairs runs out of room. Its shopkeeper is very shy, but she'll chat if you talk to her.
 
+A ladder in the pink shop (with a "keep out!" sign) goes up to the dark, dusty 3rd floor, where glowing eyes watch you from the shadows and vanish when you get close. Ask either shopkeeper about the 3rd floor and they get very scared.
+
 To talk to the grey shopkeeper, walk up to the counter and press punch. Each time you press it, they say something new: tips, how many coins you need, and a joke.
 
 - **Sunglasses (20 coins):** dark shades with a shine. Every fighter can wear them except Cool Star, who already has its own.
