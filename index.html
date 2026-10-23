@@ -541,6 +541,7 @@ const xmas = () => !spooky() && (setup.christmas === 'on' || (setup.christmas ==
 const ITEMS = [
   { id:'shades', name:'Sunglasses', price:20, desc:'Dark shades with a shine. So cool.', not:['star'] },
   { id:'coolhat', name:'Cool hat', price:25, desc:'A tilted black top hat. Very cool.' },
+  { id:'cape', name:'Super cape', price:30, desc:'A bright red cape that flutters behind you. Super!' },
   // free, up in the dark attic... but taking them makes the eyes push you back downstairs
   { id:'goggles', name:'Glow goggles', price:0, desc:'Spooky goggles that glow in the dark. Free! ...what could go wrong?', floor:3 },
 ];
@@ -551,7 +552,7 @@ for (const [k, v] of Object.entries(shop.wear)) if (typeof v === 'boolean') { (s
 const saveShop = () => { try { localStorage.setItem('fff-shop', JSON.stringify(shop)); } catch (e) {} };
 const canWear = (it, ch) => !(it.not && it.not.includes(ch.id));
 const wears = (id, ch) => !!(shop.owned[id] && shop.wear[id] && shop.wear[id][ch.id]);
-const looks = ch => ({ hat:wears('coolhat', ch), glasses:wears('shades', ch) && ch.id !== 'star' });
+const looks = ch => ({ hat:wears('coolhat', ch), glasses:wears('shades', ch) && ch.id !== 'star', cape:wears('cape', ch) });
 // the shop room: you walk a fighter up to a stand to buy what's on it
 const SHOP = { who:null, floor:1, x:280, y:0, vy:0, facing:1, near:null, nearKeeper:false, nearStairs:false, talk:{ 1:-1, 2:-1 }, prev:{}, msg:'', msgT:0, key:'' };
 // two floors: the fighty shop downstairs, and the funny fun shop upstairs for things that don't fit downstairs
@@ -559,7 +560,7 @@ const SHOP_FLOOR = 770, KEEPERS = { 1:1260, 2:1180 }, STAIRS_X = { 1:130, 2:330 
 // a ladder from the funny fun shop goes up to the dark 3rd floor, which the shopkeepers don't like to talk about
 const LADDER_X = 1480, ATTIC_STAIRS_X = 220;
 const STAIRS = [{ floor:1, x:STAIRS_X[1], to:2 }, { floor:2, x:STAIRS_X[2], to:1 }, { floor:2, x:LADDER_X, to:3 }, { floor:3, x:ATTIC_STAIRS_X, to:2 }];
-const STAND_SPOTS = { 1:[400, 700], 2:[530, 830], 3:[800] };
+const STAND_SPOTS = { 1:[390, 610, 830], 2:[530, 830], 3:[800] };
 const STANDS = (() => { // items fill the 1st floor, then the 2nd; an item can also ask for a floor of its own
   const free = { 1:[...STAND_SPOTS[1]], 2:[...STAND_SPOTS[2]], 3:[...STAND_SPOTS[3]] }, out = [];
   for (const it of ITEMS) { const f = it.floor || (free[1].length ? 1 : 2); if (free[f].length) out.push({ item:it.id, floor:f, x:free[f].shift() }); }
@@ -839,6 +840,7 @@ function drawCharacter(g, ch, r, o = {}) {
     g.strokeStyle = C.ink; g.lineWidth = Math.max(2, r*0.06); g.beginPath(); g.moveTo(0, -0.9*r); g.lineTo(Math.sin(tt*9)*r*0.06, -1.55*r); g.stroke();
     g.fillStyle = Math.sin(tt*10) > 0 ? '#ff3b3b' : '#7dff8a'; g.beginPath(); g.arc(Math.sin(tt*9)*r*0.06, -1.6*r, 0.1*r, 0, TAU); g.fill(); g.lineWidth = Math.max(1, r*0.03); g.stroke();
   }
+  if (o.cape) drawCape(g, r, o.facing || 1, tt, ch.shape === 'circle' ? r : Math.max(...shapeVerts(ch.shape, r, true).map(v => v.y))); // behind the body
   g.fillStyle = ch.color; g.strokeStyle = C.ink; g.lineWidth = Math.max(2, r*0.09); g.lineJoin = 'round';
   shapePath(g, ch.shape, r); g.fill(); g.stroke();
   if (robot) { // a panel seam and metal bolts
@@ -867,6 +869,18 @@ function drawCharacter(g, ch, r, o = {}) {
   drawFace(g, ch, r, o);
   if (o.hat) drawHat(g, r, -TOPS[ch.shape]*r, o.facing || 1);
   if (robot) g.restore();
+}
+function drawCape(g, r, facing, t, bottom = r) { // the super cape from the shop: hangs from the shoulders, trails behind and flutters
+  // wide enough to show around every fighter's body, hanging a little below it and trailing behind
+  const sway = Math.sin(t*4)*0.1*r, back = -facing*0.35*r, b = bottom + 0.12*r, top = -0.45*r, wb = 1.15*r;
+  g.save(); g.fillStyle = '#d8232a'; g.strokeStyle = C.ink; g.lineWidth = Math.max(2, r*0.07); g.lineJoin = 'round';
+  g.beginPath(); g.moveTo(-0.55*r, top); g.lineTo(0.55*r, top);
+  g.quadraticCurveTo(0.95*r + back, (top + b)/2, wb + back + sway, b);
+  for (let i=1;i<=4;i++) { const x = wb - i*wb/2; g.quadraticCurveTo(x + wb/4 + back + sway, b + (i % 2 ? 0.12 : -0.02)*r, x + back + sway, b); }
+  g.quadraticCurveTo(-0.95*r + back, (top + b)/2, -0.55*r, top);
+  g.closePath(); g.fill(); g.stroke();
+  g.fillStyle = 'rgba(255,255,255,.25)'; g.beginPath(); g.ellipse(-0.5*r + back*0.5, (top + b)/2, 0.06*r, 0.3*r, 0.15, 0, TAU); g.fill(); // a little shine
+  g.restore();
 }
 function drawBeanie(g, r, t) { // Goofy Sparkle's striped propeller beanie, sitting on his top point
   const y = -1.08*r, w = 0.42*r;
@@ -902,7 +916,7 @@ function charCanvas(ch, px, o = {}) {
   const g = c.getContext('2d'); g.scale(d, d);
   const tall = o.crown || o.hat, r = px*(tall ? 0.27 : 0.33);
   g.translate(px/2, px*(tall ? 0.62 : 0.53));
-  drawCharacter(g, ch, r, { facing:1, ko:o.ko, hat:o.hat && !o.crown, glasses:o.glasses, beanie:!o.crown });
+  drawCharacter(g, ch, r, { facing:1, ko:o.ko, hat:o.hat && !o.crown, glasses:o.glasses, cape:o.cape, beanie:!o.crown });
   if (o.crown) drawCrown(g, r, -TOPS[ch.shape]*r);
   return c;
 }
@@ -2507,7 +2521,9 @@ function drawShop(t) {
     g.fillStyle = st.floor === 2 ? PINK_DARK : st.floor === 3 ? '#4a3626' : BEAM; g.fillRect(st.x - 12, top, 24, 170); g.beginPath(); g.ellipse(st.x, SHOP_FLOOR, 60, 12, 0, 0, TAU); g.fill();
     g.fillRect(st.x - 80, top - 14, 160, 18);
     g.save(); g.translate(st.x, top - 14 + Math.sin(t*2)*3);
-    if (it.id === 'coolhat') drawHat(g, 64, -6.4, 1); else { g.translate(0, -16); g.scale(130, 130); drawGlasses(g, [[-0.2, 0], [0.2, 0]], it.id === 'goggles', SHOP.pushT > 0 || SHOP.pushing ? '#ff3b3b' : '#e8ff6a'); } // the goggles turn red when the eyes get angry
+    if (it.id === 'coolhat') drawHat(g, 64, -6.4, 1);
+    else if (it.id === 'cape') { g.translate(0, -62); drawCape(g, 64, -1, t, 64); } // draped over the stand
+    else { g.translate(0, -16); g.scale(130, 130); drawGlasses(g, [[-0.2, 0], [0.2, 0]], it.id === 'goggles', SHOP.pushT > 0 || SHOP.pushing ? '#ff3b3b' : '#e8ff6a'); } // the goggles turn red when the eyes get angry
     g.restore();
     const owned = shop.owned[it.id], label = owned ? 'yours!' : it.price ? `${it.price} coins` : 'FREE!';
     g.font = `26px ${BODYFONT}`; const tw = g.measureText(label).width + 24;
