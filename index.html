@@ -543,6 +543,17 @@ const KEEPER2_LINES = [ // she's shy
   () => 'Um... why did the shop get a second floor? ...It wanted to level up. Hehe...',
   () => '...',
 ];
+// ...but she isn't shy with Lovely Heart, her friend
+const isFriend = () => CHARS[SHOP.who].id === 'heart';
+const KEEPER2_FRIEND_LINES = [
+  () => 'Hi Lovely Heart! Yay, you came to see me!',
+  () => STANDS.some(s => s.floor === 2) ? 'Look at my stuff! I saved the best things for you.' : 'It is empty up here right now, but you can still hang out with me!',
+  () => 'Your eyelashes look so pretty today!',
+  () => 'Do you like my bow? I tied it myself! I like your heart shape. It is so cute.',
+  () => 'Why did the shop get a second floor? It wanted to level up! Hehe!',
+  () => 'Want to know a secret? I kinda like the downstairs shopkeeper... Shh! Don\'t tell!',
+  () => 'You are my best friend, Lovely Heart!',
+];
 const KEEPER_LINES = [
   () => 'Hi! Welcome to my shop. I sell things to buy and wear.',
   () => `You have ${shop.coins} coins. ` + (shop.owned.coolhat ? 'Save them up for new stuff!' : shop.coins >= 25 ? 'That is enough for the cool hat!' : `The cool hat costs 25, so you need ${25 - shop.coins} more.`),
@@ -1869,21 +1880,33 @@ function drawFunnyFloor(t) { // upstairs: the pink funny fun shop
   const kx = KEEPERS[2];
   g.fillStyle = C.purple; g.strokeStyle = C.ink; g.lineWidth = 8; g.lineJoin = 'round';
   g.beginPath(); g.moveTo(kx - 40, 600); g.lineTo(kx + 40, 600); g.lineTo(kx + 46, SHOP_FLOOR - 4); g.lineTo(kx - 52, SHOP_FLOOR - 4); g.closePath(); g.fill(); g.stroke();
-  const wave = Math.sin(t*3)*4;
-  g.fillStyle = C.ink; g.fillRect(kx - 102, 668 + wave, 62, 30); g.fillRect(kx + 40, 668 - wave, 62, 30);
+  const friend = isFriend(), wave = Math.sin(t*3)*4;
+  g.fillStyle = C.ink; g.fillRect(kx - 102, 668 + wave, 62, 30);
+  if (friend) { g.save(); g.translate(kx + 44, 683); g.rotate(-1.1 + Math.sin(t*8)*0.35); g.fillRect(0, -15, 66, 30); g.restore(); } // waving hi
+  else g.fillRect(kx + 40, 668 - wave, 62, 30);
   g.beginPath(); g.moveTo(kx - 44, 650); g.lineTo(kx, 683); g.lineTo(kx - 44, 716); g.closePath(); g.moveTo(kx + 44, 650); g.lineTo(kx, 683); g.lineTo(kx + 44, 716); g.closePath(); g.fill();
-  // she's shy: head tucked down, eyes looking at the floor, pink cheeks; she turns away more when you come close
-  const close = Math.max(0, 1 - Math.abs(SHOP.x - kx)/500), peek = Math.sin(t*0.9) > 0.85 ? 1 : 0;
-  g.save(); g.translate(kx + 10, 600); g.rotate(0.12 + close*0.18); g.translate(0, -30 + close*4);
+  // she's shy: head tucked down, eyes looking at the floor, pink cheeks; she turns away more when you come close.
+  // With her friend Lovely Heart she holds her head up, looks right at you and smiles.
+  const close = friend ? 0 : Math.max(0, 1 - Math.abs(SHOP.x - kx)/500), peek = Math.sin(t*0.9) > 0.85 ? 1 : 0;
+  g.save(); g.translate(kx + 10, 600); g.rotate(friend ? Math.sin(t*2)*0.06 : 0.12 + close*0.18); g.translate(0, -30 + close*4);
   g.fillStyle = C.grey; g.lineWidth = 3; g.beginPath(); g.arc(0, 0, 36, 0, TAU); g.fill(); g.stroke();
-  const look = peek ? { x:-3, y:0 } : { x:3 + close*2, y:3 };
+  const look = friend ? { x:Math.sign(SHOP.x - kx)*3, y:0 } : peek ? { x:-3, y:0 } : { x:3 + close*2, y:3 };
   g.fillStyle = C.white; for (const ex of [-12, 10]) { g.beginPath(); g.arc(ex, -8, 7, 0, TAU); g.fill(); }
   g.fillStyle = C.ink; for (const ex of [-12, 10]) { g.beginPath(); g.arc(ex + look.x, -8 + look.y, 3.5, 0, TAU); g.fill(); }
-  g.fillStyle = `rgba(255,105,150,${0.45 + close*0.4})`; for (const ex of [-20, 20]) { g.beginPath(); g.ellipse(ex, 8, 9 + close*3, 5 + close*2, 0, 0, TAU); g.fill(); }
-  g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.moveTo(-6, 16); g.quadraticCurveTo(-1, 13, 3, 17); g.quadraticCurveTo(7, 21, 11, 17); g.stroke();
+  g.fillStyle = `rgba(255,105,150,${friend ? 0.35 : 0.45 + close*0.4})`; for (const ex of [-20, 20]) { g.beginPath(); g.ellipse(ex, 8, 9 + close*3, 5 + close*2, 0, 0, TAU); g.fill(); }
+  g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath();
+  if (friend) { g.moveTo(-10, 12); g.quadraticCurveTo(1, 26, 12, 12); } else { g.moveTo(-6, 16); g.quadraticCurveTo(-1, 13, 3, 17); g.quadraticCurveTo(7, 21, 11, 17); }
+  g.stroke();
   g.restore();
+  if (friend) for (let i=0;i<3;i++) { // little hearts float up around her
+    const p = (t*0.5 + i/3) % 1, hx = kx + 10 + Math.sin(t*2 + i*2)*30 + (i - 1)*34, hy = 520 - p*110, s = 9;
+    g.save(); g.globalAlpha = 1 - p; g.fillStyle = '#ff6fa5'; g.beginPath(); g.moveTo(hx, hy + s);
+    g.bezierCurveTo(hx - s*1.6, hy - s*0.2, hx - s*0.6, hy - s*1.3, hx, hy - s*0.4); g.bezierCurveTo(hx + s*0.6, hy - s*1.3, hx + s*1.6, hy - s*0.2, hx, hy + s); g.fill(); g.restore();
+  }
   const empty = !STANDS.some(s => s.floor === 2);
-  const say = SHOP.msgT > 0 ? SHOP.msg : SHOP.near ? 'Ooh... good choice...' : SHOP.nearKeeper ? 'Oh! Um... you want to talk to me? Press punch...' : SHOP.nearStairs ? 'Those stairs go back down...' : empty ? 'H-hi... nothing up here yet...' : 'Um... welcome...';
+  const say = SHOP.msgT > 0 ? SHOP.msg
+    : friend ? (SHOP.near ? 'Ooh, that would look so cute on you!' : SHOP.nearKeeper ? 'Lovely Heart! Want to chat? Press punch!' : SHOP.nearStairs ? 'Aww, leaving already? Come back soon!' : 'Hi Lovely Heart! Come say hi!')
+    : SHOP.near ? 'Ooh... good choice...' : SHOP.nearKeeper ? 'Oh! Um... you want to talk to me? Press punch...' : SHOP.nearStairs ? 'Those stairs go back down...' : empty ? 'H-hi... nothing up here yet...' : 'Um... welcome...';
   drawBubble(say, kx - 40, 520, kx - 6);
   if (SHOP.nearKeeper) drawPointer(kx + 70, 566, t);
 }
@@ -2065,7 +2088,7 @@ function openShop() {
 }
 function shopSay(text, sound, secs = 3.5) { SHOP.msg = text; SHOP.msgT = secs; if (sound && sfx[sound]) sfx[sound](); }
 function shopTalk() {
-  const f = SHOP.floor, lines = f === 2 ? KEEPER2_LINES : KEEPER_LINES;
+  const f = SHOP.floor, lines = f === 2 ? (isFriend() ? KEEPER2_FRIEND_LINES : KEEPER2_LINES) : KEEPER_LINES;
   const text = lines[(SHOP.talk[f] = (SHOP.talk[f] + 1) % lines.length)]();
   shopSay(text, 'count', 6); renderShopCard(true);
   // when the shopkeeper shouts something nice upstairs, the shy shopkeeper answers quietly down the stairs
@@ -2073,7 +2096,7 @@ function shopTalk() {
 }
 function shopStairs() {
   SHOP.floor = 3 - SHOP.floor; Object.assign(SHOP, { x:STAIRS_X[SHOP.floor] + 110, y:0, vy:0, facing:1, near:null, nearKeeper:false, nearStairs:false, echoT:0 });
-  shopSay(SHOP.floor === 2 ? 'Oh! Someone came upstairs... h-hi.' : 'Welcome back to the fighty shop!', 'jump');
+  shopSay(SHOP.floor === 1 ? 'Welcome back to the fighty shop!' : isFriend() ? 'Lovely Heart! Hi hi! I am so happy you came up!' : 'Oh! Someone came upstairs... h-hi.', 'jump');
   renderShopCard(true);
 }
 function shopAct(id) {
@@ -2119,7 +2142,7 @@ function fillShopCard(card, ch, it) {
     return;
   }
   if (!it && SHOP.nearKeeper) {
-    card.innerHTML = SHOP.floor === 2 ? `<h3>The funny fun shopkeeper</h3><p>She's a bit shy, but she'd like to chat. Each time you talk, she says something new.</p><div class="row"></div>`
+    card.innerHTML = SHOP.floor === 2 ? `<h3>The funny fun shopkeeper</h3><p>${isFriend() ? 'She isn\'t shy with Lovely Heart. They\'re best friends!' : 'She\'s a bit shy, but she\'d like to chat.'} Each time you talk, she says something new.</p><div class="row"></div>`
       : `<h3>The shopkeeper</h3><p>Want to chat? Each time you talk, the shopkeeper says something new.</p><div class="row"></div>`;
     const b = document.createElement('button'); b.className = 'btn'; b.id = 'shopTalk'; b.textContent = SHOP.talk[SHOP.floor] < 0 ? 'say hi' : 'keep talking';
     b.onclick = () => { shopTalk(); cv.focus(); };
