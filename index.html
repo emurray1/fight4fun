@@ -116,6 +116,7 @@ kbd{font-family:var(--body);border:2px solid var(--ink);border-bottom-width:4px;
 .confetti i{position:absolute;top:-20px;width:10px;height:16px;animation:fall linear infinite}
 @keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
 .btn.go{background:var(--yellow)}
+#resShopBtn.won{background:var(--yellow);animation:bounce 1s ease-in-out infinite}
 .res-actions{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
 
 /* ---------- title menu, how-to, settings, quit ---------- */
@@ -455,7 +456,7 @@ html.xmas .fff span{border-color:#1b7a34;color:#c8102e}
   <div class="res-banner"><span>winner!</span><b id="winName"></b></div>
   <div id="podium" class="podium"></div>
   <div class="loser-label">losers losers</div>
-  <div class="res-actions"><button id="rematchBtn" class="btn go">rematch</button><button id="leaveBtn" class="btn black">leave</button><button id="disbandBtn" class="btn red">disband team</button></div>
+  <div class="res-actions"><button id="rematchBtn" class="btn go">rematch</button><button id="resShopBtn" class="btn">shop</button><button id="leaveBtn" class="btn black">leave</button><button id="disbandBtn" class="btn red">disband team</button></div>
   <p id="coinNote" class="res-note"></p>
   <p id="resNote" class="res-note"></p>
 </div>
@@ -2609,6 +2610,7 @@ function showResults() {
   $('coinNote').textContent = `+${earned} coins${won ? ' (10 for the fight, 15 for winning)' : ' for the fight'}. You have ${shop.coins} coins to spend in the shop.`;
   if (on === 'host') netBroadcast({ t:'results', champ: teamWin ? -1 : champ.idx, team: teamWin ? champ.team : null, w:G.wins });
   $('rematchBtn').hidden = on === 'client'; $('disbandBtn').hidden = on === 'client';
+  $('resShopBtn').hidden = !!on; $('resShopBtn').classList.toggle('won', won); // go spend your coins (not in online games, so the team stays together)
   $('resNote').textContent = on === 'client' ? 'Waiting for the host to pick what happens next.' : on === 'host' ? 'Leave takes everyone back to the team screen. Disband team ends it for everyone.' : '';
   showScreen('results'); (on === 'client' ? $('leaveBtn') : $('rematchBtn')).focus();
 }
@@ -2839,6 +2841,7 @@ $('quitBtn').onclick = () => { G.paused = false; openSetup(); };
 $('leaveBtn').onclick = () => { if (G.online === 'host') return hostToLobby(); if (G.online === 'client') return clientLeave(); G.state = 'title'; showScreen('title'); };
 $('disbandBtn').onclick = () => { if (G.online === 'host') return endRoom('You disbanded the team.'); openSetup(); };
 $('rematchBtn').onclick = () => { if (G.online === 'host') return hostStartMatch(); startMatch(); };
+$('resShopBtn').onclick = () => { audioOn(); openShop(); backTo = 'setup'; }; // "back" from the shop goes to the team screen, ready for another fight
 cv.addEventListener('mousedown', () => cv.focus());
 
 // ---------- online play (peer-to-peer, host runs the fight) ----------
