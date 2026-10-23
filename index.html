@@ -543,8 +543,22 @@ const KEEPER2_LINES = [ // she's shy
   () => 'Um... why did the shop get a second floor? ...It wanted to level up. Hehe...',
   () => '...',
 ];
-// ...but she isn't shy with Lovely Heart, her friend
-const isFriend = () => CHARS[SHOP.who].id === 'heart';
+// ...but she isn't shy with Lovely Heart, her friend, or with Angry Triangle once she has opened up to it
+const isFriend = () => { const id = CHARS[SHOP.who].id; return id === 'heart' || (id === 'tri' && !!(shop.friends && shop.friends.tri)); };
+// talking to her as Angry Triangle: she's shy at first, and on the last of these lines she opens up and they become friends
+const TRI_OPENING_LINES = [
+  () => 'Oh... um... h-hi, Angry Triangle...',
+  () => 'You look kind of... angry. But... um... are you nice?',
+  () => 'You... you ARE nice! Okay... I am not scared anymore! Let\'s be friends!',
+];
+const TRI_FRIEND_LINES = [
+  () => 'Hi Angry Triangle! I am so glad you came back!',
+  () => 'You look angry, but you are really nice inside!',
+  () => 'Can you teach me your spike wave move? It looks so cool!',
+  () => 'Why did the triangle go to school? To get a little sharper! Hehe!',
+  () => 'Want to know a secret? I kinda like the downstairs shopkeeper... Shh!',
+  () => 'Thank you for being my friend, Angry Triangle!',
+];
 const KEEPER2_FRIEND_LINES = [
   () => 'Hi Lovely Heart! Yay, you came to see me!',
   () => STANDS.some(s => s.floor === 2) ? 'Look at my stuff! I saved the best things for you.' : 'It is empty up here right now, but you can still hang out with me!',
@@ -1867,11 +1881,11 @@ function drawFightyFloor(t) { // downstairs: the fighty shop
     drawShyKeeper(v.x, t, { friend:chatting || friend, close:chatting || friend ? 0 : 1, lookX:chatting ? 3 : -3, walking:v.phase === 'run' || v.phase === 'climb',
       alpha:v.phase === 'climb' ? Math.max(0, 1 - v.t) : 1, lift:v.phase === 'climb' ? v.t*330 : 0 });
     const vs = { talk:'...and then the circle rolled right off the island! Hehe...',
-      notice:friend ? 'Oh! Hi Lovely Heart! Come visit me upstairs!' : 'Oh! S-someone is here! Um... b-bye!',
+      notice:friend ? `Oh! Hi ${CHARS[SHOP.who].name}! Come visit me upstairs!` : 'Oh! S-someone is here! Um... b-bye!',
       run:friend ? 'See you up there!' : 'Eep!' }[v.phase];
     if (vs) drawBubble(vs, v.x - 40, 520, v.x - 6);
   }
-  const say = SHOP.msgT > 0 ? SHOP.msg : v && v.phase === 'talk' ? 'Haha! That is so funny!' : v && v.phase !== 'climb' ? 'Aww, she is so shy. She works upstairs!'
+  const say = SHOP.msgT > 0 ? SHOP.msg : v && v.phase === 'talk' ? 'Haha! That is so funny!' : v && v.phase !== 'climb' ? (isFriend() ? 'Aww, she likes you! She works upstairs.' : 'Aww, she is so shy. She works upstairs!')
     : SHOP.near ? 'Ooh, good choice!' : SHOP.nearKeeper ? 'Hello! Press punch to chat with me.' : SHOP.nearStairs ? 'Those stairs go up to the funny fun shop!' : 'Hi! Have a look around, or come over and talk to me!';
   drawBubble(say, kx - 115, 360, kx - 60);
   if (SHOP.nearKeeper) drawPointer(kx + 150, 395, t);
@@ -1912,7 +1926,7 @@ function drawFunnyFloor(t) { // upstairs: the pink funny fun shop
   drawShyKeeper(kx, t, { friend, close:friend ? 0 : Math.max(0, 1 - Math.abs(SHOP.x - kx)/500), lookX:Math.sign(SHOP.x - kx)*3 });
   const empty = !STANDS.some(s => s.floor === 2);
   const say = SHOP.msgT > 0 ? SHOP.msg
-    : friend ? (SHOP.near ? 'Ooh, that would look so cute on you!' : SHOP.nearKeeper ? 'Lovely Heart! Want to chat? Press punch!' : SHOP.nearStairs ? 'Aww, leaving already? Come back soon!' : 'Hi Lovely Heart! Come say hi!')
+    : friend ? (SHOP.near ? 'Ooh, that would look so cute on you!' : SHOP.nearKeeper ? `${CHARS[SHOP.who].name}! Want to chat? Press punch!` : SHOP.nearStairs ? 'Aww, leaving already? Come back soon!' : `Hi ${CHARS[SHOP.who].name}! Come say hi!`)
     : SHOP.near ? 'Ooh... good choice...' : SHOP.nearKeeper ? 'Oh! Um... you want to talk to me? Press punch...' : SHOP.nearStairs ? 'Those stairs go back down...' : empty ? 'H-hi... nothing up here yet...' : 'Um... welcome...';
   drawBubble(say, kx - 40, 520, kx - 6);
   if (SHOP.nearKeeper) drawPointer(kx + 70, 566, t);
@@ -2126,7 +2140,14 @@ function openShop() {
 }
 function shopSay(text, sound, secs = 3.5) { SHOP.msg = text; SHOP.msgT = secs; if (sound && sfx[sound]) sfx[sound](); }
 function shopTalk() {
-  const f = SHOP.floor, lines = f === 2 ? (isFriend() ? KEEPER2_FRIEND_LINES : KEEPER2_LINES) : KEEPER_LINES;
+  const f = SHOP.floor, id = CHARS[SHOP.who].id;
+  if (f === 2 && id === 'tri' && !isFriend()) { // she opens up to Angry Triangle a little more each time
+    SHOP.triStep = Math.min((SHOP.triStep ?? -1) + 1, TRI_OPENING_LINES.length - 1);
+    const opened = SHOP.triStep === TRI_OPENING_LINES.length - 1;
+    if (opened) { shop.friends = { ...shop.friends, tri:true }; saveShop(); SHOP.talk[2] = -1; }
+    shopSay(TRI_OPENING_LINES[SHOP.triStep](), opened ? 'win' : 'count', 6); renderShopCard(true); return;
+  }
+  const lines = f === 1 ? KEEPER_LINES : !isFriend() ? KEEPER2_LINES : id === 'tri' ? TRI_FRIEND_LINES : KEEPER2_FRIEND_LINES;
   const text = lines[(SHOP.talk[f] = (SHOP.talk[f] + 1) % lines.length)]();
   shopSay(text, 'count', 6); renderShopCard(true);
   // when the shopkeeper shouts something nice upstairs, the shy shopkeeper answers quietly down the stairs
@@ -2134,7 +2155,7 @@ function shopTalk() {
 }
 function shopStairs() {
   SHOP.floor = 3 - SHOP.floor; Object.assign(SHOP, { x:STAIRS_X[SHOP.floor] + 110, y:0, vy:0, facing:1, near:null, nearKeeper:false, nearStairs:false, echoT:0, visit:null });
-  shopSay(SHOP.floor === 1 ? 'Welcome back to the fighty shop!' : isFriend() ? 'Lovely Heart! Hi hi! I am so happy you came up!' : 'Oh! Someone came upstairs... h-hi.', 'jump');
+  shopSay(SHOP.floor === 1 ? 'Welcome back to the fighty shop!' : isFriend() ? `${CHARS[SHOP.who].name}! Hi hi! I am so happy you came up!` : 'Oh! Someone came upstairs... h-hi.', 'jump');
   renderShopCard(true);
 }
 function shopAct(id) {
@@ -2180,7 +2201,8 @@ function fillShopCard(card, ch, it) {
     return;
   }
   if (!it && SHOP.nearKeeper) {
-    card.innerHTML = SHOP.floor === 2 ? `<h3>The funny fun shopkeeper</h3><p>${isFriend() ? 'She isn\'t shy with Lovely Heart. They\'re best friends!' : 'She\'s a bit shy, but she\'d like to chat.'} Each time you talk, she says something new.</p><div class="row"></div>`
+    card.innerHTML = SHOP.floor === 2 ? `<h3>The funny fun shopkeeper</h3><p>${isFriend() ? (ch.id === 'tri' ? 'She opened up to Angry Triangle. They\'re friends now!' : 'She isn\'t shy with Lovely Heart. They\'re best friends!')
+      : ch.id === 'tri' ? 'She\'s shy with Angry Triangle, but if you keep talking to her, she might open up.' : 'She\'s a bit shy, but she\'d like to chat.'} Each time you talk, she says something new.</p><div class="row"></div>`
       : `<h3>The shopkeeper</h3><p>Want to chat? Each time you talk, the shopkeeper says something new.</p><div class="row"></div>`;
     const b = document.createElement('button'); b.className = 'btn'; b.id = 'shopTalk'; b.textContent = SHOP.talk[SHOP.floor] < 0 ? 'say hi' : 'keep talking';
     b.onclick = () => { shopTalk(); cv.focus(); };
