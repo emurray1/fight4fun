@@ -761,6 +761,7 @@ const sfx = {
   tweet(){ for (let i=0;i<4;i++) tone(2200 + (i%2)*500, 3200, 0.07, 'sine', 0.06, i*0.11); },
   buzz(){ tone(110,120,0.9,'sawtooth',0.04); },
   zap(){ noise(0.35,6000,0.16,'highpass'); tone(1500,200,0.3,'square',0.06); },
+  laugh(){ for (let i=0;i<4;i++) tone(620 - i*40, 480 - i*40, 0.09, 'square', 0.05, i*0.13); },
   car(){ tone(90,70,0.9,'sawtooth',0.07); },
 };
 
@@ -1803,6 +1804,8 @@ function shopStep(dt) {
   SHOP.nearStairs = !SHOP.near && Math.abs(STAIRS_X[f] - SHOP.x) < 100;
   SHOP.nearKeeper = !SHOP.near && !SHOP.nearStairs && Math.abs(KEEPERS[f] - SHOP.x) < 220;
   if (h.punch && !pr.punch) { if (SHOP.near) shopAct(SHOP.near.item); else if (SHOP.nearStairs) shopStairs(); else if (SHOP.nearKeeper) shopTalk(); }
+  if (h.grab && !pr.grab && SHOP.nearKeeper) shopLaugh();
+  SHOP.laughT = Math.max(0, (SHOP.laughT || 0) - dt); SHOP.keeperLaughT = Math.max(0, (SHOP.keeperLaughT || 0) - dt);
   SHOP.msgT = Math.max(0, SHOP.msgT - dt); SHOP.echoT = Math.max(0, (SHOP.echoT || 0) - dt);
   const v = SHOP.visit; // talk, notice you, run to the stairs, climb up and away
   if (v) {
@@ -1823,8 +1826,9 @@ function drawFightyFloor(t) { // downstairs: the fighty shop
   g.strokeStyle = BEAM; g.lineWidth = 8; g.lineCap = 'round';
   for (const y of [SHOP_FLOOR + 4, SHOP_FLOOR + 50, SHOP_FLOOR + 96]) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
   g.lineWidth = 5; for (let i=0;i<12;i++) { const x = (i*157 + (i%2)*70) % W, y = SHOP_FLOOR + (i%2 ? 50 : 4); g.beginPath(); g.moveTo(x, y); g.lineTo(x, y + 46); g.stroke(); }
-  // shopkeeper behind the counter, waving
+  // shopkeeper behind the counter, waving (and bouncing when laughing)
   const kx = KEEPERS[1];
+  g.save(); g.translate(0, SHOP.keeperLaughT > 0 ? -Math.abs(Math.sin(t*18))*10 : 0);
   g.fillStyle = C.ink; g.beginPath(); g.roundRect ? g.roundRect(kx - 72, 450, 144, 160, 18) : g.rect(kx - 72, 450, 144, 160); g.fill();
   g.save(); g.translate(kx + 66, 470); g.rotate(-0.5 + Math.sin(t*5)*0.35); g.beginPath(); g.roundRect ? g.roundRect(-22, -130, 44, 140, 20) : g.rect(-22, -130, 44, 140); g.fill(); g.restore();
   g.fillStyle = C.grey; g.strokeStyle = C.ink; g.lineWidth = 5; g.beginPath(); g.arc(kx, 395, 58, 0, TAU); g.fill(); g.stroke();
@@ -1838,6 +1842,7 @@ function drawFightyFloor(t) { // downstairs: the fighty shop
   g.beginPath(); g.ellipse(kx, 418, 20, 11, 0, 0, Math.PI); g.fill();
   // and the shop's own cool hat
   g.save(); g.translate(kx, 395); drawHat(g, 58, -58, 1); g.restore();
+  g.restore();
   // counter: dark top, light front with scribbly wood lines, and the shopkeeper's other hand resting on it
   g.fillStyle = C.brown; g.fillRect(960, 600, 580, SHOP_FLOOR - 600);
   g.strokeStyle = BEAM; g.lineWidth = 9;
@@ -1923,7 +1928,7 @@ function drawFunnyFloor(t) { // upstairs: the pink funny fun shop
   g.strokeStyle = C.ink; g.lineWidth = 5; g.beginPath(); g.moveTo(sx - 70, SHOP_FLOOR); g.lineTo(sx - 70, SHOP_FLOOR - 70); g.lineTo(sx + 70, SHOP_FLOOR - 70); g.lineTo(sx + 70, SHOP_FLOOR); g.stroke();
   drawFloorSign(sx, SHOP_FLOOR - 120, '1st floor ↓', '#f3e2c7');
   const kx = KEEPERS[2], friend = isFriend();
-  drawShyKeeper(kx, t, { friend, close:friend ? 0 : Math.max(0, 1 - Math.abs(SHOP.x - kx)/500), lookX:Math.sign(SHOP.x - kx)*3 });
+  drawShyKeeper(kx, t, { friend, close:friend ? 0 : Math.max(0, 1 - Math.abs(SHOP.x - kx)/500), lookX:Math.sign(SHOP.x - kx)*3, lift:SHOP.keeperLaughT > 0 ? Math.abs(Math.sin(t*18))*8 : 0 });
   const empty = !STANDS.some(s => s.floor === 2);
   const say = SHOP.msgT > 0 ? SHOP.msg
     : friend ? (SHOP.near ? 'Ooh, that would look so cute on you!' : SHOP.nearKeeper ? `${CHARS[SHOP.who].name}! Want to chat? Press punch!` : SHOP.nearStairs ? 'Aww, leaving already? Come back soon!' : `Hi ${CHARS[SHOP.who].name}! Come say hi!`)
@@ -1981,8 +1986,10 @@ function drawShop(t) {
   // you
   const ch = CHARS[SHOP.who], r = 50, moving = Math.abs(SHOP.prev.x || 0) > 0 && SHOP.y === 0;
   const bottom = ch.shape === 'circle' ? r : Math.max(...shapeVerts(ch.shape, r, true).map(v => v.y));
-  g.save(); g.translate(SHOP.x, SHOP_FLOOR - bottom + SHOP.y - (moving ? Math.abs(Math.sin(t*12))*8 : 0)); g.rotate(moving ? Math.sin(t*12)*0.08 : 0);
+  const laughing = SHOP.laughT > 0, hop = (moving ? Math.abs(Math.sin(t*12))*8 : 0) + (laughing ? Math.abs(Math.sin(t*16))*12 : 0);
+  g.save(); g.translate(SHOP.x, SHOP_FLOOR - bottom + SHOP.y - hop); g.rotate(moving ? Math.sin(t*12)*0.08 : laughing ? Math.sin(t*16)*0.1 : 0);
   drawCharacter(g, ch, r, { facing:SHOP.facing, ...looks(ch) }); g.restore();
+  if (laughing) drawBubble('Hahaha!', SHOP.x + 70, SHOP_FLOOR - bottom - 80 + SHOP.y, SHOP.x + 20);
 }
 let lastT = performance.now(), acc = 0;
 function frame(now) {
@@ -2145,13 +2152,23 @@ function shopTalk() {
     SHOP.triStep = Math.min((SHOP.triStep ?? -1) + 1, TRI_OPENING_LINES.length - 1);
     const opened = SHOP.triStep === TRI_OPENING_LINES.length - 1;
     if (opened) { shop.friends = { ...shop.friends, tri:true }; saveShop(); SHOP.talk[2] = -1; }
-    shopSay(TRI_OPENING_LINES[SHOP.triStep](), opened ? 'win' : 'count', 6); renderShopCard(true); return;
+    SHOP.joke = false; shopSay(TRI_OPENING_LINES[SHOP.triStep](), opened ? 'win' : 'count', 6); renderShopCard(true); return;
   }
   const lines = f === 1 ? KEEPER_LINES : !isFriend() ? KEEPER2_LINES : id === 'tri' ? TRI_FRIEND_LINES : KEEPER2_FRIEND_LINES;
   const text = lines[(SHOP.talk[f] = (SHOP.talk[f] + 1) % lines.length)]();
+  SHOP.joke = /why did/i.test(text); // after a joke you can laugh at it
   shopSay(text, 'count', 6); renderShopCard(true);
   // when the shopkeeper shouts something nice upstairs, the shy shopkeeper answers quietly down the stairs
   if (text.startsWith('*shouts upstairs*')) SHOP.echoT = 5;
+}
+const jokeOpen = () => !!SHOP.joke && SHOP.msgT > 0;
+function shopLaugh() { // you laugh at the joke, and the shopkeeper is happy you got it
+  if (!jokeOpen()) return;
+  SHOP.joke = false; SHOP.laughT = 1.6; SHOP.keeperLaughT = 1.8;
+  const name = CHARS[SHOP.who].name, replies = SHOP.floor === 1 ? ['HAHAHA! You get it! I am so funny!', 'Hahaha! Good one, right?', 'Hoho! I knew you would laugh!']
+    : isFriend() ? [`Hehehe! Yay, you laughed, ${name}!`, 'Hahaha! Stop, my bow will fall off!', 'Haha! I love making you laugh!']
+    : ['Y-you laughed! Hehe... *happy blush*', 'Hihi... you thought it was funny...?', 'Pfft... hehe... thank you...'];
+  shopSay(replies[Math.floor(Math.random()*replies.length)], 'laugh', 4); renderShopCard(true);
 }
 function shopStairs() {
   SHOP.floor = 3 - SHOP.floor; Object.assign(SHOP, { x:STAIRS_X[SHOP.floor] + 110, y:0, vy:0, facing:1, near:null, nearKeeper:false, nearStairs:false, echoT:0, visit:null });
@@ -2170,7 +2187,7 @@ function shopAct(id) {
 }
 function renderShopCard(force) {
   const ch = CHARS[SHOP.who], st = SHOP.near, it = st && ITEMS.find(i => i.id === st.item);
-  const key = [shop.coins, ch.id, it && it.id, it && shop.owned[it.id], ITEMS.map(i => wears(i.id, ch)).join(), SHOP.nearKeeper, SHOP.nearStairs, SHOP.floor].join('|');
+  const key = [shop.coins, ch.id, it && it.id, it && shop.owned[it.id], ITEMS.map(i => wears(i.id, ch)).join(), SHOP.nearKeeper, SHOP.nearStairs, SHOP.floor, jokeOpen()].join('|');
   if (!force && key === SHOP.key) return;
   SHOP.key = key; $('coinCount').textContent = shop.coins; $('shopWho').textContent = ch.name;
   const card = $('shopCard'); fillShopCard(card, ch, it);
@@ -2207,6 +2224,13 @@ function fillShopCard(card, ch, it) {
     const b = document.createElement('button'); b.className = 'btn'; b.id = 'shopTalk'; b.textContent = SHOP.talk[SHOP.floor] < 0 ? 'say hi' : 'keep talking';
     b.onclick = () => { shopTalk(); cv.focus(); };
     card.querySelector('.row').append(b, Object.assign(document.createElement('span'), { innerHTML:press }));
+    if (jokeOpen()) { // they just told a joke
+      const row = document.createElement('div'); row.className = 'row';
+      const lb = document.createElement('button'); lb.className = 'btn'; lb.id = 'shopLaugh'; lb.textContent = 'laugh'; lb.style.background = 'var(--yellow)';
+      lb.onclick = () => { shopLaugh(); cv.focus(); };
+      row.append(lb, Object.assign(document.createElement('span'), { innerHTML:`That was a joke! Laugh, or press <kbd>${k('p1','grab')}</kbd> / <kbd>${k('p2','grab')}</kbd> / <kbd>B</kbd>` }));
+      card.append(row);
+    }
     return;
   }
   if (!it && SHOP.floor === 2) {
