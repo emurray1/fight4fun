@@ -128,6 +128,7 @@ kbd{font-family:var(--body);border:2px solid var(--ink);border-bottom-width:4px;
 .set-grid .setting>span{font-family:var(--display);font-size:26px;line-height:1}
 .set-grid .setting small{font-size:16px;color:#444}
 .page-foot{display:flex;justify-content:center;gap:14px;flex-wrap:wrap}
+.shop-art{display:block;width:100%;height:auto;border:4px solid var(--ink)}
 #gameQuit{position:fixed;left:calc(14px + env(safe-area-inset-left,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));font-size:24px;padding:4px 20px;border:3px solid var(--paper);z-index:5}
 .quit-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
 .btn.red{background:var(--maroon);color:var(--paper)}
@@ -194,7 +195,7 @@ input:focus-visible{outline:4px solid var(--yellow);outline-offset:2px}
     <h1><mark>fight</mark> for<br><mark>fun</mark> <span class="smile">:D</span></h1>
     <div class="title-chars" id="titleChars"></div>
     <button id="okBtn" class="btn grey">OK</button>
-    <div class="menu"><button id="onlineBtn" class="btn">play online</button><button id="howBtn" class="btn">how to play</button><button id="keysBtn" class="btn">controls</button><button id="setBtn" class="btn">settings</button></div>
+    <div class="menu"><button id="onlineBtn" class="btn">play online</button><button id="howBtn" class="btn">how to play</button><button id="keysBtn" class="btn">controls</button><button id="setBtn" class="btn">settings</button><button id="shopBtn" class="btn">shop</button></div>
     <p id="notice" class="msg" role="status"></p>
     <p class="hint">OK plays on this computer. Best with a keyboard or game controllers.</p>
   </div>
@@ -286,6 +287,17 @@ input:focus-visible{outline:4px solid var(--yellow);outline-offset:2px}
       <p class="note">Controllers always use: stick or D-pad to move, A jump, X punch, B grab and throw, Y special, Start pause. Esc always pauses.</p>
       <p id="keysMsg" class="msg" role="status"></p>
       <div class="page-foot"><button id="keysReset" class="btn">reset to normal keys</button><button class="btn grey" data-back>done</button></div>
+    </div>
+  </div>
+</div>
+
+<div id="shop" class="screen" hidden>
+  <div class="panel page">
+    <header class="whois"><h2>shop</h2><button class="btn back" data-back>back</button></header>
+    <div class="page-body">
+      <img class="shop-art" src="shop.png" alt="The shop: a grey fighter waves from behind a wooden counter under a hanging shop sign. Things to buy and wear.">
+      <p>Things to buy and wear are coming soon!</p>
+      <div class="page-foot"><button class="btn grey" data-back>back</button></div>
     </div>
   </div>
 </div>
@@ -627,7 +639,7 @@ const sfx = {
 
 // ---------- menu music: an original bouncy polka loop, made with Web Audio ----------
 const Music = { timer:null, next:0, step:0, gain:null };
-const MENU_STATES = new Set(['title','setup','howto','settings','online','lobby']);
+const MENU_STATES = new Set(['title','setup','howto','settings','online','lobby','shop']);
 function hz(n) { const m = /([A-G])(#?)(\d)/.exec(n); const i = { C:0, D:2, E:4, F:5, G:7, A:9, B:11 }[m[1]] + (m[2] ? 1 : 0); return 440*Math.pow(2, (i + 12*(+m[3] + 1) - 69)/12); }
 const TUNE = [ // [note, length in eighth notes], 16 bars of 2/4
   ['G4',1],['C5',1],['E5',1],['C5',1], ['G4',1],['C5',1],['E5',2], ['D5',1],['B4',1],['G4',1],['B4',1], ['D5',1],['F5',1],['D5',2],
@@ -1676,7 +1688,7 @@ function frame(now) {
 
 // ---------- menus ----------
 const $ = id => document.getElementById(id);
-const screens = ['title','setup','pause','results','howto','settings','quitAsk','online','lobby','keys'];
+const screens = ['title','setup','pause','results','howto','settings','quitAsk','online','lobby','keys','shop'];
 function showScreen(id) { for (const s of screens) $(s).hidden = s !== id; $('gameQuit').hidden = !(id === null && G.state === 'fight'); musicUpdate(); }
 function openQuit() {
   if (G.state !== 'fight') return;
@@ -1790,6 +1802,7 @@ function openPage(id) { backTo = G.state; G.state = id; waitingKey = null; if (i
 document.querySelectorAll('[data-back]').forEach(b => b.onclick = () => { if (backTo === 'setup') openSetup(); else { G.state = 'title'; showScreen('title'); $('okBtn').focus(); } });
 $('howBtn').onclick = () => { audioOn(); openPage('howto'); };
 $('setBtn').onclick = () => { audioOn(); openPage('settings'); };
+$('shopBtn').onclick = () => { audioOn(); openPage('shop'); };
 let waitingKey = null;
 function renderKeys() {
   for (const pl of ['p1','p2']) {
