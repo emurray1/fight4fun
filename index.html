@@ -609,6 +609,9 @@ const KEEPER2_HEX_LINES = [
   () => 'Why did the shop get a second floor? It wanted to level up! ...Did I say it weird? I like you, Hexstar.',
   () => 'You are my favourite nervous friend!',
 ];
+// after Hexstar's "beep boop baap!" they carry on like nothing happened
+const IGNORE_BEEP_LINES = ['Anyway... as I was saying...', 'So! Nice weather today, huh?', '*keeps tidying the counter*', 'Mm-hmm. Yep. Shop stuff.'];
+const IGNORE_BEEP2_LINES = ['Anyway... um... nice shop, right?', '*keeps smiling*', 'So... um... hi again!', '*fixes her bow*'];
 // ...and what he says when he sees the Christmas update (he thinks it's SO cool)
 const EXCITED_LINES = ['WOW! Christmas lights! SO COOL!', 'Is Santa coming?! IS HE?!', 'SNOW! Look at all the SNOW!', 'This is the BEST update EVER!', 'A Christmas tree! Can I put the star on top?!'];
 // talking to her as Angry Triangle: she's shy at first, and on the last of these lines she opens up and they become friends
@@ -885,6 +888,7 @@ const sfx = {
   buzz(){ tone(110,120,0.9,'sawtooth',0.04); },
   zap(){ noise(0.35,6000,0.16,'highpass'); tone(1500,200,0.3,'square',0.06); },
   laugh(){ for (let i=0;i<4;i++) tone(620 - i*40, 480 - i*40, 0.09, 'square', 0.05, i*0.13); },
+  beep(){ tone(880, 880, 0.09, 'square', 0.05); tone(660, 660, 0.09, 'square', 0.05, 0.14); tone(990, 700, 0.14, 'square', 0.05, 0.28); },
   car(){ tone(90,70,0.9,'sawtooth',0.07); },
 };
 
@@ -2012,6 +2016,14 @@ function shopStep(dt) {
   SHOP.nearKeeper = !SHOP.near && !SHOP.nearStairs && Math.abs(KEEPERS[f] - SHOP.x) < 220;
   if (h.punch && !pr.punch) { if (SHOP.near) shopAct(SHOP.near.item); else if (SHOP.nearStairs) shopStairs(); else if (SHOP.nearKeeper) shopTalk(); }
   if (h.grab && !pr.grab && SHOP.nearKeeper) shopLaugh();
+  if (isHex()) { // Hexstar says "beep boop baap!" now and then (or when you press special), and the shopkeepers act like he never said it
+    SHOP.beepCD = (SHOP.beepCD ?? 3) - dt; SHOP.beepT = Math.max(0, (SHOP.beepT || 0) - dt);
+    if (SHOP.beepCD <= 0 || (h.special && !pr.special)) { SHOP.beepT = 2; SHOP.beepCD = 8; SHOP.ignoreT = 1.1; if (sfx.beep) sfx.beep(); }
+    if (SHOP.ignoreT > 0 && (SHOP.ignoreT -= dt) <= 0 && SHOP.msgT <= 0) {
+      const lines = SHOP.floor === 1 ? IGNORE_BEEP_LINES : IGNORE_BEEP2_LINES;
+      shopSay(lines[Math.floor(Math.random()*lines.length)], null, 3);
+    }
+  }
   SHOP.laughT = Math.max(0, (SHOP.laughT || 0) - dt); SHOP.keeperLaughT = Math.max(0, (SHOP.keeperLaughT || 0) - dt);
   SHOP.msgT = Math.max(0, SHOP.msgT - dt); SHOP.echoT = Math.max(0, (SHOP.echoT || 0) - dt);
   const v = SHOP.visit; // talk, notice you, run to the stairs, climb up and away
@@ -2219,6 +2231,7 @@ function drawShop(t) {
   drawCharacter(g, ch, r, { facing:SHOP.facing, ...looks(ch), scared, excited }); g.restore();
   const above = SHOP_FLOOR - bottom - 80 + SHOP.y;
   if (laughing) drawBubble('Hahaha!', SHOP.x + 70, above, SHOP.x + 20);
+  else if (ch.id === 'hex' && SHOP.beepT > 0) drawBubble('beep boop baap!', SHOP.x + 110, above, SHOP.x + 20);
   else if (scared && t % 6 < 2.6) drawBubble(SCARED_LINES[Math.floor(t/6) % SCARED_LINES.length], SHOP.x + 120, above - (bottom > 60 ? 20 : 0), SHOP.x + 20);
   else if (excited && t % 5 < 2.6) drawBubble(EXCITED_LINES[Math.floor(t/5) % EXCITED_LINES.length], SHOP.x + 120, above - 24, SHOP.x + 20);
 }
@@ -2476,7 +2489,7 @@ function fillShopCard(card, ch, it) {
   }
   if (!it && SHOP.nearKeeper) {
     card.innerHTML = isKid() ? `<h3>${SHOP.floor === 2 ? 'The funny fun shopkeeper' : 'The shopkeeper'}</h3><p>${SHOP.floor === 2 ? 'She isn\'t shy with little kids. She thinks Goofy Sparkle is a kid and talks like a babysitter!' : 'The shopkeeper thinks Goofy Sparkle is a little kid!'} Each time you talk, they say something new.</p><div class="row"></div>`
-      : isHex() ? `<h3>${SHOP.floor === 2 ? 'The funny fun shopkeeper' : 'The shopkeeper'}</h3><p>${SHOP.floor === 2 ? 'She acts a bit weird around Nervous Hexstar, but she really likes him!' : 'The shopkeeper acts a bit weird around Nervous Hexstar, but really likes him!'} Each time you talk, they say something new.</p><div class="row"></div>`
+      : isHex() ? `<h3>${SHOP.floor === 2 ? 'The funny fun shopkeeper' : 'The shopkeeper'}</h3><p>${SHOP.floor === 2 ? 'She acts a bit weird around Nervous Hexstar, but she really likes him!' : 'The shopkeeper acts a bit weird around Nervous Hexstar, but really likes him!'} Each time you talk, they say something new. Press special to make Hexstar beep.</p><div class="row"></div>`
       : SHOP.floor === 2 ? `<h3>The funny fun shopkeeper</h3><p>${isFriend() ? (ch.id === 'tri' ? 'She opened up to Angry Triangle. They\'re friends now!' : 'She isn\'t shy with Lovely Heart. They\'re best friends!')
       : ch.id === 'tri' ? 'She\'s shy with Angry Triangle, but if you keep talking to her, she might open up.' : 'She\'s a bit shy, but she\'d like to chat.'} Each time you talk, she says something new.</p><div class="row"></div>`
       : `<h3>The shopkeeper</h3><p>Want to chat? Each time you talk, the shopkeeper says something new.</p><div class="row"></div>`;
