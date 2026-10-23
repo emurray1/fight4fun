@@ -2175,17 +2175,14 @@ function drawFightyFloor(t) { // downstairs: the fighty shop
   const weird = isHex(); // around Nervous Hexstar they sway back and forth a bit oddly
   g.save(); g.translate(SHOP.keeperScaredT > 0 ? Math.sin(t*60)*4 : 0, SHOP.keeperLaughT > 0 ? -Math.abs(Math.sin(t*18))*10 : 0); // shakes when scared
   if (weird) { g.translate(kx, 610); g.rotate(Math.sin(t*3)*0.08); g.translate(-kx, -610); }
-  // body: rounded shoulders in black clothes, a white collar and a red tie, and a brown shop apron with a pocket and a name tag
+  // body: rounded shoulders in black clothes, a white collar and a red tie, and a name tag
   g.fillStyle = C.ink; g.beginPath(); g.moveTo(kx - 78, 610); g.lineTo(kx - 74, 492); g.quadraticCurveTo(kx - 70, 448, kx - 30, 446); g.lineTo(kx + 30, 446);
   g.quadraticCurveTo(kx + 70, 448, kx + 74, 492); g.lineTo(kx + 78, 610); g.closePath(); g.fill();
   g.fillStyle = C.white; for (const s of [-1, 1]) { g.beginPath(); g.moveTo(kx + s*28, 448); g.lineTo(kx + s*3, 448); g.lineTo(kx + s*6, 480); g.closePath(); g.fill(); }
   g.fillStyle = C.red; g.fillRect(kx - 7, 452, 14, 12);
   g.beginPath(); g.moveTo(kx - 8, 463); g.lineTo(kx + 8, 463); g.lineTo(kx + 12, 528); g.lineTo(kx, 544); g.lineTo(kx - 12, 528); g.closePath(); g.fill();
-  g.strokeStyle = '#a0703f'; g.lineWidth = 8; g.beginPath(); g.moveTo(kx - 46, 504); g.lineTo(kx - 34, 452); g.moveTo(kx + 46, 504); g.lineTo(kx + 34, 452); g.stroke();
-  g.fillStyle = '#a0703f'; g.strokeStyle = '#5a3a1e'; g.lineWidth = 3; g.fillRect(kx - 54, 500, 108, 110); g.strokeRect(kx - 54, 500, 108, 110);
-  g.strokeRect(kx - 34, 548, 34, 24); // pocket
-  g.fillStyle = '#f3e2c7'; g.fillRect(kx + 8, 512, 40, 18); g.strokeRect(kx + 8, 512, 40, 18);
-  g.fillStyle = C.ink; g.font = `14px ${BODYFONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('fighty', kx + 28, 522, 36);
+  g.fillStyle = '#f3e2c7'; g.strokeStyle = '#5a3a1e'; g.lineWidth = 3; g.fillRect(kx + 20, 500, 40, 18); g.strokeRect(kx + 20, 500, 40, 18);
+  g.fillStyle = C.ink; g.font = `14px ${BODYFONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('fighty', kx + 40, 510, 36);
   // the waving arm, with a hand
   g.save(); g.translate(kx + 66, 470); g.rotate(-0.5 + Math.sin(t*5)*0.35);
   g.fillStyle = C.ink; g.beginPath(); g.roundRect ? g.roundRect(-22, -118, 44, 128, 20) : g.rect(-22, -118, 44, 128); g.fill();
