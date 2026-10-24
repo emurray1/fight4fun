@@ -550,6 +550,9 @@ const ITEMS = [
   { id:'goggles', name:'Glow goggles', price:0, desc:'Spooky goggles that glow in the dark. Free! ...what could go wrong?', floor:3 },
   // an easter egg: not on a stand. SMI7Y (a YouTuber) is visiting the shop 1 time in 10, and gives these away
   { id:'headphones', name:'SMI7Y headphones', price:0, desc:'Gaming headphones with a mic, a gift from SMI7Y!', gift:true },
+  // gifts from the shopkeepers when you hang out with them in the break room
+  { id:'bow', name:'Pink bow', price:0, desc:'A pink bow, tied by the funny fun shopkeeper on her break.', gift:true },
+  { id:'badge', name:'Staff badge', price:0, desc:'A gold star badge from the fighty shopkeeper. You\'re one of the team now!', gift:true },
 ];
 const shop = { coins:0, owned:{}, wear:{} };
 try { const s = JSON.parse(localStorage.getItem('fff-shop') || 'null'); if (s) Object.assign(shop, s); } catch (e) {}
@@ -558,16 +561,18 @@ for (const [k, v] of Object.entries(shop.wear)) if (typeof v === 'boolean') { (s
 const saveShop = () => { try { localStorage.setItem('fff-shop', JSON.stringify(shop)); } catch (e) {} };
 const canWear = (it, ch) => !(it.not && it.not.includes(ch.id));
 const wears = (id, ch) => !!(shop.owned[id] && shop.wear[id] && shop.wear[id][ch.id]);
-const looks = ch => ({ hat:wears('coolhat', ch), glasses:wears('shades', ch) && ch.id !== 'star', cape:wears('cape', ch), headphones:wears('headphones', ch) });
+const looks = ch => ({ hat:wears('coolhat', ch), glasses:wears('shades', ch) && ch.id !== 'star', cape:wears('cape', ch), headphones:wears('headphones', ch), bow:wears('bow', ch), badge:wears('badge', ch) });
 // the shop room: you walk a fighter up to a stand to buy what's on it
-const SHOP = { who:null, floor:1, x:280, y:0, vy:0, facing:1, near:null, nearKeeper:false, nearStairs:false, talk:{ 1:-1, 2:-1, 4:-1 }, prev:{}, msg:'', msgT:0, key:'' };
+const SHOP = { who:null, floor:1, x:280, y:0, vy:0, facing:1, near:null, nearKeeper:false, nearStairs:false, talk:{ 1:-1, 2:-1, 4:-1, 6:-1 }, prev:{}, msg:'', msgT:0, key:'' };
 // two floors: the fighty shop downstairs, and the funny fun shop upstairs for things that don't fit downstairs
-const SHOP_FLOOR = 770, KEEPERS = { 1:1260, 2:1180, 4:975 }, STAIRS_X = { 1:130, 2:330 }; // floor 4: the manager, in a big spinny chair
+const SHOP_FLOOR = 770, KEEPERS = { 1:1260, 2:1180, 4:975, 6:1010 }, STAIRS_X = { 1:130, 2:330 }; // floor 4: the manager, in a big spinny chair; floor 6: the break room
+// a "staff only" door on the 2nd floor goes into the break room (floor 6, since 5 is the chase), where both shopkeepers take their break
+const BREAK_DOOR_X = 110;
 // a ladder from the funny fun shop goes up to the dark 3rd floor, which the shopkeepers don't like to talk about
 // and an elevator in the attic goes up to the manager's office on the 4th floor
 const LADDER_X = 1480, ATTIC_STAIRS_X = 220, ELEVATOR_X = 1480;
 const STAIRS = [{ floor:1, x:STAIRS_X[1], to:2 }, { floor:2, x:STAIRS_X[2], to:1 }, { floor:2, x:LADDER_X, to:3 }, { floor:3, x:ATTIC_STAIRS_X, to:2 },
-  { floor:3, x:ELEVATOR_X, to:4 }, { floor:4, x:ELEVATOR_X, to:3 }];
+  { floor:3, x:ELEVATOR_X, to:4 }, { floor:4, x:ELEVATOR_X, to:3 }, { floor:2, x:BREAK_DOOR_X, to:6 }, { floor:6, x:BREAK_DOOR_X, to:2 }];
 const STAND_SPOTS = { 1:[390, 610, 830], 2:[530, 830], 3:[800] };
 const STANDS = (() => { // items fill the 1st floor, then the 2nd; an item can also ask for a floor of its own
   const free = { 1:[...STAND_SPOTS[1]], 2:[...STAND_SPOTS[2]], 3:[...STAND_SPOTS[3]] }, out = [];
@@ -632,6 +637,7 @@ const SHURIKEN_REPLIES = [
 // ask either shopkeeper about the 3rd floor and they get scared
 const ASK3_LINES = {
   4:['The third floor? Oh, that\'s where Gerald lives. He\'s harmless. Mostly.', 'Do NOT take the goggles. Gerald gets very upset.'],
+  6:['*both spill their drinks* The third floor?! Not on our break!', 'We don\'t talk about the third floor. Especially not on our break.', '*the shy shopkeeper hides behind a cushion*'],
   1:['The th-th-third floor?! *drops everything* We do NOT talk about the third floor!', 'Third floor? What third floor? There is no third floor! *sweats*', 'Shhh! Not so loud! It might hear you!'],
   2:['Eep! N-no! Don\'t go up there! *hides behind her bow*', 'The third floor? *shaking* I... I heard something blinking up there...', 'P-please don\'t ask me about that...'],
 };
@@ -894,8 +900,10 @@ function drawCharacter(g, ch, r, o = {}) {
   }
   if (o.flash > 0) { g.fillStyle = `rgba(255,255,255,${Math.min(0.8, o.flash*6)})`; shapePath(g, ch.shape, r); g.fill(); }
   drawFace(g, ch, r, o);
+  if (o.badge) drawBadge(g, r);
   if (o.headphones) drawHeadphones(g, r, -TOPS[ch.shape]*r, !!o.hat);
   if (o.hat) drawHat(g, r, -TOPS[ch.shape]*r, o.facing || 1);
+  if (o.bow) drawBow(g, r, -TOPS[ch.shape]*r - (o.hat ? r*0.5 : 0));
   if (robot) g.restore();
 }
 function drawCape(g, r, facing, t, bottom = r) { // the super cape from the shop: hangs from the shoulders, trails behind and flutters
@@ -918,6 +926,20 @@ function drawHeadphones(g, r, topY, hat) { // SMI7Y's gaming headphones: a band 
   for (const s of [-1, 1]) { g.fillStyle = C.ink; g.beginPath(); g.ellipse(s*ex, ey, r*0.2, r*0.28, 0, 0, TAU); g.fill(); g.fillStyle = '#2ee6a6'; g.beginPath(); g.ellipse(s*ex, ey, r*0.09, r*0.14, 0, 0, TAU); g.fill(); }
   g.strokeStyle = C.ink; g.lineWidth = r*0.06; g.beginPath(); g.moveTo(ex, ey + r*0.15); g.quadraticCurveTo(ex*0.85, r*0.5, r*0.35, r*0.45); g.stroke(); // the mic arm
   g.fillStyle = '#ff4d4d'; g.beginPath(); g.arc(r*0.33, r*0.45, r*0.08, 0, TAU); g.fill();
+  g.restore();
+}
+function drawBow(g, r, topY) { // the pink bow from the break room: two loops and a knot, sitting on top (or on the hat)
+  g.save(); g.translate(0, topY); g.fillStyle = '#ff7aa8'; g.strokeStyle = C.ink; g.lineWidth = Math.max(2, r*0.05); g.lineJoin = 'round';
+  for (const s of [-1, 1]) { g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(s*r*0.45, -r*0.4, s*r*0.5, 0); g.quadraticCurveTo(s*r*0.45, r*0.3, 0, 0); g.fill(); g.stroke(); }
+  g.beginPath(); g.arc(0, 0, r*0.11, 0, TAU); g.fill(); g.stroke();
+  g.fillStyle = 'rgba(255,255,255,.55)'; g.beginPath(); g.ellipse(-r*0.3, -r*0.08, r*0.07, r*0.035, -0.4, 0, TAU); g.fill();
+  g.restore();
+}
+function drawBadge(g, r) { // the gold staff badge from the break room, pinned low on the body
+  const x = r*0.36, y = r*0.42, s = r*0.17;
+  g.save(); g.fillStyle = C.yellow; g.strokeStyle = C.ink; g.lineWidth = Math.max(1.5, r*0.035); g.lineJoin = 'round';
+  g.beginPath(); for (let i=0;i<10;i++) { const a = -Math.PI/2 + i*Math.PI/5, d = i % 2 ? s*0.45 : s; g.lineTo(x + Math.cos(a)*d, y + Math.sin(a)*d); } g.closePath(); g.fill(); g.stroke();
+  g.fillStyle = 'rgba(255,255,255,.6)'; g.beginPath(); g.arc(x - s*0.25, y - s*0.25, s*0.12, 0, TAU); g.fill();
   g.restore();
 }
 function drawBeanie(g, r, t) { // Goofy Sparkle's striped propeller beanie, sitting on his top point
@@ -954,7 +976,7 @@ function charCanvas(ch, px, o = {}) {
   const g = c.getContext('2d'); g.scale(d, d);
   const tall = o.crown || o.hat, r = px*(tall ? 0.27 : 0.33);
   g.translate(px/2, px*(tall ? 0.62 : 0.53));
-  drawCharacter(g, ch, r, { facing:1, ko:o.ko, hat:o.hat && !o.crown, glasses:o.glasses, cape:o.cape, headphones:o.headphones, beanie:!o.crown });
+  drawCharacter(g, ch, r, { facing:1, ko:o.ko, hat:o.hat && !o.crown, glasses:o.glasses, cape:o.cape, headphones:o.headphones, bow:o.bow && !o.crown, badge:o.badge, beanie:!o.crown });
   if (o.crown) drawCrown(g, r, -TOPS[ch.shape]*r);
   return c;
 }
@@ -988,6 +1010,7 @@ const sfx = {
   dizzy(){ tone(900,300,0.5,'sine',0.12); tone(1200,500,0.5,'sine',0.06,0.05); },
   splash(){ noise(0.6,900,0.3); tone(180,60,0.3,'sine',0.15); },
   count(){ tone(440,440,0.12,'square',0.07); },
+  coin(){ tone(988,988,0.08,'square',0.06); tone(1319,1319,0.2,'square',0.06,0.08); },
   go(){ tone(660,990,0.3,'square',0.09); },
   win(){ [523,659,784,1046].forEach((f,i)=>tone(f,f,0.2,'square',0.07,i*0.12)); },
   warn(){ tone(880,880,0.09,'square',0.06); tone(880,880,0.09,'square',0.06,0.16); tone(880,880,0.09,'square',0.06,0.32); },
@@ -2213,7 +2236,7 @@ function shopStep(dt) {
   SHOP.near = STANDS.find(s => s.floor === f && Math.abs(s.x - SHOP.x) < 110) || null;
   const stair = !SHOP.near && STAIRS.find(s => s.floor === f && Math.abs(s.x - SHOP.x) < 100);
   SHOP.nearStairs = !!stair; SHOP.stairTo = stair ? stair.to : 0;
-  SHOP.nearKeeper = !SHOP.near && !SHOP.nearStairs && !!KEEPERS[f] && Math.abs(KEEPERS[f] - SHOP.x) < 220 && (f !== 4 || (SHOP.revealed && !SHOP.chase));
+  SHOP.nearKeeper = !SHOP.near && !SHOP.nearStairs && !!KEEPERS[f] && Math.abs(KEEPERS[f] - SHOP.x) < (f === 6 ? 300 : 220) && (f !== 4 || (SHOP.revealed && !SHOP.chase));
   if (f === 4 && !SHOP.revealed && !SHOP.chase) { // walk close and the chair spins around
     if (SHOP.spinT > 0 || Math.abs(KEEPERS[4] - SHOP.x) < 380) SHOP.spinT = (SHOP.spinT || 0) + dt;
     if (SHOP.spinT >= 0.9) { SHOP.revealed = true; SHOP.talk[4] = 0; SHOP.bossT = 0; shopSay(MANAGER_LINES[0](), 'go', 3); }
@@ -2225,6 +2248,7 @@ function shopStep(dt) {
   }
   chaseStep(dt);
   if (f === 3) atticStep(dt);
+  if (f === 6) breakStep(dt);
   SHOP.nearSmi = f === 1 && SHOP.smi7y && !SHOP.near && !SHOP.nearStairs && Math.abs(SMI7Y_X - SHOP.x) < 70;
   if (SHOP.nearSmi) SHOP.nearKeeper = false;
   SHOP.smiSayT = Math.max(0, (SHOP.smiSayT || 0) - dt);
@@ -2265,13 +2289,8 @@ function drawWoodRoom(wall = C.white, beam = BEAM, floor = C.brown) { // walls, 
   for (const y of [SHOP_FLOOR + 4, SHOP_FLOOR + 50, SHOP_FLOOR + 96]) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
   g.lineWidth = 5; for (let i=0;i<12;i++) { const x = (i*157 + (i%2)*70) % W, y = SHOP_FLOOR + (i%2 ? 50 : 4); g.beginPath(); g.moveTo(x, y); g.lineTo(x, y + 46); g.stroke(); }
 }
-function drawFightyFloor(t) { // downstairs: the fighty shop
-  drawWoodRoom();
-  // shopkeeper behind the counter, waving (and bouncing when laughing)
-  const kx = KEEPERS[1];
-  const weird = isHex(); // around Nervous Hexstar they sway back and forth a bit oddly
-  g.save(); g.translate(SHOP.keeperScaredT > 0 ? Math.sin(t*60)*4 : 0, SHOP.keeperLaughT > 0 ? -Math.abs(Math.sin(t*18))*10 : 0); // shakes when scared
-  if (weird) { g.translate(kx, 610); g.rotate(Math.sin(t*3)*0.08); g.translate(-kx, -610); }
+// the fighty shopkeeper, from the head down to the waist. Their right arm waves, or (with a mug) holds a cup of coffee and takes a sip now and then
+function drawGreyKeeper(kx, t, mug) {
   // body: rounded shoulders in black clothes, a white collar and a red tie, and a name tag
   g.fillStyle = C.ink; g.beginPath(); g.moveTo(kx - 78, 610); g.lineTo(kx - 74, 492); g.quadraticCurveTo(kx - 70, 448, kx - 30, 446); g.lineTo(kx + 30, 446);
   g.quadraticCurveTo(kx + 70, 448, kx + 74, 492); g.lineTo(kx + 78, 610); g.closePath(); g.fill();
@@ -2280,10 +2299,11 @@ function drawFightyFloor(t) { // downstairs: the fighty shop
   g.beginPath(); g.moveTo(kx - 8, 463); g.lineTo(kx + 8, 463); g.lineTo(kx + 12, 528); g.lineTo(kx, 544); g.lineTo(kx - 12, 528); g.closePath(); g.fill();
   g.fillStyle = '#f3e2c7'; g.strokeStyle = '#5a3a1e'; g.lineWidth = 3; g.fillRect(kx + 20, 500, 40, 18); g.strokeRect(kx + 20, 500, 40, 18);
   g.fillStyle = C.ink; g.font = `14px ${BODYFONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('fighty', kx + 40, 510, 36);
-  // the waving arm, with a hand
-  g.save(); g.translate(kx + 66, 470); g.rotate(-0.5 + Math.sin(t*5)*0.35);
-  g.fillStyle = C.ink; g.beginPath(); g.roundRect ? g.roundRect(-22, -118, 44, 128, 20) : g.rect(-22, -118, 44, 128); g.fill();
-  g.fillStyle = C.grey; g.strokeStyle = C.ink; g.lineWidth = 4; g.beginPath(); g.arc(0, -126, 21, 0, TAU); g.fill(); g.stroke(); g.restore();
+  if (!mug) { // the waving arm, with a hand
+    g.save(); g.translate(kx + 66, 470); g.rotate(-0.5 + Math.sin(t*5)*0.35);
+    g.fillStyle = C.ink; g.beginPath(); g.roundRect ? g.roundRect(-22, -118, 44, 128, 20) : g.rect(-22, -118, 44, 128); g.fill();
+    g.fillStyle = C.grey; g.strokeStyle = C.ink; g.lineWidth = 4; g.beginPath(); g.arc(0, -126, 21, 0, TAU); g.fill(); g.stroke(); g.restore();
+  }
   g.fillStyle = C.grey; g.strokeStyle = C.ink; g.lineWidth = 4; for (const s of [-1, 1]) { g.beginPath(); g.arc(kx + s*57, 400, 13, 0, TAU); g.fill(); g.stroke(); } // ears
   g.lineWidth = 5; g.beginPath(); g.arc(kx, 395, 58, 0, TAU); g.fill(); g.stroke();
   // sunglasses: two dark lenses with a bridge, and a little shine on each
@@ -2298,6 +2318,24 @@ function drawFightyFloor(t) { // downstairs: the fighty shop
   g.fillStyle = C.white; g.beginPath(); g.moveTo(kx - 24, 411); g.lineTo(kx + 24, 411); g.lineTo(kx + 20, 419); g.lineTo(kx - 20, 419); g.closePath(); g.fill();
   // and the shop's own cool hat
   g.save(); g.translate(kx, 395); drawHat(g, 58, -58, 1); g.restore();
+  if (mug) { // an arm holding a mug of coffee, lifted up for a sip every few seconds, with steam curling up
+    const sip = t % 5 > 3.8, hx = kx + (sip ? 34 : 58), hy = sip ? 448 : 545;
+    g.strokeStyle = C.ink; g.lineWidth = 40; g.lineCap = 'round'; g.beginPath(); g.moveTo(kx + 58, 480); g.lineTo(hx + 14, hy + 10); g.stroke();
+    g.fillStyle = mug; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(hx - 18, hy - 30, 38, 42); g.strokeRect(hx - 18, hy - 30, 38, 42);
+    g.beginPath(); g.arc(hx + 22, hy - 9, 10, -1.2, 1.2); g.stroke();
+    g.fillStyle = '#5a3a1e'; g.fillRect(hx - 15, hy - 27, 32, 6);
+    g.fillStyle = C.grey; g.beginPath(); g.ellipse(hx + 18, hy + 4, 18, 15, 0, 0, TAU); g.fill(); g.stroke(); // the hand around the mug
+    if (!sip) { g.strokeStyle = 'rgba(120,120,120,.6)'; g.lineWidth = 3; for (const dx of [-6, 8]) { g.beginPath(); g.moveTo(hx + dx, hy - 36); g.bezierCurveTo(hx + dx + 10, hy - 50, hx + dx - 10, hy - 62, hx + dx + Math.sin(t*3 + dx)*6, hy - 78); g.stroke(); } }
+  }
+}
+function drawFightyFloor(t) { // downstairs: the fighty shop
+  drawWoodRoom();
+  // shopkeeper behind the counter, waving (and bouncing when laughing)
+  const kx = KEEPERS[1];
+  const weird = isHex(); // around Nervous Hexstar they sway back and forth a bit oddly
+  g.save(); g.translate(SHOP.keeperScaredT > 0 ? Math.sin(t*60)*4 : 0, SHOP.keeperLaughT > 0 ? -Math.abs(Math.sin(t*18))*10 : 0); // shakes when scared
+  if (weird) { g.translate(kx, 610); g.rotate(Math.sin(t*3)*0.08); g.translate(-kx, -610); }
+  drawGreyKeeper(kx, t, null);
   g.restore();
   if (weird) { // a puzzled "?!" and a little heart float over their head
     g.font = `40px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = C.ink; g.fillText('?!', kx + 78, 300 + Math.sin(t*4)*6);
@@ -2393,6 +2431,7 @@ function drawFunnyFloor(t) { // upstairs: the funny fun shop, built like the fig
   g.strokeStyle = PINK_DARK; g.lineWidth = 6; for (let i=0;i<4;i++) { const y = SHOP_FLOOR + 10 + i*14; g.beginPath(); g.moveTo(sx - 64 + i*10, y); g.lineTo(sx + 64 - i*10, y); g.stroke(); }
   g.strokeStyle = C.ink; g.lineWidth = 5; g.beginPath(); g.moveTo(sx - 70, SHOP_FLOOR); g.lineTo(sx - 70, SHOP_FLOOR - 70); g.lineTo(sx + 70, SHOP_FLOOR - 70); g.lineTo(sx + 70, SHOP_FLOOR); g.stroke();
   drawFloorSign(sx, SHOP_FLOOR - 120, '1st floor ↓', '#f3e2c7');
+  drawStaffDoor(BREAK_DOOR_X, 'break room', '#f3e2c7'); // in the corner: the door to the break room
   if (spooky()) { drawWeb(0, 110, 150, 1); drawWeb(W, 110, 150, -1); drawPumpkin(470, SHOP_FLOOR, 30, t); drawPumpkin(690, SHOP_FLOOR, 24, t); }
   if (xmas()) { drawLights(0, W, 110, t); drawXmasTree(680, SHOP_FLOOR, 100, t); }
   // a ladder up to the 3rd floor, with a sign nobody listens to
@@ -2430,12 +2469,133 @@ function drawFunnyFloor(t) { // upstairs: the funny fun shop, built like the fig
   const empty = !STANDS.some(s => s.floor === 2);
   const say = SHOP.msgT > 0 ? SHOP.msg
     : SHOP.nearStairs && SHOP.stairTo === 3 ? 'D-don\'t go up there... please...'
+    : SHOP.nearStairs && SHOP.stairTo === 6 ? 'That\'s our break room... you can come in. Hehe...'
     : hex ? (SHOP.near ? 'Ooh, so cool! Like you!' : SHOP.nearKeeper ? 'Want to talk? I am being weird. Sorry. I like you!' : SHOP.nearStairs ? 'Bye bye, nervous buddy!' : 'H-hexstar! *wiggles* Hi!')
     : kid ? (SHOP.near ? 'Ooh, so cute for a little one!' : SHOP.nearKeeper ? 'Hi little one! Want to talk? Press punch!' : SHOP.nearStairs ? 'Hold the rail going down, okay?' : spooky() ? 'Aww, it\'s okay sweetie, they\'re just decorations! You\'re so brave!' : xmas() ? 'Aww, you\'re so excited, sweetie! Merry Christmas!' : 'Aww, hi sweetie! Come here!')
     : friend ? (SHOP.near ? 'Ooh, that would look so cute on you!' : SHOP.nearKeeper ? `${CHARS[SHOP.who].name}! Want to chat? Press punch!` : SHOP.nearStairs ? 'Aww, leaving already? Come back soon!' : `Hi ${CHARS[SHOP.who].name}! Come say hi!`)
     : SHOP.near ? 'Ooh... good choice...' : SHOP.nearKeeper ? 'Oh! Um... you want to talk to me? Press punch...' : SHOP.nearStairs ? 'Those stairs go back down...' : xmas() ? 'M-merry Christmas... *blushes*' : empty ? 'H-hi... nothing up here yet...' : 'Um... welcome...';
   if (!(SHOP.sparkleHere && SHOP.foundT < 5.4 && SHOP.msgT <= 0)) drawBubble(say, kx - 40, 520, kx - 6); // quiet while Shuriken and Goofy Sparkle say hi
   if (SHOP.nearKeeper) drawPointer(kx + 70, 566, t);
+}
+function drawStaffDoor(x, label, color) { // a wooden door with two panels, a gold knob, a "staff only" plaque and a sign above
+  g.fillStyle = '#4f3427'; g.fillRect(x - 62, SHOP_FLOOR - 250, 124, 250);
+  g.fillStyle = '#a8744a'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(x - 52, SHOP_FLOOR - 240, 104, 240); g.strokeRect(x - 52, SHOP_FLOOR - 240, 104, 240);
+  g.strokeStyle = '#7a5236'; g.strokeRect(x - 38, SHOP_FLOOR - 222, 76, 90); g.strokeRect(x - 38, SHOP_FLOOR - 118, 76, 96);
+  g.fillStyle = '#f3e2c7'; g.strokeStyle = C.ink; g.lineWidth = 2; g.fillRect(x - 34, SHOP_FLOOR - 190, 68, 24); g.strokeRect(x - 34, SHOP_FLOOR - 190, 68, 24);
+  g.fillStyle = C.ink; g.font = `14px ${BODYFONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('STAFF ONLY', x, SHOP_FLOOR - 177, 62);
+  g.fillStyle = C.yellow; g.lineWidth = 3; g.beginPath(); g.arc(x + 36, SHOP_FLOOR - 120, 8, 0, TAU); g.fill(); g.stroke();
+  drawFloorSign(x, SHOP_FLOOR - 285, label, color);
+}
+// ---------- the break room: both shopkeepers on their break. The longer you stay, the more stuff they give you ----------
+const BREAK_EVERY = 15; // seconds between treats (the timer starts over each time you come in)
+const BREAK_GREY = 760, BREAK_SHY = 1300; // where the two shopkeepers are
+const BREAK_LINES = [ // talking takes turns: the fighty shopkeeper, then the shy one
+  () => 'Welcome to the break room! It\'s staff only... but you can stay. Shh!',
+  () => 'H-hi... this is my favourite spot. You can hang out here... if you want.',
+  () => 'Why did the shopkeeper take a break? The cash register needed a rest! Hehe!',
+  () => '*sips tea* ...the downstairs shopkeeper makes the best coffee...',
+  () => `Psst... ${BOSS_NAME} never comes in here. It's the safest room in the shop!`,
+  () => 'If you stay a bit longer... we have a surprise for you. Hehe...',
+];
+const BREAK_COIN_LINES = [
+  [1, n => `Here, have ${n === 1 ? 'a coin' : n + ' coins'}. Don't tell the manager!`],
+  [2, n => `Um... I found ${n === 1 ? 'a coin' : n + ' coins'} in the couch... you can have ${n === 1 ? 'it' : 'them'}.`],
+  [1, n => `Ahh, break time. ${n === 1 ? 'A coin' : n + ' coins'} for you, buddy!`],
+  [2, n => `H-here... ${n === 1 ? 'a coin' : n + ' coins'}... *blushes*`],
+];
+const breakCoins = at => Math.min(5, 1 + Math.floor(at/60)); // 1 coin at a time at first, then more the longer you stay
+function breakTreat(at) { // what you get `at` seconds into your break
+  if (at === 30 && !shop.owned.bow) return { gift:'bow', who:2, say:ch => `${ch.name}... I tied you a bow. On my break. It's pink... do you like it?` };
+  if (at === 60 && !shop.owned.badge) return { gift:'badge', who:1, say:ch => `A whole minute on break with us? ${ch.name}, you're one of the team now! Here's your staff badge!` };
+  if (at === 120) return { coins:20, big:true, who:1, say:() => 'TWO whole minutes! You\'re a break champion! Here\'s a big bonus: 20 coins!' };
+  const n = breakCoins(at), [who, say] = BREAK_COIN_LINES[(at/BREAK_EVERY) % BREAK_COIN_LINES.length];
+  return { coins:n, who, say:() => say(n) };
+}
+function breakStep(dt) {
+  const b = SHOP.brk; if (!b) return;
+  b.t += dt; b.popT = Math.max(0, b.popT - dt);
+  if (b.t < b.next) return;
+  const at = b.next, tr = breakTreat(at), ch = CHARS[SHOP.who]; b.next += BREAK_EVERY;
+  if (tr.gift) { shop.owned[tr.gift] = true; (shop.wear[tr.gift] = shop.wear[tr.gift] || {})[ch.id] = true; b.pop = ITEMS.find(i => i.id === tr.gift).name + '!'; } // it goes right on
+  else { shop.coins += tr.coins; b.pop = `+${tr.coins} coin${tr.coins === 1 ? '' : 's'}`; }
+  saveShop(); b.popT = 1.8; shopSay(tr.say(ch), tr.gift || tr.big ? 'win' : 'coin', 5, tr.who); renderShopCard(true);
+}
+function drawBreakFloor(t) {
+  drawWoodRoom('#fdf3e1', '#8a5a3c', '#c98f5a');
+  g.fillStyle = 'rgba(255,255,255,.25)'; for (let x = 0; x < W; x += 90) g.fillRect(x, 110, 40, SHOP_FLOOR - 110); // stripy wallpaper
+  // a "break room" sign hanging from the beam, like the shop signs
+  g.save(); g.translate(1030, 110); g.rotate(Math.sin(t*1.4 + 2)*0.05);
+  g.strokeStyle = '#ff9a5c'; g.lineWidth = 6; g.beginPath(); g.moveTo(-70, 0); g.lineTo(-66, 30); g.moveTo(70, 0); g.lineTo(66, 30); g.stroke();
+  g.fillStyle = '#7a5236'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(-120, 28, 240, 60); g.strokeRect(-120, 28, 240, 60);
+  g.fillStyle = C.white; g.font = `44px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('break room', 0, 59, 220);
+  g.restore();
+  drawStaffDoor(BREAK_DOOR_X, '← shop', PINK);
+  // a wall clock whose hands spin way too fast (time flies on your break)
+  g.fillStyle = C.white; g.strokeStyle = C.ink; g.lineWidth = 6; g.beginPath(); g.arc(300, 215, 52, 0, TAU); g.fill(); g.stroke();
+  g.fillStyle = C.ink; for (let i=0;i<12;i++) { const a = i*Math.PI/6; g.beginPath(); g.arc(300 + Math.cos(a)*40, 215 + Math.sin(a)*40, 3, 0, TAU); g.fill(); }
+  g.lineCap = 'round'; for (const [len, sp, lw] of [[24, 0.5, 6], [36, 6, 4]]) { const a = t*sp - Math.PI/2; g.lineWidth = lw; g.beginPath(); g.moveTo(300, 215); g.lineTo(300 + Math.cos(a)*len, 215 + Math.sin(a)*len); g.stroke(); }
+  // a snack machine full of treats
+  g.fillStyle = '#d8232a'; g.strokeStyle = C.ink; g.lineWidth = 5; g.fillRect(330, 440, 150, SHOP_FLOOR - 440); g.strokeRect(330, 440, 150, SHOP_FLOOR - 440);
+  g.fillStyle = '#cfe8ff'; g.fillRect(345, 458, 90, 200); g.strokeRect(345, 458, 90, 200);
+  const SNACKS = [C.yellow, C.green, '#ff7aa8', C.blue, '#ff9a5c'];
+  for (let r=0;r<4;r++) for (let c=0;c<3;c++) { g.fillStyle = SNACKS[(r*3 + c) % SNACKS.length]; g.fillRect(352 + c*28, 470 + r*48, 22, 30); g.fillStyle = '#888'; g.fillRect(350 + c*28, 502 + r*48, 26, 4); }
+  g.fillStyle = C.ink; g.fillRect(445, 470, 24, 60); g.fillRect(352, 675, 76, 30);
+  g.fillStyle = C.white; g.font = `20px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('SNACKS', 405, 730);
+  // the chalkboard: how long your break has been, and what you get next
+  const b = SHOP.brk || { t:0, next:BREAK_EVERY }, nx = breakTreat(b.next), secs = Math.floor(b.t), left = Math.ceil(b.next - b.t);
+  g.fillStyle = '#8a5a3c'; g.fillRect(842, 240, 376, 168); g.fillStyle = '#2f4a3a'; g.fillRect(854, 252, 352, 144);
+  g.fillStyle = '#f2f2e8'; g.font = `30px ${FONT}`; g.fillText(`break time ${Math.floor(secs/60)}:${String(secs % 60).padStart(2, '0')}`, 1030, 282);
+  g.font = `24px ${BODYFONT}`; g.fillText(`next: ${nx.gift ? 'a surprise gift!' : nx.big ? 'a BIG bonus!' : `+${nx.coins} coin${nx.coins === 1 ? '' : 's'}`} in ${left}s`, 1030, 320, 330);
+  g.strokeStyle = '#f2f2e8'; g.lineWidth = 3; g.strokeRect(890, 340, 280, 18); g.fillStyle = C.yellow; g.fillRect(892, 342, 276*Math.min(1, 1 - (b.next - b.t)/BREAK_EVERY), 14);
+  g.fillStyle = '#f2f2e8'; g.font = `18px ${BODYFONT}`; g.fillText('stay longer = more stuff!', 1030, 380);
+  // a "take a break" poster
+  g.save(); g.translate(1480, 300); g.rotate(0.04);
+  g.fillStyle = '#fff8c4'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(-70, -80, 140, 160); g.strokeRect(-70, -80, 140, 160);
+  g.fillStyle = C.yellow; g.beginPath(); g.arc(0, -15, 38, 0, TAU); g.fill(); g.stroke();
+  g.fillStyle = C.ink; for (const s of [-1, 1]) { g.beginPath(); g.arc(s*13, -24, 5, 0, TAU); g.fill(); }
+  g.lineWidth = 4; g.beginPath(); g.arc(0, -15, 22, 0.2*Math.PI, 0.8*Math.PI); g.stroke();
+  g.font = `22px ${FONT}`; g.fillText('take a break!', 0, 52, 126); g.restore();
+  // the couch, with the fighty shopkeeper sitting on it drinking coffee
+  const gx = BREAK_GREY;
+  g.fillStyle = '#3f7fbf'; g.strokeStyle = C.ink; g.lineWidth = 5;
+  g.beginPath(); g.roundRect ? g.roundRect(gx - 175, 530, 350, 140, 30) : g.rect(gx - 175, 530, 350, 140); g.fill(); g.stroke(); // the back
+  g.save(); g.translate(SHOP.keeperScaredT > 0 ? Math.sin(t*60)*4 : 0, 59 - (SHOP.keeperLaughT > 0 ? Math.abs(Math.sin(t*18))*10 : 0)); // sitting down, so a bit lower
+  drawGreyKeeper(gx, t, '#ff7a3d'); g.restore();
+  g.fillStyle = '#5a9ad6'; g.beginPath(); g.roundRect ? g.roundRect(gx - 190, 650, 380, 58, 20) : g.rect(gx - 190, 650, 380, 58); g.fill(); g.stroke(); // the seat cushion
+  g.fillStyle = C.ink; for (const s of [-1, 1]) { g.fillRect(gx + s*34 - 16, 700, 32, SHOP_FLOOR - 714); g.beginPath(); g.ellipse(gx + s*34 + 8, SHOP_FLOOR - 10, 26, 11, 0, 0, TAU); g.fill(); } // legs and shoes
+  g.fillStyle = '#3f7fbf'; for (const s of [-1, 1]) { g.beginPath(); g.roundRect ? g.roundRect(gx + s*195 - 30, 590, 60, 120, 24) : g.rect(gx + s*195 - 30, 590, 60, 120); g.fill(); g.stroke(); } // arms
+  g.fillStyle = '#5a3a24'; for (const s of [-1, 1]) g.fillRect(gx + s*170 - 8, 708, 16, SHOP_FLOOR - 708); // couch legs
+  // a little table with a plate of cookies and a cup of tea
+  const tx = 1080;
+  g.fillStyle = '#7a5236'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(tx - 10, 650, 20, SHOP_FLOOR - 650); g.fillRect(tx - 40, SHOP_FLOOR - 10, 80, 10);
+  g.beginPath(); g.ellipse(tx, 648, 80, 16, 0, 0, TAU); g.fill(); g.stroke();
+  g.fillStyle = C.white; g.beginPath(); g.ellipse(tx - 25, 636, 38, 9, 0, 0, TAU); g.fill(); g.stroke();
+  g.fillStyle = '#d9a35b'; for (const [cx, cy] of [[-42, 628], [-24, 624], [-8, 629]]) { g.beginPath(); g.arc(tx + cx, cy, 11, 0, TAU); g.fill(); g.stroke(); g.fillStyle = '#5a3a1e'; g.fillRect(tx + cx - 3, cy - 3, 4, 4); g.fillStyle = '#d9a35b'; }
+  g.fillStyle = '#ff7aa8'; g.fillRect(tx + 22, 610, 30, 30); g.strokeRect(tx + 22, 610, 30, 30); g.beginPath(); g.arc(tx + 56, 625, 8, -1.2, 1.2); g.stroke();
+  // a counter with a coffee machine
+  g.fillStyle = '#8a5a3c'; g.fillRect(1400, 650, 200, SHOP_FLOOR - 650); g.fillStyle = '#5a3a24'; g.fillRect(1390, 636, 210, 20);
+  g.fillStyle = '#2c2f36'; g.fillRect(1440, 530, 90, 106); g.fillStyle = '#555'; g.fillRect(1462, 590, 46, 10);
+  g.fillStyle = Math.sin(t*4) > 0 ? '#7dff8a' : '#2e6b35'; g.beginPath(); g.arc(1515, 548, 6, 0, TAU); g.fill();
+  g.fillStyle = C.white; g.fillRect(1470, 606, 30, 30);
+  // the shy shopkeeper, having her tea break
+  const kid = isKid(), hex = isHex(), friend = isFriend() || kid || hex, scared3 = SHOP.keeperScaredT > 0;
+  drawShyKeeper(BREAK_SHY, t, { friend:friend && !scared3, close:scared3 ? 1 : friend ? 0 : Math.max(0, 1 - Math.abs(SHOP.x - BREAK_SHY)/500)*0.7, lookX:Math.sign(SHOP.x - BREAK_SHY)*3,
+    lift:SHOP.keeperLaughT > 0 ? Math.abs(Math.sin(t*18))*8 : 0, wiggle:scared3 ? Math.sin(t*60)*4 : hex ? Math.sin(t*5)*8 : 0 });
+  // what they say: one bubble at a time, from whoever is talking
+  const talking = SHOP.msgT > 0, shyTalks = talking && SHOP.msgWho === 2;
+  const greyIdle = kid ? 'Shh, little one! It\'s nap time... just kidding, it\'s break time!' : hex ? 'Hexstar is on our break! Best break ever!'
+    : SHOP.nearKeeper ? 'Hey! We\'re on break. Press punch to chat!' : 'Ahh, break time. Stay as long as you like!';
+  const shyIdle = Math.abs(SHOP.x - BREAK_SHY) < 220 ? (friend ? `Hi ${CHARS[SHOP.who].name}! Want a cookie?` : '*sips tea* ...h-hi.') : '';
+  if (shyTalks) drawBubble(SHOP.msg, BREAK_SHY - 40, 520, BREAK_SHY - 6);
+  else if (talking) drawBubble(SHOP.msg, gx - 70, 380, gx - 30);
+  else if (shyIdle) drawBubble(shyIdle, BREAK_SHY - 40, 520, BREAK_SHY - 6);
+  else drawBubble(greyIdle, gx - 70, 380, gx - 30);
+}
+function drawBreakPop(t) { // what you just got floats up over your head
+  const b = SHOP.brk; if (!b || b.popT <= 0) return;
+  const k = b.popT/1.8, y = SHOP_FLOOR + SHOP.y - 230 - (1 - k)*70;
+  g.save(); g.globalAlpha = Math.min(1, k*3); g.font = `44px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round';
+  g.lineWidth = 8; g.strokeStyle = C.ink; g.strokeText(b.pop, SHOP.x, y); g.fillStyle = C.yellow; g.fillText(b.pop, SHOP.x, y); g.restore();
 }
 // the funny fun shopkeeper: grey head, purple dress, black arms with a bow in the middle, standing on the floor at kx.
 // She's shy: head tucked down, eyes looking at the floor, pink cheeks, turning away more as `close` goes to 1.
@@ -2789,7 +2949,7 @@ function drawManager(g, t) { // %#@% sitting in his chair (drawn in the chair's 
 function drawShop(t) {
   const hall = SHOP.floor === 5; // the chase hallway scrolls with you
   if (hall) { g.save(); g.translate(-(SHOP.cam || 0), 0); drawChaseFloor(t); }
-  else if (SHOP.floor === 4) drawOfficeFloor(t); else if (SHOP.floor === 3) drawAtticFloor(t); else if (SHOP.floor === 2) drawFunnyFloor(t); else drawFightyFloor(t);
+  else if (SHOP.floor === 6) drawBreakFloor(t); else if (SHOP.floor === 4) drawOfficeFloor(t); else if (SHOP.floor === 3) drawAtticFloor(t); else if (SHOP.floor === 2) drawFunnyFloor(t); else drawFightyFloor(t);
   // an empty pink stand upstairs, waiting for the next thing to sell (a real item takes its place once there is one)
   if (SHOP.floor === 2) {
     const spot = STAND_SPOTS[2].find(x => !STANDS.some(s => s.floor === 2 && s.x === x));
@@ -2838,6 +2998,7 @@ function drawShop(t) {
   else if (found && SHOP.foundT > 0.2 && SHOP.foundT < 2.6) drawBubble('Goofy Sparkle! I FOUND you!', SHOP.x + 160, above - 24, SHOP.x + 20);
   else if (scared && t % 6 < 2.6) drawBubble(SCARED_LINES[Math.floor(t/6) % SCARED_LINES.length], SHOP.x + 120, above - (bottom > 60 ? 20 : 0), SHOP.x + 20);
   else if (excited && t % 5 < 2.6) drawBubble(EXCITED_LINES[Math.floor(t/5) % EXCITED_LINES.length], SHOP.x + 120, above - 24, SHOP.x + 20);
+  if (SHOP.floor === 6) drawBreakPop(t);
   if (SHOP.floor === 3) drawAtticDark(t);
   if (hall) { drawChaser(t); g.restore(); drawChaseOverlay(t); }
 }
@@ -3022,7 +3183,7 @@ function openShop() {
   SHOP.enterClock = 0; SHOP.replies = CHARS[SHOP.who].id === 'shuriken' ? SHURIKEN_REPLIES.map(r => ({ ...r })) : [];
   openPage('shop'); renderShopCard(true); cv.focus();
 }
-function shopSay(text, sound, secs = 3.5) { SHOP.msg = text; SHOP.msgT = secs; if (sound && sfx[sound]) sfx[sound](); }
+function shopSay(text, sound, secs = 3.5, who = 1) { SHOP.msg = text; SHOP.msgT = secs; SHOP.msgWho = who; if (sound && sfx[sound]) sfx[sound](); } // `who`: which shopkeeper says it in the break room
 function shopTalk() {
   const f = SHOP.floor, id = CHARS[SHOP.who].id;
   if (f === 2 && id === 'tri' && !isFriend()) { // she opens up to Angry Triangle a little more each time
@@ -3031,11 +3192,11 @@ function shopTalk() {
     if (opened) { shop.friends = { ...shop.friends, tri:true }; saveShop(); SHOP.talk[2] = -1; }
     SHOP.joke = false; shopSay(TRI_OPENING_LINES[SHOP.triStep](), opened ? 'win' : 'count', 6); renderShopCard(true); return;
   }
-  const lines = f === 4 ? MANAGER_LINES : isKid() ? (f === 1 ? KEEPER_KID_LINES : KEEPER2_KID_LINES) : isHex() ? (f === 1 ? KEEPER_HEX_LINES : KEEPER2_HEX_LINES)
+  const lines = f === 6 ? BREAK_LINES : f === 4 ? MANAGER_LINES : isKid() ? (f === 1 ? KEEPER_KID_LINES : KEEPER2_KID_LINES) : isHex() ? (f === 1 ? KEEPER_HEX_LINES : KEEPER2_HEX_LINES)
     : f === 1 ? KEEPER_LINES : !isFriend() ? KEEPER2_LINES : id === 'tri' ? TRI_FRIEND_LINES : KEEPER2_FRIEND_LINES;
   const text = lines[(SHOP.talk[f] = (SHOP.talk[f] + 1) % lines.length)]();
   SHOP.joke = /why did/i.test(text); // after a joke you can laugh at it
-  shopSay(text, 'count', 6); renderShopCard(true);
+  shopSay(text, 'count', 6, f === 6 && SHOP.talk[6] % 2 ? 2 : 1); renderShopCard(true); // in the break room they take turns
   // when the shopkeeper shouts something nice upstairs, the shy shopkeeper answers quietly down the stairs
   if (text.startsWith('*shouts upstairs*')) SHOP.echoT = 5;
 }
@@ -3089,7 +3250,8 @@ function shopAsk3() {
 function shopLaugh() { // you laugh at the joke, and the shopkeeper is happy you got it
   if (!jokeOpen()) return;
   SHOP.joke = false; SHOP.laughT = 1.6; SHOP.keeperLaughT = 1.8;
-  const name = CHARS[SHOP.who].name, replies = isKid() ? (SHOP.floor === 1 ? ['Hahaha! You are such a giggly little kid!', 'Hoho! Kids always get my jokes!']
+  const name = CHARS[SHOP.who].name, replies = SHOP.floor === 6 ? ['Hahaha! Even on my break I\'m hilarious!', 'Hehe... *both shopkeepers giggle*', 'HAHA! *spills coffee* Worth it!']
+    : isKid() ? (SHOP.floor === 1 ? ['Hahaha! You are such a giggly little kid!', 'Hoho! Kids always get my jokes!']
       : ['Hehe! You have the cutest little laugh, sweetie!', 'Aww, you giggled! Hehe!'])
     : isHex() ? (SHOP.floor === 1 ? ['HAHA! You laughed! I am so happy I could do a cartwheel! *does not*', 'Hexstar laughed at my joke! Best day ever! Haha... ha.']
       : ['Hehe! You laughed! Nervous buddies laugh together!', 'Y-you laughed! *happy wiggle*'])
@@ -3112,6 +3274,12 @@ function shopStairs() {
   }
   if (to === 4) { if (!SHOP.chase) { SHOP.spinT = 0; SHOP.revealed = false; } renderShopCard(true); return; } // the manager's chair faces away until you get close
   if (from === 3) { shopSay('Y-you went up there?! Are you okay?!', 'jump', 4); renderShopCard(true); return; }
+  if (to === 6) { // the break timer starts now
+    SHOP.brk = { t:0, next:BREAK_EVERY, pop:'', popT:0 };
+    shopSay(isKid() ? 'Oh! A little visitor in the break room! Come sit with us, sweetie!' : `Oh, hi ${CHARS[SHOP.who].name}! We're on our break. Stay a while... we might have treats!`, 'jump', 5);
+    renderShopCard(true); return;
+  }
+  if (from === 6) { SHOP.brk = null; shopSay('Did you have a nice break? Hehe... come back soon.', 'jump'); renderShopCard(true); return; }
   // sometimes Grumpy Shuriken finds Goofy Sparkle hiding upstairs in the funny fun shop
   const lookingForSparkle = SHOP.floor === 2 && CHARS[SHOP.who].id === 'shuriken';
   SHOP.sparkleHere = lookingForSparkle && Math.random() < 0.5; SHOP.foundT = 0; // a 50/50 chance
@@ -3170,12 +3338,14 @@ function fillShopCard(card, ch, it) {
   const press = `or press <kbd>${k('p1','punch')}</kbd> / <kbd>${k('p2','punch')}</kbd> / <kbd>X</kbd>`;
   if (!it && SHOP.nearStairs) {
     const to = SHOP.stairTo, up = to > SHOP.floor;
-    const text = { 2:SHOP.floor === 1 ? 'Go up to the 2nd floor: the funny fun shop. Things that don\'t fit down here go up there.' : 'Go back down to the 2nd floor: the funny fun shop.',
+    const door = to === 6 || SHOP.floor === 6;
+    const text = { 2:SHOP.floor === 6 ? 'Go back out to the funny fun shop. (Your break timer will start over!)' : SHOP.floor === 1 ? 'Go up to the 2nd floor: the funny fun shop. Things that don\'t fit down here go up there.' : 'Go back down to the 2nd floor: the funny fun shop.',
+      6:'Go into the break room. The shopkeepers take their break in there... the longer you stay, the more stuff they give you!',
       1:'Go back down to the 1st floor: the fighty shop.', 4:'Ride the elevator up to the manager\'s office. Ding!',
       3:SHOP.floor === 4 ? 'Ride the elevator back down to the dark 3rd floor.' : 'Climb up to the 3rd floor. The shopkeepers really don\'t like to talk about it...' }[to];
     const lift = to === 4 || SHOP.floor === 4;
-    card.innerHTML = `<h3>${lift ? 'Elevator' : to === 3 ? 'Ladder' : 'Stairs'}</h3><p>${text}</p><div class="row"></div>`;
-    const b = document.createElement('button'); b.className = 'btn'; b.id = 'shopStairs'; b.textContent = lift ? (up ? 'ride up' : 'ride down') : to === 3 ? 'climb up... if you dare' : up ? 'go upstairs' : 'go downstairs';
+    card.innerHTML = `<h3>${door ? 'Break room door' : lift ? 'Elevator' : to === 3 ? 'Ladder' : 'Stairs'}</h3><p>${text}</p><div class="row"></div>`;
+    const b = document.createElement('button'); b.className = 'btn'; b.id = 'shopStairs'; b.textContent = door ? (to === 6 ? 'go in' : 'go out') : lift ? (up ? 'ride up' : 'ride down') : to === 3 ? 'climb up... if you dare' : up ? 'go upstairs' : 'go downstairs';
     b.onclick = () => { shopStairs(); cv.focus(); };
     card.querySelector('.row').append(b, Object.assign(document.createElement('span'), { innerHTML:press }));
     return;
@@ -3190,6 +3360,7 @@ function fillShopCard(card, ch, it) {
   }
   if (!it && SHOP.nearKeeper) {
     card.innerHTML = SHOP.floor === 4 ? `<h3>${BOSS_NAME}, the manager</h3><p>The manager of the whole shop. Very busy. Very important. He does NOT like visitors...</p><div class="row"></div>`
+      : SHOP.floor === 6 ? '<h3>The shopkeepers, on their break</h3><p>Both shopkeepers are taking a break. Chat with them! They take turns, and each time you talk, one of them says something new.</p><div class="row"></div>'
       : isKid() ? `<h3>${SHOP.floor === 2 ? 'The funny fun shopkeeper' : 'The shopkeeper'}</h3><p>${SHOP.floor === 2 ? 'She isn\'t shy with little kids. She thinks Goofy Sparkle is a kid and talks like a babysitter!' : 'The shopkeeper thinks Goofy Sparkle is a little kid!'} Each time you talk, they say something new.</p><div class="row"></div>`
       : isHex() ? `<h3>${SHOP.floor === 2 ? 'The funny fun shopkeeper' : 'The shopkeeper'}</h3><p>${SHOP.floor === 2 ? 'She acts a bit weird around Nervous Hexstar, but she really likes him!' : 'The shopkeeper acts a bit weird around Nervous Hexstar, but really likes him!'} Each time you talk, they say something new. Press special to make Hexstar beep.</p><div class="row"></div>`
       : SHOP.floor === 2 ? `<h3>The funny fun shopkeeper</h3><p>${isFriend() ? (ch.id === 'tri' ? 'She opened up to Angry Triangle. They\'re friends now!' : 'She isn\'t shy with Lovely Heart. They\'re best friends!')
@@ -3210,6 +3381,10 @@ function fillShopCard(card, ch, it) {
     card.querySelector('.row').append(ask);
     return;
   }
+  if (!it && SHOP.floor === 6) {
+    card.innerHTML = '<h3>The break room</h3><p>The shopkeepers are on their break! Hang out with them: the longer you stay, the more stuff they give you. Coins come every 15 seconds (more and more the longer you stay), and there are surprise gifts too. The chalkboard shows what\'s next.</p><p class="note">The door on the left goes back to the funny fun shop. If you leave, your break timer starts over.</p>';
+    return;
+  }
   if (!it && SHOP.floor === 5) {
     card.innerHTML = `<h3>RUN!</h3><p>${BOSS_NAME} is chasing you! Run right and jump into the glitchy rift at the end. Jump over the glitch cubes (he floats right through them). If he catches you, he throws you out!</p>`;
     return;
@@ -3225,7 +3400,7 @@ function fillShopCard(card, ch, it) {
   }
   if (!it && SHOP.floor === 2) {
     const empty = !STANDS.some(s => s.floor === 2);
-    card.innerHTML = `<h3>Welcome to the funny fun shop!</h3><p>This is the 2nd floor. ${empty ? 'Nothing is up here yet. When the fighty shop downstairs runs out of room, new things come up here.' : 'Walk up to something to buy it.'}</p><p class="note">The stairs on the left go back down. The ladder on the right goes up to the 3rd floor...</p>`;
+    card.innerHTML = `<h3>Welcome to the funny fun shop!</h3><p>This is the 2nd floor. ${empty ? 'Nothing is up here yet. When the fighty shop downstairs runs out of room, new things come up here.' : 'Walk up to something to buy it.'}</p><p class="note">The stairs on the left go back down, and the door in the corner goes into the break room. The ladder on the right goes up to the 3rd floor...</p>`;
     return;
   }
   if (!it) {
