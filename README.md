@@ -14,6 +14,7 @@ Open `index.html` in a web browser, or play the GitHub Pages version.
 - **Angry Triangle** flips into the air and lands with spike waves that shoot along the ground both ways (30 damage each).
 - **Yelling Square** jumps up and slams down on anyone close by (45 damage). If it misses, it crashes into a puff of dust.
 - **Goofy Sparkle** goes on a **sugar rush**: he zooms all around the closest fighter in a wild yellow scribble and hits them 4 times (10 damage each, 40 in all). The last hit knocks them away.
+- **Grumpy Shuriken** dashes straight forward, spinning like a real shuriken, and hits everyone in his way (30 damage each). Careful: he can dash right off a cliff!
 
 Every fighter has 200 hp. When it runs out, they get dizzy and can be thrown.
 

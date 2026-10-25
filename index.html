@@ -310,7 +310,7 @@ html.xmas .fff span{border-color:#1b7a34;color:#c8102e}
       <section>
         <h3>Tips</h3>
         <ul class="tips">
-          <li>Special moves: Shocked Circle rolls into people (35 damage). Yelling Square jumps up and slams down on anyone close by (45). Angry Triangle flips into the air and lands with spike waves that shoot along the ground both ways (30 each). Goofy Sparkle goes on a sugar rush: he zooms all around the closest fighter in a wild yellow scribble and hits them 4 times (10 each). If they miss, they do a silly flip or a dusty crash instead.</li>
+          <li>Special moves: Shocked Circle rolls into people (35 damage). Yelling Square jumps up and slams down on anyone close by (45). Angry Triangle flips into the air and lands with spike waves that shoot along the ground both ways (30 each). Goofy Sparkle goes on a sugar rush: he zooms all around the closest fighter in a wild yellow scribble and hits them 4 times (10 each). Grumpy Shuriken dashes straight forward, spinning, and hits everyone in his way (30 each). If they miss, they do a silly flip or a dusty crash instead.</li>
           <li>Got grabbed? Mash punch, jump or grab to wriggle free.</li>
           <li>Knocked off the edge? Use your double jump and steer back to the island.</li>
           <li>Throwing a dizzy fighter sends them much farther than throwing an awake one.</li>
@@ -512,7 +512,7 @@ const CHARS = [
   { id:'sparkle', name:'Goofy Sparkle',  color:'#ffd83a', shape:'star4',   trait:'Light and zippy. Special: sugar rush',            speed:1.15, power:0.9,  weight:0.8,  jump:1.12 },
   { id:'hex',      name:'Nervous Hexstar', color:'#93a3bd', shape:'star6',    trait:'Six points, extra sturdy',  speed:0.9,  power:1.05, weight:1.25, jump:0.95 },
   { id:'heart',    name:'Lovely Heart',    color:'#ff8fc1', shape:'heart',    trait:'Bouncy, jumps really high', speed:1.05, power:0.9,  weight:0.9,  jump:1.22 },
-  { id:'shuriken', name:'Grumpy Shuriken', color:'#b97a57', shape:'shuriken', trait:'Fast and sharp',            speed:1.2,  power:1.1,  weight:0.85, jump:1.0 },
+  { id:'shuriken', name:'Grumpy Shuriken', color:'#b97a57', shape:'shuriken', trait:'Fast and sharp. Special: dashes forward',            speed:1.2,  power:1.1,  weight:0.85, jump:1.0 },
 ];
 const CHAR = Object.fromEntries(CHARS.map(c => [c.id, c]));
 const CONTROLS = [
@@ -1421,6 +1421,7 @@ function aiInput(p) {
     if (SPECIALS[p.ch.id] === 'roll' && Math.abs(dy) < 45 && Math.abs(dx) > 110 && Math.abs(dx) < 420 && Math.random() < 0.03) { p.facing = Math.sign(dx); inp.specialP = true; }
     if (SPECIALS[p.ch.id] === 'quake' && Math.abs(dy) < 40 && Math.abs(dx) > 60 && Math.abs(dx) < 320 && Math.random() < 0.03) inp.specialP = true;
     if (SPECIALS[p.ch.id] === 'rush' && Math.hypot(dx, dy) < 300 && Math.random() < 0.03) inp.specialP = true;
+    if (SPECIALS[p.ch.id] === 'dash' && Math.abs(dy) < 40 && Math.abs(dx) > 80 && Math.abs(dx) < 300 && Math.random() < 0.03) { p.facing = Math.sign(dx); inp.specialP = true; }
     if (SPECIALS[p.ch.id] === 'slam' && Math.abs(dx) < 160 && Math.abs(dy) < 60 && Math.random() < 0.03) inp.specialP = true;
   }
   if (p.grounded > 0 && Math.random() < 0.003) inp.jumpP = true;
@@ -1606,7 +1607,9 @@ function updateHazards() {
 }
 
 // ---------- special moves (from Mason's drawings) ----------
-const SPECIALS = { circle:'roll', square:'slam', tri:'quake', sparkle:'rush' };
+const SPECIALS = { circle:'roll', square:'slam', tri:'quake', sparkle:'rush', shuriken:'dash' };
+// Grumpy Shuriken's dash: he shoots straight forward, spinning like a real shuriken, and hits everyone in his way (30 each)
+const DASH_SPEED = 26, DASH_TIME = 0.32;
 // Goofy Sparkle's sugar rush: he zooms all around the closest fighter in a wild yellow scribble, hitting them 4 times (10 each)
 const RUSH_HITS = 4, RUSH_GAP = 0.28, RUSH_RANGE = 450;
 function startSpecial(p, grounded) {
@@ -1618,6 +1621,7 @@ function startSpecial(p, grounded) {
     ev('pop', b.position.x, b.position.y - 70, 'SUGAR RUSH!', C.yellow); ev('sfx','roll');
     return;
   }
+  if (kind === 'dash') { p.special = { kind, t:0, hit:[], y:b.position.y - 6 }; p.specCD = 3.5; p.trail = []; ev('sfx','throw'); ev('puff', b.position.x - p.facing*p.r, b.position.y + p.r*0.6); return; }
   if (kind === 'roll') { p.special = { kind, t:0 }; p.specCD = 3; ev('sfx','roll'); }
   else if (kind === 'quake') { p.special = { kind, t:0, phase:'up' }; p.specCD = 4.5; Body.setVelocity(b, { x:b.velocity.x*0.3, y:-16 }); p.grounded = 0; ev('sfx','jump'); }
   else { p.special = { kind, t:0, phase:'up' }; p.specCD = 4; Body.setVelocity(b, { x:b.velocity.x*0.4, y:-21 }); p.grounded = 0; ev('sfx','jump'); ev('puff', b.position.x, b.position.y + p.r); }
@@ -1694,6 +1698,19 @@ function runSpecial(p, inp, grounded) {
       if (!sp.hits) ev('pop', b.position.x, b.position.y - 50, 'miss', C.white);
       p.special = null; p.trail = []; Body.setVelocity(b, { x:b.velocity.x*0.3, y:-4 });
     }
+    return;
+  }
+  if (sp.kind === 'dash') {
+    (p.trail = p.trail || []).push({ x:b.position.x, y:b.position.y }); if (p.trail.length > 10) p.trail.shift();
+    if (sp.t < DASH_TIME) { // straight ahead, no falling, spinning fast
+      Body.setVelocity(b, { x:p.facing*DASH_SPEED, y:(sp.y - b.position.y)*0.3 }); Body.setAngularVelocity(b, p.facing*0.6);
+      for (const q of foes) if (!sp.hit.includes(q.idx) && Math.abs(q.body.position.x - b.position.x) < p.r + q.r && Math.abs(q.body.position.y - b.position.y) < p.r + q.r - 10) {
+        sp.hit.push(q.idx); specialHit(p, q, 30, p.facing*11, -8, 'SWISH!');
+      }
+      return;
+    }
+    Body.setVelocity(b, { x:b.velocity.x*0.25, y:b.velocity.y }); p.trail = []; p.special = null; // skids to a stop
+    if (!sp.hit.length) ev('pop', b.position.x, b.position.y - 50, 'miss', C.white);
     return;
   }
   if (sp.kind === 'loop') {
@@ -1807,7 +1824,7 @@ function step() {
     const b = p.body;
     // each jump-through platform is solid only for fighters standing above it
     const passAll = b.velocity.y < -0.5 || (p.input && p.input.down) || !!p.grabbedBy;
-    let mask = CAT.WORLD|(p.special && p.special.kind === 'rush' ? 0 : CAT.PLAYER); // in a sugar rush, Goofy Sparkle zooms right through other fighters
+    let mask = CAT.WORLD|(p.special && (p.special.kind === 'rush' || p.special.kind === 'dash') ? 0 : CAT.PLAYER); // in a sugar rush or a dash, they zoom right through other fighters
     if (!passAll) G.clouds.forEach(c => { if (b.bounds.max.y <= c.bounds.min.y + 12) mask |= c.collisionFilter.category; });
     b.collisionFilter.mask = mask;
   }
@@ -2187,6 +2204,11 @@ function drawFighter(p, t) {
       g.strokeStyle = col; g.lineWidth = w; g.beginPath(); g.moveTo(p.trail[0].x, p.trail[0].y);
       p.trail.forEach((q, i) => g.lineTo(q.x + Math.sin(i*2.7 + t*30)*6, q.y + Math.cos(i*3.1 + t*30)*6)); g.stroke();
     }
+    g.restore();
+  }
+  if (p.special && p.special.kind === 'dash') { // speed lines streaking out behind Grumpy Shuriken
+    const back = -p.facing; g.save(); g.lineCap = 'round'; g.strokeStyle = 'rgba(80,80,80,.55)';
+    for (const [dy, len, lw] of [[-22, 150, 5], [-6, 220, 7], [10, 180, 6], [24, 120, 4]]) { g.lineWidth = lw; g.beginPath(); g.moveTo(x + back*(p.r + 6), y + dy); g.lineTo(x + back*(p.r + len), y + dy); g.stroke(); }
     g.restore();
   }
   g.save(); g.translate(x, y); g.rotate(b.angle); g.scale(1 + p.squash*0.6, 1 - p.squash);
