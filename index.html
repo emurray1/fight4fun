@@ -310,7 +310,7 @@ html.xmas .fff span{border-color:#1b7a34;color:#c8102e}
       <section>
         <h3>Tips</h3>
         <ul class="tips">
-          <li>Special moves: Shocked Circle rolls into people (35 damage). Yelling Square jumps up and slams down on anyone close by (45). Angry Triangle flips into the air and lands with spike waves that shoot along the ground both ways (30 each). If they miss, they do a silly flip or a dusty crash instead.</li>
+          <li>Special moves: Shocked Circle rolls into people (35 damage). Yelling Square jumps up and slams down on anyone close by (45). Angry Triangle flips into the air and lands with spike waves that shoot along the ground both ways (30 each). Goofy Sparkle goes on a sugar rush: he zooms all around the closest fighter in a wild yellow scribble and hits them 4 times (10 each). If they miss, they do a silly flip or a dusty crash instead.</li>
           <li>Got grabbed? Mash punch, jump or grab to wriggle free.</li>
           <li>Knocked off the edge? Use your double jump and steer back to the island.</li>
           <li>Throwing a dizzy fighter sends them much farther than throwing an awake one.</li>
@@ -481,7 +481,7 @@ const MAPS = {
     ledges:[{ x:235, y:470, w:200, amp:0 }, { x:1365, y:470, w:200, amp:0 }, { x:800, y:355, w:230, amp:230 }],
     sides:[[410,740],[860,1190]], ice:false, hazards:false },
   snow: { id:'snow', name:'Snowy Hills', desc:'Slippery ice and a broken bridge. When a sign flashes, ice or snow is about to fall!',
-    ground:[{ x1:40, x2:750, top:640 }, { x1:905, x2:1450, top:640 }],
+    ground:[{ x1:-300, x2:750, top:640 }, { x1:905, x2:W + 300, top:640 }], // both cliffs go past the edges of the screen, so the only way down is the gap in the middle
     planks:[{ x1:744, x2:800, y:648, ang:0.14 }, { x1:868, x2:912, y:647, ang:-0.16 }],
     ledges:[{ x:340, y:430, w:220, amp:0, kind:'ice' }, { x:1200, y:430, w:220, amp:0, kind:'snow' }],
     sides:[[150,640],[1000,1380]], ice:true, hazards:'snow' },
@@ -509,7 +509,7 @@ const CHARS = [
   { id:'circle',  name:'Shocked Circle', color:C.blue,   shape:'circle',  trait:'Fastest roller. Special: rolls into you', speed:1.25, power:0.85, weight:0.85, jump:1.0 },
   { id:'diamond', name:'Sly Diamond',    color:C.green,  shape:'diamond', trait:'Jumps the highest',          speed:1.05, power:0.95, weight:0.95, jump:1.2 },
   { id:'square',  name:'Yelling Square', color:C.orange, shape:'square',  trait:'Heavy. Special: jumps and slams down', speed:0.85, power:1.15, weight:1.45, jump:0.92 },
-  { id:'sparkle', name:'Goofy Sparkle',  color:'#ffd83a', shape:'star4',   trait:'Light and zippy',            speed:1.15, power:0.9,  weight:0.8,  jump:1.12 },
+  { id:'sparkle', name:'Goofy Sparkle',  color:'#ffd83a', shape:'star4',   trait:'Light and zippy. Special: sugar rush',            speed:1.15, power:0.9,  weight:0.8,  jump:1.12 },
   { id:'hex',      name:'Nervous Hexstar', color:'#93a3bd', shape:'star6',    trait:'Six points, extra sturdy',  speed:0.9,  power:1.05, weight:1.25, jump:0.95 },
   { id:'heart',    name:'Lovely Heart',    color:'#ff8fc1', shape:'heart',    trait:'Bouncy, jumps really high', speed:1.05, power:0.9,  weight:0.9,  jump:1.22 },
   { id:'shuriken', name:'Grumpy Shuriken', color:'#b97a57', shape:'shuriken', trait:'Fast and sharp',            speed:1.2,  power:1.1,  weight:0.85, jump:1.0 },
@@ -1420,6 +1420,7 @@ function aiInput(p) {
   if (p.grounded > 0 && (p.specCD || 0) <= 0 && t.ko <= 0) {
     if (SPECIALS[p.ch.id] === 'roll' && Math.abs(dy) < 45 && Math.abs(dx) > 110 && Math.abs(dx) < 420 && Math.random() < 0.03) { p.facing = Math.sign(dx); inp.specialP = true; }
     if (SPECIALS[p.ch.id] === 'quake' && Math.abs(dy) < 40 && Math.abs(dx) > 60 && Math.abs(dx) < 320 && Math.random() < 0.03) inp.specialP = true;
+    if (SPECIALS[p.ch.id] === 'rush' && Math.hypot(dx, dy) < 300 && Math.random() < 0.03) inp.specialP = true;
     if (SPECIALS[p.ch.id] === 'slam' && Math.abs(dx) < 160 && Math.abs(dy) < 60 && Math.random() < 0.03) inp.specialP = true;
   }
   if (p.grounded > 0 && Math.random() < 0.003) inp.jumpP = true;
@@ -1432,14 +1433,17 @@ function spawnHazard() {
   const near = G.fighters.filter(f => f.alive && f.body.position.x > side[0] - 120 && f.body.position.x < side[1] + 120);
   let x = near.length && Math.random() < 0.65 ? near[(Math.random()*near.length)|0].body.position.x + rand(-40, 40) : rand(side[0] - 80, side[1] + 80);
   x = Math.max(side[0] - 100, Math.min(side[1] + 100, x));
+  const gp = nearestGround(x); x = Math.max(gp.x1 + 40, Math.min(gp.x2 - 40, x)); // always over the ground, never past the end of a cliff
   G.hazards.push({ type: ice ? 'ice' : 'snow', x, y:-70, vy:0, warn:1.6, r: ice ? 24 : 36 });
   ev('sfx','warn');
 }
 function hazardHit(h, p) {
   h.dead = true;
-  const b = p.body, dir = Math.sign(b.position.x - h.x) || (Math.random() < 0.5 ? -1 : 1), ice = h.type === 'ice';
+  const b = p.body, ice = h.type === 'ice', gp = nearestGround(b.position.x);
+  let dir = Math.sign(b.position.x - h.x) || (Math.random() < 0.5 ? -1 : 1);
+  if (dir > 0 ? gp.x2 - b.position.x < 260 : b.position.x - gp.x1 < 260) dir = -dir; // it hurts, but it never knocks you off the cliff (the ice is too slippery to stop)
   if (p.grabbedBy) release(p.grabbedBy); if (p.grabbing) release(p);
-  Body.setVelocity(b, { x:dir*(ice ? 8 : 11), y:-8 }); Body.setAngularVelocity(b, dir*0.25);
+  Body.setVelocity(b, { x:dir*8, y:-8 }); Body.setAngularVelocity(b, dir*0.25);
   p.hitstun = 0.6; p.flash = 0.15;
   if (p.ko <= 0) { p.dizzy += ice ? 55 : 40; if (p.dizzy >= MAX_HP) { p.dizzy = MAX_HP; p.ko = 3; ev('pop', b.position.x, b.position.y - 80, 'DIZZY!', C.purple); ev('sfx','dizzy'); } }
   ev('pop', b.position.x, b.position.y - 45, ice ? 'CRACK!' : 'SPLAT!', C.white); ev('shatter', h.x, h.y, h.type); ev('sfx','bonk'); ev('shake', 7);
@@ -1602,10 +1606,18 @@ function updateHazards() {
 }
 
 // ---------- special moves (from Mason's drawings) ----------
-const SPECIALS = { circle:'roll', square:'slam', tri:'quake' };
+const SPECIALS = { circle:'roll', square:'slam', tri:'quake', sparkle:'rush' };
+// Goofy Sparkle's sugar rush: he zooms all around the closest fighter in a wild yellow scribble, hitting them 4 times (10 each)
+const RUSH_HITS = 4, RUSH_GAP = 0.28, RUSH_RANGE = 450;
 function startSpecial(p, grounded) {
   const kind = SPECIALS[p.ch.id]; if (!kind || !grounded) return;
   const b = p.body;
+  if (kind === 'rush') {
+    const foes = G.fighters.filter(q => q !== p && q.alive && !q.grabbedBy && !allies(p, q)).map(q => [q, Math.hypot(q.body.position.x - b.position.x, q.body.position.y - b.position.y)]).filter(([, d]) => d < RUSH_RANGE).sort((a, c) => a[1] - c[1]);
+    p.special = { kind, t:0, target:foes.length ? foes[0][0] : null, hits:0, a:Math.random()*TAU }; p.specCD = 4.5; p.trail = [];
+    ev('pop', b.position.x, b.position.y - 70, 'SUGAR RUSH!', C.yellow); ev('sfx','roll');
+    return;
+  }
   if (kind === 'roll') { p.special = { kind, t:0 }; p.specCD = 3; ev('sfx','roll'); }
   else if (kind === 'quake') { p.special = { kind, t:0, phase:'up' }; p.specCD = 4.5; Body.setVelocity(b, { x:b.velocity.x*0.3, y:-16 }); p.grounded = 0; ev('sfx','jump'); }
   else { p.special = { kind, t:0, phase:'up' }; p.specCD = 4; Body.setVelocity(b, { x:b.velocity.x*0.4, y:-21 }); p.grounded = 0; ev('sfx','jump'); ev('puff', b.position.x, b.position.y + p.r); }
@@ -1663,6 +1675,25 @@ function runSpecial(p, inp, grounded) {
     const q = foes.find(q => Math.hypot(q.body.position.x - b.position.x, q.body.position.y - b.position.y) < p.r + q.r + 4);
     if (q) { specialHit(p, q, 35, p.facing*13, -7, 'ROLL!'); Body.setVelocity(b, { x:-p.facing*4, y:-5 }); p.special = null; return; }
     if (sp.t > 0.9) { ev('pop', b.position.x, b.position.y - 50, 'miss', C.white); Body.setVelocity(b, { x:-p.facing*3, y:-13 }); p.special = { kind:'loop', t:0 }; }
+    return;
+  }
+  if (sp.kind === 'rush') {
+    const q = sp.target, ok = q && q.alive && !q.grabbedBy;
+    (p.trail = p.trail || []).push({ x:b.position.x, y:b.position.y }); if (p.trail.length > 28) p.trail.shift();
+    sp.a += DT*(13 + Math.sin(sp.t*23)*6); // zig-zags around and around, like a scribble
+    const cx = ok ? q.body.position.x : b.position.x + p.facing*220*sp.t, cy = ok ? q.body.position.y - 20 : b.position.y - 30;
+    const rx = 70 + Math.sin(sp.t*17)*35, ry = 45 + Math.cos(sp.t*11)*25, tx = cx + Math.cos(sp.a)*rx, ty = cy + Math.sin(sp.a)*ry;
+    const vx = Math.max(-24, Math.min(24, (tx - b.position.x)*0.4)), vy = Math.max(-24, Math.min(24, (ty - b.position.y)*0.4));
+    Body.setVelocity(b, { x:vx, y:vy }); Body.setAngularVelocity(b, 0.5); if (vx) p.facing = Math.sign(vx);
+    if (ok && sp.t >= (sp.hits + 1)*RUSH_GAP && Math.hypot(q.body.position.x - b.position.x, q.body.position.y - b.position.y) < 220) {
+      sp.hits++; const last = sp.hits === RUSH_HITS, dir = Math.sign(q.body.position.x - b.position.x) || p.facing;
+      specialHit(p, q, 10, last ? dir*9 : dir*1.5, last ? -10 : -2.5, last ? 'SUGAR RUSH!' : '10!');
+      if (last) { p.special = null; p.trail = []; Body.setVelocity(b, { x:-dir*4, y:-8 }); return; }
+    }
+    if (sp.t > (ok ? RUSH_HITS*RUSH_GAP + 0.4 : 0.6) || (ok && Math.hypot(q.body.position.x - b.position.x, q.body.position.y - b.position.y) > 360)) {
+      if (!sp.hits) ev('pop', b.position.x, b.position.y - 50, 'miss', C.white);
+      p.special = null; p.trail = []; Body.setVelocity(b, { x:b.velocity.x*0.3, y:-4 });
+    }
     return;
   }
   if (sp.kind === 'loop') {
@@ -1776,7 +1807,7 @@ function step() {
     const b = p.body;
     // each jump-through platform is solid only for fighters standing above it
     const passAll = b.velocity.y < -0.5 || (p.input && p.input.down) || !!p.grabbedBy;
-    let mask = CAT.WORLD|CAT.PLAYER;
+    let mask = CAT.WORLD|(p.special && p.special.kind === 'rush' ? 0 : CAT.PLAYER); // in a sugar rush, Goofy Sparkle zooms right through other fighters
     if (!passAll) G.clouds.forEach(c => { if (b.bounds.max.y <= c.bounds.min.y + 12) mask |= c.collisionFilter.category; });
     b.collisionFilter.mask = mask;
   }
@@ -1975,7 +2006,7 @@ function drawSnowArena(t, clouds, live) {
   g.strokeStyle = ICE_HI; g.lineWidth = 6; g.lineCap = 'round';
   for (const gp of MAP.ground) { g.beginPath(); g.moveTo(gp.x1 + 14, gp.top + 6); g.lineTo(gp.x2 - 14, gp.top + 6); g.stroke(); }
   g.fillStyle = '#ffffff';
-  for (let i=0;i<22;i++) { const x = 60 + i*66 + (i%3)*11; if (!groundAt(x) || x > 1430) continue; g.beginPath(); g.ellipse(x, 643, 18 + (i%3)*6, 5, 0, 0, TAU); g.fill(); }
+  for (let i=0;i<22;i++) { const x = 60 + i*66 + (i%3)*11; if (!groundAt(x)) continue; g.beginPath(); g.ellipse(x, 643, 18 + (i%3)*6, 5, 0, 0, TAU); g.fill(); }
   // broken bridge
   for (const k of MAP.planks) {
     g.save(); g.translate((k.x1 + k.x2)/2, k.y); g.rotate(k.ang); const w = k.x2 - k.x1;
@@ -2150,6 +2181,14 @@ function drawStar(x, y, r, fill, stroke) {
 }
 function drawFighter(p, t) {
   const b = p.body, x = b.position.x, y = b.position.y;
+  if (p.special && p.special.kind === 'rush' && p.trail && p.trail.length > 1) { // the sugar rush leaves a wild yellow scribble behind him (like Mason's drawing)
+    g.save(); g.lineCap = 'round'; g.lineJoin = 'round';
+    for (const [w, col] of [[9, 'rgba(255,200,0,.35)'], [4, C.yellow]]) {
+      g.strokeStyle = col; g.lineWidth = w; g.beginPath(); g.moveTo(p.trail[0].x, p.trail[0].y);
+      p.trail.forEach((q, i) => g.lineTo(q.x + Math.sin(i*2.7 + t*30)*6, q.y + Math.cos(i*3.1 + t*30)*6)); g.stroke();
+    }
+    g.restore();
+  }
   g.save(); g.translate(x, y); g.rotate(b.angle); g.scale(1 + p.squash*0.6, 1 - p.squash);
   drawCharacter(g, p.ch, p.r, { facing:p.facing, ko:p.ko > 0, flash:p.flash, ...(G.online ? {} : looks(p.ch)) });
   g.restore();
