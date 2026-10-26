@@ -22,6 +22,17 @@ Every fighter has 200 hp. When it runs out, they get dizzy and can be thrown.
 
 - **Free for all:** everyone for themselves. The last fighter on the island wins the round.
 - **Team vs team:** Red team against Blue team. You can't punch or grab your teammates. A team wins the round when the whole other team is in the water.
+- **Racing:** like Mario Kart! Everyone drives a kart 3 laps around a track. Pick the track under the map picture:
+  - **Grand Prix:** a twisty track with a grandstand full of cheering fans in the middle. Stay on the road, because the grass slows you right down.
+  - **Space Race** (drawn by Mason): grey roads in outer space between Earth, a tan planet with a big red spot, and a stripy blue planet. You can drive all over the planets, but if you drive off a road you float away into space and come back where you fell off.
+
+  Hold jump to go, down to brake, and steer with left and right. Drive through the rainbow **?** boxes to get an item, then press punch to use it:
+  - **Speed boost:** a burst of speed.
+  - **Banana peel:** drops behind you. Whoever drives over it spins out.
+  - **Bouncy shell (green):** shoots straight ahead and bounces off the walls.
+  - **Chaser shell (red):** flies after whoever is just ahead of you.
+
+  The further back you are, the better the items you get. The first one over the finish line wins, and once they finish, everyone else has 15 seconds to cross the line. Racing works on one computer, not online yet.
 
 ## Maps
 
