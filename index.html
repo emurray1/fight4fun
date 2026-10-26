@@ -258,7 +258,7 @@ html.xmas .fff span{border-color:#1b7a34;color:#c8102e}
         <h3>The goal</h3>
         <p>Knock everyone off Cloud Island into the water. The last fighter still on the island wins the round. Win enough rounds and you win the whole fight and get the crown.</p>
         <p><b>Team vs team:</b> pick "Team vs team" for the game mode, then put each fighter on the Red team or the Blue team. You can't punch or grab your own teammates. A team wins the round when everyone on the other team is in the water.</p>
-        <p><b>Racing:</b> pick "Racing" for the game mode and everyone drives a kart 3 laps around a race track. Pick the Grand Prix, or the Space Race, where you drive on roads between planets (don't fall off into space!). Hold jump to go, down to brake, and steer with left and right. Items lie on the road in glowing yellow rings, so you can see what you'll get. Drive over one to pick it up (you can hold one at a time), then press punch to use it: a speed boost, a banana peel to drop behind you, a green bouncy shell, or a red chaser shell that flies at whoever is just ahead of you. Stay on the road, because the grass slows you right down. The first one over the finish line wins.</p>
+        <p><b>Racing:</b> pick "Racing" for the game mode and everyone drives a kart 3 laps around a race track. Pick the Grand Prix, or the Space Race, where you drive on roads between planets (don't fall off into space!). Hold jump to go, down to brake, and steer with left and right. Items lie at random spots all around the road in glowing yellow rings, so you can see what you'll get. Drive over one to pick it up (you can hold one at a time), then press punch to use it: a speed boost, a banana peel to drop behind you, a green bouncy shell, or a red chaser shell that flies at whoever is just ahead of you. Stay on the road, because the grass slows you right down. The first one over the finish line wins.</p>
       </section>
       <section>
         <h3>A fight, step by step</h3>
@@ -1869,9 +1869,9 @@ function step() {
 const RACE_LAPS = 3, TRACK_W = 74; // TRACK_W is half the road's width
 // each track is a loop of points [x, y, half the road's width]. On the space track the planets are solid ground too, and off the road is space
 const RACE_TRACKS = {
-  gp: { id:'gp', name:'Grand Prix', boxes:[0.27, 0.6], desc:'a twisty track with a grandstand full of fans in the middle. The grass slows you down.',
+  gp: { id:'gp', name:'Grand Prix', desc:'a twisty track with a grandstand full of fans in the middle. The grass slows you down.',
     ctrl:[[450,200],[850,210],[1200,200],[1420,260],[1480,430],[1400,640],[1220,780],[1050,790],[800,600],[550,790],[300,780],[170,620],[330,470],[160,330],[250,215]] },
-  space: { id:'space', name:'Space Race', boxes:[0.15, 0.55], space:true, desc:'grey roads between Earth and two planets (drawn by Mason). Drive off the road and you float away into space!',
+  space: { id:'space', name:'Space Race', space:true, desc:'grey roads between Earth and two planets (drawn by Mason). Drive off the road and you float away into space!',
     planets:[{ kind:'earth', x:280, y:650, r:150 }, { kind:'tan', x:540, y:290, r:140 }, { kind:'blue', x:1250, y:420, r:150 }],
     ctrl:[[420,690,80],[580,630,100],[820,580,100],[1080,520,100],[1270,520,80],[1360,420,80],[1270,320,80],[1080,250,50],[800,205,50],[640,220,80],[480,350,80],[400,450,60],[300,540,80],[240,640,80],[310,720,80]] },
 };
@@ -1933,12 +1933,21 @@ function startRace() {
   TRACK = (RACE_TRACKS[setup.track] || RACE_TRACKS.gp).built;
   const grid = [...G.lineup].sort(() => Math.random() - 0.5);
   G.fighters = grid.map((l, i) => makeKart(l, i));
-  const spot = (f, side) => { const at = trackAt(TRACK.len*f, side); return { x:at.x, y:at.y, t:0, kind:randomItem() }; };
-  G.race = { boxes:TRACK.boxes.flatMap(f => [-45, -15, 15, 45].map(side => spot(f, side))), things:[], finished:0, endT:-1, order:[...G.fighters] };
+  G.race = { boxes:[], things:[], finished:0, endT:-1, order:[...G.fighters] };
+  for (let i=0;i<RACE_ITEMS;i++) G.race.boxes.push(placeItem({ t:0 }));
   ev('clear'); G.banner = null; G.phase = 'countdown'; G.timer = 3; G.lastCount = 4; G.goT = 0; G.champ = null;
 }
 const rankOf = k => G.race.order.indexOf(k);
 const randomItem = () => ITEM_KINDS[Math.floor(Math.random()*ITEM_KINDS.length)]; // the items lying on the road, so you can see what you'll get
+const RACE_ITEMS = 10;
+function placeItem(bx) { // a random item at a random spot on the road (not right on the start line, and not on top of another item)
+  for (let n=0;n<30;n++) {
+    const at = trackAt(rand(150, TRACK.len - 150), rand(-50, 50));
+    if (G.race && G.race.boxes.some(o => o !== bx && Math.hypot(o.x - at.x, o.y - at.y) < 60)) continue;
+    bx.x = at.x; bx.y = at.y; break;
+  }
+  bx.kind = randomItem(); return bx;
+}
 function useItem(k) {
   if (!k.item) return;
   const it = k.item, hx = Math.cos(k.a), hy = Math.sin(k.a), R = G.race; k.item = null;
@@ -2029,7 +2038,7 @@ function raceStep() {
   }
   // items lying on the road: drive over one to pick it up (if your hands are full, it stays there for someone else)
   for (const bx of R.boxes) {
-    if (bx.t > 0) { bx.t -= DT; if (bx.t <= 0) bx.kind = randomItem(); continue; } // a new one appears 3 seconds later
+    if (bx.t > 0) { bx.t -= DT; if (bx.t <= 0) placeItem(bx); continue; } // a new one appears somewhere else 3 seconds later
     const k = G.fighters.find(k => !k.item && k.fallT <= 0 && Math.hypot(k.x - bx.x, k.y - bx.y) < k.r + 18);
     if (!k) continue;
     k.item = bx.kind; bx.t = 3; ev('burst', bx.x, bx.y, C.white, 8); ev('sfx','grab');

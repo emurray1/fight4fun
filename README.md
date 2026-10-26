@@ -32,7 +32,7 @@ Every fighter has 200 hp. When it runs out, they get dizzy and can be thrown.
   - **Bouncy shell (green):** shoots straight ahead and bounces off the walls.
   - **Chaser shell (red):** flies after whoever is just ahead of you.
 
-  A new item shows up 3 seconds after one is picked up. The first one over the finish line wins, and once they finish, everyone else has 15 seconds to cross the line. Racing works on one computer, not online yet.
+  Items are scattered at random spots all around the track, different every race, and 3 seconds after one is picked up a new random item shows up somewhere else. The first one over the finish line wins, and once they finish, everyone else has 15 seconds to cross the line. Racing works on one computer, not online yet.
 
 ## Maps
 
