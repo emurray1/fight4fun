@@ -258,7 +258,7 @@ html.xmas .fff span{border-color:#1b7a34;color:#c8102e}
         <h3>The goal</h3>
         <p>Knock everyone off Cloud Island into the water. The last fighter still on the island wins the round. Win enough rounds and you win the whole fight and get the crown.</p>
         <p><b>Team vs team:</b> pick "Team vs team" for the game mode, then put each fighter on the Red team or the Blue team. You can't punch or grab your own teammates. A team wins the round when everyone on the other team is in the water.</p>
-        <p><b>Racing:</b> pick "Racing" for the game mode and everyone drives a kart 3 laps around a race track. Pick the Grand Prix, or the Space Race, where you drive on roads between planets (don't fall off into space!). Hold jump to go, down to brake, and steer with left and right. Drive through the rainbow ? boxes to get an item, then press punch to use it: a speed boost, a banana peel to drop behind you, a green bouncy shell, or a red chaser shell that flies at whoever is just ahead of you. Stay on the road, because the grass slows you right down. The first one over the finish line wins.</p>
+        <p><b>Racing:</b> pick "Racing" for the game mode and everyone drives a kart 3 laps around a race track. Pick the Grand Prix, or the Space Race, where you drive on roads between planets (don't fall off into space!). Hold jump to go, down to brake, and steer with left and right. Items lie on the road in glowing yellow rings, so you can see what you'll get. Drive over one to pick it up (you can hold one at a time), then press punch to use it: a speed boost, a banana peel to drop behind you, a green bouncy shell, or a red chaser shell that flies at whoever is just ahead of you. Stay on the road, because the grass slows you right down. The first one over the finish line wins.</p>
       </section>
       <section>
         <h3>A fight, step by step</h3>
@@ -1925,7 +1925,7 @@ function makeKart(l, i) {
   const row = Math.floor(i/3), col = i % 3, s = -45 - row*80 - col*26, at = trackAt(s, (col - 1)*50); // three across on the start grid, a little staggered, behind the line
   return { ch:l.ch, control:l.control, idx:i, team:0, tag:l.tag || (l.control === 'cpu' ? 'CPU' : CTRL[l.control].tag), alive:true, r:22,
     x:at.x, y:at.y, a:at.a, vx:0, vy:0, speed:0, seg:trackNear(at.x, at.y).i, prog:s, lap:0, off:false, done:false, place:0, time:0,
-    item:null, roll:0, boostT:0, spinT:0, spin:0, fallT:0, bumpT:0, wrongT:0, bob:0, prevHeld:null,
+    item:null, boostT:0, spinT:0, spin:0, fallT:0, bumpT:0, wrongT:0, bob:0, prevHeld:null,
     ai:{ lane:rand(-30, 30), think:rand(1, 2), cd:rand(0.8, 2) } };
 }
 function startRace() {
@@ -1933,20 +1933,14 @@ function startRace() {
   TRACK = (RACE_TRACKS[setup.track] || RACE_TRACKS.gp).built;
   const grid = [...G.lineup].sort(() => Math.random() - 0.5);
   G.fighters = grid.map((l, i) => makeKart(l, i));
-  const box = (f, side) => { const at = trackAt(TRACK.len*f, side); return { x:at.x, y:at.y, t:0 }; };
-  G.race = { boxes:TRACK.boxes.flatMap(f => [-45, -15, 15, 45].map(side => box(f, side))), things:[], finished:0, endT:-1, order:[...G.fighters] };
+  const spot = (f, side) => { const at = trackAt(TRACK.len*f, side); return { x:at.x, y:at.y, t:0, kind:randomItem() }; };
+  G.race = { boxes:TRACK.boxes.flatMap(f => [-45, -15, 15, 45].map(side => spot(f, side))), things:[], finished:0, endT:-1, order:[...G.fighters] };
   ev('clear'); G.banner = null; G.phase = 'countdown'; G.timer = 3; G.lastCount = 4; G.goT = 0; G.champ = null;
 }
 const rankOf = k => G.race.order.indexOf(k);
-function rollItem(k) { // last place gets the best stuff, 1st place gets bananas
-  const n = G.fighters.length, pl = n > 1 ? rankOf(k)/(n - 1) : 0;
-  const w = { boost:1 + pl*3, banana:3 - pl*2, shell:2, chaser:rankOf(k) === 0 ? 0 : 0.5 + pl*3 };
-  let pick = Math.random()*ITEM_KINDS.reduce((s, it) => s + w[it], 0);
-  for (const it of ITEM_KINDS) { pick -= w[it]; if (pick <= 0) return it; }
-  return 'banana';
-}
+const randomItem = () => ITEM_KINDS[Math.floor(Math.random()*ITEM_KINDS.length)]; // the items lying on the road, so you can see what you'll get
 function useItem(k) {
-  if (!k.item || k.roll > 0) return;
+  if (!k.item) return;
   const it = k.item, hx = Math.cos(k.a), hy = Math.sin(k.a), R = G.race; k.item = null;
   if (it === 'boost') { k.boostT = 1.4; ev('sfx','roll'); }
   else if (it === 'banana') { R.things.push({ kind:'banana', x:k.x - hx*(k.r + 20), y:k.y - hy*(k.r + 20), t:0, owner:k }); ev('sfx','grab'); if (R.things.filter(th => th.kind === 'banana').length > 10) R.things.splice(R.things.findIndex(th => th.kind === 'banana'), 1); }
@@ -2000,7 +1994,7 @@ function kartAI(k) {
   const bend = Math.abs(wrap(TRACK.pts[(k.seg + 18) % N].a - TRACK.pts[k.seg].a));
   const inp = { x:Math.abs(diff) < 0.06 ? 0 : Math.sign(diff), up:!(bend > 1.4 && k.speed > KART.top*0.75), down:Math.abs(diff) > 1.2 && k.speed > 200, punchP:false };
   ai.cd -= DT;
-  if (k.item && k.roll <= 0 && ai.cd <= 0) {
+  if (k.item && ai.cd <= 0) {
     ai.cd = rand(0.3, 1);
     const others = G.fighters.filter(q => q !== k), hx = Math.cos(k.a), hy = Math.sin(k.a);
     const inFront = others.some(q => { const dx = q.x - k.x, dy = q.y - k.y, d = Math.hypot(dx, dy); return d < 500 && (dx*hx + dy*hy)/d > 0.95; });
@@ -2033,15 +2027,13 @@ function raceStep() {
     a.vx -= nx*80*wa; a.vy -= ny*80*wa; b.vx += nx*80*(1 - wa); b.vy += ny*80*(1 - wa);
     if (a.bumpT <= 0 && b.bumpT <= 0) { ev('sfx','bonk'); a.bumpT = b.bumpT = 0.4; }
   }
-  // ? boxes give you an item (it spins for a second first)
+  // items lying on the road: drive over one to pick it up (if your hands are full, it stays there for someone else)
   for (const bx of R.boxes) {
-    if (bx.t > 0) { bx.t -= DT; continue; }
-    for (const k of G.fighters) {
-      if (Math.hypot(k.x - bx.x, k.y - bx.y) > k.r + 18) continue;
-      bx.t = 3; ev('burst', bx.x, bx.y, C.white, 8);
-      if (!k.item && k.roll <= 0) { k.roll = 1; k.rolled = rollItem(k); ev('sfx','grab'); }
-      break;
-    }
+    if (bx.t > 0) { bx.t -= DT; if (bx.t <= 0) bx.kind = randomItem(); continue; } // a new one appears 3 seconds later
+    const k = G.fighters.find(k => !k.item && k.fallT <= 0 && Math.hypot(k.x - bx.x, k.y - bx.y) < k.r + 18);
+    if (!k) continue;
+    k.item = bx.kind; bx.t = 3; ev('burst', bx.x, bx.y, C.white, 8); ev('sfx','grab');
+    if (k.control !== 'cpu') ev('pop', k.x, k.y - 60, ITEM_NAMES[k.item], C.white);
   }
   for (const th of R.things) {
     th.t += DT;
@@ -2063,7 +2055,6 @@ function raceStep() {
   // how far round the track everyone is, laps, and the finish line
   for (const k of G.fighters) {
     k.bumpT -= DT;
-    if (k.roll > 0) { k.roll -= DT; if (k.roll <= 0) { k.item = k.rolled; if (k.control !== 'cpu') ev('pop', k.x, k.y - 60, ITEM_NAMES[k.item], C.white); } }
     if (k.fallT > 0) continue;
     const near = trackNear(k.x, k.y, k.seg); let d = (near.i - k.seg)*TRACK.seg;
     if (d > TRACK.len/2) d -= TRACK.len; if (d < -TRACK.len/2) d += TRACK.len;
@@ -2216,8 +2207,7 @@ function drawRaceHUD(t) {
     g.font = `18px ${BODYFONT}`; g.fillStyle = C.grey; g.fillText(k.done ? `done! ${k.time.toFixed(1)}s` : `lap ${Math.max(1, Math.min(RACE_LAPS, k.lap))}/${RACE_LAPS}`, x + 54, 70, cw - 100);
     g.font = `30px ${FONT}`; g.textAlign = 'right'; g.fillStyle = rank === 1 ? '#e0a800' : C.ink; g.fillText(placeName(rank), x + cw - 8, 44);
     g.fillStyle = '#f2f2f2'; g.strokeStyle = C.ink; g.lineWidth = 2; roundRect(x + cw - 38, 50, 30, 30, 6); g.fill(); g.stroke(); // the item slot
-    const shown = k.roll > 0 ? ITEM_KINDS[Math.floor(t*12) % ITEM_KINDS.length] : k.item;
-    if (shown) drawItemIcon(shown, x + cw - 23, 65, 0.75);
+    if (k.item) drawItemIcon(k.item, x + cw - 23, 65, 0.75);
     x += cw + 12;
   }
   if (R.finished && G.phase === 'fight' && R.endT > 0) { g.font = `34px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round'; g.lineWidth = 6; g.strokeStyle = C.ink; g.strokeText(`race ends in ${Math.ceil(R.endT)}`, W/2, H - 30); g.fillStyle = C.white; g.fillText(`race ends in ${Math.ceil(R.endT)}`, W/2, H - 30); }
@@ -2227,10 +2217,11 @@ function drawRace(t, dt) {
   drawRaceTrack(t);
   for (const bx of R.boxes) {
     if (bx.t > 0) continue;
-    g.save(); g.translate(bx.x, bx.y + Math.sin(t*4 + bx.x)*2); g.rotate(t*1.5);
-    g.fillStyle = `hsl(${(t*120 + bx.x) % 360},90%,62%)`; g.strokeStyle = C.white; g.lineWidth = 4; roundRect(-15, -15, 30, 30, 6); g.fill(); g.stroke();
-    g.rotate(-t*1.5); g.font = `26px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = C.white; g.strokeStyle = C.ink; g.lineWidth = 4; g.strokeText('?', 0, 1); g.fillText('?', 0, 1);
-    g.restore();
+    // a glowing yellow ring on the road, so you can tell it apart from a banana someone dropped, with the item bobbing in it
+    const glow = 0.5 + 0.5*Math.sin(t*5 + bx.x);
+    g.fillStyle = `rgba(255,242,0,${0.25 + glow*0.2})`; g.beginPath(); g.arc(bx.x, bx.y, 20, 0, TAU); g.fill();
+    g.strokeStyle = C.yellow; g.lineWidth = 3; g.beginPath(); g.arc(bx.x, bx.y, 20, 0, TAU); g.stroke();
+    drawItemIcon(bx.kind, bx.x, bx.y - 3 + Math.sin(t*4 + bx.x)*2, 0.85, bx.kind === 'banana' || bx.kind === 'boost' ? 0 : t*0.3);
   }
   for (const th of R.things) drawItemIcon(th.kind, th.x, th.y, th.kind === 'banana' ? 1 : 1.15, th.kind === 'banana' ? 0 : t);
   for (const k of [...G.fighters].sort((a, b) => a.y - b.y)) drawKart(k, t);
@@ -3533,7 +3524,7 @@ function drawMapPreview() {
       drawRaceTrack(0);
       CHARS.filter(ch => setup.slots[ch.id] !== 'off').forEach((ch, i) => drawKart(makeKart({ ch, control:setup.slots[ch.id] }, i), 0));
     } finally { g = oldG; MAP = oldMap; }
-    $('mapDesc').textContent = `${track.name}: ${track.desc} ${RACE_LAPS} laps. Hold ${keyName(KEYMAP.p1.u[0])} (or ${keyName(KEYMAP.p2.u[0])}, or A on a controller) to drive, steer left and right, and press punch to use an item from the ? boxes.`;
+    $('mapDesc').textContent = `${track.name}: ${track.desc} ${RACE_LAPS} laps. Hold ${keyName(KEYMAP.p1.u[0])} (or ${keyName(KEYMAP.p2.u[0])}, or A on a controller) to drive, steer left and right, and drive over an item on the road to pick it up, and press punch to use it.`;
     return;
   }
   try {
