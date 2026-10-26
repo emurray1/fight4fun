@@ -66,6 +66,16 @@ To talk to the grey shopkeeper, walk up to the counter and press punch. Each tim
 - **Sunglasses (20 coins):** dark shades with a shine. Every fighter can wear them except Cool Star, who already has its own.
 - **Cool hat (25 coins):** a tilted black top hat.
 - **Super cape (30 coins):** a bright red cape that flutters behind you.
+- **Bat wings (35 coins, LIMITED!):** spooky dark purple bat wings that flap behind you. They're only for sale at Halloween (all of October, or whenever Halloween is set to Always in settings), on a stand in the funny fun shop on the 2nd floor. The rest of the year the stand says "Halloween only". If you buy them, they're yours to keep and wear all year.
+- **Skins:** new colours for your fighters, at the skins booth (a big gold mirror) in the funny fun shop on the 2nd floor. The mirror shows your fighter in each skin. Every fighter has their own skins, so pick a fighter with the arrows at the top, then click a skin on the card to buy it or put it on. Press punch at the mirror to switch between the skins that fighter has.
+  - **Classic** (free): the fighter's normal colour.
+  - **Ice** (25 coins): light icy blue with little frost spots.
+  - **Shadow** (30 coins): dark and sneaky.
+  - **Gold** (40 coins): shiny gold with a twinkle.
+  - **Rainbow** (60 coins): changes colour all the time.
+  - **Pumpkin** (35 coins, LIMITED!): orange with pumpkin stripes. Only for sale at Halloween, like the bat wings.
+
+  Skins show up in fights, races and horror games on your computer (not in online games yet).
 - **Glow goggles (free!):** up on the dark 3rd floor. Take them and the eyes and goggles turn red, the eyes shout "GET OUT!!!", push you back down the stairs and take the goggles back. Nobody gets to keep them.
 
 **Easter egg:** 1 time in 10 when you open the shop, the YouTuber **SMI7Y** (a squishy bag of milk with headphones) is hanging out in front of the counter on the 1st floor. Walk up and press punch to say hi, and SMI7Y gives you their **SMI7Y headphones** (gaming headphones with a mic) for free. They aren't on a stand, so put them on or take them off with the buttons at the bottom of the shop. To always see SMI7Y, add `?smi7y` to the end of the game's address.
