@@ -521,7 +521,7 @@ const CHARS = [
   { id:'heart',    name:'Lovely Heart',    color:'#ff8fc1', shape:'heart',    trait:'Bouncy, jumps really high', speed:1.05, power:0.9,  weight:0.9,  jump:1.22 },
   { id:'shuriken', name:'Grumpy Shuriken', color:'#b97a57', shape:'shuriken', trait:'Fast and sharp. Special: dashes forward',            speed:1.2,  power:1.1,  weight:0.85, jump:1.0 },
   // the missing guy from the "HAVE YOU SEEN HIM?" poster: locked in a cage past the 5th floor until you break him out
-  { id:'arrow',    name:'Missing Arrow',   color:'#ffb07c', shape:'arrow',    trait:'He was missing... until you saved him!', speed:1.1,  power:1.0,  weight:0.95, jump:1.08, secret:true },
+  { id:'arrow',    name:'Missing Arrow',   color:'#ffb07c', shape:'arrow',    trait:'He was missing... now he\'s scared of everything (and a bit glitchy)', speed:1.1,  power:1.0,  weight:0.95, jump:1.08, secret:true },
 ];
 const CHAR = Object.fromEntries(CHARS.map(c => [c.id, c]));
 const unlocked = ch => !ch.secret || !!(shop.unlocked && shop.unlocked[ch.id]); // secret fighters stay locked until you earn them
@@ -906,15 +906,19 @@ function drawFace(g, ch, r, o = {}) {
       line(-0.3,-0.3,-0.04,-0.14); line(0.1,-0.32,0.28,-0.22);
       dot(-0.15,-0.05,0.08); g.lineWidth = 0.08; line(0.08,-0.06,0.26,-0.06);
       g.lineWidth = 0.11; line(-0.22,0.24,0.24,0.22); break;
-    case 'arrow': // big hopeful eyes with shines (worried brows and a wobbly mouth while he's still locked up)
-      oval(-0.18,0,0.09,0.12); oval(0.18,0,0.09,0.12);
-      g.fillStyle = C.white; dot(-0.15,-0.04,0.035); dot(0.21,-0.04,0.035); g.fillStyle = C.ink;
-      g.lineWidth = 0.06;
-      if (o.caged) {
-        line(-0.3,-0.2,-0.1,-0.26); line(0.3,-0.2,0.1,-0.26);
-        g.beginPath(); g.moveTo(-0.16,0.28); for (let i=1;i<=4;i++) g.lineTo(-0.16 + i*0.08, 0.28 + (i % 2 ? -0.05 : 0)); g.stroke();
-      } else { g.lineWidth = 0.08; g.beginPath(); g.moveTo(-0.2,0.18); g.quadraticCurveTo(0,0.4,0.2,0.18); g.stroke(); }
+    case 'arrow': { // he's scared of everything since he was locked up: wide eyes with tiny darting pupils, worried brows, a wobbly mouth and a sweat drop (and tears in the cage)
+      const look = Math.sin(performance.now()/1000*2.7)*0.05;
+      g.fillStyle = C.white; oval(-0.19,-0.03,0.13,0.16); oval(0.19,-0.03,0.13,0.16);
+      g.lineWidth = 0.04; for (const ex of [-0.19, 0.19]) { g.beginPath(); g.ellipse(ex,-0.03,0.13,0.16,0,0,TAU); g.stroke(); }
+      g.fillStyle = C.ink; dot(-0.19 + look,-0.01,0.045); dot(0.19 + look,-0.01,0.045);
+      g.lineWidth = 0.06; line(-0.34,-0.24,-0.1,-0.32); line(0.34,-0.24,0.1,-0.32); // brows pushed up in the middle
+      g.beginPath(); g.moveTo(-0.18,0.3); for (let i=1;i<=6;i++) g.lineTo(-0.18 + i*0.06, 0.3 + (i % 2 ? -0.045 : 0)); g.stroke(); // a wobbly, scared mouth
+      g.fillStyle = '#8fd8ff'; g.strokeStyle = C.ink; g.lineWidth = 0.025; // a sweat drop
+      g.beginPath(); g.moveTo(0.42,-0.38); g.quadraticCurveTo(0.5,-0.24,0.42,-0.2); g.quadraticCurveTo(0.34,-0.24,0.42,-0.38); g.fill(); g.stroke();
+      if (o.caged) { const k = (performance.now()/1000*1.2) % 1; for (const ex of [-0.22, 0.22]) { g.beginPath(); g.ellipse(ex, 0.14 + k*0.3, 0.03, 0.05, 0, 0, TAU); g.fill(); } } // tears
+      g.fillStyle = C.ink; g.strokeStyle = C.ink;
       break;
+    }
   }
   if (o.glasses && EYES[ch.id]) drawGlasses(g, EYES[ch.id]);
   g.restore();
@@ -940,7 +944,16 @@ function drawGlasses(g, [a, b], glow = false, lens = '#e8ff6a') { // the sunglas
 }
 function drawCharacter(g, ch, r, o = {}) {
   const robot = ch.shape === 'star6', tt = performance.now()/1000; // Nervous Hexstar is a nervous little robot who never stops shaking
-  if (robot) { g.save(); g.translate(Math.sin(tt*45)*r*0.035, 0); }
+  const shaky = robot || ch.shape === 'arrow'; // Missing Arrow trembles too, he's so scared
+  if (shaky) { g.save(); g.translate(Math.sin(tt*(robot ? 45 : 33))*r*(robot ? 0.035 : 0.025), 0); }
+  // Missing Arrow is glitchy, like the cage room he was stuck in: a red and blue fringe all the time, and lots of big glitches
+  const glitchy = ch.shape === 'arrow', burst = glitchy && Math.sin(tt*2.3) + Math.sin(tt*5.7) + Math.sin(tt*13.1)*0.5 > 0.6, gk = Math.floor(tt*24) % 6;
+  if (glitchy) {
+    const s = burst ? 0.22 : 0.05; // how far the red and blue copies split apart
+    if (burst) g.translate((gk - 2.5)*r*0.09, (gk % 2 ? -1 : 1)*r*0.04); // a jump
+    for (const [dx, col] of [[r*s, `rgba(237,28,36,${burst ? 0.65 : 0.35})`], [-r*s, `rgba(0,162,232,${burst ? 0.65 : 0.35})`]]) { g.save(); g.translate(dx, 0); g.fillStyle = col; shapePath(g, ch.shape, r); g.fill(); g.restore(); }
+    if (burst) for (let i=0;i<8;i++) { const a = i*0.79 + gk*1.3, d = r*(0.95 + ((i + gk) % 3)*0.25), sz = r*(0.1 + (i % 3)*0.05); g.fillStyle = [C.red, C.blue, C.white][i % 3]; g.fillRect(Math.cos(a)*d - sz/2, Math.sin(a)*d - sz/2, sz, sz); } // glitch squares
+  }
   if (robot && !o.hat && o.beanie !== false) { // antenna with a blinking light
     g.strokeStyle = C.ink; g.lineWidth = Math.max(2, r*0.06); g.beginPath(); g.moveTo(0, -0.9*r); g.lineTo(Math.sin(tt*9)*r*0.06, -1.55*r); g.stroke();
     g.fillStyle = Math.sin(tt*10) > 0 ? '#ff3b3b' : '#7dff8a'; g.beginPath(); g.arc(Math.sin(tt*9)*r*0.06, -1.6*r, 0.1*r, 0, TAU); g.fill(); g.lineWidth = Math.max(1, r*0.03); g.stroke();
@@ -986,7 +999,14 @@ function drawCharacter(g, ch, r, o = {}) {
   if (o.headphones) drawHeadphones(g, r, -TOPS[ch.shape]*r, !!o.hat);
   if (o.hat) drawHat(g, r, -TOPS[ch.shape]*r, o.facing || 1);
   if (o.bow) drawBow(g, r, -TOPS[ch.shape]*r - (o.hat ? r*0.5 : 0));
-  if (robot) g.restore();
+  if (burst) { // strips of him slide sideways, with scan lines and static, like a broken TV
+    g.save(); shapePath(g, ch.shape, r*1.02); g.clip();
+    for (let i=0;i<3;i++) { const y = (-1.1 + ((i*0.73 + gk*0.37) % 1.9))*r, h = r*(0.1 + (i % 2)*0.08), dx = (i % 2 ? 1 : -1)*r*(0.15 + (gk % 3)*0.08); g.fillStyle = i === 1 ? '#00a2e8' : skinColor(o.skin) || ch.color; g.fillRect(-r*1.2 + dx, y, r*2.4, h); }
+    g.fillStyle = 'rgba(0,0,0,.25)'; for (let y=-1.3*r; y<r; y += r*0.14) g.fillRect(-r, y, r*2, r*0.04);
+    g.fillStyle = 'rgba(255,255,255,.7)'; for (let i=0;i<10;i++) g.fillRect(Math.sin(i*12.9 + gk*3.1)*r*0.7, Math.cos(i*7.3 + gk*1.7)*r*0.8, r*0.05, r*0.05);
+    g.restore();
+  }
+  if (shaky) g.restore();
 }
 function drawBatWings(g, r, t) { // the Halloween bat wings: dark purple, with bumpy bottom edges, slowly flapping
   const f = Math.sin(t*6), lift = 0.8 + 0.2*f;
