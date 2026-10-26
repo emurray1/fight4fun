@@ -317,7 +317,7 @@ html.xmas .fff span{border-color:#1b7a34;color:#c8102e}
       <section>
         <h3>Tips</h3>
         <ul class="tips">
-          <li>Special moves: Shocked Circle rolls into people (35 damage). Yelling Square jumps up and slams down on anyone close by (45). Angry Triangle flips into the air and lands with spike waves that shoot along the ground both ways (30 each). Goofy Sparkle goes on a sugar rush: he zooms all around the closest fighter in a wild yellow scribble and hits them 4 times (10 each). Grumpy Shuriken dashes straight forward, spinning, and hits everyone in his way (30 each). If they miss, they do a silly flip or a dusty crash instead.</li>
+          <li>Special moves: Shocked Circle rolls into people (35 damage). Yelling Square jumps up and slams down on anyone close by (45). Angry Triangle flips into the air and lands with spike waves that shoot along the ground both ways (30 each). Goofy Sparkle goes on a sugar rush: he zooms all around the closest fighter in a wild yellow scribble and hits them 4 times (10 each). Grumpy Shuriken dashes straight forward, spinning, and hits everyone in his way (30 each). Once you free him, Missing Arrow makes glitch blocks fall from the sky in front of him (50 to everyone they land on). If they miss, they do a silly flip or a dusty crash instead.</li>
           <li>Got grabbed? Mash punch, jump or grab to wriggle free.</li>
           <li>Knocked off the edge? Use your double jump and steer back to the island.</li>
           <li>Throwing a dizzy fighter sends them much farther than throwing an awake one.</li>
@@ -521,7 +521,7 @@ const CHARS = [
   { id:'heart',    name:'Lovely Heart',    color:'#ff8fc1', shape:'heart',    trait:'Bouncy, jumps really high', speed:1.05, power:0.9,  weight:0.9,  jump:1.22 },
   { id:'shuriken', name:'Grumpy Shuriken', color:'#b97a57', shape:'shuriken', trait:'Fast and sharp. Special: dashes forward',            speed:1.2,  power:1.1,  weight:0.85, jump:1.0 },
   // the missing guy from the "HAVE YOU SEEN HIM?" poster: locked in a cage past the 5th floor until you break him out
-  { id:'arrow',    name:'Missing Arrow',   color:'#ffb07c', shape:'arrow',    trait:'He was missing... now he\'s scared of everything (and a bit glitchy)', speed:1.1,  power:1.0,  weight:0.95, jump:1.08, secret:true },
+  { id:'arrow',    name:'Missing Arrow',   color:'#ffb07c', shape:'arrow',    trait:'Scared and glitchy. Special: glitch fest', speed:1.1,  power:1.0,  weight:0.95, jump:1.08, secret:true },
 ];
 const CHAR = Object.fromEntries(CHARS.map(c => [c.id, c]));
 const unlocked = ch => !ch.secret || !!(shop.unlocked && shop.unlocked[ch.id]); // secret fighters stay locked until you earn them
@@ -1544,6 +1544,7 @@ function aiInput(p) {
     if (SPECIALS[p.ch.id] === 'roll' && Math.abs(dy) < 45 && Math.abs(dx) > 110 && Math.abs(dx) < 420 && Math.random() < 0.03) { p.facing = Math.sign(dx); inp.specialP = true; }
     if (SPECIALS[p.ch.id] === 'quake' && Math.abs(dy) < 40 && Math.abs(dx) > 60 && Math.abs(dx) < 320 && Math.random() < 0.03) inp.specialP = true;
     if (SPECIALS[p.ch.id] === 'rush' && Math.hypot(dx, dy) < 300 && Math.random() < 0.03) inp.specialP = true;
+    if (SPECIALS[p.ch.id] === 'glitch' && Math.abs(dy) < 120 && Math.abs(dx) > 100 && Math.abs(dx) < 380 && Math.random() < 0.03) { p.facing = Math.sign(dx); inp.specialP = true; }
     if (SPECIALS[p.ch.id] === 'dash' && Math.abs(dy) < 40 && Math.abs(dx) > 80 && Math.abs(dx) < 300 && Math.random() < 0.03) { p.facing = Math.sign(dx); inp.specialP = true; }
     if (SPECIALS[p.ch.id] === 'slam' && Math.abs(dx) < 160 && Math.abs(dy) < 60 && Math.random() < 0.03) inp.specialP = true;
   }
@@ -1730,7 +1731,9 @@ function updateHazards() {
 }
 
 // ---------- special moves (from Mason's drawings) ----------
-const SPECIALS = { circle:'roll', square:'slam', tri:'quake', sparkle:'rush', shuriken:'dash' };
+const SPECIALS = { circle:'roll', square:'slam', tri:'quake', sparkle:'rush', shuriken:'dash', arrow:'glitch' };
+// Missing Arrow's glitch fest: he glitches out, and a big pile of glitch blocks falls from the sky where he's pointing (50 to everyone it lands on)
+const GLITCH_DIST = 230, GLITCH_RX = 190, GLITCH_RY = 140, GLITCH_WARN = 0.7, GLITCH_TIME = 1.4; // GLITCH_WARN: how long the blocks take to fall from the sky
 // Grumpy Shuriken's dash: he shoots straight forward, spinning like a real shuriken, and hits everyone in his way (30 each)
 const DASH_SPEED = 26, DASH_TIME = 0.32;
 // Goofy Sparkle's sugar rush: he zooms all around the closest fighter in a wild yellow scribble, hitting them 4 times (10 each)
@@ -1742,6 +1745,11 @@ function startSpecial(p, grounded) {
     const foes = G.fighters.filter(q => q !== p && q.alive && !q.grabbedBy && !allies(p, q)).map(q => [q, Math.hypot(q.body.position.x - b.position.x, q.body.position.y - b.position.y)]).filter(([, d]) => d < RUSH_RANGE).sort((a, c) => a[1] - c[1]);
     p.special = { kind, t:0, target:foes.length ? foes[0][0] : null, hits:0, a:Math.random()*TAU }; p.specCD = 4.5; p.trail = [];
     ev('pop', b.position.x, b.position.y - 70, 'SUGAR RUSH!', C.yellow); ev('sfx','roll');
+    return;
+  }
+  if (kind === 'glitch') {
+    p.special = { kind, t:0, hit:[], x:Math.max(80, Math.min(W - 80, b.position.x + p.facing*GLITCH_DIST)), y:b.position.y, boom:false }; p.specCD = 6;
+    ev('pop', b.position.x, b.position.y - 70, 'GLITCH FEST!', C.red); ev('sfx','buzz');
     return;
   }
   if (kind === 'dash') { p.special = { kind, t:0, hit:[], y:b.position.y - 6 }; p.specCD = 3.5; p.trail = []; ev('sfx','throw'); ev('puff', b.position.x - p.facing*p.r, b.position.y + p.r*0.6); return; }
@@ -1796,6 +1804,19 @@ function drawWaves() {
 function runSpecial(p, inp, grounded) {
   const sp = p.special, b = p.body; sp.t += DT;
   const foes = G.fighters.filter(q => q !== p && q.alive && !q.grabbedBy && !allies(p, q));
+  if (sp.kind === 'glitch') { // he stands still and glitches out... then it blows up
+    Body.setVelocity(b, { x:b.velocity.x*0.6, y:b.velocity.y });
+    if (sp.t >= GLITCH_WARN) {
+      if (!sp.boom) { sp.boom = true; ev('sfx','slam'); ev('sfx','zap'); ev('shake', 14); ev('dust', sp.x, sp.y + 40); } // they smash down
+      for (const q of foes) {
+        if (sp.hit.includes(q)) continue;
+        const dx = (q.body.position.x - sp.x)/GLITCH_RX, dy = (q.body.position.y - sp.y)/GLITCH_RY;
+        if (dx*dx + dy*dy <= 1) { sp.hit.push(q); specialHit(p, q, 50, (Math.sign(q.body.position.x - sp.x) || p.facing)*12, -12, 'GLITCH FEST!'); }
+      }
+    }
+    if (sp.t > GLITCH_TIME) { if (!sp.hit.length) ev('pop', b.position.x, b.position.y - 50, 'miss', C.white); p.special = null; }
+    return;
+  }
   if (sp.kind === 'roll') {
     Body.setVelocity(b, { x:p.facing*16, y:b.velocity.y }); Body.setAngularVelocity(b, p.facing*0.45);
     if (Math.random() < 0.5) G.particles.push({ type:'dot', x:b.position.x - p.facing*p.r, y:b.position.y + p.r*0.8, vx:-p.facing*rand(1, 3), vy:rand(-2, 0), life:0.3, max:0.3, size:rand(4, 7), color:'rgba(160,160,160,.8)' });
@@ -3029,6 +3050,18 @@ function drawFighter(p, t) {
       g.strokeStyle = col; g.lineWidth = w; g.beginPath(); g.moveTo(p.trail[0].x, p.trail[0].y);
       p.trail.forEach((q, i) => g.lineTo(q.x + Math.sin(i*2.7 + t*30)*6, q.y + Math.cos(i*3.1 + t*30)*6)); g.stroke();
     }
+    g.restore();
+  }
+  if (p.special && p.special.kind === 'glitch') { // the glitch fest (from Mason's drawing): red glitch blocks and red and blue scribbles fall from the sky and smash down
+    const sp = p.special, k = Math.floor(t*20), fall = sp.boom ? 0 : Math.pow(1 - Math.min(1, sp.t/GLITCH_WARN), 2)*(sp.y + 250); // how high up they still are
+    g.save(); g.translate(sp.x, sp.y);
+    if (!sp.boom && k % 2) { g.strokeStyle = C.red; g.lineWidth = 4; g.setLineDash([14, 10]); g.beginPath(); g.ellipse(0, 0, GLITCH_RX, GLITCH_RY, 0, 0, TAU); g.stroke(); g.setLineDash([]); } // where they'll land
+    g.translate(0, -fall);
+    if (!sp.boom) { g.strokeStyle = 'rgba(237,28,36,.45)'; g.lineWidth = 6; for (const x of [-120, -30, 60]) { g.beginPath(); g.moveTo(x, -60); g.lineTo(x + Math.sin(k + x)*8, -60 - Math.min(300, fall)); g.stroke(); } } // streaks behind them as they fall
+    g.fillStyle = C.red;
+    for (const [x, y, w, h] of [[-170,-40,140,90],[-90,10,160,40],[-20,-5,110,60],[-40,30,90,80]]) { roundRect(x + (sp.boom ? Math.sin(k + x)*6 : 0), y, w, h, 16); g.fill(); }
+    g.lineWidth = 2.5;
+    for (let i=0;i<(sp.boom ? 10 : 5);i++) { g.strokeStyle = i % 2 ? C.blue : C.red; g.beginPath(); for (let j=0;j<6;j++) { const a = i*1.7 + j*2.3 + k*0.9, px = Math.cos(a*1.3)*GLITCH_RX*0.9, py = Math.sin(a)*GLITCH_RY*0.8; j ? g.lineTo(px, py) : g.moveTo(px, py); } g.stroke(); }
     g.restore();
   }
   if (p.special && p.special.kind === 'dash') { // speed lines streaking out behind Grumpy Shuriken

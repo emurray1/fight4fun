@@ -15,6 +15,7 @@ Open `index.html` in a web browser, or play the GitHub Pages version.
 - **Yelling Square** jumps up and slams down on anyone close by (45 damage). If it misses, it crashes into a puff of dust.
 - **Goofy Sparkle** goes on a **sugar rush**: he zooms all around the closest fighter in a wild yellow scribble and hits them 4 times (10 damage each, 40 in all). The last hit knocks them away.
 - **Grumpy Shuriken** dashes straight forward, spinning like a real shuriken, and hits everyone in his way (30 damage each). Careful: he can dash right off a cliff!
+- **Missing Arrow** (the secret fighter) does a **glitch fest**: he glitches out, and a big pile of red glitch blocks and red and blue scribbles falls from the sky in front of him (a dashed red ring shows where). Everyone it lands on takes 50 damage and goes flying. It's a big one, so he has to wait 6 seconds before he can do it again.
 
 Every fighter has 200 hp. When it runs out, they get dizzy and can be thrown.
 
