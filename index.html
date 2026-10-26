@@ -3832,7 +3832,7 @@ function enterCage() {
   musicUpdate(); if (sfx.zap) sfx.zap(); renderShopCard(true);
 }
 // Pop the Lock: a needle spins around the lock, and you press punch right when it's on the yellow dot.
-// Each pop turns the needle around and speeds it up. Press at the wrong time (or let it go past the dot) and the lock starts over.
+// Each pop turns the needle around and speeds it up. Press at the wrong time and the lock starts over.
 const newLock = () => ({ left:LOCK_POPS, ang:-Math.PI/2, dir:1, speed:LOCK_SPEED, dot:0, playing:false, flash:0, popT:0 });
 function placeDot(L) { L.dot = L.ang + L.dir*rand(0.9, 2.6); } // somewhere ahead of the needle
 function cageHit() { // punch at the cage: start picking the lock, or try to pop it
@@ -3868,7 +3868,7 @@ function cageStep(dt) {
   if (!L.playing) return;
   if (!SHOP.nearCage) { L.playing = false; return; } // walk away and you stop picking (the needle waits)
   L.ang += L.dir*L.speed*dt;
-  if (wrap(L.dot - L.ang)*L.dir < -LOCK_WIN) lockMiss(); // the needle went right past the dot
+  // (if the needle goes past the dot, nothing happens: it just comes around again. Only pressing at the wrong time is a miss)
 }
 // drawn from Mason's picture: red and blue blocks, red and orange blobs, the cage on the left, and the portal on the right
 const CAGE_RED = [[235,154,386,192],[467,199,696,302],[156,379,457,440],[270,440,326,547],[136,626,245,686],[243,547,529,709],[670,557,786,679]];
@@ -4467,7 +4467,7 @@ function fillShopCard(card, ch, it) {
     const c = SHOP.cage || {};
     card.innerHTML = c.freed ? (c.freeT >= 99 ? '<h3>The cage room</h3><p>The cage is empty. You already saved Missing Arrow!</p><p class="note">The portal on the right goes home to the 1st floor.</p>'
       : '<h3>He\'s free!</h3><p>You saved Missing Arrow! He\'s a new fighter now: turn him on in the "who is with who" screen, or shop as him with ◀ ▶ at the top.</p><p class="note">The portal on the right is open now. Jump in to go home.</p>')
-      : `<h3>Once you enter, you can't get out...</h3><p>Missing Arrow is locked in the cage! Walk up to it and press punch to start picking the lock. A needle spins around the lock: press punch right when it's on the yellow dot. Pop it ${LOCK_POPS} times to open the lock (${c.lock ? c.lock.left : LOCK_POPS} to go). Each pop makes the needle turn around and go faster. Press at the wrong time, or let it go past the dot, and the lock starts over and you lose a heart. Lose all 3 and you get thrown out!</p><p class="note">The portal only opens once he's free.</p>`;
+      : `<h3>Once you enter, you can't get out...</h3><p>Missing Arrow is locked in the cage! Walk up to it and press punch to start picking the lock. A needle spins around the lock: press punch right when it's on the yellow dot. Pop it ${LOCK_POPS} times to open the lock (${c.lock ? c.lock.left : LOCK_POPS} to go). Each pop makes the needle turn around and go faster. If the needle goes past the dot, it just comes around again. But press at the wrong time and the lock starts over and you lose a heart. Lose all 3 and you get thrown out!</p><p class="note">The portal only opens once he's free.</p>`;
     return;
   }
   if (!it && SHOP.floor === 7) {
