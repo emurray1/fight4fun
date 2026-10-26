@@ -520,8 +520,12 @@ const CHARS = [
   { id:'hex',      name:'Nervous Hexstar', color:'#93a3bd', shape:'star6',    trait:'Six points, extra sturdy',  speed:0.9,  power:1.05, weight:1.25, jump:0.95 },
   { id:'heart',    name:'Lovely Heart',    color:'#ff8fc1', shape:'heart',    trait:'Bouncy, jumps really high', speed:1.05, power:0.9,  weight:0.9,  jump:1.22 },
   { id:'shuriken', name:'Grumpy Shuriken', color:'#b97a57', shape:'shuriken', trait:'Fast and sharp. Special: dashes forward',            speed:1.2,  power:1.1,  weight:0.85, jump:1.0 },
+  // the missing guy from the "HAVE YOU SEEN HIM?" poster: locked in a cage past the 5th floor until you break him out
+  { id:'arrow',    name:'Missing Arrow',   color:'#ffb07c', shape:'arrow',    trait:'He was missing... until you saved him!', speed:1.1,  power:1.0,  weight:0.95, jump:1.08, secret:true },
 ];
 const CHAR = Object.fromEntries(CHARS.map(c => [c.id, c]));
+const unlocked = ch => !ch.secret || !!(shop.unlocked && shop.unlocked[ch.id]); // secret fighters stay locked until you earn them
+const PLAYABLE = () => CHARS.filter(unlocked);
 const CONTROLS = [
   { id:'off', label:'Off', kind:'off' }, { id:'cpu', label:'Computer', kind:'cpu' },
   { id:'p1', label:'Keys: WASD', kind:'human', tag:'P1' }, { id:'p2', label:'Keys: Arrows', kind:'human', tag:'P2' },
@@ -536,7 +540,7 @@ const MAPLIST = [['cloud','Cloud Island'],['snow','Snowy Hills'],['road','Roadsi
 const allies = (a, b) => G.mode === 'teams' && a.team === b.team;
 const DIFF = { easy:{ punch:0.3, cd:0.9, mash:0.06, label:'Easy' }, normal:{ punch:0.55, cd:0.55, mash:0.13, label:'Normal' }, hard:{ punch:0.85, cd:0.36, mash:0.25, label:'Hard' } };
 const MAX_HP = 200; // health points: when they run out, you get dizzy
-const TOPS = { star5:1.15, star4:1.25, tri:1.3, diamond:1.15, square:0.85, circle:1, star6:1.15, heart:0.75, shuriken:1.2 };
+const TOPS = { star5:1.15, star4:1.25, tri:1.3, diamond:1.15, square:0.85, circle:1, star6:1.15, heart:0.75, shuriken:1.2, arrow:1.25 };
 
 const setup = { slots:{ star:'cpu', tri:'p1', circle:'cpu', diamond:'off', square:'cpu', sparkle:'off' }, rounds:3, diff:'normal', mode:'ffa', map:'cloud', track:'gp', teams:{ star:0, tri:1, circle:0, diamond:1, square:1, sparkle:0, hex:0, heart:1, shuriken:0 }, sound:true, music:true, volume:1, shake:true, tags:true, halloween:'auto', christmas:'auto' };
 try { const s = JSON.parse(localStorage.getItem('fff-setup') || 'null'); if (s && s.slots) Object.assign(setup, s); } catch (e) {}
@@ -598,9 +602,11 @@ const LADDER_X = 1480, ATTIC_STAIRS_X = 220, ELEVATOR_X = 1480;
 // behind the manager's desk there's a swirly portal: run past him before the boss fight starts and jump in, and it takes you up to the 5th floor
 // (floor 7 in the code, since 5 is the chase and 6 is the break room)
 const TOP_PORTAL_X = 800; // there is no portal in the office: you walk off its left edge, and the 5th floor (with its big portal) is the next screen
+// the 5th floor's portal leads to the cage room (floor 8): Missing Arrow is locked in a cage, and you play Pop the Lock to free him
+const CAGE_X = 200, CAGE_PORTAL_X = 1263, LOCK_POPS = 12, LOCK_SPEED = 2.0, LOCK_SPEEDUP = 0.14, LOCK_WIN = 0.19; // pops needed, how fast the needle spins (and speeds up), how close counts
 const STAIRS = [{ floor:1, x:STAIRS_X[1], to:2 }, { floor:2, x:STAIRS_X[2], to:1 }, { floor:2, x:LADDER_X, to:3 }, { floor:3, x:ATTIC_STAIRS_X, to:2 },
   { floor:3, x:ELEVATOR_X, to:4 }, { floor:4, x:ELEVATOR_X, to:3 }, { floor:2, x:BREAK_DOOR_X, to:6 }, { floor:6, x:BREAK_DOOR_X, to:2 },
-  { floor:7, x:TOP_PORTAL_X, to:4 }];
+  { floor:7, x:TOP_PORTAL_X, to:8 }, { floor:8, x:CAGE_PORTAL_X, to:1 }];
 const STAND_SPOTS = { 1:[390, 610, 830], 2:[530], 3:[800] };
 const SKIN_X = 830; // the skins booth on the 2nd floor (a big mirror)
 const STANDS = (() => { // items fill the 1st floor, then the 2nd; an item can also ask for a floor of its own
@@ -737,6 +743,7 @@ function shapeVerts(shape, r, visual) {
     case 'square': return regular(4, r*1.2, -3*Math.PI/4);
     case 'star6': return visual ? starPts(6, r*1.15, 0.58) : regular(6, r*1.15);
     case 'shuriken': return visual ? starPtsRot(4, r*1.2, 0.34, 0.35) : regular(4, r*1.2, -Math.PI/2 + 0.35);
+    case 'arrow': return [{ x:0, y:-1.25*r }, { x:0.72*r, y:-0.35*r }, { x:0.72*r, y:0.9*r }, { x:-0.72*r, y:0.9*r }, { x:-0.72*r, y:-0.35*r }]; // a house shape, pointing up like an arrow
     case 'heart': return HEART_HULL.map(([x, y]) => ({ x:(x - HEART_C.x)*r*1.1, y:(y - HEART_C.y)*r*1.1 }));
   }
 }
@@ -765,7 +772,7 @@ function twinklePath(g, x, y, R, c) { // four points joined by curves that bend 
 }
 function drawFace(g, ch, r, o = {}) {
   const fs = ch.shape==='star4' ? 0.8 : ch.shape==='star5' ? 0.85 : ch.shape==='shuriken' ? 0.75 : ch.shape==='star6' ? 0.9 : 1;
-  const fy = ch.shape==='tri' ? r*0.15 : ch.shape==='star5' ? r*0.06 : 0;
+  const fy = ch.shape==='tri' || ch.shape==='arrow' ? r*0.15 : ch.shape==='star5' ? r*0.06 : 0;
   g.save(); g.translate((o.facing||1)*r*0.1, fy); g.scale(fs*r, fs*r);
   g.fillStyle = C.ink; g.strokeStyle = C.ink; g.lineCap = 'round'; g.lineJoin = 'round'; g.lineWidth = 0.09;
   const dot = (x,y,rad) => { g.beginPath(); g.arc(x,y,rad,0,TAU); g.fill(); };
@@ -872,12 +879,21 @@ function drawFace(g, ch, r, o = {}) {
       line(-0.3,-0.3,-0.04,-0.14); line(0.1,-0.32,0.28,-0.22);
       dot(-0.15,-0.05,0.08); g.lineWidth = 0.08; line(0.08,-0.06,0.26,-0.06);
       g.lineWidth = 0.11; line(-0.22,0.24,0.24,0.22); break;
+    case 'arrow': // big hopeful eyes with shines (worried brows and a wobbly mouth while he's still locked up)
+      oval(-0.18,0,0.09,0.12); oval(0.18,0,0.09,0.12);
+      g.fillStyle = C.white; dot(-0.15,-0.04,0.035); dot(0.21,-0.04,0.035); g.fillStyle = C.ink;
+      g.lineWidth = 0.06;
+      if (o.caged) {
+        line(-0.3,-0.2,-0.1,-0.26); line(0.3,-0.2,0.1,-0.26);
+        g.beginPath(); g.moveTo(-0.16,0.28); for (let i=1;i<=4;i++) g.lineTo(-0.16 + i*0.08, 0.28 + (i % 2 ? -0.05 : 0)); g.stroke();
+      } else { g.lineWidth = 0.08; g.beginPath(); g.moveTo(-0.2,0.18); g.quadraticCurveTo(0,0.4,0.2,0.18); g.stroke(); }
+      break;
   }
   if (o.glasses && EYES[ch.id]) drawGlasses(g, EYES[ch.id]);
   g.restore();
 }
 // where each fighter's eyes are (in face units), so the shop's sunglasses sit on them
-const EYES = { tri:[[-0.17,0.06],[0.17,0.06]], circle:[[-0.2,-0.2],[0.2,-0.2]], diamond:[[-0.18,-0.04],[0.18,-0.04]], square:[[-0.18,-0.04],[0.18,-0.04]], sparkle:[[-0.18,-0.1],[0.18,-0.1]],
+const EYES = { arrow:[[-0.18,0],[0.18,0]], tri:[[-0.17,0.06],[0.17,0.06]], circle:[[-0.2,-0.2],[0.2,-0.2]], diamond:[[-0.18,-0.04],[0.18,-0.04]], square:[[-0.18,-0.04],[0.18,-0.04]], sparkle:[[-0.18,-0.1],[0.18,-0.1]],
   hex:[[-0.24,-0.12],[0.17,-0.13]], heart:[[-0.3,0.04],[0.3,0.04]], shuriken:[[-0.15,-0.05],[0.17,-0.06]] };
 function drawGlasses(g, [a, b], glow = false, lens = '#e8ff6a') { // the sunglasses from the shop (or, with glow, the round glow goggles), drawn in face units between two eyes
   const d = Math.hypot(b[0] - a[0], b[1] - a[1]), lw = Math.min(0.3, d*0.8), lh = glow ? lw : 0.2;
@@ -1172,7 +1188,7 @@ const SONGS = {
     if (st % 16 === 8) mGlide(1200, 300, t, E*3, 0.03);
   } },
 };
-const songNow = () => G.state === 'shop' && SHOP.floor === 5 ? 'chase' : spooky() ? 'spooky' : xmas() ? 'xmas' : 'polka';
+const songNow = () => G.state === 'shop' && (SHOP.floor === 5 || (SHOP.floor === 8 && SHOP.cage && !SHOP.cage.freed)) ? 'chase' : spooky() ? 'spooky' : xmas() ? 'xmas' : 'polka';
 function musicTick() {
   const want = songNow();
   if (Music.song !== want) { Music.song = want; Music.step = 0; }
@@ -1310,7 +1326,7 @@ function makeFighter(ch, control, x, idx) {
 
 function startMatch() {
   G.boss = false;
-  G.wins = {}; G.round = 0; G.rounds = setup.rounds; G.online = null; MAP = MAPS[setup.map] || MAPS.cloud; G.mode = setup.mode; G.lineup = CHARS.filter(c => setup.slots[c.id] !== 'off').map(c => ({ ch:c, control:setup.slots[c.id], team:setup.teams[c.id] || 0 }));
+  G.wins = {}; G.round = 0; G.rounds = setup.rounds; G.online = null; MAP = MAPS[setup.map] || MAPS.cloud; G.mode = setup.mode; G.lineup = CHARS.filter(c => setup.slots[c.id] !== 'off' && unlocked(c)).map(c => ({ ch:c, control:setup.slots[c.id], team:setup.teams[c.id] || 0 }));
   G.state = 'fight'; G.paused = false; showScreen(null); cv.focus(); if (G.mode === 'race') startRace(); else if (G.mode === 'horror') startHorror(); else startRound();
 }
 function startBossFight() { // you (shopping as your fighter) against %#@%, one round on Cloud Island
@@ -3061,7 +3077,8 @@ function shopStep(dt) {
   const f = SHOP.floor;
   SHOP.near = STANDS.find(s => s.floor === f && Math.abs(s.x - SHOP.x) < 110) || null;
   SHOP.nearSkins = f === 2 && !SHOP.near && Math.abs(SKIN_X - SHOP.x) < 100;
-  const stair = !SHOP.near && STAIRS.find(s => s.floor === f && Math.abs(s.x - SHOP.x) < 100);
+  const stair = !SHOP.near && STAIRS.find(s => s.floor === f && Math.abs(s.x - SHOP.x) < 100 && (f !== 8 || (SHOP.cage && SHOP.cage.freed))); // the cage room portal only opens once he is free
+  SHOP.nearCage = f === 8 && !!SHOP.cage && !SHOP.cage.freed && Math.abs(SHOP.x - CAGE_X) < 170;
   SHOP.nearStairs = !!stair; SHOP.stairTo = stair ? stair.to : 0;
   SHOP.nearKeeper = !SHOP.near && !SHOP.nearStairs && !!KEEPERS[f] && Math.abs(KEEPERS[f] - SHOP.x) < (f === 6 ? 300 : 220) && (f !== 4 || (SHOP.revealed && !SHOP.chase));
   if (f === 4 && !SHOP.revealed && !SHOP.chase) { // walk close and the chair spins around
@@ -3076,10 +3093,11 @@ function shopStep(dt) {
   chaseStep(dt);
   if (f === 3) atticStep(dt);
   if (f === 6) breakStep(dt);
+  if (f === 8) { cageStep(dt); if (SHOP.floor !== 8) return; }
   SHOP.nearSmi = f === 1 && SHOP.smi7y && !SHOP.near && !SHOP.nearStairs && Math.abs(SMI7Y_X - SHOP.x) < 70;
   if (SHOP.nearSmi) SHOP.nearKeeper = false;
   SHOP.smiSayT = Math.max(0, (SHOP.smiSayT || 0) - dt);
-  if (h.punch && !pr.punch) { if (SHOP.near) shopAct(SHOP.near.item); else if (SHOP.nearSkins) nextSkin(); else if (SHOP.nearStairs) shopStairs(); else if (SHOP.nearSmi) smiTalk(); else if (SHOP.nearKeeper) shopTalk(); }
+  if (h.punch && !pr.punch) { if (SHOP.nearCage) cageHit(); else if (SHOP.near) shopAct(SHOP.near.item); else if (SHOP.nearSkins) nextSkin(); else if (SHOP.nearStairs) shopStairs(); else if (SHOP.nearSmi) smiTalk(); else if (SHOP.nearKeeper) shopTalk(); }
   if (h.grab && !pr.grab && SHOP.nearKeeper) shopLaugh();
   if (isHex()) { // Hexstar says "beep boop baap!" now and then (or when you press special), and the shopkeepers act like he never said it
     SHOP.beepCD = (SHOP.beepCD ?? 3) - dt; SHOP.beepT = Math.max(0, (SHOP.beepT || 0) - dt);
@@ -3805,13 +3823,125 @@ function drawTopFloor(t) {
   g.closePath(); g.stroke();
   drawPortal(TOP_PORTAL_X, SHOP_FLOOR - 150, 140, t);
 }
+// ----- the cage room: once you enter, you can't get out... until you break Missing Arrow out of his cage -----
+function enterCage() {
+  const freed = unlocked(CHAR.arrow);
+  Object.assign(SHOP, { floor:8, x:900, y:0, vy:0, facing:-1, near:null, nearKeeper:false, nearStairs:false, stairTo:0, msgT:0 });
+  SHOP.cage = { hp:3, freed, freeT:freed ? 99 : 0, shake:0, lock:newLock(), say:freed ? '' : 'H-help me! There\'s a lock on the cage! Can you pop it?', sayT:freed ? 0 : 3.5 };
+  SHOP.youSay = freed ? 'The cage is empty now...' : '...Is someone there?'; SHOP.youSayT = 2.5;
+  musicUpdate(); if (sfx.zap) sfx.zap(); renderShopCard(true);
+}
+// Pop the Lock: a needle spins around the lock, and you press punch right when it's on the yellow dot.
+// Each pop turns the needle around and speeds it up. Press at the wrong time (or let it go past the dot) and the lock starts over.
+const newLock = () => ({ left:LOCK_POPS, ang:-Math.PI/2, dir:1, speed:LOCK_SPEED, dot:0, playing:false, flash:0, popT:0 });
+function placeDot(L) { L.dot = L.ang + L.dir*rand(0.9, 2.6); } // somewhere ahead of the needle
+function cageHit() { // punch at the cage: start picking the lock, or try to pop it
+  const c = SHOP.cage; if (!c || c.freed) return;
+  const L = c.lock;
+  if (!L.playing) { L.playing = true; placeDot(L); if (sfx.grab) sfx.grab(); renderShopCard(true); return; }
+  if (Math.abs(wrap(L.ang - L.dot)) < LOCK_WIN) { // pop!
+    L.left--; L.dir = -L.dir; L.speed += LOCK_SPEEDUP; L.popT = 0.25; c.shake = 1; if (sfx.coin) sfx.coin();
+    if (L.left <= 0) { // the lock springs open, and he's free!
+      c.freed = true; c.freeT = 0; L.playing = false; shop.unlocked = shop.unlocked || {}; shop.unlocked.arrow = true; saveShop();
+      c.say = 'YOU SAVED ME! Thank you!! I\'ll fight with you now!'; c.sayT = 5; SHOP.youSay = 'The lock popped! You\'re free!'; SHOP.youSayT = 2.2;
+      if (sfx.win) sfx.win(); musicUpdate();
+    } else { placeDot(L); if (L.left === Math.ceil(LOCK_POPS/2)) { c.say = 'You\'re doing it! Keep going!'; c.sayT = 2.5; } }
+  } else lockMiss();
+  renderShopCard(true);
+}
+function lockMiss() { // the lock starts over, and you lose a heart
+  const c = SHOP.cage; c.hp--; c.lock = newLock(); c.lock.flash = 0.6; if (sfx.bonk) sfx.bonk();
+  if (c.hp <= 0) { cageCaught(); return; }
+  SHOP.youSay = c.hp === 1 ? 'Missed! One more miss and I\'m out!' : 'Missed! The lock started over...'; SHOP.youSayT = 1.8;
+  renderShopCard(true);
+}
+function cageCaught() { // three misses: the cage zaps you, and you get thrown out, all the way down to the 1st floor
+  Object.assign(SHOP, { floor:1, x:280, y:0, vy:0, facing:1, cage:null, near:null, nearCage:false, nearStairs:false, stairTo:0 });
+  musicUpdate(); if (sfx.throw) sfx.throw();
+  shopSay('Whoa! You fell out of the ceiling! Where were you?!', 'bonk', 4.5);
+  SHOP.youSay = 'The lock zapped me out... he\'s still up there!'; SHOP.youSayT = 3.5; renderShopCard(true);
+}
+function cageStep(dt) {
+  const c = SHOP.cage; if (!c) return;
+  c.shake = Math.max(0, c.shake - dt*4); c.sayT -= dt; if (c.freed) { c.freeT += dt; return; }
+  const L = c.lock; L.flash = Math.max(0, L.flash - dt); L.popT = Math.max(0, L.popT - dt);
+  if (!L.playing) return;
+  if (!SHOP.nearCage) { L.playing = false; return; } // walk away and you stop picking (the needle waits)
+  L.ang += L.dir*L.speed*dt;
+  if (wrap(L.dot - L.ang)*L.dir < -LOCK_WIN) lockMiss(); // the needle went right past the dot
+}
+// drawn from Mason's picture: red and blue blocks, red and orange blobs, the cage on the left, and the portal on the right
+const CAGE_RED = [[235,154,386,192],[467,199,696,302],[156,379,457,440],[270,440,326,547],[136,626,245,686],[243,547,529,709],[670,557,786,679]];
+const CAGE_BLUE = [[165,96,217,138],[0,184,147,300],[157,294,298,338],[548,302,685,359],[453,392,590,498],[103,428,157,623],[844,78,966,127],[1032,126,1178,213],[981,547,1095,659]];
+function drawCageFloor(t) {
+  const X = v => v*0.973, Y = v => 105 + v*0.92, c = SHOP.cage || { hp:3, freed:false, freeT:0, shake:0, lock:newLock() };
+  g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
+  g.fillStyle = '#0d0d10'; g.fillRect(0, SHOP_FLOOR, W, H - SHOP_FLOOR); g.fillStyle = '#26262e'; g.fillRect(0, SHOP_FLOOR, W, 4);
+  const box = ([x1, y1, x2, y2], col) => { g.fillStyle = col; g.fillRect(X(x1), Y(y1), X(x2) - X(x1), Y(y2) - Y(y1)); };
+  const blob = (pts, col) => { g.fillStyle = col; for (const [x, y, r] of pts) { g.beginPath(); g.arc(X(x), Y(y), r*0.95*(1 + Math.sin(t*5 + x)*0.04), 0, TAU); g.fill(); } }; // blobs that flicker a little, like fire
+  blob([[538,85,62],[528,122,44],[565,62,42]], C.orange);
+  blob([[700,62,62],[705,118,62],[692,152,40],[665,42,34]], C.red);
+  blob([[350,272,36],[345,326,52],[300,352,44],[382,348,40]], C.red);
+  g.fillStyle = C.orange; g.beginPath(); g.ellipse(X(816), Y(393), 27, 61, 0, 0, TAU); g.fill();
+  g.fillStyle = C.red; g.beginPath(); g.ellipse(X(908), Y(356), 24, 120, 0, 0, TAU); g.fill();
+  CAGE_RED.forEach(r => box(r, C.red)); CAGE_BLUE.forEach(r => box(r, C.blue));
+  g.fillStyle = C.ink; g.font = `30px ${FONT}`; g.textAlign = 'left'; g.textBaseline = 'middle'; // a creepy glitchy note on the red block
+  ['H1 1F Y0U S3E', 'TH1S, Y0U CANN0T', 'B3 SAV3D...'].forEach((s, i) => g.fillText(s, X(268) + (Math.sin(t*9 + i) > 0.95 ? 4 : 0), Y(588) + i*36));
+  g.fillStyle = C.white; g.font = `30px ${FONT}`; g.fillText('once you enter', X(1150), Y(237)); g.fillText('you can\'t get out', X(1150), Y(278));
+  // the portal: just a flat purple circle until he's free, then it swirls open
+  if (c.freed) drawPortal(X(1298), Y(540), 140, t);
+  else { g.fillStyle = '#a349a4'; g.beginPath(); g.arc(X(1298), Y(540), 140, 0, TAU); g.fill(); }
+  // Missing Arrow, in the cage behind the bars with a padlock on it (or hopping around once he's out)
+  const ch = CHAR.arrow, cx = X(212), cy = Y(540), jx = c.shake*Math.sin(t*80)*6;
+  if (!c.freed) {
+    g.save(); g.translate(cx, cy); drawCharacter(g, ch, 38, { facing:1, caged:true, beanie:false }); g.restore();
+    g.strokeStyle = '#8a8a8a'; g.lineWidth = 5; g.lineCap = 'round';
+    for (const [x1, y1, x2, y2] of [[-60,-95,40,95],[60,-95,-40,95],[-70,-40,70,-20],[-70,30,70,10],[-30,-100,-20,100],[20,-100,30,100],[-75,-70,75,60],[75,-70,-75,60],[-60,70,60,80],[-10,-100,0,100],[-70,0,70,0],[45,-90,55,90]]) { g.beginPath(); g.moveTo(cx + x1, cy + y1); g.lineTo(cx + x2, cy + y2); g.stroke(); }
+    drawPadlock(cx + 60 + jx, cy + 50, 0.32);
+    if (c.sayT > 0) drawBubble(c.say, cx + 300, cy - 120, cx + 20);
+  } else if (unlocked(ch) && c.freeT < 99) { // he follows you around, hopping with joy
+    const ax = Math.min(SHOP.x - 120*SHOP.facing, X(1100)), hop = Math.abs(Math.sin(t*7))*20;
+    g.save(); g.translate(Math.max(80, ax), SHOP_FLOOR - 50*0.9 - hop); drawCharacter(g, ch, 50, { facing:SHOP.facing }); g.restore();
+    if (c.sayT > 0) drawBubble(c.say, Math.max(80, ax) + 200, SHOP_FLOOR - 170, Math.max(80, ax));
+  }
+  if (!c.freed) { // your hearts, how many pops are left, and the lock game itself
+    for (let i=0;i<3;i++) { if (i < c.hp) drawLittleHeart(50 + i*44, 140, 15); else { g.strokeStyle = '#555'; g.lineWidth = 2; g.beginPath(); g.arc(50 + i*44, 140, 12, 0, TAU); g.stroke(); } }
+    g.fillStyle = C.white; g.font = `26px ${BODYFONT}`; g.textAlign = 'left'; g.textBaseline = 'middle'; g.fillText(`lock: ${c.lock.left} to go`, 190, 142);
+    if (c.lock.playing || c.lock.flash > 0) drawLockGame(c.lock, t);
+    else if (SHOP.nearCage) { g.font = `30px ${FONT}`; g.textAlign = 'center'; g.fillStyle = C.yellow; g.fillText('press punch to pick the lock!', cx + 120, Y(360) + Math.sin(t*4)*4); }
+  }
+}
+function drawPadlock(x, y, s, lift = 0) { // a gold padlock with a grey shackle on top
+  g.save(); g.translate(x, y); g.scale(s, s);
+  g.lineCap = 'butt';
+  for (const [w, col] of [[42, C.ink], [30, '#a8a8b4']]) { g.strokeStyle = col; g.lineWidth = w; g.beginPath(); g.moveTo(-70, -40); g.lineTo(-70, -110 - lift); g.arc(0, -110 - lift, 70, Math.PI, 0); g.lineTo(70, -40); g.stroke(); }
+  g.fillStyle = '#e0b030'; g.strokeStyle = C.ink; g.lineWidth = 8; roundRect(-110, -70, 220, 170, 26); g.fill(); g.stroke();
+  g.fillStyle = C.ink; g.beginPath(); g.arc(0, 0, 18, 0, TAU); g.fill(); g.fillRect(-7, 0, 14, 42);
+  g.restore();
+}
+function drawLockGame(L, t) { // the big Pop the Lock screen: the needle, the yellow dot, and how many pops are left
+  const x = 820, y = 480, R = 150, shake = L.flash > 0 ? Math.sin(t*90)*10 : 0;
+  g.save(); g.translate(x + shake, y);
+  g.lineCap = 'butt'; // the shackle on top, which pops up a little each time you get one
+  for (const [w, col] of [[50, C.ink], [36, '#a8a8b4']]) { g.strokeStyle = col; g.lineWidth = w; g.beginPath(); g.moveTo(-110, -R + 20); g.lineTo(-110, -R - 50 - L.popT*60); g.arc(0, -R - 50 - L.popT*60, 110, Math.PI, 0); g.lineTo(110, -R + 20); g.stroke(); }
+  g.fillStyle = L.flash > 0 ? '#9a2030' : '#2d2d38'; g.strokeStyle = C.ink; g.lineWidth = 8; g.beginPath(); g.arc(0, 0, R + 40, 0, TAU); g.fill(); g.stroke();
+  g.strokeStyle = '#555568'; g.lineWidth = 34; g.beginPath(); g.arc(0, 0, R - 20, 0, TAU); g.stroke(); // the track
+  if (L.playing) {
+    const pulse = 1 + Math.sin(t*10)*0.12;
+    g.fillStyle = C.yellow; g.strokeStyle = C.ink; g.lineWidth = 4; g.beginPath(); g.arc(Math.cos(L.dot)*(R - 20), Math.sin(L.dot)*(R - 20), 16*pulse, 0, TAU); g.fill(); g.stroke();
+    g.strokeStyle = '#ff3b3b'; g.lineWidth = 12; g.lineCap = 'round'; g.beginPath(); g.moveTo(Math.cos(L.ang)*(R - 44), Math.sin(L.ang)*(R - 44)); g.lineTo(Math.cos(L.ang)*(R + 4), Math.sin(L.ang)*(R + 4)); g.stroke();
+  }
+  g.fillStyle = C.white; g.font = `110px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(String(L.left), 0, 6);
+  g.font = `26px ${BODYFONT}`; g.fillText(L.flash > 0 ? 'missed! the lock started over' : 'press punch when the needle is on the dot!', 0, R + 75);
+  g.restore();
+}
 function drawManager(g, t) { // %#@% sitting in his chair (drawn in the chair's frame), like Mason's picture of him
   g.save(); g.translate(0, 110 + 305*0.5 - 60); drawGlitchMan(g, t, 0.5); g.restore(); // sitting up tall, so his head pokes up above the chair
 }
 function drawShop(t) {
   const hall = SHOP.floor === 5; // the chase hallway scrolls with you
   if (hall) { g.save(); g.translate(-(SHOP.cam || 0), 0); drawChaseFloor(t); }
-  else if (SHOP.floor === 7) drawTopFloor(t); else if (SHOP.floor === 6) drawBreakFloor(t); else if (SHOP.floor === 4) drawOfficeFloor(t); else if (SHOP.floor === 3) drawAtticFloor(t); else if (SHOP.floor === 2) drawFunnyFloor(t); else drawFightyFloor(t);
+  else if (SHOP.floor === 8) drawCageFloor(t); else if (SHOP.floor === 7) drawTopFloor(t); else if (SHOP.floor === 6) drawBreakFloor(t); else if (SHOP.floor === 4) drawOfficeFloor(t); else if (SHOP.floor === 3) drawAtticFloor(t); else if (SHOP.floor === 2) drawFunnyFloor(t); else drawFightyFloor(t);
   // an empty pink stand upstairs, waiting for the next thing to sell (a real item takes its place once there is one)
   if (SHOP.floor === 2) {
     const spot = STAND_SPOTS[2].find(x => !STANDS.some(s => s.floor === 2 && s.x === x));
@@ -3914,7 +4044,7 @@ function togglePause() {
   G.paused = !G.paused; $('pause').hidden = !G.paused;
   if (G.paused) $('resumeBtn').focus(); else cv.focus();
 }
-const titleChars = $('titleChars'); CHARS.forEach(c => titleChars.appendChild(charCanvas(c, 78)));
+const titleChars = $('titleChars'); PLAYABLE().forEach(c => titleChars.appendChild(charCanvas(c, 78)));
 
 function nextControl(id) {
   const cur = setup.slots[id], order = CONTROLS.map(c => c.id);
@@ -3933,6 +4063,12 @@ function teamButton(id, team, fn) {
 function renderRoster() {
   const box = $('roster'); box.innerHTML = '';
   for (const ch of CHARS) {
+    if (!unlocked(ch)) { // a locked fighter: just a dark shape and a hint
+      const card = document.createElement('div'); card.className = 'card off locked';
+      const cc = charCanvas(ch, 92); cc.style.filter = 'brightness(0)'; card.appendChild(cc);
+      card.insertAdjacentHTML('beforeend', '<h4>???</h4><p>Locked. Have you seen him? Look past the 5th floor of the shop...</p>');
+      box.appendChild(card); continue;
+    }
     const ctl = CTRL[setup.slots[ch.id]] || CTRL.off;
     const card = document.createElement('div'); card.className = 'card' + (ctl.kind === 'off' ? ' off' : '');
     card.appendChild(charCanvas(ch, 92, looks(ch)));
@@ -4036,7 +4172,7 @@ function showResults() {
   showScreen('results'); (on === 'client' ? $('leaveBtn') : $('rematchBtn')).focus();
 }
 $('okBtn').onclick = () => { audioOn(); openSetup(); };
-CHARS.forEach(ch => {
+PLAYABLE().forEach(ch => {
   const d = document.createElement('div'); d.appendChild(charCanvas(ch, 64));
   d.insertAdjacentHTML('beforeend', `<span><b>${ch.name}</b>${ch.trait}</span>`); $('howChars').appendChild(d);
 });
@@ -4061,8 +4197,8 @@ $('howBtn').onclick = () => { audioOn(); openPage('howto'); };
 $('setBtn').onclick = () => { audioOn(); openPage('settings'); };
 $('shopBtn').onclick = () => { audioOn(); openShop(); };
 $('shopCardOpen').onclick = () => { SHOP.cardClosed = false; renderShopCard(true); cv.focus(); };
-$('shopPrev').onclick = () => { SHOP.who = (SHOP.who + CHARS.length - 1) % CHARS.length; renderShopCard(true); };
-$('shopNext').onclick = () => { SHOP.who = (SHOP.who + 1) % CHARS.length; renderShopCard(true); };
+$('shopPrev').onclick = () => { do SHOP.who = (SHOP.who + CHARS.length - 1) % CHARS.length; while (!unlocked(CHARS[SHOP.who])); renderShopCard(true); };
+$('shopNext').onclick = () => { do SHOP.who = (SHOP.who + 1) % CHARS.length; while (!unlocked(CHARS[SHOP.who])); renderShopCard(true); };
 function openShop() {
   const mine = CHARS.findIndex(ch => (CTRL[setup.slots[ch.id]] || CTRL.off).kind === 'human');
   Object.assign(SHOP, { floor:1, x:280, y:0, vy:0, facing:1, near:null, nearKeeper:false, nearStairs:false, prev:readHeld('local'), msg:'', msgT:0, echoT:0, carry:false, pushT:0, pushing:false, youSayT:0, chase:null, bossT:-1, cam:0 });
@@ -4153,6 +4289,7 @@ function shopLaugh() { // you laugh at the joke, and the shopkeeper is happy you
   shopSay(replies[Math.floor(Math.random()*replies.length)], 'laugh', 4); renderShopCard(true);
 }
 function shopStairs() {
+  if (SHOP.stairTo === 8) { enterCage(); return; } // the 5th floor portal goes to Missing Arrow's cage
   const from = SHOP.floor, to = SHOP.stairTo || (from === 1 ? 2 : 1), back = STAIRS.find(s => s.floor === to && s.to === from);
   if (to === 3 && isKid()) { // the shy shopkeeper thinks the attic is too scary for Goofy Sparkle, so she lifts him off the ladder
     Object.assign(SHOP, { carry:true, carryT:0, x:LADDER_X, facing:-1 });
@@ -4160,13 +4297,13 @@ function shopStairs() {
   }
   const bx = back ? back.x : -40; // coming back from the 5th floor, you walk in from the left edge of the office
   SHOP.floor = to; musicUpdate(); Object.assign(SHOP, { x:bx + (bx > W/2 ? -110 : 110), y:0, vy:0, facing:bx > W/2 ? -1 : 1, near:null, nearKeeper:false, nearStairs:false, stairTo:0, echoT:0, visit:null, sparkleHere:false, msgT:0 });
-  const portal = to === 7 || from === 7;
+  const portal = to === 7 || from === 7 || from === 8;
   if (portal) { if (sfx.zap) sfx.zap(); } else if (to === 4 || from === 4) { if (sfx.ding) sfx.ding(); } // the elevator goes ding! (and the portal goes zzap)
   if (to === 7) { // you got past the boss!
     SHOP.bossT = -1; SHOP.youSay = SHOP.revealed ? `I got past ${BOSS_NAME}! ...Where am I?` : 'Whoa... where am I?'; SHOP.youSayT = 3.5;
     renderShopCard(true); return;
   }
-  if (from === 7) { SHOP.spinT = 0; SHOP.revealed = false; SHOP.youSay = 'Back in the office... shhh!'; SHOP.youSayT = 2.5; renderShopCard(true); return; } // his chair is facing away again
+  if (from === 8) { SHOP.cage = null; SHOP.x = 600; shopSay(unlocked(CHAR.arrow) ? 'Whoa! You came out of a portal! ...And who is your new friend?' : 'Whoa! Where did you come from?!', 'jump', 4.5); renderShopCard(true); return; }
   if (to === 3) {
     SHOP.eyes = { x:from === 4 ? 560 : 1250, y:from === 4 ? 470 : 420, gone:0, fade:0 }; // coming down the elevator, the eyes are across the room
     SHOP.atticSay = from === 4 ? 'Gerald...? Is that you?' : 'It\'s so dark up here...'; SHOP.atticSayT = 3; renderShopCard(true); return;
@@ -4243,7 +4380,7 @@ function drawSkinBooth(t) { // a big gold mirror on a stand: it shows you in eac
 }
 function renderShopCard(force) {
   const ch = CHARS[SHOP.who], st = SHOP.near, it = st && ITEMS.find(i => i.id === st.item);
-  const key = [shop.coins, ch.id, it && it.id, it && shop.owned[it.id], ITEMS.map(i => wears(i.id, ch)).join(), SHOP.nearKeeper, SHOP.nearStairs, SHOP.stairTo, SHOP.floor, jokeOpen(), !!SHOP.revealed, SHOP.nearSmi, SHOP.nearSkins, skinOf(ch), skinRec(ch).have.join()].join('|');
+  const key = [shop.coins, ch.id, it && it.id, it && shop.owned[it.id], ITEMS.map(i => wears(i.id, ch)).join(), SHOP.nearKeeper, SHOP.nearStairs, SHOP.stairTo, SHOP.floor, jokeOpen(), !!SHOP.revealed, SHOP.nearSmi, SHOP.nearSkins, skinOf(ch), skinRec(ch).have.join(), SHOP.nearCage, SHOP.cage && SHOP.cage.lock.left, SHOP.cage && SHOP.cage.hp, SHOP.cage && SHOP.cage.freed].join('|');
   if (!force && key === SHOP.key) return;
   SHOP.key = key; $('coinCount').textContent = shop.coins; $('shopWho').textContent = ch.name;
   const card = $('shopCard'); fillShopCard(card, ch, it);
@@ -4281,9 +4418,10 @@ function fillShopCard(card, ch, it) {
     const door = to === 6 || SHOP.floor === 6;
     const text = { 2:SHOP.floor === 6 ? 'Go back out to the funny fun shop. (Your break timer will start over!)' : SHOP.floor === 1 ? 'Go up to the 2nd floor: the funny fun shop. Things that don\'t fit down here go up there.' : 'Go back down to the 2nd floor: the funny fun shop.',
       6:'Go into the break room. The shopkeepers take their break in there... the longer you stay, the more stuff they give you!',
-      1:'Go back down to the 1st floor: the fighty shop.', 4:SHOP.floor === 7 ? `Jump back into the portal. It goes down to the manager's office... careful, ${BOSS_NAME} is in there!` : 'Ride the elevator up to the manager\'s office. Ding!',
+      1:SHOP.floor === 8 ? 'The portal is open! Jump in to go home, to the 1st floor.' : 'Go back down to the 1st floor: the fighty shop.',
+      8:'A big swirly portal... Where does it go? Is that where HE is?', 4:SHOP.floor === 7 ? `Jump back into the portal. It goes down to the manager's office... careful, ${BOSS_NAME} is in there!` : 'Ride the elevator up to the manager\'s office. Ding!',
       3:SHOP.floor === 4 ? 'Ride the elevator back down to the dark 3rd floor.' : 'Climb up to the 3rd floor. The shopkeepers really don\'t like to talk about it...' }[to];
-    const portal = to === 7 || SHOP.floor === 7, lift = !portal && (to === 4 || SHOP.floor === 4);
+    const portal = to === 8 || SHOP.floor === 8, lift = !portal && (to === 4 || SHOP.floor === 4);
     card.innerHTML = `<h3>${door ? 'Break room door' : portal ? 'Portal' : lift ? 'Elevator' : to === 3 ? 'Ladder' : 'Stairs'}</h3><p>${text}</p><div class="row"></div>`;
     const b = document.createElement('button'); b.className = 'btn'; b.id = 'shopStairs'; b.textContent = door ? (to === 6 ? 'go in' : 'go out') : portal ? 'jump in' : lift ? (up ? 'ride up' : 'ride down') : to === 3 ? 'climb up... if you dare' : up ? 'go upstairs' : 'go downstairs';
     b.onclick = () => { shopStairs(); cv.focus(); };
@@ -4325,8 +4463,15 @@ function fillShopCard(card, ch, it) {
     card.innerHTML = '<h3>The break room</h3><p>The shopkeepers are on their break! Hang out with them: the longer you stay, the more stuff they give you. Coins come every 15 seconds (more and more the longer you stay), and there are surprise gifts too. The chalkboard shows what\'s next.</p><p class="note">The door on the left goes back to the funny fun shop. If you leave, your break timer starts over.</p>';
     return;
   }
+  if (!it && SHOP.floor === 8) {
+    const c = SHOP.cage || {};
+    card.innerHTML = c.freed ? (c.freeT >= 99 ? '<h3>The cage room</h3><p>The cage is empty. You already saved Missing Arrow!</p><p class="note">The portal on the right goes home to the 1st floor.</p>'
+      : '<h3>He\'s free!</h3><p>You saved Missing Arrow! He\'s a new fighter now: turn him on in the "who is with who" screen, or shop as him with ◀ ▶ at the top.</p><p class="note">The portal on the right is open now. Jump in to go home.</p>')
+      : `<h3>Once you enter, you can't get out...</h3><p>Missing Arrow is locked in the cage! Walk up to it and press punch to start picking the lock. A needle spins around the lock: press punch right when it's on the yellow dot. Pop it ${LOCK_POPS} times to open the lock (${c.lock ? c.lock.left : LOCK_POPS} to go). Each pop makes the needle turn around and go faster. Press at the wrong time, or let it go past the dot, and the lock starts over and you lose a heart. Lose all 3 and you get thrown out!</p><p class="note">The portal only opens once he's free.</p>`;
+    return;
+  }
   if (!it && SHOP.floor === 7) {
-    card.innerHTML = `<h3>The 5th floor...</h3><p>It's pitch black up here, and ${BOSS_NAME}'s red and blue glitch blocks are everywhere. There's a poster on the wall: HAVE YOU SEEN HIM? MISSING. Who is missing...?</p><p class="note">The portal in the middle goes back down to the manager's office.</p>`;
+    card.innerHTML = `<h3>The 5th floor...</h3><p>It's pitch black up here, and ${BOSS_NAME}'s red and blue glitch blocks are everywhere. There's a poster on the wall: HAVE YOU SEEN HIM? MISSING. Who is missing...?</p><p class="note">Where does the portal in the middle go...?</p>`;
     return;
   }
   if (!it && SHOP.floor === 5) {
@@ -4503,7 +4648,7 @@ function endNet(msg, toOnline) {
 function openOnline() { G.state = 'online'; showScreen('online'); onlineMsg(''); $('notice').textContent = ''; ($('nameIn').value ? $('codeIn') : $('nameIn')).focus(); }
 
 // ----- host -----
-function firstFree() { const L = Net.lobby; const c = CHARS.find(c => !L.players.some(p => p.ch === c.id) && !L.cpus.includes(c.id)); return c ? c.id : null; }
+function firstFree() { const L = Net.lobby; const c = CHARS.find(c => !c.secret && !L.players.some(p => p.ch === c.id) && !L.cpus.includes(c.id)); return c ? c.id : null; }
 function hostRoom() {
   const name = myName(), code = genCode();
   let peer; try { peer = makePeer(PREFIX + code); } catch (e) { return onlineMsg('Online play could not load. Check your internet connection and reload the page.'); }
@@ -4756,7 +4901,7 @@ function renderLobby() {
   const isHost = Net.role === 'host', me = isHost ? 'host' : Net.you;
   $('lobbyCode').textContent = L.code;
   const box = $('lobbyRoster'); box.innerHTML = '';
-  for (const ch of CHARS) {
+  for (const ch of CHARS.filter(c => !c.secret)) { // secret fighters aren't in online games yet
     const owner = L.players.find(p => p.ch === ch.id), cpu = L.cpus.includes(ch.id);
     const card = document.createElement('div'); card.className = 'card';
     const cc = charCanvas(ch, 92); if (!owner && !cpu) cc.style.filter = 'grayscale(.8) opacity(.5)'; card.appendChild(cc);

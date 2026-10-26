@@ -2,7 +2,7 @@
 
 A Party Animals–style brawler designed by Mason, with Alex and Mason's dad.
 
-Nine shape fighters punch, grab and throw each other off Cloud Island. The last one standing wins the round.
+Nine shape fighters (and a secret tenth one you have to rescue) punch, grab and throw each other off Cloud Island. The last one standing wins the round.
 
 ## Play
 
@@ -61,7 +61,9 @@ An elevator in the attic goes up to the **manager's office** on the 4th floor. A
 
 After the fight, the **chase** starts. You're in a long, dark, glitched-out world: a glowing grid, flickering floor tiles, broken chunks of pixels and error messages floating in the void. %#@% climbs out of a glitchy hole in the floor: a tall grey glitch man with a round black head, a big grey hand over his face, red arrows for arms and red, blue and purple glitch blocks all over him (drawn from Mason's picture). Everything glitches, and every few seconds he glitches forward. Run right, jump over the glitch cubes (he floats through them), and dive into the glitchy rift at the end to get back to the 1st floor safe. If he catches you, he throws you out of the shop.
 
-**Sneak past the boss:** there's a secret way out of the office. Once %#@% spins around, you have a few seconds before the boss fight starts. Run past his desk and keep walking, right off the left edge of the screen, to get away to the secret **5th floor**, drawn by Mason. It's pitch black up there, with %#@%'s red and blue glitch blocks all over the walls (they glitch sideways now and then) and a poster: **HAVE YOU SEEN HIM? MISSING**, with an arrow pointing at it. Who is missing...? The big portal in the middle takes you back down to the office, where his chair is facing away again.
+**Sneak past the boss:** there's a secret way out of the office. Once %#@% spins around, you have a few seconds before the boss fight starts. Run past his desk and keep walking, right off the left edge of the screen, to get away to the secret **5th floor**, drawn by Mason. It's pitch black up there, with %#@%'s red and blue glitch blocks all over the walls (they glitch sideways now and then) and a poster: **HAVE YOU SEEN HIM? MISSING**, with an arrow pointing at it. Who is missing...? Jump into the big portal in the middle to find out.
+
+**The cage room and a secret fighter:** the 5th floor's portal takes you to the **cage room** (drawn by Mason). "Once you enter, you can't get out..." The missing guy from the poster, **Missing Arrow**, is locked in a cage on the left, and a creepy glitchy note says "H1 1F Y0U S3E TH1S, Y0U CANN0T B3 SAV3D...". There's a padlock on the cage, and to open it you play **Pop the Lock**: walk up to the cage and press punch to start. A red needle spins around the lock. Press punch right when it's on the yellow dot! Each pop counts down, turns the needle around and makes it a little faster. Pop it 12 times to open the lock. If you press at the wrong time, or let the needle go past the dot, the lock starts over from 12 and you lose a heart. Lose all 3 hearts and you get zapped out to the 1st floor. Pop the lock and Missing Arrow is free ("YOU SAVED ME!"): he becomes a **new fighter** you can play, and the portal on the right opens to take you home. Until then, he shows up as a locked "???" on the "who is with who" screen. (He isn't in online games yet.)
 
 To talk to the grey shopkeeper, walk up to the counter and press punch. Each time you press it, they say something new: tips, how many coins you need, and a joke.
 
