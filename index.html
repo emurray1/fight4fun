@@ -595,8 +595,12 @@ const BREAK_DOOR_X = 110;
 // a ladder from the funny fun shop goes up to the dark 3rd floor, which the shopkeepers don't like to talk about
 // and an elevator in the attic goes up to the manager's office on the 4th floor
 const LADDER_X = 1480, ATTIC_STAIRS_X = 220, ELEVATOR_X = 1480;
+// behind the manager's desk there's a swirly portal: run past him before the boss fight starts and jump in, and it takes you up to the 5th floor
+// (floor 7 in the code, since 5 is the chase and 6 is the break room)
+const OFFICE_PORTAL_X = 140, TOP_PORTAL_X = 800;
 const STAIRS = [{ floor:1, x:STAIRS_X[1], to:2 }, { floor:2, x:STAIRS_X[2], to:1 }, { floor:2, x:LADDER_X, to:3 }, { floor:3, x:ATTIC_STAIRS_X, to:2 },
-  { floor:3, x:ELEVATOR_X, to:4 }, { floor:4, x:ELEVATOR_X, to:3 }, { floor:2, x:BREAK_DOOR_X, to:6 }, { floor:6, x:BREAK_DOOR_X, to:2 }];
+  { floor:3, x:ELEVATOR_X, to:4 }, { floor:4, x:ELEVATOR_X, to:3 }, { floor:2, x:BREAK_DOOR_X, to:6 }, { floor:6, x:BREAK_DOOR_X, to:2 },
+  { floor:4, x:OFFICE_PORTAL_X, to:7 }, { floor:7, x:TOP_PORTAL_X, to:4 }];
 const STAND_SPOTS = { 1:[390, 610, 830], 2:[530], 3:[800] };
 const SKIN_X = 830; // the skins booth on the 2nd floor (a big mirror)
 const STANDS = (() => { // items fill the 1st floor, then the 2nd; an item can also ask for a floor of its own
@@ -3741,6 +3745,7 @@ function drawOfficeFloor(t) {
   g.fillStyle = '#2f7a2f'; for (let i=0;i<5;i++) { g.save(); g.translate(680, 650); g.rotate(-1 + i*0.5 + Math.sin(t + i)*0.04); g.beginPath(); g.ellipse(0, -55, 16, 55, 0, 0, TAU); g.fill(); g.restore(); }
   g.fillStyle = '#b5543a'; g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.moveTo(650, 650); g.lineTo(710, 650); g.lineTo(700, SHOP_FLOOR); g.lineTo(660, SHOP_FLOOR); g.closePath(); g.fill(); g.stroke();
   drawElevator(ELEVATOR_X, '3rd floor ↓', t);
+  drawPortal(OFFICE_PORTAL_X, SHOP_FLOOR - 80, 70, t); drawFloorSign(OFFICE_PORTAL_X, SHOP_FLOOR - 190, '???', '#c9a3e6');
   // the big spinny chair, and the manager in it once it has spun around
   const mx = KEEPERS[4], spin = SHOP.revealed ? 1 : Math.min(1, (SHOP.spinT || 0)/0.9), facingYou = spin > 0.5;
   g.save(); g.translate(mx, 520); g.scale(Math.max(0.08, Math.abs(Math.cos(spin*Math.PI))), 1); // squashes thin as it turns
@@ -3763,13 +3768,48 @@ function drawOfficeFloor(t) {
   if (say) drawBubble(say, mx - 70, 360, mx - 30);
   if (SHOP.nearKeeper) drawPointer(mx + 110, 430, t);
 }
+function drawPortal(x, y, r, t) { // Mason's swirly purple portal: a purple ball full of dark and pink scribbly loops that keep turning
+  g.save(); g.translate(x, y);
+  g.shadowColor = '#ff6cf0'; g.shadowBlur = 30 + Math.sin(t*4)*10; g.fillStyle = '#a04aa6'; g.beginPath(); g.arc(0, 0, r, 0, TAU); g.fill(); g.shadowBlur = 0;
+  g.save(); g.beginPath(); g.arc(0, 0, r, 0, TAU); g.clip(); g.lineCap = 'round'; g.lineJoin = 'round';
+  for (const [col, w, sp, k] of [['#3a1a3a', r*0.05, 0.6, 0.85], ['#2a0f2a', r*0.04, -0.9, 0.6], ['#ff6cf0', r*0.06, 1.3, 0.75], ['#ff9cf5', r*0.03, -1.7, 0.45]]) {
+    g.save(); g.rotate(t*sp); g.strokeStyle = col; g.lineWidth = w; g.beginPath();
+    for (let i=0;i<=80;i++) { const a = i/80*TAU, s = Math.sin(a); g.lineTo(r*k*0.55*Math.sin(2*a)*0.9 + Math.sin(a*5 + t)*r*0.06, r*k*s); } // figure-8 loops
+    g.stroke(); g.restore();
+  }
+  g.restore();
+  g.strokeStyle = '#2a0f2a'; g.lineWidth = r*0.06; g.beginPath(); g.arc(0, 0, r, 0, TAU); g.stroke();
+  g.restore();
+}
+// the 5th floor, from Mason's drawing: pitch black, with the manager's red and blue glitch blocks everywhere,
+// a "HAVE YOU SEEN HIM? / MISSING" poster with an arrow pointing at it, and the portal back down in the middle
+const TOP_RED = [[118,453,432,679],[997,97,1233,224],[1262,247,1479,394]];
+const TOP_BLUE = [[39,99,246,229],[270,210,500,337],[9,365,208,523],[1117,112,1294,234],[1080,327,1211,382],[1390,348,1527,419],[1125,645,1406,723],[1462,710,1617,753],[1672,751,1800,787]];
+function drawTopFloor(t) {
+  const X = v => v*0.863, Y = v => 105 + v*0.8; // the drawing was 1854 wide (and it starts below the shop's top bar)
+  g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
+  g.fillStyle = '#0d0d10'; g.fillRect(0, SHOP_FLOOR, W, H - SHOP_FLOOR); g.fillStyle = '#26262e'; g.fillRect(0, SHOP_FLOOR, W, 4);
+  const block = ([x1, y1, x2, y2], col, i) => { const jit = Math.sin(t*7 + i*3.1) > 0.96 ? 8 : 0; g.fillStyle = col; g.fillRect(X(x1) + jit, Y(y1), X(x2) - X(x1), Y(y2) - Y(y1)); }; // now and then a block glitches sideways
+  TOP_RED.forEach((r, i) => block(r, '#880015', i));
+  block([382,76,877,267], '#880015', 9); // the poster
+  TOP_BLUE.forEach((r, i) => block(r, '#00a2e8', i + 20));
+  block([617,74,855,134], '#00a2e8', 40);
+  g.fillStyle = C.ink; g.textAlign = 'left'; g.textBaseline = 'middle';
+  g.font = `40px ${FONT}`; g.fillText('MISSING', X(636), Y(102));
+  g.font = `36px ${FONT}`; g.fillText('HAVE YOU', X(408), Y(150)); g.fillText('SEEN HIM?', X(408), Y(205));
+  const ay = Math.sin(t*4)*5; // the orange arrow pointing up at "missing"
+  g.strokeStyle = '#ffa060'; g.lineWidth = 5; g.lineJoin = 'round'; g.beginPath();
+  for (const [x, y] of [[632,270],[636,210],[618,210],[660,150],[696,212],[678,212],[672,272]]) g.lineTo(X(x), Y(y) + ay);
+  g.closePath(); g.stroke();
+  drawPortal(TOP_PORTAL_X, SHOP_FLOOR - 150, 140, t);
+}
 function drawManager(g, t) { // %#@% sitting in his chair (drawn in the chair's frame), like Mason's picture of him
   g.save(); g.translate(0, 110 + 305*0.5 - 60); drawGlitchMan(g, t, 0.5); g.restore(); // sitting up tall, so his head pokes up above the chair
 }
 function drawShop(t) {
   const hall = SHOP.floor === 5; // the chase hallway scrolls with you
   if (hall) { g.save(); g.translate(-(SHOP.cam || 0), 0); drawChaseFloor(t); }
-  else if (SHOP.floor === 6) drawBreakFloor(t); else if (SHOP.floor === 4) drawOfficeFloor(t); else if (SHOP.floor === 3) drawAtticFloor(t); else if (SHOP.floor === 2) drawFunnyFloor(t); else drawFightyFloor(t);
+  else if (SHOP.floor === 7) drawTopFloor(t); else if (SHOP.floor === 6) drawBreakFloor(t); else if (SHOP.floor === 4) drawOfficeFloor(t); else if (SHOP.floor === 3) drawAtticFloor(t); else if (SHOP.floor === 2) drawFunnyFloor(t); else drawFightyFloor(t);
   // an empty pink stand upstairs, waiting for the next thing to sell (a real item takes its place once there is one)
   if (SHOP.floor === 2) {
     const spot = STAND_SPOTS[2].find(x => !STANDS.some(s => s.floor === 2 && s.x === x));
@@ -4117,7 +4157,13 @@ function shopStairs() {
     shopSay('Whoa! Not up there, sweetie! The 3rd floor is too scary for little ones.', 'jump', 4.5); renderShopCard(true); return;
   }
   SHOP.floor = to; musicUpdate(); Object.assign(SHOP, { x:back.x + (back.x > W/2 ? -110 : 110), y:0, vy:0, facing:back.x > W/2 ? -1 : 1, near:null, nearKeeper:false, nearStairs:false, stairTo:0, echoT:0, visit:null, sparkleHere:false, msgT:0 });
-  if (to === 4 || from === 4) { if (sfx.ding) sfx.ding(); } // the elevator goes ding!
+  const portal = to === 7 || from === 7;
+  if (portal) { if (sfx.zap) sfx.zap(); } else if (to === 4 || from === 4) { if (sfx.ding) sfx.ding(); } // the elevator goes ding! (and the portal goes zzap)
+  if (to === 7) { // you got past the boss!
+    SHOP.bossT = -1; SHOP.youSay = SHOP.revealed ? `I got past ${BOSS_NAME}! ...Where am I?` : 'Whoa... where am I?'; SHOP.youSayT = 3.5;
+    renderShopCard(true); return;
+  }
+  if (from === 7) { SHOP.spinT = 0; SHOP.revealed = false; SHOP.youSay = 'Back in the office... shhh!'; SHOP.youSayT = 2.5; renderShopCard(true); return; } // his chair is facing away again
   if (to === 3) {
     SHOP.eyes = { x:from === 4 ? 560 : 1250, y:from === 4 ? 470 : 420, gone:0, fade:0 }; // coming down the elevator, the eyes are across the room
     SHOP.atticSay = from === 4 ? 'Gerald...? Is that you?' : 'It\'s so dark up here...'; SHOP.atticSayT = 3; renderShopCard(true); return;
@@ -4232,11 +4278,12 @@ function fillShopCard(card, ch, it) {
     const door = to === 6 || SHOP.floor === 6;
     const text = { 2:SHOP.floor === 6 ? 'Go back out to the funny fun shop. (Your break timer will start over!)' : SHOP.floor === 1 ? 'Go up to the 2nd floor: the funny fun shop. Things that don\'t fit down here go up there.' : 'Go back down to the 2nd floor: the funny fun shop.',
       6:'Go into the break room. The shopkeepers take their break in there... the longer you stay, the more stuff they give you!',
-      1:'Go back down to the 1st floor: the fighty shop.', 4:'Ride the elevator up to the manager\'s office. Ding!',
+      1:'Go back down to the 1st floor: the fighty shop.', 4:SHOP.floor === 7 ? `Jump back into the portal. It goes down to the manager's office... careful, ${BOSS_NAME} is in there!` : 'Ride the elevator up to the manager\'s office. Ding!',
+      7:`A swirly purple portal! Jump in before ${BOSS_NAME} starts a boss fight. Where does it go...?`,
       3:SHOP.floor === 4 ? 'Ride the elevator back down to the dark 3rd floor.' : 'Climb up to the 3rd floor. The shopkeepers really don\'t like to talk about it...' }[to];
-    const lift = to === 4 || SHOP.floor === 4;
-    card.innerHTML = `<h3>${door ? 'Break room door' : lift ? 'Elevator' : to === 3 ? 'Ladder' : 'Stairs'}</h3><p>${text}</p><div class="row"></div>`;
-    const b = document.createElement('button'); b.className = 'btn'; b.id = 'shopStairs'; b.textContent = door ? (to === 6 ? 'go in' : 'go out') : lift ? (up ? 'ride up' : 'ride down') : to === 3 ? 'climb up... if you dare' : up ? 'go upstairs' : 'go downstairs';
+    const portal = to === 7 || SHOP.floor === 7, lift = !portal && (to === 4 || SHOP.floor === 4);
+    card.innerHTML = `<h3>${door ? 'Break room door' : portal ? 'Portal' : lift ? 'Elevator' : to === 3 ? 'Ladder' : 'Stairs'}</h3><p>${text}</p><div class="row"></div>`;
+    const b = document.createElement('button'); b.className = 'btn'; b.id = 'shopStairs'; b.textContent = door ? (to === 6 ? 'go in' : 'go out') : portal ? 'jump in' : lift ? (up ? 'ride up' : 'ride down') : to === 3 ? 'climb up... if you dare' : up ? 'go upstairs' : 'go downstairs';
     b.onclick = () => { shopStairs(); cv.focus(); };
     card.querySelector('.row').append(b, Object.assign(document.createElement('span'), { innerHTML:press }));
     return;
@@ -4276,13 +4323,17 @@ function fillShopCard(card, ch, it) {
     card.innerHTML = '<h3>The break room</h3><p>The shopkeepers are on their break! Hang out with them: the longer you stay, the more stuff they give you. Coins come every 15 seconds (more and more the longer you stay), and there are surprise gifts too. The chalkboard shows what\'s next.</p><p class="note">The door on the left goes back to the funny fun shop. If you leave, your break timer starts over.</p>';
     return;
   }
+  if (!it && SHOP.floor === 7) {
+    card.innerHTML = `<h3>The 5th floor...</h3><p>It's pitch black up here, and ${BOSS_NAME}'s red and blue glitch blocks are everywhere. There's a poster on the wall: HAVE YOU SEEN HIM? MISSING. Who is missing...?</p><p class="note">The portal in the middle goes back down to the manager's office.</p>`;
+    return;
+  }
   if (!it && SHOP.floor === 5) {
     card.innerHTML = `<h3>RUN!</h3><p>${BOSS_NAME} is chasing you! Run right and jump into the glitchy rift at the end. Jump over the glitch cubes (he floats right through them). If he catches you, he throws you out!</p>`;
     return;
   }
   if (!it && SHOP.floor === 4) {
-    card.innerHTML = SHOP.revealed ? '<h3>The manager\'s office</h3><p>Fancy! Walk up to the desk to talk to the manager.</p><p class="note">The elevator on the right goes back down.</p>'
-      : '<h3>The manager\'s office</h3><p>Fancy! There\'s a big desk... and a big spinny chair, facing away. Who\'s sitting in it?</p><p class="note">The elevator on the right goes back down.</p>';
+    card.innerHTML = SHOP.revealed ? '<h3>The manager\'s office</h3><p>Fancy! Walk up to the desk to talk to the manager... or run past him to the swirly portal on the left before the boss fight starts!</p><p class="note">The elevator on the right goes back down.</p>'
+      : '<h3>The manager\'s office</h3><p>Fancy! There\'s a big desk... and a big spinny chair, facing away. Who\'s sitting in it?</p><p class="note">The elevator on the right goes back down. And what\'s that swirly thing on the left...?</p>';
     return;
   }
   if (!it && SHOP.floor === 3) {
