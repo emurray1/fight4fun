@@ -627,6 +627,33 @@ const KEEPER2_LINES = [ // she's shy
 ];
 // ...but she isn't shy with Lovely Heart, her friend, or with Angry Triangle once she has opened up to it
 const isFriend = () => { const id = CHARS[SHOP.who].id; return id === 'heart' || (id === 'tri' && !!(shop.friends && shop.friends.tri)); };
+// nobody in the shop has ever seen Missing Arrow before (and they've never noticed the poster up on the 5th floor, either)
+const isNew = () => CHARS[SHOP.who].id === 'arrow';
+const KEEPER_NEW_LINES = [ // the fighty shopkeeper
+  () => 'Um... hello? Who are you? I don\'t think I\'ve ever seen you before.',
+  () => 'Are you new around here? I know everybody, but I don\'t know YOU.',
+  () => 'Missing? Who\'s missing? Nobody told me anybody was missing.',
+  () => 'A poster on the 5th floor? There IS no 5th floor. Hehe... right?',
+  () => 'You kind of look like an arrow. A very lost arrow.',
+  () => 'Why did the arrow go to the shop? It was looking for a point! ...Sorry, I don\'t know you well enough for jokes.',
+  () => 'Well, whoever you are, welcome to the fighty shop! Have a look around.',
+];
+const KEEPER2_NEW_LINES = [ // the shy shopkeeper, who is extra shy with strangers
+  () => 'Eek! W-who are you? I\'ve never seen you before...',
+  () => '*hides behind the counter* ...a-are you new?',
+  () => 'I know all the fighters... but not you. Where did you come from?',
+  () => 'M-missing? I didn\'t know anyone was missing... *gulps*',
+  () => 'You... seem nice. I think. I\'ve never met you, so I don\'t know...',
+  () => '...',
+];
+const BREAK_NEW_LINES = [ // in the break room they take turns, and neither of them knows who you are
+  () => 'Hey, who let you in here? This is the STAFF break room! ...Wait, who are you?',
+  () => 'I-I don\'t know them either... I\'ve never seen them before...',
+  () => 'Are you a new worker? Nobody told me we hired an arrow.',
+  () => 'M-maybe they came from upstairs... no, nobody comes from upstairs...',
+  () => 'Well, you can stay for a cookie, I guess. Mystery arrow.',
+  () => '*whispers* ...do you think they\'re the one from the poster?',
+];
 // both shopkeepers treat Goofy Sparkle like a little kid (and she isn't shy with little kids)
 const isKid = () => CHARS[SHOP.who].id === 'sparkle';
 const KEEPER_KID_LINES = [
@@ -3237,6 +3264,7 @@ function drawFightyFloor(t) { // downstairs: the fighty shop
     if (vs) drawBubble(vs, v.x - 40, 520, v.x - 6);
   }
   const say = SHOP.msgT > 0 ? SHOP.msg : v && v.phase === 'talk' ? 'Haha! That is so funny!' : v && v.phase !== 'climb' ? (isKid() ? 'She loves little kids! She works upstairs.' : isHex() ? 'Haha... we get a bit weird around Hexstar. We like him!' : isFriend() ? 'Aww, she likes you! She works upstairs.' : 'Aww, she is so shy. She works upstairs!')
+    : isNew() && SHOP.msgT <= 0 ? (SHOP.near ? 'Hmm... have I seen you before? No... I don\'t think so.' : SHOP.nearKeeper ? 'Um... who are you? Want to talk? Press punch, I guess.' : SHOP.nearStairs ? 'Wait, who ARE you?' : 'Huh? I\'ve never seen you before... are you new?')
     : isHex() && SHOP.msgT <= 0 ? (SHOP.near ? 'Ooh! That would look... so weird and great on you!' : SHOP.nearKeeper ? 'Hexstar! Talk to me! Or don\'t! Either is fine! Hehe!' : SHOP.nearStairs ? 'Bye Hexstar! I mean, see you! I mean... have fun!' : 'Hexstar! *waves both arms* Hi hi hi!')
     : isKid() && SHOP.msgT <= 0 ? (SHOP.near ? 'Ooh, that might be a bit big for you! Hehe.' : SHOP.nearKeeper ? 'Hi there, little buddy! Want to chat? Press punch!' : SHOP.nearStairs ? 'Careful on the stairs, little one!' : spooky() ? 'Don\'t be scared, little one! The pumpkins are just pretend!' : xmas() ? 'Ho ho ho! Somebody REALLY loves Christmas!' : 'Oh! A little one! Hello there, sweetie!')
     : SHOP.near ? 'Ooh, good choice!' : SHOP.nearKeeper ? 'Hello! Press punch to chat with me.' : SHOP.nearStairs ? 'Those stairs go up to the funny fun shop!' : spooky() ? 'Happy Halloween! Boo! Have a look around!' : xmas() ? 'Ho ho ho! Merry Christmas! Have a look around!' : 'Hi! Have a look around, or come over and talk to me!';
@@ -3315,6 +3343,7 @@ function drawFunnyFloor(t) { // upstairs: the funny fun shop, built like the fig
   const say = SHOP.msgT > 0 ? SHOP.msg
     : SHOP.nearStairs && SHOP.stairTo === 3 ? 'D-don\'t go up there... please...'
     : SHOP.nearStairs && SHOP.stairTo === 6 ? 'That\'s our break room... you can come in. Hehe...'
+    : isNew() ? (SHOP.near ? 'W-who are you? ...that would look nice on you, I guess...' : SHOP.nearKeeper ? 'I-I\'ve never seen you before... d-do you want to talk?' : SHOP.nearStairs ? 'Bye... um... whoever you are...' : 'W-who are you?! I\'ve never seen you before...')
     : hex ? (SHOP.near ? 'Ooh, so cool! Like you!' : SHOP.nearKeeper ? 'Want to talk? I am being weird. Sorry. I like you!' : SHOP.nearStairs ? 'Bye bye, nervous buddy!' : 'H-hexstar! *wiggles* Hi!')
     : kid ? (SHOP.near ? 'Ooh, so cute for a little one!' : SHOP.nearKeeper ? 'Hi little one! Want to talk? Press punch!' : SHOP.nearStairs ? 'Hold the rail going down, okay?' : spooky() ? 'Aww, it\'s okay sweetie, they\'re just decorations! You\'re so brave!' : xmas() ? 'Aww, you\'re so excited, sweetie! Merry Christmas!' : 'Aww, hi sweetie! Come here!')
     : friend ? (SHOP.near ? 'Ooh, that would look so cute on you!' : SHOP.nearKeeper ? `${CHARS[SHOP.who].name}! Want to chat? Press punch!` : SHOP.nearStairs ? 'Aww, leaving already? Come back soon!' : `Hi ${CHARS[SHOP.who].name}! Come say hi!`)
@@ -3428,9 +3457,9 @@ function drawBreakFloor(t) {
     lift:SHOP.keeperLaughT > 0 ? Math.abs(Math.sin(t*18))*8 : 0, wiggle:scared3 ? Math.sin(t*60)*4 : hex ? Math.sin(t*5)*8 : 0 });
   // what they say: one bubble at a time, from whoever is talking
   const talking = SHOP.msgT > 0, shyTalks = talking && SHOP.msgWho === 2;
-  const greyIdle = kid ? 'Shh, little one! It\'s nap time... just kidding, it\'s break time!' : hex ? 'Hexstar is on our break! Best break ever!'
+  const greyIdle = isNew() ? (SHOP.nearKeeper ? 'Who are YOU? Well... press punch if you want to chat.' : 'Huh? Who let you in here? I\'ve never seen you before.') : kid ? 'Shh, little one! It\'s nap time... just kidding, it\'s break time!' : hex ? 'Hexstar is on our break! Best break ever!'
     : SHOP.nearKeeper ? 'Hey! We\'re on break. Press punch to chat!' : 'Ahh, break time. Stay as long as you like!';
-  const shyIdle = Math.abs(SHOP.x - BREAK_SHY) < 220 ? (friend ? `Hi ${CHARS[SHOP.who].name}! Want a cookie?` : '*sips tea* ...h-hi.') : '';
+  const shyIdle = Math.abs(SHOP.x - BREAK_SHY) < 220 ? (isNew() ? '*hides behind her tea* W-who are you...?' : friend ? `Hi ${CHARS[SHOP.who].name}! Want a cookie?` : '*sips tea* ...h-hi.') : '';
   if (shyTalks) drawBubble(SHOP.msg, BREAK_SHY - 40, 520, BREAK_SHY - 6);
   else if (talking) drawBubble(SHOP.msg, gx - 70, 380, gx - 30);
   else if (shyIdle) drawBubble(shyIdle, BREAK_SHY - 40, 520, BREAK_SHY - 6);
@@ -4220,7 +4249,7 @@ function shopTalk() {
     if (opened) { shop.friends = { ...shop.friends, tri:true }; saveShop(); SHOP.talk[2] = -1; }
     SHOP.joke = false; shopSay(TRI_OPENING_LINES[SHOP.triStep](), opened ? 'win' : 'count', 6); renderShopCard(true); return;
   }
-  const lines = f === 6 ? BREAK_LINES : f === 4 ? MANAGER_LINES : isKid() ? (f === 1 ? KEEPER_KID_LINES : KEEPER2_KID_LINES) : isHex() ? (f === 1 ? KEEPER_HEX_LINES : KEEPER2_HEX_LINES)
+  const lines = f === 6 ? (isNew() ? BREAK_NEW_LINES : BREAK_LINES) : f === 4 ? MANAGER_LINES : isNew() ? (f === 1 ? KEEPER_NEW_LINES : KEEPER2_NEW_LINES) : isKid() ? (f === 1 ? KEEPER_KID_LINES : KEEPER2_KID_LINES) : isHex() ? (f === 1 ? KEEPER_HEX_LINES : KEEPER2_HEX_LINES)
     : f === 1 ? KEEPER_LINES : !isFriend() ? KEEPER2_LINES : id === 'tri' ? TRI_FRIEND_LINES : KEEPER2_FRIEND_LINES;
   const text = lines[(SHOP.talk[f] = (SHOP.talk[f] + 1) % lines.length)]();
   SHOP.joke = /why did/i.test(text); // after a joke you can laugh at it
@@ -4312,7 +4341,7 @@ function shopStairs() {
   if (from === 3) { shopSay('Y-you went up there?! Are you okay?!', 'jump', 4); renderShopCard(true); return; }
   if (to === 6) { // the break timer starts now
     SHOP.brk = { t:0, next:BREAK_EVERY, pop:'', popT:0 };
-    shopSay(isKid() ? 'Oh! A little visitor in the break room! Come sit with us, sweetie!' : `Oh, hi ${CHARS[SHOP.who].name}! We're on our break. Stay a while... we might have treats!`, 'jump', 5);
+    shopSay(isNew() ? 'Oh! Um... hi? Who are you? We\'ve never seen you before...' : isKid() ? 'Oh! A little visitor in the break room! Come sit with us, sweetie!' : `Oh, hi ${CHARS[SHOP.who].name}! We're on our break. Stay a while... we might have treats!`, 'jump', 5);
     renderShopCard(true); return;
   }
   if (from === 6) { SHOP.brk = null; shopSay('Did you have a nice break? Hehe... come back soon.', 'jump'); renderShopCard(true); return; }
@@ -4323,8 +4352,8 @@ function shopStairs() {
     if (SHOP.sparkleHere) { SHOP.foundReply = true; SHOP.msgT = 0; if (sfx.win) sfx.win(); } else shopSay('Um... Goofy Sparkle isn\'t up here right now... sorry.', 'jump', 4);
     renderShopCard(true); return;
   }
-  shopSay(SHOP.floor === 1 ? (isKid() ? 'Welcome back, little one! Careful on those stairs!' : 'Welcome back to the fighty shop!')
-    : isKid() ? 'Aww, a little one came upstairs! Hi sweetie!' : isHex() ? 'H-hexstar came upstairs! *wiggles* Hi! I like you!' : isFriend() ? `${CHARS[SHOP.who].name}! Hi hi! I am so happy you came up!` : 'Oh! Someone came upstairs... h-hi.', 'jump');
+  shopSay(SHOP.floor === 1 ? (isNew() ? 'Oh, hello... um, who are you again? I don\'t think we\'ve met.' : isKid() ? 'Welcome back, little one! Careful on those stairs!' : 'Welcome back to the fighty shop!')
+    : isNew() ? 'Eek! A s-stranger! I\'ve never seen you before...' : isKid() ? 'Aww, a little one came upstairs! Hi sweetie!' : isHex() ? 'H-hexstar came upstairs! *wiggles* Hi! I like you!' : isFriend() ? `${CHARS[SHOP.who].name}! Hi hi! I am so happy you came up!` : 'Oh! Someone came upstairs... h-hi.', 'jump');
   renderShopCard(true);
 }
 function shopAct(id) {
