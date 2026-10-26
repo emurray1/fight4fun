@@ -603,7 +603,7 @@ const LADDER_X = 1480, ATTIC_STAIRS_X = 220, ELEVATOR_X = 1480;
 // (floor 7 in the code, since 5 is the chase and 6 is the break room)
 const TOP_PORTAL_X = 800; // there is no portal in the office: you walk off its left edge, and the 5th floor (with its big portal) is the next screen
 // the 5th floor's portal leads to the cage room (floor 8): Missing Arrow is locked in a cage, and you play Pop the Lock to free him
-const CAGE_X = 200, CAGE_PORTAL_X = 1263, LOCK_POPS = 12, LOCK_SPEED = 2.0, LOCK_SPEEDUP = 0.14, LOCK_WIN = 0.19; // pops needed, how fast the needle spins (and speeds up), how close counts
+const CAGE_X = 200, CAGE_PORTAL_X = 1263, LOCK_POPS = 12, LOCK_SPEED = 2.0, LOCK_SPEEDUP = 0.14, LOCK_WIN = 0.28; // pops needed, how fast the needle spins (and speeds up), how close counts
 const STAIRS = [{ floor:1, x:STAIRS_X[1], to:2 }, { floor:2, x:STAIRS_X[2], to:1 }, { floor:2, x:LADDER_X, to:3 }, { floor:3, x:ATTIC_STAIRS_X, to:2 },
   { floor:3, x:ELEVATOR_X, to:4 }, { floor:4, x:ELEVATOR_X, to:3 }, { floor:2, x:BREAK_DOOR_X, to:6 }, { floor:6, x:BREAK_DOOR_X, to:2 },
   { floor:7, x:TOP_PORTAL_X, to:8 }, { floor:8, x:CAGE_PORTAL_X, to:1 }];
@@ -3928,7 +3928,7 @@ function drawLockGame(L, t) { // the big Pop the Lock screen: the needle, the ye
   g.strokeStyle = '#555568'; g.lineWidth = 34; g.beginPath(); g.arc(0, 0, R - 20, 0, TAU); g.stroke(); // the track
   if (L.playing) {
     const pulse = 1 + Math.sin(t*10)*0.12;
-    g.fillStyle = C.yellow; g.strokeStyle = C.ink; g.lineWidth = 4; g.beginPath(); g.arc(Math.cos(L.dot)*(R - 20), Math.sin(L.dot)*(R - 20), 16*pulse, 0, TAU); g.fill(); g.stroke();
+    g.fillStyle = C.yellow; g.strokeStyle = C.ink; g.lineWidth = 4; g.beginPath(); g.arc(Math.cos(L.dot)*(R - 20), Math.sin(L.dot)*(R - 20), 25*pulse, 0, TAU); g.fill(); g.stroke();
     g.strokeStyle = '#ff3b3b'; g.lineWidth = 12; g.lineCap = 'round'; g.beginPath(); g.moveTo(Math.cos(L.ang)*(R - 44), Math.sin(L.ang)*(R - 44)); g.lineTo(Math.cos(L.ang)*(R + 4), Math.sin(L.ang)*(R + 4)); g.stroke();
   }
   g.fillStyle = C.white; g.font = `110px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(String(L.left), 0, 6);
