@@ -597,10 +597,10 @@ const BREAK_DOOR_X = 110;
 const LADDER_X = 1480, ATTIC_STAIRS_X = 220, ELEVATOR_X = 1480;
 // behind the manager's desk there's a swirly portal: run past him before the boss fight starts and jump in, and it takes you up to the 5th floor
 // (floor 7 in the code, since 5 is the chase and 6 is the break room)
-const OFFICE_PORTAL_X = 140, TOP_PORTAL_X = 800, PORTAL_SHOW_X = 330; // the office portal is hidden until you walk left of PORTAL_SHOW_X
+const TOP_PORTAL_X = 800; // there is no portal in the office: you walk off its left edge, and the 5th floor (with its big portal) is the next screen
 const STAIRS = [{ floor:1, x:STAIRS_X[1], to:2 }, { floor:2, x:STAIRS_X[2], to:1 }, { floor:2, x:LADDER_X, to:3 }, { floor:3, x:ATTIC_STAIRS_X, to:2 },
   { floor:3, x:ELEVATOR_X, to:4 }, { floor:4, x:ELEVATOR_X, to:3 }, { floor:2, x:BREAK_DOOR_X, to:6 }, { floor:6, x:BREAK_DOOR_X, to:2 },
-  { floor:4, x:OFFICE_PORTAL_X, to:7 }, { floor:7, x:TOP_PORTAL_X, to:4 }];
+  { floor:7, x:TOP_PORTAL_X, to:4 }];
 const STAND_SPOTS = { 1:[390, 610, 830], 2:[530], 3:[800] };
 const SKIN_X = 830; // the skins booth on the 2nd floor (a big mirror)
 const STANDS = (() => { // items fill the 1st floor, then the 2nd; an item can also ask for a floor of its own
@@ -3052,9 +3052,7 @@ function shopStep(dt) {
   let nx = Math.max(SHOP.floor === 4 && !SHOP.chase ? 0 : 70, Math.min(hall ? CHASE_LEN - 60 : W - 70, SHOP.x + (frozen ? 0 : h.x)*430*ch.speed*dt));
   if (hall) nx = chaseBlock(SHOP.x, nx);
   SHOP.x = nx; if (h.x) SHOP.facing = h.x;
-  if (SHOP.floor === 4 && !SHOP.chase) { // the secret portal appears when you get to the far left end of the office, and walking off the edge takes you through it
-    const seen = SHOP.x < PORTAL_SHOW_X;
-    if (seen && !SHOP.portalSeen) { SHOP.portalSeen = true; if (sfx.zap) sfx.zap(); SHOP.youSay = 'Whoa! A portal!'; SHOP.youSayT = 2; }
+  if (SHOP.floor === 4 && !SHOP.chase) { // walk off the far left edge of the office to get to the secret 5th floor
     if (SHOP.x <= 15) { SHOP.stairTo = 7; shopStairs(); return; }
   }
   const groundY = hall && onCrate(SHOP.x) ? -CRATE_H : 0;
@@ -3750,8 +3748,6 @@ function drawOfficeFloor(t) {
   g.fillStyle = '#2f7a2f'; for (let i=0;i<5;i++) { g.save(); g.translate(680, 650); g.rotate(-1 + i*0.5 + Math.sin(t + i)*0.04); g.beginPath(); g.ellipse(0, -55, 16, 55, 0, 0, TAU); g.fill(); g.restore(); }
   g.fillStyle = '#b5543a'; g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.moveTo(650, 650); g.lineTo(710, 650); g.lineTo(700, SHOP_FLOOR); g.lineTo(660, SHOP_FLOOR); g.closePath(); g.fill(); g.stroke();
   drawElevator(ELEVATOR_X, '3rd floor ↓', t);
-  const pa = SHOP.chase ? 0 : Math.max(0, Math.min(1, (PORTAL_SHOW_X + 60 - SHOP.x)/140)); // the secret portal fades in as you walk to the far left end
-  if (pa > 0) { g.save(); g.globalAlpha = pa; g.translate(OFFICE_PORTAL_X, SHOP_FLOOR - 80); g.scale(pa, pa); drawPortal(0, 0, 70, t); g.restore(); g.globalAlpha = 1; }
   // the big spinny chair, and the manager in it once it has spun around
   const mx = KEEPERS[4], spin = SHOP.revealed ? 1 : Math.min(1, (SHOP.spinT || 0)/0.9), facingYou = spin > 0.5;
   g.save(); g.translate(mx, 520); g.scale(Math.max(0.08, Math.abs(Math.cos(spin*Math.PI))), 1); // squashes thin as it turns
@@ -4162,19 +4158,20 @@ function shopStairs() {
     Object.assign(SHOP, { carry:true, carryT:0, x:LADDER_X, facing:-1 });
     shopSay('Whoa! Not up there, sweetie! The 3rd floor is too scary for little ones.', 'jump', 4.5); renderShopCard(true); return;
   }
-  SHOP.floor = to; musicUpdate(); Object.assign(SHOP, { x:back.x + (back.x > W/2 ? -110 : 110), y:0, vy:0, facing:back.x > W/2 ? -1 : 1, near:null, nearKeeper:false, nearStairs:false, stairTo:0, echoT:0, visit:null, sparkleHere:false, msgT:0 });
+  const bx = back ? back.x : -40; // coming back from the 5th floor, you walk in from the left edge of the office
+  SHOP.floor = to; musicUpdate(); Object.assign(SHOP, { x:bx + (bx > W/2 ? -110 : 110), y:0, vy:0, facing:bx > W/2 ? -1 : 1, near:null, nearKeeper:false, nearStairs:false, stairTo:0, echoT:0, visit:null, sparkleHere:false, msgT:0 });
   const portal = to === 7 || from === 7;
   if (portal) { if (sfx.zap) sfx.zap(); } else if (to === 4 || from === 4) { if (sfx.ding) sfx.ding(); } // the elevator goes ding! (and the portal goes zzap)
   if (to === 7) { // you got past the boss!
     SHOP.bossT = -1; SHOP.youSay = SHOP.revealed ? `I got past ${BOSS_NAME}! ...Where am I?` : 'Whoa... where am I?'; SHOP.youSayT = 3.5;
     renderShopCard(true); return;
   }
-  if (from === 7) { SHOP.spinT = 0; SHOP.revealed = false; SHOP.portalSeen = true; SHOP.youSay = 'Back in the office... shhh!'; SHOP.youSayT = 2.5; renderShopCard(true); return; } // his chair is facing away again
+  if (from === 7) { SHOP.spinT = 0; SHOP.revealed = false; SHOP.youSay = 'Back in the office... shhh!'; SHOP.youSayT = 2.5; renderShopCard(true); return; } // his chair is facing away again
   if (to === 3) {
     SHOP.eyes = { x:from === 4 ? 560 : 1250, y:from === 4 ? 470 : 420, gone:0, fade:0 }; // coming down the elevator, the eyes are across the room
     SHOP.atticSay = from === 4 ? 'Gerald...? Is that you?' : 'It\'s so dark up here...'; SHOP.atticSayT = 3; renderShopCard(true); return;
   }
-  if (to === 4) { if (!SHOP.chase) { SHOP.spinT = 0; SHOP.revealed = false; } SHOP.portalSeen = false; renderShopCard(true); return; } // the manager's chair faces away until you get close
+  if (to === 4) { if (!SHOP.chase) { SHOP.spinT = 0; SHOP.revealed = false; } renderShopCard(true); return; } // the manager's chair faces away until you get close
   if (from === 3) { shopSay('Y-you went up there?! Are you okay?!', 'jump', 4); renderShopCard(true); return; }
   if (to === 6) { // the break timer starts now
     SHOP.brk = { t:0, next:BREAK_EVERY, pop:'', popT:0 };
@@ -4285,7 +4282,6 @@ function fillShopCard(card, ch, it) {
     const text = { 2:SHOP.floor === 6 ? 'Go back out to the funny fun shop. (Your break timer will start over!)' : SHOP.floor === 1 ? 'Go up to the 2nd floor: the funny fun shop. Things that don\'t fit down here go up there.' : 'Go back down to the 2nd floor: the funny fun shop.',
       6:'Go into the break room. The shopkeepers take their break in there... the longer you stay, the more stuff they give you!',
       1:'Go back down to the 1st floor: the fighty shop.', 4:SHOP.floor === 7 ? `Jump back into the portal. It goes down to the manager's office... careful, ${BOSS_NAME} is in there!` : 'Ride the elevator up to the manager\'s office. Ding!',
-      7:`A swirly purple portal! Jump in before ${BOSS_NAME} starts a boss fight. Where does it go...?`,
       3:SHOP.floor === 4 ? 'Ride the elevator back down to the dark 3rd floor.' : 'Climb up to the 3rd floor. The shopkeepers really don\'t like to talk about it...' }[to];
     const portal = to === 7 || SHOP.floor === 7, lift = !portal && (to === 4 || SHOP.floor === 4);
     card.innerHTML = `<h3>${door ? 'Break room door' : portal ? 'Portal' : lift ? 'Elevator' : to === 3 ? 'Ladder' : 'Stairs'}</h3><p>${text}</p><div class="row"></div>`;
@@ -4338,8 +4334,8 @@ function fillShopCard(card, ch, it) {
     return;
   }
   if (!it && SHOP.floor === 4) {
-    card.innerHTML = SHOP.revealed ? '<h3>The manager\'s office</h3><p>Fancy! Walk up to the desk to talk to the manager... or run past him, all the way to the far left end of the room, before the boss fight starts!</p><p class="note">The elevator on the right goes back down.</p>'
-      : '<h3>The manager\'s office</h3><p>Fancy! There\'s a big desk... and a big spinny chair, facing away. Who\'s sitting in it?</p><p class="note">The elevator on the right goes back down. Psst... what\'s at the far left end of the room?</p>';
+    card.innerHTML = SHOP.revealed ? '<h3>The manager\'s office</h3><p>Fancy! Walk up to the desk to talk to the manager... or run past him and keep going, right off the left edge of the room, before the boss fight starts!</p><p class="note">The elevator on the right goes back down.</p>'
+      : '<h3>The manager\'s office</h3><p>Fancy! There\'s a big desk... and a big spinny chair, facing away. Who\'s sitting in it?</p><p class="note">The elevator on the right goes back down. Psst... what\'s past the left edge of the room?</p>';
     return;
   }
   if (!it && SHOP.floor === 3) {
