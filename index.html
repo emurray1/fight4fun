@@ -259,6 +259,7 @@ html.xmas .fff span{border-color:#1b7a34;color:#c8102e}
         <p>Knock everyone off Cloud Island into the water. The last fighter still on the island wins the round. Win enough rounds and you win the whole fight and get the crown.</p>
         <p><b>Team vs team:</b> pick "Team vs team" for the game mode, then put each fighter on the Red team or the Blue team. You can't punch or grab your own teammates. A team wins the round when everyone on the other team is in the water.</p>
         <p><b>Racing:</b> pick "Racing" for the game mode and everyone drives a kart 3 laps around a race track. Pick the Grand Prix, or the Space Race, where you drive on roads between planets (don't fall off into space!). Hold jump to go, down to brake, and steer with left and right. Items lie at random spots all around the road in glowing yellow rings, so you can see what you'll get. Drive over one to pick it up (you can hold one at a time), then press punch to use it: a speed boost, a banana peel to drop behind you, a green bouncy shell, or a red chaser shell that flies at whoever is just ahead of you. Stay on the road, because the grass slows you right down. The first one over the finish line wins.</p>
+        <p><b>Horror:</b> a monster is looking for you in a dark, spooky house! Move all around with left, right, up (jump) and down. Press punch next to a bed, closet, box or other furniture to hide in it, and press it again to come out. The monster sees in a cone in front of it (yellow, or red when it's chasing someone), and your heart beats faster when it's close. Don't let it see you hide, or it will come and pull you out! You can't stay hidden forever, either: you get more and more scared until you jump out screaming. Survive for 60 seconds and you win. Racing and Horror work online too.</p>
       </section>
       <section>
         <h3>A fight, step by step</h3>
@@ -524,8 +525,8 @@ const CONTROLS = [
 ];
 const CTRL = Object.fromEntries(CONTROLS.map(c => [c.id, c]));
 const TEAMS = [{ name:'Red team', color:'#ed1c24', dark:'#880015' }, { name:'Blue team', color:'#3f48cc', dark:'#1d2370' }];
-const MODES = [['ffa','Free for all'],['teams','Team vs team'],['race','Racing']];
-const NET_MODES = MODES.filter(m => m[0] !== 'race'); // racing is only on one computer for now
+const MODES = [['ffa','Free for all'],['teams','Team vs team'],['race','Racing'],['horror','Horror']];
+const LOCAL_MODES = ['race', 'horror']; // modes with their own maps (and their own online snapshots)
 const MAPLIST = [['cloud','Cloud Island'],['snow','Snowy Hills'],['road','Roadside Fights'],['lava','Lava Rocks']];
 const allies = (a, b) => G.mode === 'teams' && a.team === b.team;
 const DIFF = { easy:{ punch:0.3, cd:0.9, mash:0.06, label:'Easy' }, normal:{ punch:0.55, cd:0.55, mash:0.13, label:'Normal' }, hard:{ punch:0.85, cd:0.36, mash:0.25, label:'Hard' } };
@@ -1034,6 +1035,10 @@ const sfx = {
   zap(){ tone(1800, 200, 0.12, 'square', 0.08); tone(300, 1500, 0.1, 'sawtooth', 0.06, 0.08); },
   beep(){ tone(880, 880, 0.09, 'square', 0.05); tone(660, 660, 0.09, 'square', 0.05, 0.14); tone(990, 700, 0.14, 'square', 0.05, 0.28); },
   car(){ tone(90,70,0.9,'sawtooth',0.07); },
+  growl(){ tone(80,55,0.9,'sawtooth',0.14); tone(120,70,0.7,'square',0.05,0.05); noise(0.8,300,0.12); },
+  scream(){ tone(500,1500,0.45,'sawtooth',0.07); tone(700,1800,0.4,'square',0.04,0.05); },
+  thump(){ tone(70,45,0.12,'sine',0.3); },
+  thunder(){ noise(1.6,350,0.4); tone(55,35,1.2,'sawtooth',0.06); },
 };
 
 
@@ -1253,7 +1258,7 @@ function makeFighter(ch, control, x, idx) {
 function startMatch() {
   G.boss = false;
   G.wins = {}; G.round = 0; G.rounds = setup.rounds; G.online = null; MAP = MAPS[setup.map] || MAPS.cloud; G.mode = setup.mode; G.lineup = CHARS.filter(c => setup.slots[c.id] !== 'off').map(c => ({ ch:c, control:setup.slots[c.id], team:setup.teams[c.id] || 0 }));
-  G.state = 'fight'; G.paused = false; showScreen(null); cv.focus(); if (G.mode === 'race') startRace(); else startRound();
+  G.state = 'fight'; G.paused = false; showScreen(null); cv.focus(); if (G.mode === 'race') startRace(); else if (G.mode === 'horror') startHorror(); else startRound();
 }
 function startBossFight() { // you (shopping as your fighter) against %#@%, one round on Cloud Island
   G.boss = true; G.wins = {}; G.round = 0; G.rounds = 1; G.online = null; MAP = MAPS.cloud; G.mode = 'ffa';
@@ -1841,8 +1846,7 @@ function step() {
     if (pos.y > WATER + 30 || pos.x < -260 || pos.x > W + 260) eliminate(p);
   }
   const alive = G.fighters.filter(f => f.alive);
-  G.netTick = (G.netTick || 0) + 1;
-  if (G.online === 'host' && G.netTick % 2 === 0) netBroadcast(snapshot());
+  hostSync();
   const teamsLeft = new Set(alive.map(f => f.team));
   if (G.phase === 'fight' && (G.mode === 'teams' ? teamsLeft.size <= 1 : alive.length <= 1)) {
     G.phase = 'roundEnd'; G.timer = 1.1;
@@ -1921,9 +1925,9 @@ const RACE_DECOR = (() => {
 const ITEM_KINDS = ['boost', 'banana', 'shell', 'chaser'];
 const ITEM_NAMES = { boost:'Speed boost!', banana:'Banana peel!', shell:'Bouncy shell!', chaser:'Chaser shell!' };
 
-function makeKart(l, i) {
-  const row = Math.floor(i/3), col = i % 3, s = -45 - row*80 - col*26, at = trackAt(s, (col - 1)*50); // three across on the start grid, a little staggered, behind the line
-  return { ch:l.ch, control:l.control, idx:i, team:0, tag:l.tag || (l.control === 'cpu' ? 'CPU' : CTRL[l.control].tag), alive:true, r:22,
+function makeKart(l, slot, idx = slot) { // slot is the place on the start grid
+  const row = Math.floor(slot/3), col = slot % 3, s = -45 - row*80 - col*26, at = trackAt(s, (col - 1)*50); // three across on the start grid, a little staggered, behind the line
+  return { ch:l.ch, control:l.control, idx, team:0, tag:l.tag || (l.control === 'cpu' ? 'CPU' : CTRL[l.control].tag), alive:true, r:22,
     x:at.x, y:at.y, a:at.a, vx:0, vy:0, speed:0, seg:trackNear(at.x, at.y).i, prog:s, lap:0, off:false, done:false, place:0, time:0,
     item:null, boostT:0, spinT:0, spin:0, fallT:0, bumpT:0, wrongT:0, bob:0, prevHeld:null,
     ai:{ lane:rand(-30, 30), think:rand(1, 2), cd:rand(0.8, 2) } };
@@ -1931,8 +1935,8 @@ function makeKart(l, i) {
 function startRace() {
   G.round = 1; G.time = 0; G.engine = null; G.clouds = []; G.hazards = []; G.waves = [];
   TRACK = (RACE_TRACKS[setup.track] || RACE_TRACKS.gp).built;
-  const grid = [...G.lineup].sort(() => Math.random() - 0.5);
-  G.fighters = grid.map((l, i) => makeKart(l, i));
+  const slots = G.lineup.map((_, i) => i).sort(() => Math.random() - 0.5); // a random start grid, but the karts stay in lineup order so online players match up
+  G.fighters = G.lineup.map((l, i) => makeKart(l, slots[i], i));
   G.race = { boxes:[], things:[], finished:0, endT:-1, order:[...G.fighters] };
   for (let i=0;i<RACE_ITEMS;i++) G.race.boxes.push(placeItem({ t:0 }));
   ev('clear'); G.banner = null; G.phase = 'countdown'; G.timer = 3; G.lastCount = 4; G.goT = 0; G.champ = null;
@@ -2012,19 +2016,23 @@ function kartAI(k) {
   }
   return inp;
 }
-function raceStep() {
-  G.time += DT;
-  const R = G.race, live = G.phase !== 'countdown';
+function countdownTick() { // 3, 2, 1, GO! for racing and horror. True once the game has started
+  const live = G.phase !== 'countdown';
   if (G.phase === 'countdown') {
     G.timer -= DT; const c = Math.ceil(G.timer);
     if (c !== G.lastCount && c > 0) { G.lastCount = c; ev('sfx','count'); }
     if (G.timer <= 0) { G.phase = 'fight'; G.goT = 0.9; ev('sfx','go'); }
   }
   G.goT = Math.max(0, G.goT - DT);
+  return live;
+}
+function raceStep() {
+  G.time += DT; hostSync();
+  const R = G.race, live = countdownTick();
   for (const k of G.fighters) {
     let inp = BLANK;
     if (k.control === 'cpu') { if (live) inp = kartAI(k); }
-    else { const hi = humanInput(k); if (live) inp = k.done ? kartAI(k) : hi; } // after you finish, the computer drives you round
+    else { const hi = k.control.startsWith('net:') ? netInput(k) : humanInput(k); if (live) inp = k.done ? kartAI(k) : hi; } // after you finish, the computer drives you round
     driveKart(k, inp);
   }
   // karts bump each other (heavy fighters push light ones more)
@@ -2192,7 +2200,7 @@ function drawKart(k, t) {
   g.fillStyle = 'rgba(255,255,255,.45)'; roundRect(14, -10, 9, 20, 4); g.fill(); // the front bumper
   g.restore();
   g.translate(0, -14 + Math.sin(k.bob)*1.5);
-  drawCharacter(g, k.ch, 19, { facing:Math.cos(ang) >= 0 ? 1 : -1, ko:k.spinT > 0, ...looks(k.ch) });
+  drawCharacter(g, k.ch, 19, { facing:Math.cos(ang) >= 0 ? 1 : -1, ko:k.spinT > 0, ...(G.online ? {} : looks(k.ch)) });
   g.restore();
   if (k.fallT > 0) return;
   const top = k.y - 14 - TOPS[k.ch.shape]*19 - 12;
@@ -2235,6 +2243,333 @@ function drawRace(t, dt) {
   for (const th of R.things) drawItemIcon(th.kind, th.x, th.y, th.kind === 'banana' ? 1 : 1.15, th.kind === 'banana' ? 0 : t);
   for (const k of [...G.fighters].sort((a, b) => a.y - b.y)) drawKart(k, t);
   drawParticles(G.paused ? 0 : dt); drawRaceHUD(t); drawOverlayText();
+}
+
+// ---------- horror: a monster looks for you in a dark house. Run, hide, and survive until morning! ----------
+const SURVIVE_TIME = 60, FEAR_MAX = 10, MONSTER_WAIT = 5; // seconds to survive, longest you can stay hidden, head start before the monster comes out
+const MON = { patrol:135, chase:240, half:0.65, range:420, hear:90 }; // the monster's speeds, how wide and far it sees, and how close it hears you
+const DIRS8 = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+function rectDist(x, y, w) { const cx = Math.max(w.x, Math.min(w.x + w.w, x)), cy = Math.max(w.y, Math.min(w.y + w.h, y)); return Math.hypot(x - cx, y - cy); }
+function segEnter(x1, y1, x2, y2, w) { // how far along the line (0 to 1) it hits the wall, or -1 if it misses
+  let t0 = 0, t1 = 1; const dx = x2 - x1, dy = y2 - y1;
+  for (const [p, q] of [[-dx, x1 - w.x], [dx, w.x + w.w - x1], [-dy, y1 - w.y], [dy, w.y + w.h - y1]]) {
+    if (p === 0) { if (q < 0) return -1; continue; }
+    const r = q/p;
+    if (p < 0) { if (r > t1) return -1; if (r > t0) t0 = r; } else { if (r < t0) return -1; if (r < t1) t1 = r; }
+  }
+  return t0;
+}
+const HOUSE = (() => { // six rooms with doorways between them
+  const walls = [
+    { x:40, y:110, w:1520, h:20 }, { x:40, y:860, w:1520, h:20 }, { x:40, y:110, w:20, h:770 }, { x:1540, y:110, w:20, h:770 },
+    { x:550, y:130, w:20, h:130 }, { x:550, y:360, w:20, h:280 }, { x:550, y:740, w:20, h:120 },
+    { x:1050, y:130, w:20, h:100 }, { x:1050, y:330, w:20, h:270 }, { x:1050, y:700, w:20, h:160 },
+    { x:60, y:480, w:160, h:20 }, { x:320, y:480, w:230, h:20 }, { x:570, y:480, w:190, h:20 }, { x:860, y:480, w:190, h:20 }, { x:1070, y:480, w:180, h:20 }, { x:1350, y:480, w:190, h:20 },
+  ];
+  const rooms = [
+    { x:60, y:130, w:490, h:350, floor:'#57405c' }, { x:60, y:500, w:490, h:360, floor:'#44444f', tiles:true }, { x:570, y:130, w:480, h:350, floor:'#664632' },
+    { x:570, y:500, w:480, h:360, floor:'#58402f' }, { x:1070, y:130, w:470, h:350, floor:'#3d4838' }, { x:1070, y:500, w:470, h:360, floor:'#3a5058', tiles:true },
+  ];
+  const spots = [ // places to hide
+    { kind:'bed', x:180, y:230, w:130, h:90 }, { kind:'closet', x:470, y:168, w:90, h:44 }, { kind:'cupboard', x:115, y:812, w:80, h:52 }, { kind:'fridge', x:500, y:552, w:54, h:64 },
+    { kind:'couch', x:810, y:190, w:150, h:56 }, { kind:'box', x:630, y:420, w:56, h:56 }, { kind:'table', x:740, y:690, w:120, h:76 }, { kind:'barrel', x:1000, y:815, w:56, h:56 },
+    { kind:'shelf', x:1300, y:162, w:170, h:36 }, { kind:'chest', x:1480, y:420, w:76, h:46 }, { kind:'tub', x:1430, y:810, w:130, h:62 }, { kind:'box', x:1130, y:560, w:56, h:56 },
+  ];
+  const CELL = 20, GW = W/CELL, GH = H/CELL, free = new Uint8Array(GW*GH); // a grid of where the monster fits, for finding its way around the walls
+  for (let j=0;j<GH;j++) for (let i=0;i<GW;i++) { const cx = i*CELL + CELL/2, cy = j*CELL + CELL/2; free[j*GW + i] = cx > 60 && cx < 1540 && cy > 130 && cy < 860 && walls.every(w => rectDist(cx, cy, w) > 26) ? 1 : 0; }
+  return { walls, rooms, spots, CELL, GW, GH, free, lair:{ x:1490, y:700 },
+    waypoints:[[300,300],[300,680],[810,330],[810,620],[1300,300],[1300,680]], candles:[[95,160],[1505,160],[600,830],[1505,530],[95,530],[1020,160]],
+    spawns:[[300,380],[800,350],[300,620],[820,610],[420,380],[680,350],[420,640],[940,610],[200,400]] };
+})();
+const clearLine = (x1, y1, x2, y2) => HOUSE.walls.every(w => segEnter(x1, y1, x2, y2, w) < 0);
+function pushOut(o, r) { for (const w of HOUSE.walls) { const cx = Math.max(w.x, Math.min(w.x + w.w, o.x)), cy = Math.max(w.y, Math.min(w.y + w.h, o.y)), dx = o.x - cx, dy = o.y - cy, d = Math.hypot(dx, dy); if (d < r && d > 0) { o.x += dx/d*(r - d); o.y += dy/d*(r - d); } } }
+function cellOf(x, y) {
+  const { GW, GH, CELL, free } = HOUSE, i = Math.max(0, Math.min(GW - 1, Math.floor(x/CELL))), j = Math.max(0, Math.min(GH - 1, Math.floor(y/CELL)));
+  if (free[j*GW + i]) return j*GW + i;
+  for (let r=1;r<6;r++) for (let dj=-r;dj<=r;dj++) for (let di=-r;di<=r;di++) { const a = i + di, b = j + dj; if (a >= 0 && b >= 0 && a < GW && b < GH && free[b*GW + a]) return b*GW + a; }
+  return j*GW + i;
+}
+function findPath(x1, y1, x2, y2) { // the way around the walls, as a list of points
+  const { GW, GH, CELL, free } = HOUSE, s = cellOf(x1, y1), e = cellOf(x2, y2), prev = new Int32Array(GW*GH).fill(-1), q = [s]; prev[s] = s;
+  for (let h=0;h<q.length;h++) {
+    const c = q[h]; if (c === e) break;
+    const i = c % GW, j = (c - i)/GW;
+    for (const [di, dj] of DIRS8) {
+      const a = i + di, b = j + dj; if (a < 0 || b < 0 || a >= GW || b >= GH) continue;
+      const n = b*GW + a; if (!free[n] || prev[n] >= 0 || (di && dj && (!free[j*GW + a] || !free[b*GW + i]))) continue;
+      prev[n] = c; q.push(n);
+    }
+  }
+  if (prev[e] < 0) return [];
+  const out = []; for (let c = e; c !== s; c = prev[c]) out.push({ x:(c % GW)*CELL + CELL/2, y:Math.floor(c/GW)*CELL + CELL/2 });
+  return out.reverse();
+}
+function walkPath(o, path) { // which way to go to follow a path (cutting corners when the way is clear)
+  while (path.length && Math.hypot(path[0].x - o.x, path[0].y - o.y) < 14) path.shift();
+  if (!path.length) return null;
+  for (let k = Math.min(5, path.length - 1); k > 0; k--) if (clearLine(o.x, o.y, path[k].x, path[k].y)) { path.splice(0, k); break; }
+  const dx = path[0].x - o.x, dy = path[0].y - o.y, d = Math.hypot(dx, dy) || 1;
+  return { x:dx/d, y:dy/d };
+}
+function monsterSees(m, p, evenHidden) {
+  if (p.caught || (p.hidden && !evenHidden)) return false;
+  const dx = p.x - m.x, dy = p.y - m.y, d = Math.hypot(dx, dy);
+  if (d > MON.range || (d > MON.hear && Math.abs(wrap(Math.atan2(dy, dx) - m.a)) > MON.half)) return false;
+  return clearLine(m.x, m.y, p.x, p.y);
+}
+function startHorror() {
+  G.round = 1; G.time = 0; G.engine = null; G.clouds = []; G.hazards = []; G.waves = [];
+  const spawns = [...HOUSE.spawns].sort(() => Math.random() - 0.5);
+  G.fighters = G.lineup.map((l, i) => ({ ch:l.ch, control:l.control, idx:i, team:0, tag:l.tag || (l.control === 'cpu' ? 'CPU' : CTRL[l.control].tag), alive:true, caught:false, r:22,
+    x:spawns[i % spawns.length][0], y:spawns[i % spawns.length][1], facing:1, walk:0, hidden:null, fear:0, noHideT:0, prevHeld:null, ai:{ path:[], repath:rand(0.2, 1), spot:null, last:null } }));
+  const L = HOUSE.lair;
+  G.horror = { left:SURVIVE_TIME, spots:HOUSE.spots.map(s => ({ ...s, who:null })), flash:0, nextFlash:rand(8, 14), beatT:0,
+    monster:{ x:L.x, y:L.y, r:30, a:Math.PI, state:'wait', waitT:MONSTER_WAIT, path:[], repath:0, target:null, spot:null, lastSeen:null, lostT:0, searchT:0, checkT:2, walk:0 } };
+  ev('clear'); G.banner = null; G.phase = 'countdown'; G.timer = 3; G.lastCount = 4; G.goT = 0; G.champ = null;
+}
+function leaveSpot(p, scared) {
+  const s = p.hidden; if (!s) return;
+  s.who = null; p.hidden = null; p.x = p.fromX; p.y = p.fromY; p.ai.last = s; p.ai.path = []; p.ai.repath = 0;
+  p.noHideT = scared ? 3 : 0.6;
+  if (scared) { ev('pop', p.x, p.y - 50, 'AAAH!', C.yellow); ev('sfx','scream'); }
+}
+function catchSurvivor(p) {
+  const m = G.horror.monster;
+  leaveSpot(p); p.caught = true; p.alive = false;
+  ev('pop', p.x, p.y - 50, 'CAUGHT!', C.red); ev('sfx','scream'); ev('shake', 12); ev('burst', p.x, p.y, C.purple, 14);
+  Object.assign(m, { state:'search', lastSeen:{ x:p.x, y:p.y }, searchT:0, path:[], target:null });
+}
+function moveSurvivor(p, inp) {
+  const Hh = G.horror, m = Hh.monster;
+  p.noHideT -= DT;
+  if (p.hidden) { // you can't stay hidden forever: you get more and more scared until you jump out
+    p.fear += DT;
+    if (p.fear >= FEAR_MAX) leaveSpot(p, true); else if (inp.punchP) leaveSpot(p);
+    return;
+  }
+  p.fear = Math.max(0, p.fear - DT);
+  const mx = inp.mx || 0, my = inp.my || 0, d = Math.hypot(mx, my);
+  if (d > 0) { const sp = 250*Math.min(1.25, p.ch.speed)/d; p.x += mx*sp*DT; p.y += my*sp*DT; if (Math.abs(mx) > 0.2) p.facing = Math.sign(mx); p.walk += DT*12; }
+  pushOut(p, p.r);
+  if (inp.punchP && p.noHideT <= 0) {
+    const s = Hh.spots.filter(s => !s.who).sort((a, b) => Math.hypot(a.x - p.x, a.y - p.y) - Math.hypot(b.x - p.x, b.y - p.y))[0];
+    if (s && Math.hypot(s.x - p.x, s.y - p.y) < 75) {
+      const seen = m.waitT <= 0 && monsterSees(m, p, true); // if it watched you hide, it knows where you are...
+      p.hidden = s; s.who = p; p.fromX = p.x; p.fromY = p.y; p.x = s.x; p.y = s.y; ev('sfx','grab');
+      if (seen) Object.assign(m, { state:'grab', spot:s, path:[] });
+    }
+  }
+}
+function horrorAI(p) {
+  const Hh = G.horror, m = Hh.monster, ai = p.ai, active = m.waitT <= 0, dm = Math.hypot(m.x - p.x, m.y - p.y);
+  if (p.hidden) return { punchP:p.fear > FEAR_MAX - 1.5 && dm > 380 && Math.random() < 0.05 }; // sneak out before getting too scared, if the monster is far away
+  const chased = active && m.state === 'chase' && m.target === p, seen = active && monsterSees(m, p);
+  ai.repath -= DT;
+  if (ai.spot && ai.spot.who) ai.repath = 0; // someone else got there first
+  if (ai.repath <= 0 || (chased && !ai.fleeing)) {
+    ai.repath = chased ? 0.4 : 1.5; ai.fleeing = chased;
+    const danger = active && (chased || dm < 300);
+    const score = s => danger ? Math.hypot(s.x - p.x, s.y - p.y)*0.6 - Math.hypot(s.x - m.x, s.y - m.y) : Math.hypot(s.x - p.x, s.y - p.y) + rand(0, 300) - (active ? Math.hypot(s.x - m.x, s.y - m.y)*0.3 : 0);
+    ai.spot = Hh.spots.filter(s => !s.who && (s !== ai.last || p.fear < 2)).sort((a, b) => score(a) - score(b))[0] || null;
+    ai.path = ai.spot ? findPath(p.x, p.y, ai.spot.x, ai.spot.y) : [];
+  }
+  const inp = { mx:0, my:0, punchP:false };
+  if (ai.spot && Math.hypot(ai.spot.x - p.x, ai.spot.y - p.y) < 65) { if (!seen && p.noHideT <= 0 && p.fear < FEAR_MAX - 3) inp.punchP = true; else if (seen) ai.repath = 0; }
+  const dir = walkPath(p, ai.path);
+  if (dir) { inp.mx = dir.x; inp.my = dir.y; }
+  else if (ai.spot) { const dx = ai.spot.x - p.x, dy = ai.spot.y - p.y, d = Math.hypot(dx, dy) || 1; inp.mx = dx/d; inp.my = dy/d; }
+  return inp;
+}
+function monsterStep(m) {
+  const Hh = G.horror;
+  if (m.waitT > 0) { m.waitT -= DT; if (m.waitT <= 0) { m.state = 'patrol'; ev('sfx','growl'); ev('pop', m.x - 140, m.y - 90, 'READY OR NOT...', C.red); ev('shake', 6); } return; }
+  const out = G.fighters.filter(p => !p.caught);
+  let seen = null, sd = 1e9;
+  for (const p of out) if (monsterSees(m, p)) { const d = Math.hypot(p.x - m.x, p.y - m.y); if (d < sd) { sd = d; seen = p; } }
+  if (seen && m.state !== 'grab') { if (m.state !== 'chase') { ev('sfx','growl'); ev('pop', m.x, m.y - 110, '!', C.red); } Object.assign(m, { state:'chase', target:seen, lastSeen:{ x:seen.x, y:seen.y }, lostT:0 }); }
+  else if (m.state === 'chase') { m.lostT += DT; if (m.lostT > 0.5) Object.assign(m, { state:'search', searchT:0, path:findPath(m.x, m.y, m.lastSeen.x, m.lastSeen.y) }); }
+  let dir = null, speed = MON.patrol;
+  if (m.state === 'chase') {
+    speed = MON.chase;
+    if (seen) { const dx = seen.x - m.x, dy = seen.y - m.y, d = Math.hypot(dx, dy) || 1; dir = { x:dx/d, y:dy/d }; }
+    else { if (!m.path.length) m.path = findPath(m.x, m.y, m.lastSeen.x, m.lastSeen.y); dir = walkPath(m, m.path); }
+  } else if (m.state === 'grab') { // straight to the hiding spot, and pull out whoever is inside
+    const s = m.spot; speed = MON.chase;
+    if (!m.path.length) m.path = findPath(m.x, m.y, s.x, s.y);
+    dir = walkPath(m, m.path);
+    if (Math.hypot(s.x - m.x, s.y - m.y) < 80 || !dir) {
+      if (s.who) { ev('pop', s.x, s.y - 60, 'FOUND YOU!', C.red); catchSurvivor(s.who); }
+      else { ev('pop', s.x, s.y - 60, 'nobody here...', C.white); Object.assign(m, { state:'search', lastSeen:{ x:s.x, y:s.y }, searchT:0, path:[] }); }
+    }
+  } else if (m.state === 'search') { // go where it last saw you, then look all around
+    speed = MON.patrol*1.3;
+    if (m.path.length) dir = walkPath(m, m.path);
+    if (!dir) { m.searchT += DT; m.a += DT*2.6; if (m.searchT > 2.5) { m.state = 'patrol'; m.path = []; } }
+  } else { // patrol from room to room, and sometimes check a hiding spot on the way
+    if (!m.path.length) { const wp = HOUSE.waypoints.filter(w => Math.hypot(w[0] - m.x, w[1] - m.y) > 200), w = wp[Math.floor(Math.random()*wp.length)]; m.path = findPath(m.x, m.y, w[0], w[1]); }
+    dir = walkPath(m, m.path);
+    m.checkT -= DT;
+    if (m.checkT <= 0) {
+      m.checkT = 1;
+      const s = Hh.spots.find(s => Math.hypot(s.x - m.x, s.y - m.y) < 170 && Math.random() < 0.15);
+      if (s) { Object.assign(m, { state:'grab', spot:s, path:[] }); ev('pop', m.x, m.y - 110, 'sniff sniff...', C.white); }
+    }
+  }
+  if (dir) {
+    m.x += dir.x*speed*DT; m.y += dir.y*speed*DT; m.walk += DT*8;
+    m.a += Math.max(-7*DT, Math.min(7*DT, wrap(Math.atan2(dir.y, dir.x) - m.a)));
+  }
+  pushOut(m, 24);
+  for (const p of out) if (!p.hidden && !p.caught && Math.hypot(p.x - m.x, p.y - m.y) < m.r + p.r - 6) catchSurvivor(p);
+}
+function horrorStep() {
+  G.time += DT; hostSync();
+  const Hh = G.horror, m = Hh.monster, live = countdownTick();
+  for (const p of G.fighters) {
+    const net = p.control.startsWith('net:');
+    if (p.caught) { if (p.control !== 'cpu' && !net) humanInput(p); continue; } // so pause still works
+    let inp = BLANK;
+    if (p.control === 'cpu') { if (live) inp = horrorAI(p); }
+    else { const hi = net ? netInput(p) : humanInput(p); if (live) inp = { mx:hi.x, my:(hi.down ? 1 : 0) - (hi.up ? 1 : 0), punchP:hi.punchP || hi.grabP || hi.specialP }; }
+    moveSurvivor(p, inp);
+  }
+  if (live && G.phase === 'fight') monsterStep(m);
+  Hh.flash = Math.max(0, Hh.flash - DT*2.5); Hh.nextFlash -= DT; // lightning!
+  if (Hh.nextFlash <= 0) { Hh.nextFlash = rand(9, 16); Hh.flash = 1; ev('sfx','thunder'); }
+  const near = Math.min(1e9, ...G.fighters.filter(p => !p.caught && p.control !== 'cpu').map(p => Math.hypot(p.x - m.x, p.y - m.y)));
+  Hh.beatT -= DT; if (m.waitT <= 0 && near < 350 && Hh.beatT <= 0) { Hh.beatT = 0.3 + near/700; ev('sfx','thump'); } // your heart beats faster when it's close
+  if (G.phase === 'fight') {
+    if (m.waitT <= 0) Hh.left -= DT;
+    const left = G.fighters.filter(p => !p.caught);
+    if (!left.length || Hh.left <= 0) {
+      G.banner = left.length ? { title:left.length === 1 ? `${left[0].ch.name} survived!` : `${left.length} fighters survived!`, sub:'The sun comes up and the monster runs away.' } : { title:'The monster got everyone!', sub:'Hide better next time...' };
+      ev('sfx', left.length ? 'win' : 'growl'); G.phase = 'between'; G.timer = 3;
+    }
+  } else if (G.phase === 'between') { G.timer -= DT; if (G.timer <= 0) showResults(); }
+}
+
+function drawSpot(s, t) { // furniture to hide in (top-down)
+  const box = (x, y, w, h, fill, r = 6) => { g.fillStyle = fill; roundRect(x - w/2, y - h/2, w, h, r); g.fill(); g.strokeStyle = C.ink; g.lineWidth = 3; g.stroke(); };
+  const { x, y, w, h } = s;
+  if (s.kind === 'bed') { box(x, y, w, h, '#d9d2e6'); box(x - w/2 + 20, y, 26, h - 20, C.white, 8); g.fillStyle = '#8b6fa8'; g.fillRect(x - w/2 + 40, y - h/2 + 4, w - 44, h - 8); }
+  else if (s.kind === 'closet' || s.kind === 'cupboard') { box(x, y, w, h, '#7a5234', 4); g.strokeStyle = C.ink; g.lineWidth = 2; g.beginPath(); g.moveTo(x, y - h/2); g.lineTo(x, y + h/2); g.stroke(); g.fillStyle = C.yellow; g.fillRect(x - 8, y - 3, 4, 6); g.fillRect(x + 4, y - 3, 4, 6); }
+  else if (s.kind === 'fridge') { box(x, y, w, h, '#dfe6ea', 6); g.fillStyle = C.grey; g.fillRect(x + w/2 - 12, y - 18, 4, 36); }
+  else if (s.kind === 'couch') { box(x, y, w, h, '#7a2230', 14); g.fillStyle = '#9b3343'; for (let i=0;i<3;i++) { roundRect(x - w/2 + 12 + i*(w - 24)/3, y - h/2 + 14, (w - 24)/3 - 6, h - 22, 6); g.fill(); } }
+  else if (s.kind === 'box') { box(x, y, w, h, '#c49a6c', 3); g.strokeStyle = '#8a6a44'; g.lineWidth = 6; g.beginPath(); g.moveTo(x - w/2, y); g.lineTo(x + w/2, y); g.stroke(); }
+  else if (s.kind === 'table') { g.fillStyle = '#4a3020'; for (const [cx, cy] of [[-w/2 - 12, 0], [w/2 + 12, 0], [0, -h/2 - 12], [0, h/2 + 12]]) { roundRect(x + cx - 12, y + cy - 12, 24, 24, 4); g.fill(); } box(x, y, w, h, '#8a5a3a', 8); g.fillStyle = 'rgba(255,255,255,.75)'; g.fillRect(x - w/2 + 10, y - 8, w - 20, 16); }
+  else if (s.kind === 'barrel') { g.fillStyle = '#8a5a2a'; g.beginPath(); g.arc(x, y, w/2, 0, TAU); g.fill(); g.strokeStyle = C.ink; g.lineWidth = 3; g.stroke(); g.strokeStyle = '#3a2a1a'; g.lineWidth = 4; g.beginPath(); g.arc(x, y, w/2 - 8, 0, TAU); g.stroke(); }
+  else if (s.kind === 'shelf') { box(x, y, w, h, '#5a3a22', 3); for (let i=0;i<12;i++) { g.fillStyle = [C.red, C.blue, C.green, C.yellow, C.purple, C.orange][i % 6]; g.fillRect(x - w/2 + 8 + i*13, y - h/2 + 6, 10, h - 12); } }
+  else if (s.kind === 'chest') { box(x, y, w, h, '#8a5a2a', 6); g.fillStyle = '#e0b030'; g.fillRect(x - 6, y - 8, 12, 14); }
+  else if (s.kind === 'tub') { box(x, y, w, h, '#f0f0f0', 26); g.fillStyle = '#7fc8e8'; roundRect(x - w/2 + 12, y - h/2 + 10, w - 24, h - 20, 18); g.fill(); }
+}
+function drawHouse(t, spots) {
+  g.fillStyle = '#0c0812'; g.fillRect(0, 0, W, H);
+  g.fillStyle = '#4a3a30'; g.fillRect(60, 130, 1480, 730);
+  for (const r of HOUSE.rooms) {
+    g.fillStyle = r.floor; g.fillRect(r.x, r.y, r.w, r.h);
+    if (r.tiles) { g.fillStyle = 'rgba(255,255,255,.06)'; for (let y=r.y, k=0; y<r.y + r.h; y+=40, k++) for (let x=r.x + (k % 2)*40; x<r.x + r.w; x+=80) g.fillRect(x, y, 40, Math.min(40, r.y + r.h - y)); }
+    else { g.strokeStyle = 'rgba(0,0,0,.25)'; g.lineWidth = 2; for (let y=r.y + 36; y<r.y + r.h; y+=36) { g.beginPath(); g.moveTo(r.x, y); g.lineTo(r.x + r.w, y); g.stroke(); } }
+  }
+  g.fillStyle = '#6e1c28'; g.beginPath(); g.ellipse(810, 340, 150, 70, 0, 0, TAU); g.fill(); // rugs
+  g.fillStyle = '#26365e'; g.fillRect(1180, 260, 240, 140);
+  for (const s of spots) drawSpot(s, t);
+  g.fillStyle = '#2a0a10'; g.fillRect(1520, 640, 20, 120); // the basement door, where the monster lives
+  g.fillStyle = '#1b1222'; for (const w of HOUSE.walls) g.fillRect(w.x, w.y, w.w, w.h);
+  g.fillStyle = '#3a2a44'; for (const w of HOUSE.walls) g.fillRect(w.x, w.y, w.w, 5);
+  drawWeb(60, 130, 70, 1); drawWeb(1540, 130, 70, -1); drawWeb(570, 500, 50, 1);
+  for (const [cx, cy] of HOUSE.candles) { // candles with flickering flames
+    g.fillStyle = '#f2ead8'; g.fillRect(cx - 5, cy - 6, 10, 18); g.strokeStyle = C.ink; g.lineWidth = 2; g.strokeRect(cx - 5, cy - 6, 10, 18);
+    const f = 1 + Math.sin(t*13 + cx)*0.2; g.fillStyle = C.orange; g.beginPath(); g.ellipse(cx, cy - 13, 4*f, 8*f, 0, 0, TAU); g.fill(); g.fillStyle = C.yellow; g.beginPath(); g.ellipse(cx, cy - 12, 2, 4, 0, 0, TAU); g.fill();
+  }
+}
+function drawMonster(m, t, glowOnly) { // a tall shadow with long arms, a raggedy bottom and glowing eyes
+  const chase = m.state === 'chase' || m.state === 'grab', sway = Math.sin(m.walk)*7;
+  g.save(); g.translate(m.x, m.y);
+  if (!glowOnly) {
+    g.fillStyle = 'rgba(0,0,0,.4)'; g.beginPath(); g.ellipse(0, 24, 42, 14, 0, 0, TAU); g.fill();
+    g.strokeStyle = '#1a0d24'; g.lineWidth = 10; g.lineCap = 'round';
+    for (const s of [-1, 1]) {
+      const hx = s*50, hy = 30 + s*sway;
+      g.beginPath(); g.moveTo(s*24, -40); g.quadraticCurveTo(s*62, -20 + s*sway, hx, hy); g.stroke();
+      g.lineWidth = 4; for (const c of [-1, 0, 1]) { g.beginPath(); g.moveTo(hx, hy); g.lineTo(hx + s*6 + c*7, hy + 14); g.stroke(); } g.lineWidth = 10;
+    }
+    g.fillStyle = '#1a0d24'; g.strokeStyle = '#000'; g.lineWidth = 3;
+    g.beginPath(); g.moveTo(-34, 22);
+    for (let i=1;i<=6;i++) g.lineTo(-34 + i*68/6, 22 + (i % 2 ? 12 : 0) + Math.sin(t*6 + i)*3);
+    g.lineTo(30, -40); g.quadraticCurveTo(0, -118, -30, -40); g.closePath(); g.fill(); g.stroke();
+  }
+  g.shadowColor = chase ? '#ff2020' : '#ffd040'; g.shadowBlur = 20; g.fillStyle = chase ? '#ff3030' : '#ffe14a';
+  for (const s of [-1, 1]) { g.beginPath(); g.ellipse(s*13, -62, 8, 5, s*0.35, 0, TAU); g.fill(); }
+  if (chase) { g.shadowBlur = 0; g.fillStyle = C.white; g.beginPath(); g.moveTo(-16, -40); for (let i=0;i<=6;i++) g.lineTo(-16 + i*32/6, -40 + (i % 2 ? 9 : 0)); g.closePath(); g.fill(); }
+  g.restore();
+}
+function monsterCone(m) { // what the monster can see, stopped by the walls
+  const pts = [[m.x, m.y]];
+  for (let i=0;i<=24;i++) {
+    const a = m.a - MON.half + i*MON.half*2/24, ex = m.x + Math.cos(a)*MON.range, ey = m.y + Math.sin(a)*MON.range;
+    let tm = 1; for (const w of HOUSE.walls) { const tt = segEnter(m.x, m.y, ex, ey, w); if (tt >= 0 && tt < tm) tm = tt; }
+    pts.push([m.x + (ex - m.x)*tm, m.y + (ey - m.y)*tm]);
+  }
+  return pts;
+}
+const darkCv = document.createElement('canvas'); darkCv.width = W; darkCv.height = H; const dk = darkCv.getContext('2d');
+function drawDarkness(t, cone) { // everything is dark, except near you, the candles and where the monster is looking
+  const Hh = G.horror;
+  dk.globalCompositeOperation = 'source-over'; dk.clearRect(0, 0, W, H);
+  dk.fillStyle = `rgba(4,2,10,${0.92*(1 - Hh.flash*0.85)})`; dk.fillRect(0, 0, W, H);
+  dk.globalCompositeOperation = 'destination-out';
+  const hole = (x, y, r, k) => { const gr = dk.createRadialGradient(x, y, r*0.25, x, y, r); gr.addColorStop(0, `rgba(0,0,0,${k})`); gr.addColorStop(1, 'rgba(0,0,0,0)'); dk.fillStyle = gr; dk.beginPath(); dk.arc(x, y, r, 0, TAU); dk.fill(); };
+  for (const p of G.fighters) if (!p.caught) { const you = p.control !== 'cpu'; hole(p.x, p.y, p.hidden ? 60 : you ? 190 : 90, you ? 1 : 0.6); }
+  for (const [cx, cy] of HOUSE.candles) hole(cx, cy - 10, 85 + Math.sin(t*9 + cx)*6, 0.75);
+  if (cone) { dk.fillStyle = 'rgba(0,0,0,.45)'; dk.beginPath(); cone.forEach(([x, y], i) => i ? dk.lineTo(x, y) : dk.moveTo(x, y)); dk.closePath(); dk.fill(); }
+  dk.globalCompositeOperation = 'source-over';
+  g.drawImage(darkCv, 0, 0, W, H);
+}
+function drawSmallTag(x, y, tag, cpu) {
+  g.font = `20px ${BODYFONT}`; g.textAlign = 'center'; g.textBaseline = 'alphabetic';
+  const tw = g.measureText(tag).width + 12;
+  g.fillStyle = cpu ? 'rgba(255,255,255,.75)' : C.ink; roundRect(x - tw/2, y - 18, tw, 22, 6); g.fill();
+  g.fillStyle = cpu ? C.ink : C.white; g.fillText(tag, x, y);
+}
+function drawSurvivor(p, t) {
+  g.fillStyle = 'rgba(0,0,0,.3)'; g.beginPath(); g.ellipse(p.x, p.y + 20, 24, 9, 0, 0, TAU); g.fill();
+  g.save(); g.translate(p.x, p.y - 4 - Math.abs(Math.sin(p.walk))*4); drawCharacter(g, p.ch, 24, { facing:p.facing, ...(G.online ? {} : looks(p.ch)) }); g.restore();
+}
+function drawHorror(t, dt) {
+  const Hh = G.horror, m = Hh.monster, active = m.waitT <= 0;
+  drawHouse(t, Hh.spots);
+  const things = [...G.fighters.filter(p => !p.caught && !p.hidden), m].sort((a, b) => a.y - b.y);
+  for (const o of things) o === m ? drawMonster(m, t) : drawSurvivor(o, t);
+  const cone = active ? monsterCone(m) : null;
+  drawDarkness(t, cone);
+  if (cone) { g.fillStyle = m.state === 'chase' || m.state === 'grab' ? 'rgba(255,40,40,.2)' : 'rgba(255,220,80,.1)'; g.beginPath(); cone.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.closePath(); g.fill(); }
+  drawMonster(m, t, true); // its eyes glow in the dark
+  if (m.state === 'search' && active) { g.font = `54px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = C.white; g.fillText('?', m.x, m.y - 120); }
+  for (const s of Hh.spots) {
+    const p = s.who; if (!p) continue;
+    if ((t*0.7 + s.x) % 3 > 0.2) for (const e of [-1, 1]) { g.fillStyle = C.white; g.beginPath(); g.arc(s.x + e*7, s.y - 2, 4.5, 0, TAU); g.fill(); g.fillStyle = C.ink; g.beginPath(); g.arc(s.x + e*7 + 1.5, s.y - 1, 2, 0, TAU); g.fill(); } // peeking eyes
+    const k = p.fear/FEAR_MAX; g.fillStyle = C.ink; roundRect(s.x - 32, s.y - 48, 64, 10, 4); g.fill(); g.fillStyle = k > 0.7 ? C.red : k > 0.4 ? C.orange : C.yellow; roundRect(s.x - 30, s.y - 46, 60*k, 6, 3); g.fill(); // the scared meter
+    if (setup.tags) drawSmallTag(s.x, s.y - 54, p.tag, p.control === 'cpu');
+  }
+  if (setup.tags) for (const p of G.fighters) if (!p.caught && !p.hidden) drawSmallTag(p.x, p.y - 24 - TOPS[p.ch.shape]*24, p.tag, p.control === 'cpu');
+  drawParticles(G.paused ? 0 : dt);
+  // the top bar: who is still out, who is hiding, who got caught
+  const n = G.fighters.length, cw = Math.min(230, (W - 40 - (n-1)*12)/n), total = n*cw + (n-1)*12;
+  let x = (W - total)/2;
+  for (const p of G.fighters) {
+    g.globalAlpha = p.caught ? 0.5 : 1;
+    g.fillStyle = C.white; g.strokeStyle = C.ink; g.lineWidth = 3; roundRect(x, 14, cw, 70, 6); g.fill(); g.stroke();
+    g.save(); g.translate(x + 30, 52); drawCharacter(g, p.ch, 17, { facing:1, ko:p.caught }); g.restore();
+    g.fillStyle = C.ink; g.textAlign = 'left'; g.textBaseline = 'alphabetic'; g.font = `22px ${FONT}`; g.fillText(p.ch.name, x + 54, 40, cw - 62);
+    g.font = `18px ${BODYFONT}`; g.fillStyle = p.caught ? C.red : p.hidden ? C.purple : C.grey; g.fillText(p.caught ? 'caught!' : p.hidden ? 'hiding' : 'running', x + 54, 70);
+    g.font = `18px ${BODYFONT}`; g.textAlign = 'right'; g.fillStyle = C.grey; g.fillText(p.tag, x + cw - 8, 70);
+    g.globalAlpha = 1; x += cw + 12;
+  }
+  if (G.phase === 'fight') {
+    const msg = !active ? `the monster comes out in ${Math.ceil(m.waitT)}... HIDE!` : `survive for ${Math.ceil(Hh.left)} more seconds`;
+    g.font = `34px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round'; g.lineWidth = 6; g.strokeStyle = C.ink; g.strokeText(msg, W/2, H - 22); g.fillStyle = active ? C.white : C.yellow; g.fillText(msg, W/2, H - 22);
+  }
+  drawOverlayText();
 }
 
 // ---------- drawing ----------
@@ -2647,7 +2982,7 @@ function bigText(text, size, color, y = H/2 - 40) {
 }
 function drawOverlayText() {
   if (G.phase === 'countdown') { const c = Math.ceil(G.timer); const s = 1 + (c - G.timer)*0.25; g.save(); g.translate(W/2, H/2 - 40); g.scale(s, s); g.translate(-W/2, -(H/2 - 40)); bigText(String(Math.max(1, c)), 170, C.yellow); g.restore(); }
-  if (G.goT > 0) { g.globalAlpha = Math.min(1, G.goT*2); bigText(G.mode === 'race' ? 'GO!' : 'FIGHT!', 170, C.yellow); g.globalAlpha = 1; }
+  if (G.goT > 0) { g.globalAlpha = Math.min(1, G.goT*2); bigText(G.mode === 'race' ? 'GO!' : G.mode === 'horror' ? 'HIDE!' : 'FIGHT!', 170, C.yellow); g.globalAlpha = 1; }
   if (G.banner) {
     g.font = `64px ${FONT}`; const tw = Math.min(W - 80, g.measureText(G.banner.title).width + 120);
     g.fillStyle = C.ink; g.beginPath(); g.moveTo(W/2 - tw/2, 330); g.lineTo(W/2 + tw/2, 316); g.lineTo(W/2 + tw/2 + 20, 470); g.lineTo(W/2 - tw/2 - 10, 482); g.closePath(); g.fill();
@@ -3441,7 +3776,7 @@ let lastT = performance.now(), acc = 0;
 function frame(now) {
   const dt = Math.min(0.1, (now - lastT)/1000); lastT = now;
   if (G.online === 'client' && G.state === 'fight') { clientSmooth(dt); clientSendInput(now); }
-  else if (G.state === 'fight' && !G.paused) { acc += dt*1000; let n = 0; while (acc >= STEP && n < 6) { if (G.mode === 'race') raceStep(); else step(); acc -= STEP; n++; } if (n === 6) acc = 0; }
+  else if (G.state === 'fight' && !G.paused) { acc += dt*1000; let n = 0; while (acc >= STEP && n < 6) { if (G.mode === 'race') raceStep(); else if (G.mode === 'horror') horrorStep(); else step(); acc -= STEP; n++; } if (n === 6) acc = 0; }
   else if (G.state === 'shop') shopStep(dt);
   G.shake *= 0.85; if (!setup.shake) G.shake = 0;
   const sx = (Math.random() - 0.5)*G.shake*scale, sy = (Math.random() - 0.5)*G.shake*scale;
@@ -3450,6 +3785,7 @@ function frame(now) {
   const t = now/1000;
   if (G.state === 'shop') drawShop(t);
   else if (G.state === 'fight' && G.mode === 'race') drawRace(t, dt);
+  else if (G.state === 'fight' && G.mode === 'horror') drawHorror(t, dt);
   else if (G.state === 'fight') {
     drawSky(t, MAP); if (G.boss) drawBossSky(t);
     drawArena(t);
@@ -3524,10 +3860,21 @@ function renderSeg(id, opts, key, after) {
 }
 function drawMapPreview() {
   const c = $('mapPreview'), m = c.getContext('2d'), sc = c.width/W, map = MAPS[setup.map] || MAPS.cloud, race = setup.mode === 'race';
-  $('mapSeg').hidden = race; $('trackSeg').hidden = !race; $('roundsSeg').parentElement.hidden = race; // racing has its own tracks and is one race
+  const horror = setup.mode === 'horror';
+  $('mapSeg').hidden = race || horror; $('trackSeg').hidden = !race; $('roundsSeg').parentElement.hidden = race || horror; // racing and horror have their own maps and are one game
   const track = RACE_TRACKS[setup.track] || RACE_TRACKS.gp; if (race) TRACK = track.built;
   const oldG = g, oldMap = MAP; g = m; MAP = map;
   m.setTransform(sc, 0, 0, sc, 0, 0); m.clearRect(0, 0, W, H);
+  if (horror) {
+    try {
+      drawHouse(0, HOUSE.spots);
+      CHARS.filter(ch => setup.slots[ch.id] !== 'off').forEach((ch, i) => { const [x, y] = HOUSE.spawns[i % HOUSE.spawns.length]; drawSurvivor({ ch, x, y, facing:1, walk:0 }, 0); });
+      drawMonster({ x:HOUSE.lair.x - 40, y:HOUSE.lair.y, state:'wait', walk:0 }, 0);
+    } finally { g = oldG; MAP = oldMap; }
+    const k = KEYMAP.p1;
+    $('mapDesc').textContent = `Horror: a monster is looking for you in a dark, spooky house! Move with ${keyName(k.l[0])} ${keyName(k.r[0])} ${keyName(k.u[0])} ${keyName(k.d[0])}. Press ${keyName(k.punch[0])} next to a bed, closet, box or other furniture to hide in it, and again to come out. Survive ${SURVIVE_TIME} seconds! Don't let it see you hide, and you can't stay hidden forever.`;
+    return;
+  }
   if (race) {
     try {
       drawRaceTrack(0);
@@ -3555,12 +3902,11 @@ function openSetup() {
 }
 function showResults() {
   G.state = 'results'; G.paused = false;
-  const champ = G.champ, teamWin = G.mode === 'teams';
-  const winners = teamWin ? G.fighters.filter(f => f.team === champ.team) : [champ];
-  const race = G.mode === 'race';
-  const losers = teamWin ? G.fighters.filter(f => f.team !== champ.team) : G.fighters.filter(f => f !== champ).sort(race ? (a, b) => a.place - b.place : (a, b) => (G.wins[b.ch.id] || 0) - (G.wins[a.ch.id] || 0));
-  $('winName').textContent = (teamWin ? TEAMS[champ.team].name : champ.ch.name) + ' wins!';
-  $('winName').style.background = teamWin ? TEAMS[champ.team].color : '';
+  const champ = G.champ, teamWin = G.mode === 'teams', race = G.mode === 'race', horror = G.mode === 'horror';
+  const winners = horror ? G.fighters.filter(f => !f.caught) : teamWin ? G.fighters.filter(f => f.team === champ.team) : [champ];
+  const losers = horror ? G.fighters.filter(f => f.caught) : teamWin ? G.fighters.filter(f => f.team !== champ.team) : G.fighters.filter(f => f !== champ).sort(race ? (a, b) => a.place - b.place : (a, b) => (G.wins[b.ch.id] || 0) - (G.wins[a.ch.id] || 0));
+  $('winName').textContent = horror ? (!winners.length ? 'The monster wins!' : winners.length === 1 ? winners[0].ch.name + ' survived!' : 'The survivors win!') : (teamWin ? TEAMS[champ.team].name : champ.ch.name) + ' wins!';
+  $('winName').style.background = horror && !winners.length ? C.purple : teamWin ? TEAMS[champ.team].color : '';
   // one podium step per place: the winner (or winning team) on 1, losers on 2, 3, 4... in order of round wins
   const step = (fs, place, name) => {
     const c = document.createElement('div'); c.className = 'pcol place-' + Math.min(place, 4);
@@ -3569,13 +3915,14 @@ function showResults() {
     who.append(...fs.map(f => charCanvas(f.ch, px, { ...(G.online ? {} : looks(f.ch)), crown:place === 1, ko:place !== 1 })));
     const wins = G.wins[winKey(fs[0])] || 0;
     const nm = Object.assign(document.createElement('div'), { className:'nm', textContent:name });
-    const note = race ? (fs[0].done ? fs[0].time.toFixed(1) + ' seconds' : 'still racing') : wins ? '★'.repeat(wins) : 'no wins';
+    const note = horror ? (place === 1 ? 'got away!' : 'caught') : race ? (fs[0].done ? fs[0].time.toFixed(1) + ' seconds' : 'still racing') : wins ? '★'.repeat(wins) : 'no wins';
     const blk = document.createElement('div'); blk.className = 'pblock'; blk.innerHTML = `${place}<small>${note}</small>`;
     c.append(who, nm, blk); return c;
   };
-  const steps = teamWin ? [step(losers, 2, TEAMS[1 - champ.team].name), step(winners, 1, TEAMS[champ.team].name)]
+  const steps = horror ? [losers.length && step(losers, 2, 'caught by the monster'), winners.length && step(winners, 1, 'survived')].filter(Boolean)
+    : teamWin ? [step(losers, 2, TEAMS[1 - champ.team].name), step(winners, 1, TEAMS[champ.team].name)]
     : losers.map((f, i) => step([f], i + 2, f.ch.name));
-  if (!teamWin) steps.splice(Math.min(1, steps.length), 0, step(winners, 1, champ.ch.name)); // 2nd, 1st, 3rd, 4th...
+  if (!teamWin && !horror) steps.splice(Math.min(1, steps.length), 0, step(winners, 1, champ.ch.name)); // 2nd, 1st, 3rd, 4th...
   $('podium').replaceChildren(...steps.filter(s => s.querySelector('canvas')));
   $('confetti').replaceChildren(...Array.from({ length:40 }, (_, i) => {
     const e = document.createElement('i'); e.style.left = Math.random()*100 + '%'; e.style.background = BULBS[i % BULBS.length];
@@ -3583,10 +3930,11 @@ function showResults() {
   }));
   const on = G.online;
   // coins: 10 for finishing a fight, 15 more when a person on this computer is on the winning side
-  const won = (teamWin ? G.fighters.filter(f => f.team === champ.team) : [champ]).some(f => on ? (f.me || f.control === 'local') : f.tag !== 'CPU' && !f.ch.boss);
+  const won = winners.some(f => on ? (f.me || f.control === 'local') : f.tag !== 'CPU' && !f.ch.boss);
   const earned = 10 + (won ? 15 : 0); shop.coins += earned; saveShop();
   $('coinNote').textContent = `+${earned} coins${won ? ' (10 for the fight, 15 for winning)' : ' for the fight'}. You have ${shop.coins} coins to spend in the shop.`;
-  if (on === 'host') netBroadcast({ t:'results', champ: teamWin ? -1 : champ.idx, team: teamWin ? champ.team : null, w:G.wins });
+  if (on === 'host') netBroadcast({ t:'results', champ: champ && !teamWin ? champ.idx : -1, team: teamWin ? champ.team : null, w:G.wins,
+    rk: race ? G.fighters.map(f => [f.place, r1(f.time), f.done ? 1 : 0]) : null, hc: horror ? G.fighters.map(f => f.caught ? 1 : 0) : null });
   $('rematchBtn').hidden = on === 'client'; $('disbandBtn').hidden = on === 'client';
   $('resShopBtn').hidden = !!on; $('resShopBtn').classList.toggle('won', won); // go spend your coins (not in online games, so the team stays together)
   $('resNote').textContent = on === 'client' ? 'Waiting for the host to pick what happens next.' : on === 'host' ? 'Leave takes everyone back to the team screen. Disband team ends it for everyone.' : '';
@@ -3905,7 +4253,7 @@ $('backBtn').onclick = () => { G.state = 'title'; showScreen('title'); };
 $('fightBtn').onclick = () => {
   audioOn();
   const n = Object.values(setup.slots).filter(v => v !== 'off').length;
-  if (n < 2) { $('setupMsg').textContent = 'Pick at least 2 fighters. Click a button under a character to turn them on.'; return; }
+  if (n < (setup.mode === 'horror' ? 1 : 2)) { $('setupMsg').textContent = setup.mode === 'horror' ? 'Pick at least 1 fighter. Click a button under a character to turn them on.' : 'Pick at least 2 fighters. Click a button under a character to turn them on.'; return; }
   if (setup.mode === 'teams') { const on = CHARS.filter(c => setup.slots[c.id] !== 'off').map(c => setup.teams[c.id] || 0); if (!on.includes(0) || !on.includes(1)) { $('setupMsg').textContent = 'Each team needs at least one fighter. Click a team button to switch someone.'; return; } }
   startMatch();
 };
@@ -3937,6 +4285,24 @@ function runEv(type, a, b, c, d) {
 }
 const HZ_CODES = ['ice','snow','car','bird','zap','geyser'];
 const r1 = v => Math.round(v*10)/10, r2 = v => Math.round(v*100)/100;
+function hostSync() { // the host sends everyone what's happening, 30 times a second
+  G.netTick = (G.netTick || 0) + 1;
+  if (G.online === 'host' && G.netTick % 2 === 0) netBroadcast(G.mode === 'race' ? raceSnapshot() : G.mode === 'horror' ? horrorSnapshot() : snapshot());
+}
+const MSTATES = ['wait', 'patrol', 'chase', 'search', 'grab'];
+function raceSnapshot() {
+  const R = G.race;
+  return { t:'rs', ph:G.phase, tm:r2(G.timer), go:r2(G.goT), bn:G.banner,
+    f:G.fighters.map(k => [r1(k.x), r1(k.y), r2(k.a), r2(k.spin), r2(k.spinT), r2(k.fallT), r2(k.boostT), k.lap, k.done ? 1 : 0, k.place, r1(k.time), ITEM_KINDS.indexOf(k.item), r2(k.wrongT)]),
+    b:R.boxes.map(b => [r1(b.x), r1(b.y), b.t > 0 ? 0 : 1, ITEM_KINDS.indexOf(b.kind)]), th:R.things.map(th => [ITEM_KINDS.indexOf(th.kind), r1(th.x), r1(th.y)]),
+    o:R.order.map(k => k.idx), fin:R.finished, end:r1(R.endT), e:NETEV.splice(0) };
+}
+function horrorSnapshot() {
+  const Hh = G.horror, m = Hh.monster;
+  return { t:'hs', ph:G.phase, tm:r2(G.timer), go:r2(G.goT), bn:G.banner,
+    f:G.fighters.map(p => [r1(p.x), r1(p.y), p.facing, r1(p.walk), p.caught ? 1 : 0, p.hidden ? Hh.spots.indexOf(p.hidden) : -1, r1(p.fear)]),
+    m:[r1(m.x), r1(m.y), r2(m.a), MSTATES.indexOf(m.state), r1(m.waitT), r1(m.walk)], left:r1(Hh.left), fl:r2(Hh.flash), e:NETEV.splice(0) };
+}
 function snapshot() {
   const f = G.fighters.map(p => { const b = p.body; return [r1(b.position.x), r1(b.position.y), r2(b.angle), p.alive ? 1 : 0, p.ko > 0 ? r1(p.ko) : 0, Math.round(p.dizzy), p.facing, r2(p.punchAnim), p.flash > 0 ? r2(p.flash) : 0, p.grabbing ? p.grabbing.idx : -1, r2(p.squash)]; });
   return { t:'s', ph:G.phase, tm:r2(G.timer), go:r2(G.goT), bn:G.banner, w:G.wins, f, c:G.clouds.map(c => r1(c.position.x)), hz:(G.hazards || []).map(h => [HZ_CODES.indexOf(h.type), r1(h.x), r1(h.y), r2(Math.max(0, h.warn)), h.type === 'car' ? h.dir*10 + (h.dir > 0 ? h.c : -h.c) : h.type === 'bird' ? h.dir : h.type === 'zap' ? h.wire : h.type === 'geyser' ? Math.round(h.live*100) : 0]), wv:(G.waves || []).map(w => [r1(w.x), r1(w.y), w.dir, Math.round(w.dist), w.owner]), e:NETEV.splice(0) };
@@ -3997,8 +4363,7 @@ function hostRoom() {
   Net.role = 'host'; Net.peer = peer;
   peer.on('open', () => {
     if (Net.peer !== peer) return;
-    if (setup.mode === 'race') { setup.mode = 'ffa'; saveSetup(); } // no racing online yet
-    Net.lobby = { code, players:[{ id:'host', name, ch:null }], cpus:[], mode:setup.mode, map:setup.map, teams:Object.assign({}, setup.teams) };
+    Net.lobby = { code, players:[{ id:'host', name, ch:null }], cpus:[], mode:setup.mode, map:setup.map, track:setup.track, teams:Object.assign({}, setup.teams) };
     Net.lobby.players[0].ch = firstFree();
     openLobby();
   });
@@ -4032,7 +4397,7 @@ function hostOnData(conn, d) {
   if (!Net.conns.has(id)) return;
   if (d.t === 'pick') return lobbyPick(id, d.ch);
   if (d.t === 'team') { const pl = L.players.find(p => p.id === id); if (pl && pl.ch) { L.teams[pl.ch] = 1 - (L.teams[pl.ch] || 0); broadcastLobby(); } return; }
-  if (d.t === 'i') { Net.inputs.set(id, { x:Math.max(-1, Math.min(1, +d.x || 0)), d:!!d.d, j:+d.j || 0, p:+d.p || 0, g:+d.g || 0, s:+d.s || 0 }); return; }
+  if (d.t === 'i') { Net.inputs.set(id, { x:Math.max(-1, Math.min(1, +d.x || 0)), d:!!d.d, u:!!d.u, j:+d.j || 0, p:+d.p || 0, g:+d.g || 0, s:+d.s || 0 }); return; }
   if (d.t === 'bye') return hostDrop(id);
 }
 function lobbyPick(id, ch) {
@@ -4051,7 +4416,12 @@ function hostDrop(id) {
   L.players = L.players.filter(p => p.id !== id);
   if (G.state === 'fight' && G.online === 'host') {
     const f = G.fighters.find(f => f.control === 'net:' + id);
-    if (f && f.alive) { ev('pop', f.body.position.x, f.body.position.y - 70, (pl ? pl.name : 'Player') + ' left', C.white); eliminate(f); }
+    if (f && f.alive) {
+      const at = f.body ? f.body.position : f; ev('pop', at.x, at.y - 70, (pl ? pl.name : 'Player') + ' left', C.white);
+      if (G.mode === 'race') f.control = 'cpu'; // the computer drives their kart for the rest of the race
+      else if (G.mode === 'horror') { leaveSpot(f); f.caught = true; f.alive = false; }
+      else eliminate(f);
+    }
   }
   broadcastLobby();
 }
@@ -4078,12 +4448,14 @@ function hostStartMatch() {
     if (pl) lineup.push({ ch:c, control: pl.id === 'host' ? 'local' : 'net:' + pl.id, tag:pl.name, team });
     else if (L.cpus.includes(c.id)) lineup.push({ ch:c, control:'cpu', tag:'CPU', team });
   }
-  if (lineup.length < 2) { const m = $('lobbyMsg'); if (m) m.textContent = 'You need at least 2 fighters. Wait for a friend, or add a computer fighter.'; return; }
+  if (lineup.length < (L.mode === 'horror' ? 1 : 2)) { const m = $('lobbyMsg'); if (m) m.textContent = L.mode === 'horror' ? 'Pick a fighter first.' : 'You need at least 2 fighters. Wait for a friend, or add a computer fighter.'; return; }
   if (L.mode === 'teams' && !(lineup.some(l => l.team === 0) && lineup.some(l => l.team === 1))) { const m = $('lobbyMsg'); if (m) m.textContent = 'Each team needs at least one fighter.'; return; }
   MAP = MAPS[L.map] || MAPS.cloud; G.mode = L.mode; G.online = 'host'; G.lineup = lineup; G.wins = {}; G.round = 0; G.rounds = setup.rounds; G.paused = false; NETEV.length = 0;
   for (const f of lineup) if (f.control.startsWith('net:')) { const r = Net.inputs.get(f.control.slice(4)); if (r) r.seen = null; }
-  netBroadcast({ t:'start', rounds:G.rounds, mode:G.mode, map:MAP.id, lineup:lineup.map(l => ({ ch:l.ch.id, control: l.control === 'local' ? 'host' : l.control, tag:l.tag, team:l.team })) });
-  G.state = 'fight'; showScreen(null); cv.focus(); startRound();
+  setup.track = L.track || setup.track;
+  netBroadcast({ t:'start', rounds:G.rounds, mode:G.mode, map:MAP.id, track:setup.track, lineup:lineup.map(l => ({ ch:l.ch.id, control: l.control === 'local' ? 'host' : l.control, tag:l.tag, team:l.team })) });
+  G.state = 'fight'; showScreen(null); cv.focus();
+  if (G.mode === 'race') startRace(); else if (G.mode === 'horror') startHorror(); else startRound();
 }
 function hostToLobby() { G.online = null; netBroadcast({ t:'tolobby' }); openLobby(); broadcastLobby(); }
 function endRoom(msg) { netBroadcast({ t:'bye' }); endNet(msg); }
@@ -4091,7 +4463,7 @@ function netInput(p) {
   const r = Net.inputs.get(p.control.slice(4)) || { x:0, d:false, j:0, p:0, g:0, s:0 };
   const s = p.netSeen || { j:r.j, p:r.p, g:r.g, s:r.s };
   p.netSeen = { j:r.j, p:r.p, g:r.g, s:r.s };
-  return { x:r.x, down:r.d, jumpP:r.j > s.j, punchP:r.p > s.p, grabP:r.g > s.g, specialP:(r.s || 0) > (s.s || 0) };
+  return { x:r.x, down:r.d, up:!!r.u, jumpP:r.j > s.j, punchP:r.p > s.p, grabP:r.g > s.g, specialP:(r.s || 0) > (s.s || 0) };
 }
 
 // ----- client -----
@@ -4125,8 +4497,17 @@ function clientOnData(d) {
       if (G.state === 'online' || G.state === 'lobby') openLobby();
       break;
     case 'start': clientStart(d); break;
-    case 's': if (G.state === 'fight' && G.online === 'client') applySnap(d); break;
-    case 'results': if (G.online === 'client') { G.wins = d.w || {}; G.champ = G.mode === 'teams' ? { team:d.team } : G.fighters[d.champ]; if (G.champ) showResults(); } break;
+    case 's': if (G.state === 'fight' && G.online === 'client' && !LOCAL_MODES.includes(G.mode)) applySnap(d); break;
+    case 'rs': if (G.state === 'fight' && G.online === 'client' && G.mode === 'race') applyRaceSnap(d); break;
+    case 'hs': if (G.state === 'fight' && G.online === 'client' && G.mode === 'horror') applyHorrorSnap(d); break;
+    case 'results':
+      if (G.online !== 'client') break;
+      G.wins = d.w || {};
+      if (d.rk) d.rk.forEach((a, i) => { const f = G.fighters[i]; if (f) Object.assign(f, { place:a[0], time:a[1], done:!!a[2] }); });
+      if (d.hc) d.hc.forEach((c, i) => { const f = G.fighters[i]; if (f) f.caught = !!c; });
+      G.champ = G.mode === 'teams' ? { team:d.team } : G.mode === 'horror' ? { horror:true } : G.fighters[d.champ];
+      if (G.champ) showResults();
+      break;
     case 'tolobby': G.online = null; openLobby(); break;
     case 'kicked': endNet('The host removed you from the team.'); break;
     case 'full': endNet('That team is full. A team can have 6 players.', true); break;
@@ -4138,7 +4519,14 @@ function clientLeave() { try { if (Net.host && Net.host.open) Net.host.send({ t:
 function clientStart(d) {
   G.online = 'client'; G.mode = d.mode || 'ffa'; G.rounds = d.rounds || 3; G.wins = {}; G.particles = []; G.banner = null; G.phase = 'countdown'; G.timer = 3; G.goT = 0; G.paused = false;
   const me = 'net:' + (Net.peer && Net.peer.id);
-  G.fighters = d.lineup.map((l, i) => ({ ch:CHAR[l.ch], control:l.control, tag:l.tag, team:l.team || 0, idx:i, r:38, me:l.control === me, body:{ position:{ x:800, y:560 }, angle:0 }, tgt:null, seen:false,
+  if (G.mode === 'race') { // the host drives everything; these karts just show where the host says they are
+    TRACK = (RACE_TRACKS[d.track] || RACE_TRACKS.gp).built;
+    G.fighters = d.lineup.map((l, i) => Object.assign(makeKart({ ch:CHAR[l.ch], control:l.control, tag:l.tag }, i), { me:l.control === me, tgt:null, seen:false }));
+    G.race = { boxes:[], things:[], finished:0, endT:-1, order:[...G.fighters] };
+  } else if (G.mode === 'horror') {
+    G.fighters = d.lineup.map((l, i) => ({ ch:CHAR[l.ch], control:l.control, tag:l.tag, team:0, idx:i, me:l.control === me, alive:true, caught:false, r:22, x:800, y:500, facing:1, walk:0, hidden:null, fear:0, tgt:null, seen:false }));
+    G.horror = { left:SURVIVE_TIME, spots:HOUSE.spots.map(s => ({ ...s, who:null })), flash:0, monster:{ x:HOUSE.lair.x, y:HOUSE.lair.y, r:30, a:Math.PI, state:'wait', waitT:MONSTER_WAIT, walk:0, tgt:null, seen:false } };
+  } else G.fighters = d.lineup.map((l, i) => ({ ch:CHAR[l.ch], control:l.control, tag:l.tag, team:l.team || 0, idx:i, r:38, me:l.control === me, body:{ position:{ x:800, y:560 }, angle:0 }, tgt:null, seen:false,
     alive:true, ko:0, dizzy:0, facing:1, punchAnim:0, flash:0, grabbing:null, squash:0 }));
   MAP = MAPS[d.map] || MAPS.cloud; G.clouds = ledgeObjs(MAP); G.hazards = []; G.waves = [];
   G.state = 'fight'; showScreen(null); cv.focus();
@@ -4157,8 +4545,47 @@ function applySnap(s) {
   G.hazards = (s.hz || []).map(a => { const type = HZ_CODES[a[0]] || 'ice'; return { type, x:a[1], y:a[2], warn:a[3], r: type === 'snow' ? 36 : 24, dir: type === 'car' ? Math.sign(a[4]) : a[4], c: Math.abs(a[4]) % 10, wire:a[4], live: type === 'geyser' ? a[4]/100 : a[2], ph:a[3] ? 0 : (a[1]|0) % 7 }; });
   for (const e of s.e || []) runEv(...e);
 }
+function applyRaceSnap(s) {
+  G.phase = s.ph; G.timer = s.tm; G.goT = s.go; G.banner = s.bn || null;
+  const R = G.race;
+  s.f.forEach((a, i) => {
+    const k = G.fighters[i]; if (!k) return;
+    k.tgt = { x:a[0], y:a[1], a:a[2] };
+    if (!k.seen || Math.hypot(a[0] - k.x, a[1] - k.y) > 250) { k.x = a[0]; k.y = a[1]; k.a = a[2]; k.seen = true; }
+    Object.assign(k, { spin:a[3], spinT:a[4], fallT:a[5], boostT:a[6], lap:a[7], done:!!a[8], place:a[9], time:a[10], item:ITEM_KINDS[a[11]] || null, wrongT:a[12] });
+  });
+  R.boxes = s.b.map(a => ({ x:a[0], y:a[1], t:a[2] ? 0 : 1, kind:ITEM_KINDS[a[3]] }));
+  R.things = s.th.map(a => ({ kind:ITEM_KINDS[a[0]], x:a[1], y:a[2] }));
+  R.order = s.o.map(i => G.fighters[i]).filter(Boolean); R.finished = s.fin; R.endT = s.end;
+  for (const e of s.e || []) runEv(...e);
+}
+function applyHorrorSnap(s) {
+  G.phase = s.ph; G.timer = s.tm; G.goT = s.go; G.banner = s.bn || null;
+  const Hh = G.horror, m = Hh.monster;
+  for (const sp of Hh.spots) sp.who = null;
+  s.f.forEach((a, i) => {
+    const p = G.fighters[i]; if (!p) return;
+    p.tgt = { x:a[0], y:a[1] };
+    if (!p.seen || Math.hypot(a[0] - p.x, a[1] - p.y) > 250) { p.x = a[0]; p.y = a[1]; p.seen = true; }
+    p.facing = a[2]; p.walk = a[3]; p.caught = !!a[4]; p.alive = !p.caught; p.hidden = a[5] >= 0 ? Hh.spots[a[5]] : null; if (p.hidden) p.hidden.who = p; p.fear = a[6];
+  });
+  const [mx, my, ma, ms, mw, mk] = s.m;
+  m.tgt = { x:mx, y:my, a:ma };
+  if (!m.seen || Math.hypot(mx - m.x, my - m.y) > 250) { m.x = mx; m.y = my; m.a = ma; m.seen = true; }
+  m.state = MSTATES[ms] || 'patrol'; m.waitT = mw; m.walk = mk; Hh.left = s.left; Hh.flash = s.fl;
+  for (const e of s.e || []) runEv(...e);
+}
 function clientSmooth(dt) {
   const k = Math.min(1, dt*18);
+  if (G.mode === 'race' || G.mode === 'horror') { // slide everyone smoothly toward where the host last said they were
+    for (const o of G.mode === 'horror' ? [...G.fighters, G.horror.monster] : G.fighters) {
+      if (!o.tgt) continue;
+      const ox = o.x, oy = o.y; o.x += (o.tgt.x - o.x)*k; o.y += (o.tgt.y - o.y)*k;
+      if (o.tgt.a != null) o.a += wrap(o.tgt.a - o.a)*k;
+      if (o.bob != null) o.bob += Math.hypot(o.x - ox, o.y - oy)*0.05;
+    }
+    return;
+  }
   for (const p of G.fighters) {
     if (!p.tgt) continue; const pos = p.body.position;
     pos.x += (p.tgt.x - pos.x)*k; pos.y += (p.tgt.y - pos.y)*k; p.body.angle += wrap(p.tgt.a - p.body.angle)*k;
@@ -4170,7 +4597,7 @@ function clientSendInput(now) {
   const h = readHeld('local'), pr = Net.prevHeld, c = Net.counters;
   if (h.jump && !pr.jump) c.j++; if (h.punch && !pr.punch) c.p++; if (h.grab && !pr.grab) c.g++; if (h.special && !pr.special) c.s++;
   Net.prevHeld = h;
-  const msg = { t:'i', x:h.x, d:h.down ? 1 : 0, j:c.j, p:c.p, g:c.g, s:c.s }, key = msg.x + ',' + msg.d + ',' + c.j + ',' + c.p + ',' + c.g + ',' + c.s;
+  const msg = { t:'i', x:h.x, d:h.down ? 1 : 0, u:h.jump ? 1 : 0, j:c.j, p:c.p, g:c.g, s:c.s }, key = msg.x + ',' + msg.d + ',' + msg.u + ',' + c.j + ',' + c.p + ',' + c.g + ',' + c.s;
   if (key !== Net.lastInput || now - Net.lastSend > 250) { try { Net.host.send(msg); } catch (e) {} Net.lastInput = key; Net.lastSend = now; }
 }
 
@@ -4206,24 +4633,25 @@ function renderLobby() {
     const others = L.players.filter(p => p.id !== 'host');
     aside.innerHTML = `<h3>you are host</h3>
       <div class="kick-box"><b>kick?</b><ul class="plist">${others.length ? others.map(p => `<li>${dot(p)}<span>${esc(p.name)}</span><button class="kick" data-kick="${esc(p.id)}">kick</button></li>`).join('') : '<li><span>No friends here yet. Send them the code!</span></li>'}</ul></div>
-      <div class="setting"><span>Rounds to win</span><div class="seg" id="lobRoundsSeg"></div></div>
+      ${LOCAL_MODES.includes(L.mode) ? '' : '<div class="setting"><span>Rounds to win</span><div class="seg" id="lobRoundsSeg"></div></div>'}
       <div class="setting"><span>Game mode</span><div class="seg" id="lobModeSeg"></div></div>
-      <div class="setting"><span>Map</span><div class="seg" id="lobMapSeg"></div></div>
+      ${L.mode === 'race' ? '<div class="setting"><span>Track</span><div class="seg" id="lobTrackSeg"></div></div>' : L.mode === 'horror' ? '' : '<div class="setting"><span>Map</span><div class="seg" id="lobMapSeg"></div></div>'}
       <div class="setting"><span>Computer players</span><div class="seg" id="lobDiffSeg"></div></div>
       <button id="lobbyFight" class="btn big">make fight happen</button>
       <p id="lobbyMsg" class="msg" role="status"></p>
       <button id="lobbyDisband" class="disband small-disband"><span>disband</span><span>team</span></button>`;
     aside.querySelectorAll('[data-kick]').forEach(b => b.onclick = () => hostKick(b.dataset.kick));
-    renderSeg('lobRoundsSeg', [[1,'1'],[3,'3'],[5,'5']], 'rounds', broadcastLobby);
+    if ($('lobRoundsSeg')) renderSeg('lobRoundsSeg', [[1,'1'],[3,'3'],[5,'5']], 'rounds', broadcastLobby);
     renderSeg('lobDiffSeg', Object.entries(DIFF).map(([k, v]) => [k, v.label]), 'diff', broadcastLobby);
-    renderSeg('lobModeSeg', NET_MODES, 'mode', () => { L.mode = setup.mode; broadcastLobby(); });
-    renderSeg('lobMapSeg', MAPLIST, 'map', () => { L.map = setup.map; broadcastLobby(); });
+    renderSeg('lobModeSeg', MODES, 'mode', () => { L.mode = setup.mode; broadcastLobby(); });
+    if ($('lobMapSeg')) renderSeg('lobMapSeg', MAPLIST, 'map', () => { L.map = setup.map; broadcastLobby(); });
+    if ($('lobTrackSeg')) renderSeg('lobTrackSeg', RACE_TRACK_LIST, 'track', () => { L.track = setup.track; broadcastLobby(); });
     $('lobbyFight').onclick = () => { audioOn(); hostStartMatch(); };
     $('lobbyDisband').onclick = () => endRoom('You disbanded the team.');
   } else {
     aside.innerHTML = `<h3>the team</h3>
       <ul class="plist">${L.players.map(p => `<li>${dot(p)}<span>${esc(p.name)}${p.id === 'host' ? ' (host)' : ''}${p.id === me ? ' (you)' : ''}</span></li>`).join('')}</ul>
-      <p>Map: <b>${esc((MAPS[L.map] || MAPS.cloud).name)}</b> · Mode: <b>${L.mode === 'teams' ? 'Team vs team' : 'Free for all'}</b> · Rounds to win: <b>${esc(Net.hostRounds || 3)}</b> · Computer players: <b>${esc((DIFF[Net.hostDiff] || DIFF.normal).label)}</b></p>
+      <p>Mode: <b>${esc((MODES.find(m => m[0] === L.mode) || MODES[0])[1])}</b> · ${L.mode === 'race' ? `Track: <b>${esc((RACE_TRACKS[L.track] || RACE_TRACKS.gp).name)}</b>` : L.mode === 'horror' ? 'Map: <b>the spooky house</b>' : `Map: <b>${esc((MAPS[L.map] || MAPS.cloud).name)}</b> · Rounds to win: <b>${esc(Net.hostRounds || 3)}</b>`} · Computer players: <b>${esc((DIFF[Net.hostDiff] || DIFF.normal).label)}</b></p>
       <p class="msg" style="color:var(--ink)">Pick a fighter, then wait for the host to make the fight happen.</p>
       <button id="lobbyLeave" class="btn black">leave team</button>`;
     $('lobbyLeave').onclick = () => clientLeave();

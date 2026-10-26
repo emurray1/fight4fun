@@ -32,7 +32,13 @@ Every fighter has 200 hp. When it runs out, they get dizzy and can be thrown.
   - **Bouncy shell (green):** shoots straight ahead and bounces off the walls.
   - **Chaser shell (red):** flies after whoever is just ahead of you.
 
-  Items are scattered at random spots all around the track, different every race, and 3 seconds after one is picked up a new random item shows up somewhere else. The first one over the finish line wins, and once they finish, everyone else has 15 seconds to cross the line. Racing works on one computer, not online yet.
+  Items are scattered at random spots all around the track, different every race, and 3 seconds after one is picked up a new random item shows up somewhere else. The first one over the finish line wins, and once they finish, everyone else has 15 seconds to cross the line. Racing works online too: the host picks Racing and a track in the team lobby.
+- **Horror:** a monster is looking for you in a dark, spooky house with six rooms! It's dark everywhere except near you and the candles, and lightning flashes now and then. Move all around with left, right, up (jump) and down. Press punch next to a bed, closet, box, couch, fridge, barrel, bookshelf, chest or bathtub to hide in it, and again to come out. The monster comes out of the basement after 5 seconds and walks from room to room. It sees in a cone in front of it (yellow, or red when it's chasing someone), and it can hear you if you're right next to it. When it gets close, your heart starts beating faster.
+  - If it sees you hide, it comes and pulls you out ("FOUND YOU!"). Sometimes it sniffs around and checks hiding spots it walks past.
+  - You can't stay hidden forever. The scared meter over your hiding spot fills up, and when it's full you jump out screaming "AAAH!"
+  - If it catches you, you're out. Survive for 60 seconds and you win. If it catches everyone, the monster wins.
+
+  Horror works online too, and on one computer you can play it alone against the monster.
 
 ## Maps
 
@@ -80,6 +86,8 @@ All through December snow falls on every map, the menu hills turn snowy with Chr
 2. Send your friends the 4-letter code.
 3. They click **play online**, type the code and click **join**.
 4. Everyone picks a fighter, and the host clicks **make fight happen**.
+
+The host picks the game mode in the team lobby: Free for all, Team vs team, Racing (with a track picker) or Horror.
 
 The host's browser runs the fight, and everyone else connects to it directly using [PeerJS](https://peerjs.com/). Keep the host's game window open and in front while you play. Some school or work networks block these direct connections.
 
