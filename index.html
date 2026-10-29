@@ -122,6 +122,10 @@ kbd{font-family:var(--body);border:2px solid var(--ink);border-bottom-width:4px;
 /* ---------- title menu, how-to, settings, quit ---------- */
 .menu{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
 .menu .btn{font-size:26px;padding:6px 22px}
+/* the glitch shop button: black, with red and blue glitch blocks stuck on it, and it jumps sideways now and then */
+.menu .glitch-btn{background:#000;color:#fff;box-shadow:-6px -6px 0 #ed1c24,7px 6px 0 #00a2e8;animation:glitchJump 2.4s steps(1) infinite}
+.menu .glitch-btn[hidden]{display:none}
+@keyframes glitchJump{0%,88%,100%{transform:none}90%{transform:translateX(5px)}94%{transform:translateX(-4px)}}
 .page{width:min(980px,100%)}
 .page-body{padding:20px 26px 26px;display:flex;flex-direction:column;gap:22px}
 .page h3{font-family:var(--display);font-weight:400;font-size:34px;margin:0 0 6px;line-height:1}
@@ -249,7 +253,7 @@ html.xmas .fff span{border-color:#1b7a34;color:#c8102e}
     <p id="xmasNote" class="xmas-note" hidden>🎄 Merry Christmas! 🎁</p>
     <div class="title-chars" id="titleChars"></div>
     <button id="okBtn" class="btn grey">OK</button>
-    <div class="menu"><button id="onlineBtn" class="btn">play online</button><button id="howBtn" class="btn">how to play</button><button id="keysBtn" class="btn">controls</button><button id="setBtn" class="btn">settings</button><button id="shopBtn" class="btn">shop</button></div>
+    <div class="menu"><button id="onlineBtn" class="btn">play online</button><button id="howBtn" class="btn">how to play</button><button id="keysBtn" class="btn">controls</button><button id="setBtn" class="btn">settings</button><button id="shopBtn" class="btn">shop</button><button id="glitchShopBtn" class="btn glitch-btn" hidden>SHOP..?</button></div>
     <p id="notice" class="msg" role="status"></p>
     <p class="hint">OK plays on this computer. Best with a keyboard or game controllers.</p>
   </div>
@@ -567,6 +571,9 @@ const ITEMS = [
   // gifts from the shopkeepers when you hang out with them in the break room
   { id:'bow', name:'Pink bow', price:0, desc:'A pink bow, tied by the funny fun shopkeeper on her break.', gift:true },
   { id:'badge', name:'Staff badge', price:0, desc:'A gold star badge from the fighty shopkeeper. You\'re one of the team now!', gift:true },
+  // the glitch shop (floor 9), behind the glitch blocks on the 5th floor: only Missing Arrow can get in
+  { id:'cubes', name:'Glitch cubes', price:40, desc:'Little red and blue glitch cubes that float around you, and blink to a new spot now and then.', floor:9 },
+  { id:'glasses3d', name:'3D glasses', price:30, desc:'Red and blue glasses. Everything looks glitchy through them!', floor:9, not:['star'] },
 ];
 const shop = { coins:0, owned:{}, wear:{} };
 try { const s = JSON.parse(localStorage.getItem('fff-shop') || 'null'); if (s) Object.assign(shop, s); } catch (e) {}
@@ -589,7 +596,7 @@ const skinOf = ch => (shop.skins[ch.id] && shop.skins[ch.id].on) || 'classic';
 const skinColor = id => id === 'rainbow' ? `hsl(${(performance.now()/1000*90) % 360},85%,60%)` : (SKIN[id] && SKIN[id].color) || null;
 const mySkin = ch => G.online ? 'classic' : skinOf(ch); // like the other shop things, skins show up on this computer (not in online games yet)
 const myColor = ch => skinColor(mySkin(ch)) || ch.color;
-const looks = ch => ({ skin:skinOf(ch), hat:wears('coolhat', ch), glasses:wears('shades', ch) && ch.id !== 'star', cape:wears('cape', ch), wings:wears('batwings', ch), headphones:wears('headphones', ch), bow:wears('bow', ch), badge:wears('badge', ch) });
+const looks = ch => ({ skin:skinOf(ch), hat:wears('coolhat', ch), glasses:wears('shades', ch) && ch.id !== 'star', cape:wears('cape', ch), wings:wears('batwings', ch), headphones:wears('headphones', ch), bow:wears('bow', ch), badge:wears('badge', ch), cubes:wears('cubes', ch), glasses3d:wears('glasses3d', ch) && ch.id !== 'star' });
 // the shop room: you walk a fighter up to a stand to buy what's on it
 const SHOP = { who:null, floor:1, x:280, y:0, vy:0, facing:1, near:null, nearKeeper:false, nearStairs:false, talk:{ 1:-1, 2:-1, 4:-1, 6:-1 }, prev:{}, msg:'', msgT:0, key:'' };
 // two floors: the fighty shop downstairs, and the funny fun shop upstairs for things that don't fit downstairs
@@ -607,10 +614,10 @@ const CAGE_X = 200, CAGE_PORTAL_X = 1263, LOCK_POPS = 12, LOCK_SPEED = 2.0, LOCK
 const STAIRS = [{ floor:1, x:STAIRS_X[1], to:2 }, { floor:2, x:STAIRS_X[2], to:1 }, { floor:2, x:LADDER_X, to:3 }, { floor:3, x:ATTIC_STAIRS_X, to:2 },
   { floor:3, x:ELEVATOR_X, to:4 }, { floor:4, x:ELEVATOR_X, to:3 }, { floor:2, x:BREAK_DOOR_X, to:6 }, { floor:6, x:BREAK_DOOR_X, to:2 },
   { floor:7, x:TOP_PORTAL_X, to:8 }, { floor:8, x:CAGE_PORTAL_X, to:1 }];
-const STAND_SPOTS = { 1:[390, 610, 830], 2:[530], 3:[800] };
+const STAND_SPOTS = { 1:[390, 610, 830], 2:[530], 3:[800], 9:[720, 1080] };
 const SKIN_X = 830; // the skins booth on the 2nd floor (a big mirror)
 const STANDS = (() => { // items fill the 1st floor, then the 2nd; an item can also ask for a floor of its own
-  const free = { 1:[...STAND_SPOTS[1]], 2:[...STAND_SPOTS[2]], 3:[...STAND_SPOTS[3]] }, out = [];
+  const free = { 1:[...STAND_SPOTS[1]], 2:[...STAND_SPOTS[2]], 3:[...STAND_SPOTS[3]], 9:[...STAND_SPOTS[9]] }, out = [];
   for (const it of ITEMS) { if (it.gift) continue; const f = it.floor || (free[1].length ? 1 : 2); if (free[f].length) out.push({ item:it.id, floor:f, x:free[f].shift() }); }
   return out;
 })();
@@ -920,13 +927,14 @@ function drawFace(g, ch, r, o = {}) {
       break;
     }
   }
-  if (o.glasses && EYES[ch.id]) drawGlasses(g, EYES[ch.id]);
+  if (o.glasses3d && EYES[ch.id]) drawGlasses(g, EYES[ch.id], false, null, true);
+  else if (o.glasses && EYES[ch.id]) drawGlasses(g, EYES[ch.id]);
   g.restore();
 }
 // where each fighter's eyes are (in face units), so the shop's sunglasses sit on them
 const EYES = { arrow:[[-0.18,0],[0.18,0]], tri:[[-0.17,0.06],[0.17,0.06]], circle:[[-0.2,-0.2],[0.2,-0.2]], diamond:[[-0.18,-0.04],[0.18,-0.04]], square:[[-0.18,-0.04],[0.18,-0.04]], sparkle:[[-0.18,-0.1],[0.18,-0.1]],
   hex:[[-0.24,-0.12],[0.17,-0.13]], heart:[[-0.3,0.04],[0.3,0.04]], shuriken:[[-0.15,-0.05],[0.17,-0.06]] };
-function drawGlasses(g, [a, b], glow = false, lens = '#e8ff6a') { // the sunglasses from the shop (or, with glow, the round glow goggles), drawn in face units between two eyes
+function drawGlasses(g, [a, b], glow = false, lens = '#e8ff6a', three = false) { // the sunglasses from the shop (or, with glow, the round glow goggles, or the red and blue 3D glasses), drawn in face units between two eyes
   const d = Math.hypot(b[0] - a[0], b[1] - a[1]), lw = Math.min(0.3, d*0.8), lh = glow ? lw : 0.2;
   g.save(); g.translate((a[0] + b[0])/2, (a[1] + b[1])/2); g.rotate(Math.atan2(b[1] - a[1], b[0] - a[0]));
   g.fillStyle = C.ink; g.strokeStyle = C.ink; g.lineWidth = 0.05; g.lineCap = 'round';
@@ -935,7 +943,8 @@ function drawGlasses(g, [a, b], glow = false, lens = '#e8ff6a') { // the sunglas
     g.lineWidth = 0.05; g.beginPath(); g.moveTo(-d/2 + lw/2, 0); g.lineTo(d/2 - lw/2, 0); g.moveTo(-d/2 - lw/2, 0); g.lineTo(-d/2 - lw/2 - 0.14, -0.03); g.moveTo(d/2 + lw/2, 0); g.lineTo(d/2 + lw/2 + 0.14, -0.03); g.stroke();
     g.restore(); return;
   }
-  for (const s of [-1, 1]) { g.beginPath(); g.roundRect ? g.roundRect(s*d/2 - lw/2, -lh/2, lw, lh, 0.06) : g.rect(s*d/2 - lw/2, -lh/2, lw, lh); g.fill(); }
+  if (three) g.strokeStyle = '#fff'; // white frames
+  for (const s of [-1, 1]) { if (three) g.fillStyle = s < 0 ? C.red : C.blue; g.beginPath(); g.roundRect ? g.roundRect(s*d/2 - lw/2, -lh/2, lw, lh, 0.06) : g.rect(s*d/2 - lw/2, -lh/2, lw, lh); g.fill(); if (three) g.stroke(); }
   g.beginPath(); g.moveTo(-d/2, -0.04); g.lineTo(d/2, -0.04);
   g.moveTo(-d/2 - lw/2, -0.05); g.lineTo(-d/2 - lw/2 - 0.12, -0.1); g.moveTo(d/2 + lw/2, -0.05); g.lineTo(d/2 + lw/2 + 0.12, -0.1); g.stroke();
   g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineWidth = 0.03;
@@ -958,6 +967,7 @@ function drawCharacter(g, ch, r, o = {}) {
     g.strokeStyle = C.ink; g.lineWidth = Math.max(2, r*0.06); g.beginPath(); g.moveTo(0, -0.9*r); g.lineTo(Math.sin(tt*9)*r*0.06, -1.55*r); g.stroke();
     g.fillStyle = Math.sin(tt*10) > 0 ? '#ff3b3b' : '#7dff8a'; g.beginPath(); g.arc(Math.sin(tt*9)*r*0.06, -1.6*r, 0.1*r, 0, TAU); g.fill(); g.lineWidth = Math.max(1, r*0.03); g.stroke();
   }
+  if (o.cubes) drawGlitchCubes(g, r, tt, false); // the cubes going around behind you
   if (o.wings) drawBatWings(g, r, tt); // behind the body (and behind the cape)
   if (o.cape) drawCape(g, r, o.facing || 1, tt, ch.shape === 'circle' ? r : Math.max(...shapeVerts(ch.shape, r, true).map(v => v.y))); // behind the body
   g.fillStyle = skinColor(o.skin) || ch.color; g.strokeStyle = C.ink; g.lineWidth = Math.max(2, r*0.09); g.lineJoin = 'round';
@@ -1006,7 +1016,17 @@ function drawCharacter(g, ch, r, o = {}) {
     g.fillStyle = 'rgba(255,255,255,.7)'; for (let i=0;i<10;i++) g.fillRect(Math.sin(i*12.9 + gk*3.1)*r*0.7, Math.cos(i*7.3 + gk*1.7)*r*0.8, r*0.05, r*0.05);
     g.restore();
   }
+  if (o.cubes) drawGlitchCubes(g, r, tt, true); // ...and in front
   if (shaky) g.restore();
+}
+function drawGlitchCubes(g, r, t, front) { // the glitch cubes from the glitch shop: red and blue cubes going around you, and now and then one blinks sideways
+  for (let i=0;i<6;i++) {
+    const a = t*1.6 + i*TAU/6; if ((Math.sin(a) > 0) !== front) continue; // the half that's in front of you, or behind
+    const blink = Math.floor(t*4 + i*1.7) % 9 === 0 ? r*0.3*(i % 2 ? 1 : -1) : 0, s = r*(0.17 + (i % 3)*0.05);
+    const x = Math.cos(a)*r*1.45 + blink, y = Math.sin(a)*r*0.45 - r*0.15;
+    g.fillStyle = i % 2 ? C.blue : C.red; g.strokeStyle = C.ink; g.lineWidth = Math.max(1, r*0.03);
+    g.fillRect(x - s/2, y - s/2, s, s); g.strokeRect(x - s/2, y - s/2, s, s);
+  }
 }
 function drawBatWings(g, r, t) { // the Halloween bat wings: dark purple, with bumpy bottom edges, slowly flapping
   const f = Math.sin(t*6), lift = 0.8 + 0.2*f;
@@ -1095,7 +1115,7 @@ function charCanvas(ch, px, o = {}) {
   const g = c.getContext('2d'); g.scale(d, d);
   const tall = o.crown || o.hat, r = px*(tall ? 0.27 : 0.33);
   g.translate(px/2, px*(tall ? 0.62 : 0.53));
-  drawCharacter(g, ch, r, { facing:1, ko:o.ko, hat:o.hat && !o.crown, glasses:o.glasses, cape:o.cape, wings:o.wings, skin:o.skin, headphones:o.headphones, bow:o.bow && !o.crown, badge:o.badge, beanie:!o.crown });
+  drawCharacter(g, ch, r, { facing:1, ko:o.ko, hat:o.hat && !o.crown, glasses:o.glasses, cape:o.cape, wings:o.wings, skin:o.skin, headphones:o.headphones, bow:o.bow && !o.crown, badge:o.badge, cubes:o.cubes, glasses3d:o.glasses3d, beanie:!o.crown });
   if (o.crown) drawCrown(g, r, -TOPS[ch.shape]*r);
   return c;
 }
@@ -3905,6 +3925,21 @@ function drawTopFloor(t) {
   g.closePath(); g.stroke();
   drawPortal(TOP_PORTAL_X, SHOP_FLOOR - 150, 140, t);
 }
+// ----- the glitch shop (floor 9): a secret shop with its own button on the main menu, that only shows up once you've freed Missing Arrow -----
+function drawGlitchShop(t) {
+  g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
+  g.fillStyle = '#0d0d10'; g.fillRect(0, SHOP_FLOOR, W, H - SHOP_FLOOR); g.fillStyle = '#26262e'; g.fillRect(0, SHOP_FLOOR, W, 4);
+  // red and blue glitch blocks all over the walls, flickering
+  for (let i=0;i<14;i++) { const bx = (i*263) % 1500 + 30, by = 120 + (i*157) % 470, w = 60 + (i*37) % 110, h = 30 + (i*53) % 70, jit = Math.sin(t*6 + i*2.7) > 0.95 ? 10 : 0;
+    g.globalAlpha = 0.55; g.fillStyle = i % 2 ? C.blue : C.red; g.fillRect(bx + jit, by, w, h); }
+  g.globalAlpha = 1;
+  // the big "SHOP..?" sign from the drawing: a black sign with red blocks stuck on its corners
+  const sx = 900, sy = 210, jx = Math.sin(t*11) > 0.9 ? 6 : 0;
+  g.fillStyle = '#111'; g.strokeStyle = '#3a3a48'; g.lineWidth = 4; g.fillRect(sx - 220 + jx, sy - 70, 440, 140); g.strokeRect(sx - 220 + jx, sy - 70, 440, 140);
+  g.fillStyle = C.red; g.fillRect(sx - 250 + jx, sy - 95, 110, 90); g.fillRect(sx + 150 + jx, sy + 10, 120, 110);
+  g.fillStyle = C.white; g.font = `72px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('SHOP..?', sx + jx, sy);
+  g.fillStyle = 'rgba(0,162,232,.5)'; g.fillText('SHOP..?', sx + jx - 5, sy + 2); // a blue glitch copy
+}
 // ----- the cage room: once you enter, you can't get out... until you break Missing Arrow out of his cage -----
 function enterCage() {
   const freed = unlocked(CHAR.arrow);
@@ -4023,7 +4058,7 @@ function drawManager(g, t) { // %#@% sitting in his chair (drawn in the chair's 
 function drawShop(t) {
   const hall = SHOP.floor === 5; // the chase hallway scrolls with you
   if (hall) { g.save(); g.translate(-(SHOP.cam || 0), 0); drawChaseFloor(t); }
-  else if (SHOP.floor === 8) drawCageFloor(t); else if (SHOP.floor === 7) drawTopFloor(t); else if (SHOP.floor === 6) drawBreakFloor(t); else if (SHOP.floor === 4) drawOfficeFloor(t); else if (SHOP.floor === 3) drawAtticFloor(t); else if (SHOP.floor === 2) drawFunnyFloor(t); else drawFightyFloor(t);
+  else if (SHOP.floor === 9) drawGlitchShop(t); else if (SHOP.floor === 8) drawCageFloor(t); else if (SHOP.floor === 7) drawTopFloor(t); else if (SHOP.floor === 6) drawBreakFloor(t); else if (SHOP.floor === 4) drawOfficeFloor(t); else if (SHOP.floor === 3) drawAtticFloor(t); else if (SHOP.floor === 2) drawFunnyFloor(t); else drawFightyFloor(t);
   // an empty pink stand upstairs, waiting for the next thing to sell (a real item takes its place once there is one)
   if (SHOP.floor === 2) {
     const spot = STAND_SPOTS[2].find(x => !STANDS.some(s => s.floor === 2 && s.x === x));
@@ -4041,12 +4076,14 @@ function drawShop(t) {
   for (const st of STANDS) {
     if (st.floor !== SHOP.floor) continue;
     const it = ITEMS.find(i => i.id === st.item), top = SHOP_FLOOR - 170;
-    g.fillStyle = st.floor === 2 ? PINK_DARK : st.floor === 3 ? '#4a3626' : BEAM; g.fillRect(st.x - 12, top, 24, 170); g.beginPath(); g.ellipse(st.x, SHOP_FLOOR, 60, 12, 0, 0, TAU); g.fill();
+    g.fillStyle = st.floor === 2 ? PINK_DARK : st.floor === 3 ? '#4a3626' : st.floor === 9 ? '#3a3a48' : BEAM; g.fillRect(st.x - 12, top, 24, 170); g.beginPath(); g.ellipse(st.x, SHOP_FLOOR, 60, 12, 0, 0, TAU); g.fill();
     g.fillRect(st.x - 80, top - 14, 160, 18);
     g.save(); g.translate(st.x, top - 14 + Math.sin(t*2)*3);
     if (it.id === 'coolhat') drawHat(g, 64, -6.4, 1);
     else if (it.id === 'cape') { g.translate(0, -62); drawCape(g, 64, -1, t, 64); } // draped over the stand
     else if (it.id === 'batwings') { g.translate(0, -48); if (!forSale(it) && !shop.owned[it.id]) g.globalAlpha = 0.45; drawBatWings(g, 58, t); }
+    else if (it.id === 'cubes') { g.translate(0, -50); drawGlitchCubes(g, 80, t, false); drawGlitchCubes(g, 80, t, true); }
+    else if (it.id === 'glasses3d') { g.translate(0, -16); g.scale(130, 130); drawGlasses(g, [[-0.2, 0], [0.2, 0]], false, null, true); }
     else { g.translate(0, -16); g.scale(130, 130); drawGlasses(g, [[-0.2, 0], [0.2, 0]], it.id === 'goggles', SHOP.pushT > 0 || SHOP.pushing ? '#ff3b3b' : '#e8ff6a'); } // the goggles turn red when the eyes get angry
     g.restore();
     const owned = shop.owned[it.id], locked = !owned && !forSale(it), label = owned ? 'yours!' : locked ? 'Halloween only' : it.price ? `${it.price} coins` : 'FREE!';
@@ -4113,7 +4150,7 @@ function applyTheme() {
 }
 applyTheme();
 const screens = ['title','setup','pause','results','howto','settings','quitAsk','online','lobby','keys','shop'];
-function showScreen(id) { for (const s of screens) $(s).hidden = s !== id; $('gameQuit').hidden = !(id === null && G.state === 'fight'); musicUpdate(); }
+function showScreen(id) { for (const s of screens) $(s).hidden = s !== id; $('glitchShopBtn').hidden = !unlocked(CHAR.arrow); $('gameQuit').hidden = !(id === null && G.state === 'fight'); musicUpdate(); }
 function openQuit() {
   if (G.state !== 'fight') return;
   G.paused = !G.online; $('pause').hidden = true; $('gameQuit').hidden = true;
@@ -4278,6 +4315,13 @@ document.querySelectorAll('[data-back]').forEach(b => b.onclick = () => { if (ba
 $('howBtn').onclick = () => { audioOn(); openPage('howto'); };
 $('setBtn').onclick = () => { audioOn(); openPage('settings'); };
 $('shopBtn').onclick = () => { audioOn(); openShop(); };
+$('glitchShopBtn').onclick = () => { // straight into the glitch shop, as Missing Arrow (you only get the button once he's free)
+  if (!unlocked(CHAR.arrow)) return;
+  audioOn(); SHOP.who = CHARS.findIndex(ch => ch.id === 'arrow'); openShop();
+  Object.assign(SHOP, { floor:9, x:300, visit:null, smi7y:false, smiSayT:0, enterT:0, replies:[], youSay:'A... a shop? Just for me?', youSayT:3 });
+  musicUpdate(); if (sfx.zap) sfx.zap(); renderShopCard(true);
+};
+$('glitchShopBtn').hidden = !unlocked(CHAR.arrow);
 $('shopCardOpen').onclick = () => { SHOP.cardClosed = false; renderShopCard(true); cv.focus(); };
 $('shopPrev').onclick = () => { do SHOP.who = (SHOP.who + CHARS.length - 1) % CHARS.length; while (!unlocked(CHARS[SHOP.who])); renderShopCard(true); };
 $('shopNext').onclick = () => { do SHOP.who = (SHOP.who + 1) % CHARS.length; while (!unlocked(CHARS[SHOP.who])); renderShopCard(true); };
@@ -4484,7 +4528,7 @@ function renderShopCard(force) {
       row.append(b);
     }
   }
-  for (const i of ITEMS.filter(i => i.gift && shop.owned[i.id] && !wears(i.id, ch))) { // gifts aren't on a stand, so you put them on from here
+  for (const i of ITEMS.filter(i => (i.gift || i.floor === 9) && shop.owned[i.id] && !wears(i.id, ch) && canWear(i, ch))) { // gifts aren't on a stand (and only Missing Arrow can get to the glitch shop), so you put them on from here
     const b = document.createElement('button'); b.id = 'on-' + i.id; b.textContent = `put on ${i.name}`;
     b.onclick = () => { (shop.wear[i.id] = shop.wear[i.id] || {})[ch.id] = true; saveShop(); shopSay(`Looking cool, ${ch.name}!`, 'grab'); renderShopCard(true); cv.focus(); };
     row.append(' ', b);
@@ -4550,6 +4594,10 @@ function fillShopCard(card, ch, it) {
     card.innerHTML = c.freed ? (c.freeT >= 99 ? '<h3>The cage room</h3><p>The cage is empty. You already saved Missing Arrow!</p><p class="note">The portal on the right goes home to the 1st floor.</p>'
       : '<h3>He\'s free!</h3><p>You saved Missing Arrow! He\'s a new fighter now: turn him on in the "who is with who" screen, or shop as him with ◀ ▶ at the top.</p><p class="note">The portal on the right is open now. Jump in to go home.</p>')
       : `<h3>Once you enter, you can't get out...</h3><p>Missing Arrow is locked in the cage! Walk up to it and press punch to start picking the lock. A needle spins around the lock: press punch right when it's on the yellow dot. Pop it ${LOCK_POPS} times to open the lock (${c.lock ? c.lock.left : LOCK_POPS} to go). Each pop makes the needle turn around and go faster. If the needle goes past the dot, it just comes around again. But press at the wrong time and the lock starts over and you lose a heart. Lose all 3 and you get thrown out!</p><p class="note">The portal only opens once he's free.</p>`;
+    return;
+  }
+  if (!it && SHOP.floor === 9) {
+    card.innerHTML = '<h3>The glitch shop..?</h3><p>A secret shop that only opens once you\'ve freed Missing Arrow! Nobody works here... the things are just floating on their stands. Walk up to one to buy it. Once it\'s yours, any fighter can put it on, from the "is wearing" list on this card.</p><p class="note">Press back to leave.</p>';
     return;
   }
   if (!it && SHOP.floor === 7) {
