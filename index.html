@@ -443,7 +443,7 @@ html.xmas .fff span{border-color:#1b7a34;color:#c8102e}
         <div class="setting"><span>Rounds to win</span><div class="seg" id="roundsSeg"></div></div>
         <div class="setting"><span>Game mode</span><div class="seg" id="modeSeg"></div></div>
         <div class="setting"><span>Computer players</span><div class="seg" id="diffSeg"></div></div>
-        <div class="mapbox"><span>map</span><div class="seg" id="mapSeg"></div><div class="seg" id="trackSeg" hidden></div><canvas id="mapPreview" width="480" height="270"></canvas><small id="mapDesc"></small></div>
+        <div class="mapbox"><span>map</span><div class="seg" id="mapSeg"></div><div class="seg" id="trackSeg" hidden></div><div class="seg" id="hmapSeg" hidden></div><canvas id="mapPreview" width="480" height="270"></canvas><small id="mapDesc"></small></div>
         <button id="fightBtn" class="btn big">make fight happen</button>
         <p id="setupMsg" class="msg" role="status"></p>
       </aside>
@@ -546,7 +546,7 @@ const DIFF = { easy:{ punch:0.3, cd:0.9, mash:0.06, label:'Easy' }, normal:{ pun
 const MAX_HP = 200; // health points: when they run out, you get dizzy
 const TOPS = { star5:1.15, star4:1.25, tri:1.3, diamond:1.15, square:0.85, circle:1, star6:1.15, heart:0.75, shuriken:1.2, arrow:1.25 };
 
-const setup = { slots:{ star:'cpu', tri:'p1', circle:'cpu', diamond:'off', square:'cpu', sparkle:'off' }, rounds:3, diff:'normal', mode:'ffa', map:'cloud', track:'gp', teams:{ star:0, tri:1, circle:0, diamond:1, square:1, sparkle:0, hex:0, heart:1, shuriken:0 }, sound:true, music:true, volume:1, shake:true, tags:true, halloween:'auto', christmas:'auto' };
+const setup = { slots:{ star:'cpu', tri:'p1', circle:'cpu', diamond:'off', square:'cpu', sparkle:'off' }, rounds:3, diff:'normal', mode:'ffa', map:'cloud', track:'gp', hmap:'house', teams:{ star:0, tri:1, circle:0, diamond:1, square:1, sparkle:0, hex:0, heart:1, shuriken:0 }, sound:true, music:true, volume:1, shake:true, tags:true, halloween:'auto', christmas:'auto' };
 try { const s = JSON.parse(localStorage.getItem('fff-setup') || 'null'); if (s && s.slots) Object.assign(setup, s); } catch (e) {}
 for (const c of CHARS) { if (!setup.slots[c.id]) setup.slots[c.id] = 'off'; if (setup.teams[c.id] == null) setup.teams[c.id] = 0; }
 const saveSetup = () => { try { localStorage.setItem('fff-setup', JSON.stringify(setup)); } catch (e) {} };
@@ -2416,7 +2416,7 @@ function segEnter(x1, y1, x2, y2, w) { // how far along the line (0 to 1) it hit
   }
   return t0;
 }
-const HOUSE = (() => { // six rooms with doorways between them
+const HOUSE_MAP = (() => { // six rooms with doorways between them
   const walls = [
     { x:40, y:110, w:1520, h:20 }, { x:40, y:860, w:1520, h:20 }, { x:40, y:110, w:20, h:770 }, { x:1540, y:110, w:20, h:770 },
     { x:550, y:130, w:20, h:130 }, { x:550, y:360, w:20, h:280 }, { x:550, y:740, w:20, h:120 },
@@ -2432,12 +2432,32 @@ const HOUSE = (() => { // six rooms with doorways between them
     { kind:'couch', x:810, y:190, w:150, h:56 }, { kind:'box', x:630, y:420, w:56, h:56 }, { kind:'table', x:740, y:690, w:120, h:76 }, { kind:'barrel', x:1000, y:815, w:56, h:56 },
     { kind:'shelf', x:1300, y:162, w:170, h:36 }, { kind:'chest', x:1480, y:420, w:76, h:46 }, { kind:'tub', x:1430, y:810, w:130, h:62 }, { kind:'box', x:1130, y:560, w:56, h:56 },
   ];
-  const CELL = 20, GW = W/CELL, GH = H/CELL, free = new Uint8Array(GW*GH); // a grid of where the monster fits, for finding its way around the walls
-  for (let j=0;j<GH;j++) for (let i=0;i<GW;i++) { const cx = i*CELL + CELL/2, cy = j*CELL + CELL/2; free[j*GW + i] = cx > 60 && cx < 1540 && cy > 130 && cy < 860 && walls.every(w => rectDist(cx, cy, w) > 26) ? 1 : 0; }
-  return { walls, rooms, spots, CELL, GW, GH, free, lair:{ x:1490, y:700 },
+  return { id:'house', name:'Spooky house', walls, rooms, spots, ...hmapGrid(walls), lair:{ x:1490, y:700 },
     waypoints:[[300,300],[300,680],[810,330],[810,620],[1300,300],[1300,680]], candles:[[95,160],[1505,160],[600,830],[1505,530],[95,530],[1020,160]],
     spawns:[[300,380],[800,350],[300,620],[820,610],[420,380],[680,350],[420,640],[940,610],[200,400]] };
 })();
+function hmapGrid(walls) { // a grid of where the monster fits, for finding its way around the walls
+  const CELL = 20, GW = W/CELL, GH = H/CELL, free = new Uint8Array(GW*GH);
+  for (let j=0;j<GH;j++) for (let i=0;i<GW;i++) { const cx = i*CELL + CELL/2, cy = j*CELL + CELL/2; free[j*GW + i] = cx > 60 && cx < 1540 && cy > 130 && cy < 860 && walls.every(w => rectDist(cx, cy, w) > 26) ? 1 : 0; }
+  return { CELL, GW, GH, free };
+}
+// the spooky woods: a dark forest with a fence all around it. The tree trunks block your way and the monster's view,
+// and you hide in bushes, hollow trees, logs, a tent and behind a rock. The monster lives in a cave on the right
+const WOODS = (() => {
+  const trees = [[200,200],[420,260],[650,190],[880,240],[1100,190],[1330,250],[300,420],[540,400],[760,450],[980,380],[1200,430],[1430,400],
+    [160,600],[420,620],[640,580],[880,640],[1100,600],[1320,560],[280,790],[520,800],[760,780],[1000,800],[1220,780],[1440,820]];
+  const walls = [{ x:40, y:110, w:1520, h:20 }, { x:40, y:860, w:1520, h:20 }, { x:40, y:110, w:20, h:770 }, { x:1540, y:110, w:20, h:770 }, ...trees.map(([x, y]) => ({ x:x - 22, y:y - 22, w:44, h:44, tree:true }))];
+  const spots = [
+    { kind:'bush', x:310, y:300, w:90, h:70 }, { kind:'log', x:770, y:320, w:130, h:40 }, { kind:'hollow', x:1210, y:320, w:70, h:70 }, { kind:'tent', x:530, y:500, w:110, h:80 },
+    { kind:'bush', x:1090, y:700, w:90, h:70 }, { kind:'rock', x:160, y:780, w:80, h:56 }, { kind:'log', x:650, y:700, w:130, h:40 }, { kind:'hollow', x:1440, y:560, w:70, h:70 },
+    { kind:'bush', x:990, y:165, w:90, h:60 }, { kind:'hollow', x:120, y:440, w:70, h:70 }, { kind:'bush', x:1320, y:680, w:90, h:70 }, { kind:'bush', x:430, y:160, w:90, h:60 },
+  ];
+  return { id:'woods', name:'Spooky woods', range:300, walls, trees, rooms:[], spots, ...hmapGrid(walls), lair:{ x:1490, y:700 }, // it's foggy in the woods, so the monster can't see as far (range)
+    waypoints:[[330,520],[560,300],[1050,280],[900,520],[1240,680],[600,800]], candles:[[560,640],[100,160],[1500,160],[1000,860],[1500,440],[100,600]], // the first light is a campfire, the rest are lanterns
+    spawns:[[110,300],[230,500],[360,700],[110,680],[400,340],[600,300],[700,500],[420,720],[860,330]] };
+})();
+const HMAPS = { house:HOUSE_MAP, woods:WOODS }, HMAP_LIST = Object.values(HMAPS).map(m => [m.id, m.name]);
+let HOUSE = HOUSE_MAP; // the horror map being played
 const clearLine = (x1, y1, x2, y2) => HOUSE.walls.every(w => segEnter(x1, y1, x2, y2, w) < 0);
 function pushOut(o, r) { for (const w of HOUSE.walls) { const cx = Math.max(w.x, Math.min(w.x + w.w, o.x)), cy = Math.max(w.y, Math.min(w.y + w.h, o.y)), dx = o.x - cx, dy = o.y - cy, d = Math.hypot(dx, dy); if (d < r && d > 0) { o.x += dx/d*(r - d); o.y += dy/d*(r - d); } } }
 function cellOf(x, y) {
@@ -2471,10 +2491,11 @@ function walkPath(o, path) { // which way to go to follow a path (cutting corner
 function monsterSees(m, p, evenHidden) {
   if (p.caught || (p.hidden && !evenHidden)) return false;
   const dx = p.x - m.x, dy = p.y - m.y, d = Math.hypot(dx, dy);
-  if (d > MON.range || (d > MON.hear && Math.abs(wrap(Math.atan2(dy, dx) - m.a)) > MON.half)) return false;
+  if (d > (HOUSE.range || MON.range) || (d > MON.hear && Math.abs(wrap(Math.atan2(dy, dx) - m.a)) > MON.half)) return false;
   return clearLine(m.x, m.y, p.x, p.y);
 }
 function startHorror() {
+  HOUSE = HMAPS[setup.hmap] || HMAPS.house;
   G.round = 1; G.time = 0; G.engine = null; G.clouds = []; G.hazards = []; G.waves = [];
   const spawns = [...HOUSE.spawns].sort(() => Math.random() - 0.5);
   G.fighters = G.lineup.map((l, i) => ({ ch:l.ch, control:l.control, idx:i, team:0, tag:l.tag || (l.control === 'cpu' ? 'CPU' : CTRL[l.control].tag), alive:true, caught:false, r:22,
@@ -2617,9 +2638,45 @@ function drawSpot(s, t) { // furniture to hide in (top-down)
   else if (s.kind === 'barrel') { g.fillStyle = '#8a5a2a'; g.beginPath(); g.arc(x, y, w/2, 0, TAU); g.fill(); g.strokeStyle = C.ink; g.lineWidth = 3; g.stroke(); g.strokeStyle = '#3a2a1a'; g.lineWidth = 4; g.beginPath(); g.arc(x, y, w/2 - 8, 0, TAU); g.stroke(); }
   else if (s.kind === 'shelf') { box(x, y, w, h, '#5a3a22', 3); for (let i=0;i<12;i++) { g.fillStyle = [C.red, C.blue, C.green, C.yellow, C.purple, C.orange][i % 6]; g.fillRect(x - w/2 + 8 + i*13, y - h/2 + 6, 10, h - 12); } }
   else if (s.kind === 'chest') { box(x, y, w, h, '#8a5a2a', 6); g.fillStyle = '#e0b030'; g.fillRect(x - 6, y - 8, 12, 14); }
+  else if (s.kind === 'bush') { for (const [dx, dy, r, c] of [[-22, 6, 26, '#1f5a2a'], [22, 6, 26, '#1f5a2a'], [0, -8, 32, '#2a7034'], [-8, -16, 12, '#3a8a44']]) { g.fillStyle = c; g.beginPath(); g.arc(x + dx, y + dy, r, 0, TAU); g.fill(); } g.fillStyle = C.red; for (const [bx, by] of [[-20, -4], [14, -14], [24, 10]]) { g.beginPath(); g.arc(x + bx, y + by, 4, 0, TAU); g.fill(); } } // with red berries
+  else if (s.kind === 'log') { box(x, y, w, h, '#6a4424', 18); g.fillStyle = '#b08850'; g.beginPath(); g.ellipse(x + w/2 - 8, y, 9, h/2 - 4, 0, 0, TAU); g.fill(); g.strokeStyle = '#6a4424'; g.lineWidth = 2; g.beginPath(); g.ellipse(x + w/2 - 8, y, 4, 8, 0, 0, TAU); g.stroke(); g.fillStyle = '#000'; g.beginPath(); g.ellipse(x - w/2 + 10, y, 8, h/2 - 6, 0, 0, TAU); g.fill(); } // hollow at one end
+  else if (s.kind === 'hollow') { g.fillStyle = '#5a3a1e'; g.beginPath(); g.arc(x, y, w/2, 0, TAU); g.fill(); g.strokeStyle = C.ink; g.lineWidth = 3; g.stroke(); g.fillStyle = '#7a5430'; g.beginPath(); g.arc(x, y, w/2 - 8, 0, TAU); g.fill(); g.fillStyle = '#100800'; g.beginPath(); g.arc(x, y, w/2 - 16, 0, TAU); g.fill(); } // a big old stump, hollow inside
+  else if (s.kind === 'tent') { g.fillStyle = '#c0582a'; g.beginPath(); g.moveTo(x - w/2, y + h/2); g.lineTo(x, y - h/2); g.lineTo(x + w/2, y + h/2); g.closePath(); g.fill(); g.strokeStyle = C.ink; g.lineWidth = 3; g.stroke(); g.fillStyle = '#1a0a04'; g.beginPath(); g.moveTo(x - 18, y + h/2); g.lineTo(x, y - 8); g.lineTo(x + 18, y + h/2); g.closePath(); g.fill(); }
+  else if (s.kind === 'rock') { g.fillStyle = '#6a6a74'; g.beginPath(); g.ellipse(x, y, w/2, h/2, 0.2, 0, TAU); g.fill(); g.strokeStyle = C.ink; g.lineWidth = 3; g.stroke(); g.fillStyle = '#8a8a94'; g.beginPath(); g.ellipse(x - 10, y - 8, w/5, h/6, 0.2, 0, TAU); g.fill(); }
   else if (s.kind === 'tub') { box(x, y, w, h, '#f0f0f0', 26); g.fillStyle = '#7fc8e8'; roundRect(x - w/2 + 12, y - h/2 + 10, w - 24, h - 20, 18); g.fill(); }
 }
+function drawWoods(t, spots) {
+  g.fillStyle = '#081008'; g.fillRect(0, 0, W, H);
+  g.fillStyle = '#1e3020'; g.fillRect(60, 130, 1480, 730); // the forest floor, with tufts of grass and fallen leaves
+  for (let i=0;i<160;i++) { const x = 70 + (i*397) % 1460, y = 140 + (i*211) % 710; g.fillStyle = i % 5 ? 'rgba(80,130,70,.35)' : 'rgba(150,90,40,.4)'; g.fillRect(x, y, 6, 3); g.fillRect(x + 2, y - 3, 2, 3); }
+  g.strokeStyle = 'rgba(110,80,50,.45)'; g.lineWidth = 46; g.lineCap = 'round'; g.lineJoin = 'round'; // a dirt path winding through the trees
+  g.beginPath(); g.moveTo(60, 520); g.bezierCurveTo(400, 460, 500, 720, 820, 700); g.bezierCurveTo(1100, 690, 1200, 520, 1520, 690); g.stroke();
+  const L = HOUSE.lair; // the monster's cave, in a big rock on the right
+  g.fillStyle = '#3a3a42'; g.beginPath(); g.ellipse(L.x + 30, L.y, 80, 110, 0, 0, TAU); g.fill(); g.strokeStyle = C.ink; g.lineWidth = 3; g.stroke();
+  g.fillStyle = '#000'; g.beginPath(); g.ellipse(L.x + 20, L.y + 10, 40, 60, 0, 0, TAU); g.fill();
+  for (const s of spots) drawSpot(s, t);
+  // the fence all around
+  g.fillStyle = '#3a2614'; for (const w of HOUSE.walls) if (!w.tree) g.fillRect(w.x, w.y, w.w, w.h);
+  g.fillStyle = '#5a3a1e'; for (const w of HOUSE.walls) if (!w.tree) { const across = w.w > w.h; for (let k = 0; k < (across ? w.w : w.h); k += 36) across ? g.fillRect(w.x + k, w.y - 6, 10, w.h + 12) : g.fillRect(w.x - 6, w.y + k, w.w + 12, 10); }
+  for (const [x, y] of HOUSE.trees) { // the trees, from above: a shadow, a dark bumpy top, and a lighter spot where the moon hits it
+    g.fillStyle = 'rgba(0,0,0,.4)'; g.beginPath(); g.ellipse(x + 10, y + 14, 56, 46, 0, 0, TAU); g.fill();
+    g.fillStyle = '#163a1c'; g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath();
+    for (let i=0;i<=16;i++) { const a = i/16*TAU, r = 52 + (i % 2 ? 6 : 0) + Math.sin(t*1.5 + x)*1.5; g.lineTo(x + Math.cos(a)*r, y + Math.sin(a)*r); }
+    g.closePath(); g.fill(); g.stroke();
+    g.fillStyle = '#21522a'; g.beginPath(); g.arc(x - 12, y - 12, 26, 0, TAU); g.fill();
+    g.fillStyle = '#2d6a34'; g.beginPath(); g.arc(x - 18, y - 18, 10, 0, TAU); g.fill();
+  }
+  const [fx, fy] = HOUSE.candles[0]; // the campfire
+  g.fillStyle = '#5a3a1e'; for (const a of [0.4, -0.4]) { g.save(); g.translate(fx, fy + 6); g.rotate(a); g.fillRect(-22, -5, 44, 10); g.restore(); }
+  for (const [c, s] of [[C.red, 1.3], [C.orange, 1], [C.yellow, 0.55]]) { const f = 1 + Math.sin(t*13 + s*5)*0.15; g.fillStyle = c; g.beginPath(); g.ellipse(fx, fy - 6*s, 10*s*f, 18*s*f, 0, 0, TAU); g.fill(); }
+  for (const [cx, cy] of HOUSE.candles.slice(1)) { // lanterns on posts
+    g.fillStyle = '#3a2614'; g.fillRect(cx - 3, cy - 4, 6, 22);
+    g.fillStyle = '#2a2a30'; g.strokeStyle = C.ink; g.lineWidth = 2; g.fillRect(cx - 9, cy - 22, 18, 20); g.strokeRect(cx - 9, cy - 22, 18, 20);
+    g.fillStyle = Math.sin(t*9 + cx) > -0.9 ? C.yellow : C.orange; g.fillRect(cx - 5, cy - 18, 10, 12);
+  }
+}
 function drawHouse(t, spots) {
+  if (HOUSE.id === 'woods') return drawWoods(t, spots);
   g.fillStyle = '#0c0812'; g.fillRect(0, 0, W, H);
   g.fillStyle = '#4a3a30'; g.fillRect(60, 130, 1480, 730);
   for (const r of HOUSE.rooms) {
@@ -2663,7 +2720,7 @@ function drawMonster(m, t, glowOnly) { // a tall shadow with long arms, a ragged
 function monsterCone(m) { // what the monster can see, stopped by the walls
   const pts = [[m.x, m.y]];
   for (let i=0;i<=24;i++) {
-    const a = m.a - MON.half + i*MON.half*2/24, ex = m.x + Math.cos(a)*MON.range, ey = m.y + Math.sin(a)*MON.range;
+    const a = m.a - MON.half + i*MON.half*2/24, ex = m.x + Math.cos(a)*(HOUSE.range || MON.range), ey = m.y + Math.sin(a)*(HOUSE.range || MON.range);
     let tm = 1; for (const w of HOUSE.walls) { const tt = segEnter(m.x, m.y, ex, ey, w); if (tt >= 0 && tt < tm) tm = tt; }
     pts.push([m.x + (ex - m.x)*tm, m.y + (ey - m.y)*tm]);
   }
@@ -4211,7 +4268,7 @@ function renderSeg(id, opts, key, after) {
 function drawMapPreview() {
   const c = $('mapPreview'), m = c.getContext('2d'), sc = c.width/W, map = MAPS[setup.map] || MAPS.cloud, race = setup.mode === 'race';
   const horror = setup.mode === 'horror';
-  $('mapSeg').hidden = race || horror; $('trackSeg').hidden = !race; $('roundsSeg').parentElement.hidden = race || horror; // racing and horror have their own maps and are one game
+  $('mapSeg').hidden = race || horror; $('trackSeg').hidden = !race; $('hmapSeg').hidden = !horror; if (horror) HOUSE = HMAPS[setup.hmap] || HMAPS.house; $('roundsSeg').parentElement.hidden = race || horror; // racing and horror have their own maps and are one game
   const track = RACE_TRACKS[setup.track] || RACE_TRACKS.gp; if (race) TRACK = track.built;
   const oldG = g, oldMap = MAP; g = m; MAP = map;
   m.setTransform(sc, 0, 0, sc, 0, 0); m.clearRect(0, 0, W, H);
@@ -4222,7 +4279,8 @@ function drawMapPreview() {
       drawMonster({ x:HOUSE.lair.x - 40, y:HOUSE.lair.y, state:'wait', walk:0 }, 0);
     } finally { g = oldG; MAP = oldMap; }
     const k = KEYMAP.p1;
-    $('mapDesc').textContent = `Horror: a monster is looking for you in a dark, spooky house! Move with ${keyName(k.l[0])} ${keyName(k.r[0])} ${keyName(k.u[0])} ${keyName(k.d[0])}. Press ${keyName(k.punch[0])} next to a bed, closet, box or other furniture to hide in it, and again to come out. Survive ${SURVIVE_TIME} seconds! Don't let it see you hide, and you can't stay hidden forever.`;
+    const woods = HOUSE.id === 'woods';
+    $('mapDesc').textContent = `Horror: a monster is looking for you ${woods ? 'in the dark, spooky woods! The trees block the way, and the monster can\'t see through them' : 'in a dark, spooky house'}! Move with ${keyName(k.l[0])} ${keyName(k.r[0])} ${keyName(k.u[0])} ${keyName(k.d[0])}. Press ${keyName(k.punch[0])} next to ${woods ? 'a bush, hollow stump, log, tent or rock' : 'a bed, closet, box or other furniture'} to hide in it, and again to come out. Survive ${SURVIVE_TIME} seconds! Don't let it see you hide, and you can't stay hidden forever.`;
     return;
   }
   if (race) {
@@ -4248,6 +4306,7 @@ function openSetup() {
   renderSeg('modeSeg', MODES, 'mode', renderRoster);
   renderSeg('mapSeg', MAPLIST, 'map', drawMapPreview);
   renderSeg('trackSeg', RACE_TRACK_LIST, 'track', drawMapPreview);
+  renderSeg('hmapSeg', HMAP_LIST, 'hmap', drawMapPreview);
   drawMapPreview(); $('setupMsg').textContent = ''; $('fightBtn').focus();
 }
 function showResults() {
@@ -4786,7 +4845,7 @@ function hostRoom() {
   Net.role = 'host'; Net.peer = peer;
   peer.on('open', () => {
     if (Net.peer !== peer) return;
-    Net.lobby = { code, players:[{ id:'host', name, ch:null }], cpus:[], mode:setup.mode, map:setup.map, track:setup.track, teams:Object.assign({}, setup.teams) };
+    Net.lobby = { code, players:[{ id:'host', name, ch:null }], cpus:[], mode:setup.mode, map:setup.map, track:setup.track, hmap:setup.hmap, teams:Object.assign({}, setup.teams) };
     Net.lobby.players[0].ch = firstFree();
     openLobby();
   });
@@ -4875,8 +4934,8 @@ function hostStartMatch() {
   if (L.mode === 'teams' && !(lineup.some(l => l.team === 0) && lineup.some(l => l.team === 1))) { const m = $('lobbyMsg'); if (m) m.textContent = 'Each team needs at least one fighter.'; return; }
   MAP = MAPS[L.map] || MAPS.cloud; G.mode = L.mode; G.online = 'host'; G.lineup = lineup; G.wins = {}; G.round = 0; G.rounds = setup.rounds; G.paused = false; NETEV.length = 0;
   for (const f of lineup) if (f.control.startsWith('net:')) { const r = Net.inputs.get(f.control.slice(4)); if (r) r.seen = null; }
-  setup.track = L.track || setup.track;
-  netBroadcast({ t:'start', rounds:G.rounds, mode:G.mode, map:MAP.id, track:setup.track, lineup:lineup.map(l => ({ ch:l.ch.id, control: l.control === 'local' ? 'host' : l.control, tag:l.tag, team:l.team })) });
+  setup.track = L.track || setup.track; setup.hmap = L.hmap || setup.hmap;
+  netBroadcast({ t:'start', rounds:G.rounds, mode:G.mode, map:MAP.id, track:setup.track, hmap:setup.hmap, lineup:lineup.map(l => ({ ch:l.ch.id, control: l.control === 'local' ? 'host' : l.control, tag:l.tag, team:l.team })) });
   G.state = 'fight'; showScreen(null); cv.focus();
   if (G.mode === 'race') startRace(); else if (G.mode === 'horror') startHorror(); else startRound();
 }
@@ -4948,6 +5007,7 @@ function clientStart(d) {
     G.race = { boxes:[], things:[], finished:0, endT:-1, order:[...G.fighters] };
   } else if (G.mode === 'horror') {
     G.fighters = d.lineup.map((l, i) => ({ ch:CHAR[l.ch], control:l.control, tag:l.tag, team:0, idx:i, me:l.control === me, alive:true, caught:false, r:22, x:800, y:500, facing:1, walk:0, hidden:null, fear:0, tgt:null, seen:false }));
+    HOUSE = HMAPS[d.hmap] || HMAPS.house;
     G.horror = { left:SURVIVE_TIME, spots:HOUSE.spots.map(s => ({ ...s, who:null })), flash:0, monster:{ x:HOUSE.lair.x, y:HOUSE.lair.y, r:30, a:Math.PI, state:'wait', waitT:MONSTER_WAIT, walk:0, tgt:null, seen:false } };
   } else G.fighters = d.lineup.map((l, i) => ({ ch:CHAR[l.ch], control:l.control, tag:l.tag, team:l.team || 0, idx:i, r:38, me:l.control === me, body:{ position:{ x:800, y:560 }, angle:0 }, tgt:null, seen:false,
     alive:true, ko:0, dizzy:0, facing:1, punchAnim:0, flash:0, grabbing:null, squash:0 }));
@@ -5058,7 +5118,7 @@ function renderLobby() {
       <div class="kick-box"><b>kick?</b><ul class="plist">${others.length ? others.map(p => `<li>${dot(p)}<span>${esc(p.name)}</span><button class="kick" data-kick="${esc(p.id)}">kick</button></li>`).join('') : '<li><span>No friends here yet. Send them the code!</span></li>'}</ul></div>
       ${LOCAL_MODES.includes(L.mode) ? '' : '<div class="setting"><span>Rounds to win</span><div class="seg" id="lobRoundsSeg"></div></div>'}
       <div class="setting"><span>Game mode</span><div class="seg" id="lobModeSeg"></div></div>
-      ${L.mode === 'race' ? '<div class="setting"><span>Track</span><div class="seg" id="lobTrackSeg"></div></div>' : L.mode === 'horror' ? '' : '<div class="setting"><span>Map</span><div class="seg" id="lobMapSeg"></div></div>'}
+      ${L.mode === 'race' ? '<div class="setting"><span>Track</span><div class="seg" id="lobTrackSeg"></div></div>' : L.mode === 'horror' ? '<div class="setting"><span>Map</span><div class="seg" id="lobHmapSeg"></div></div>' : '<div class="setting"><span>Map</span><div class="seg" id="lobMapSeg"></div></div>'}
       <div class="setting"><span>Computer players</span><div class="seg" id="lobDiffSeg"></div></div>
       <button id="lobbyFight" class="btn big">make fight happen</button>
       <p id="lobbyMsg" class="msg" role="status"></p>
@@ -5069,12 +5129,13 @@ function renderLobby() {
     renderSeg('lobModeSeg', MODES, 'mode', () => { L.mode = setup.mode; broadcastLobby(); });
     if ($('lobMapSeg')) renderSeg('lobMapSeg', MAPLIST, 'map', () => { L.map = setup.map; broadcastLobby(); });
     if ($('lobTrackSeg')) renderSeg('lobTrackSeg', RACE_TRACK_LIST, 'track', () => { L.track = setup.track; broadcastLobby(); });
+    if ($('lobHmapSeg')) renderSeg('lobHmapSeg', HMAP_LIST, 'hmap', () => { L.hmap = setup.hmap; broadcastLobby(); });
     $('lobbyFight').onclick = () => { audioOn(); hostStartMatch(); };
     $('lobbyDisband').onclick = () => endRoom('You disbanded the team.');
   } else {
     aside.innerHTML = `<h3>the team</h3>
       <ul class="plist">${L.players.map(p => `<li>${dot(p)}<span>${esc(p.name)}${p.id === 'host' ? ' (host)' : ''}${p.id === me ? ' (you)' : ''}</span></li>`).join('')}</ul>
-      <p>Mode: <b>${esc((MODES.find(m => m[0] === L.mode) || MODES[0])[1])}</b> · ${L.mode === 'race' ? `Track: <b>${esc((RACE_TRACKS[L.track] || RACE_TRACKS.gp).name)}</b>` : L.mode === 'horror' ? 'Map: <b>the spooky house</b>' : `Map: <b>${esc((MAPS[L.map] || MAPS.cloud).name)}</b> · Rounds to win: <b>${esc(Net.hostRounds || 3)}</b>`} · Computer players: <b>${esc((DIFF[Net.hostDiff] || DIFF.normal).label)}</b></p>
+      <p>Mode: <b>${esc((MODES.find(m => m[0] === L.mode) || MODES[0])[1])}</b> · ${L.mode === 'race' ? `Track: <b>${esc((RACE_TRACKS[L.track] || RACE_TRACKS.gp).name)}</b>` : L.mode === 'horror' ? `Map: <b>${esc((HMAPS[L.hmap] || HMAPS.house).name)}</b>` : `Map: <b>${esc((MAPS[L.map] || MAPS.cloud).name)}</b> · Rounds to win: <b>${esc(Net.hostRounds || 3)}</b>`} · Computer players: <b>${esc((DIFF[Net.hostDiff] || DIFF.normal).label)}</b></p>
       <p class="msg" style="color:var(--ink)">Pick a fighter, then wait for the host to make the fight happen.</p>
       <button id="lobbyLeave" class="btn black">leave team</button>`;
     $('lobbyLeave').onclick = () => clientLeave();

@@ -38,6 +38,7 @@ Every fighter has 200 hp. When it runs out, they get dizzy and can be thrown.
   - If it sees you hide, it comes and pulls you out ("FOUND YOU!"). Sometimes it sniffs around and checks hiding spots it walks past.
   - You can't stay hidden forever. The scared meter over your hiding spot fills up, and when it's full you jump out screaming "AAAH!"
   - If it catches you, you're out. Survive for 60 seconds and you win. If it catches everyone, the monster wins.
+  - Pick the map: the **Spooky house** or the **Spooky woods**. The woods are a dark forest with a fence all around, a dirt path, a campfire and lanterns. The trees block your way, and the monster can't see through them. It's foggy too, so it can't see as far as in the house. Hide in bushes (with red berries), hollow stumps, logs, a tent or behind a rock. The monster comes out of a cave on the right.
 
   Horror works online too, and on one computer you can play it alone against the monster.
 
