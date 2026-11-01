@@ -3664,7 +3664,9 @@ function drawFunnyFloor(t) { // upstairs: the funny fun shop, built like the fig
   g.font = `46px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('funny fun shop', 0, 2, 320);
   g.restore();
   const empty = !STANDS.some(s => s.floor === 2);
+  const secret = (performance.now()/1000) % 16 > 12; // now and then she whispers her secret to herself, when she thinks nobody is listening
   const say = SHOP.msgT > 0 ? SHOP.msg
+    : secret ? '*whispers to herself* I like fighty... but I\'ll make sure no one knows...'
     : SHOP.nearStairs && SHOP.stairTo === 3 ? 'D-don\'t go up there... please...'
     : SHOP.nearStairs && SHOP.stairTo === 6 ? 'That\'s our break room... you can come in. Hehe...'
     : isNew() ? (SHOP.near ? 'W-who are you? ...that would look nice on you, I guess...' : SHOP.nearKeeper ? 'I-I\'ve never seen you before... d-do you want to talk?' : SHOP.nearStairs ? 'Bye... um... whoever you are...' : 'W-who are you?! I\'ve never seen you before...')
@@ -4624,7 +4626,7 @@ const ADMIN_TALK = {
   1:['La la la... nobody here today. Just me and my shop.', '...so I put the sunglasses on the stand. Then I took them off. Then I put them back on.', 'Note to self: dust the cool hat. It\'s looking dusty.',
     '*hums* Dum dee dum... dum dee dum...', 'Is it lunch time yet? It feels like lunch time.', 'Hmm, I wonder if anyone will come in today. Probably not.', 'One sunglasses, one cool hat, one super cape... yep, all here.'],
   2:['*whispers to herself* ...okay... the shop is tidy... good...', 'It\'s so quiet up here... I like it quiet.', 'Maybe I\'ll tie another bow... a blue one this time...',
-    '*hums quietly* hmm hmm hmmm...', 'I hope the downstairs shopkeeper is having a good day... *blushes*', 'Nobody ever comes up here... that\'s okay...'],
+    '*hums quietly* hmm hmm hmmm...', 'I hope the downstairs shopkeeper is having a good day... *blushes*', 'Nobody ever comes up here... that\'s okay...', 'I like fighty... but I\'ll make sure no one knows...'],
   // when you come in, the shy shopkeeper is downstairs visiting: with the Admin there, she never notices him, so she stays and they keep chatting
   visit:[[2, '...and then the circle rolled right off the island! Hehe...'], [1, 'Haha! That is so funny!'], [2, 'And then the square jumped up and slammed down... BOOM!'], [1, 'Hahaha! I wish I could have seen it!'],
     [2, 'It\'s so quiet in the shop today...'], [1, 'Yep. Nobody here but us.'], [2, 'D-do you like my bow? I tied it myself...'], [1, 'I love it! It\'s the best bow in the whole shop.'],
