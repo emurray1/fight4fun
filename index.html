@@ -199,6 +199,7 @@ kbd{font-family:var(--body);border:2px solid var(--ink);border-bottom-width:4px;
 .wearing{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;border-top:3px dashed var(--grey);padding-top:8px;margin-top:2px}
 .wearing button{font-family:var(--body);font-size:18px;border:3px solid var(--ink);background:var(--yellow);padding:0 10px}
 #gameQuit{position:fixed;left:calc(14px + env(safe-area-inset-left,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));font-size:24px;padding:4px 20px;border:3px solid var(--paper);z-index:5}
+#dayBtn{position:fixed;right:calc(14px + env(safe-area-inset-right,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));font-size:24px;padding:4px 18px;border:3px solid var(--paper);z-index:5} /* switch day or night, in the corner (in the dorms and in fights) */
 #gameAdmin{position:fixed;left:calc(130px + env(safe-area-inset-left,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));font-size:24px;padding:4px 20px;z-index:5} /* the admin can open the admin panel during any fight, even online */
 .quit-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
 .btn.red{background:var(--maroon);color:var(--paper)}
@@ -522,6 +523,7 @@ html.thanks .fff span{border-color:#8a4b14;color:#d2691e}
 
 <button id="gameQuit" class="btn black" hidden>quit</button>
 <button id="gameAdmin" class="btn admin-btn" hidden>admin</button>
+<button id="dayBtn" class="btn black" hidden>🌙</button>
 
 <div id="quitAsk" class="screen" hidden style="background:rgba(17,17,17,.45)">
   <div class="pause-card">
@@ -4902,6 +4904,7 @@ function drawShop(t) {
 let lastT = performance.now(), acc = 0;
 function frame(now) {
   const dt = Math.min(0.1, (now - lastT)/1000); lastT = now;
+  updateDayBtn();
   if (G.online === 'client' && G.state === 'fight') { clientSmooth(dt); clientSendInput(now); }
   else if (G.state === 'fight' && !G.paused) { acc += dt*1000*((G.fx && G.fx.speed) || 1); let n = 0; while (acc >= STEP && n < 6) { if (G.mode === 'race') raceStep(); else if (G.mode === 'horror') horrorStep(); else step(); acc -= STEP; n++; } if (n === 6) acc = 0; }
   else if (G.state === 'shop') shopStep(dt);
@@ -5500,6 +5503,26 @@ $('glitchShopBtn').onclick = () => { // straight into the glitch shop, as Missin
   musicUpdate(); if (sfx.zap) sfx.zap(); renderShopCard(true);
 };
 $('glitchShopBtn').hidden = !unlocked(CHAR.arrow); $('adminBtn').hidden = !unlocked(CHAR.admin);
+// ----- the day/night button in the corner: in the dorms it flips the lights, and in a fight it switches the sky (online, only the host can) -----
+function dayBtnPlace() { // where the button shows up right now: 'dorm', 'fight' or nothing
+  if (G.state === 'shop' && (SHOP.floor === 11 || SHOP.floor === 12)) return 'dorm';
+  if (G.state === 'fight' && G.mode !== 'race' && G.mode !== 'horror' && G.online !== 'client') return 'fight';
+  return null;
+}
+function updateDayBtn() {
+  const b = $('dayBtn'), place = dayBtnPlace(), night = place === 'dorm' ? dormNight() : isNight(), label = night ? '☀️ day' : '🌙 night';
+  if (b.hidden !== !place) b.hidden = !place;
+  if (place && b.textContent !== label) { b.textContent = label; b.title = night ? 'Make it day' : 'Make it night'; }
+}
+$('dayBtn').onclick = () => {
+  const place = dayBtnPlace();
+  if (place === 'dorm') dormLight();
+  else if (place === 'fight') {
+    setup.daytime = isNight() ? 'day' : 'night'; saveSetup();
+    if (G.online === 'host') netBroadcast({ t:'daytime', d:setup.daytime });
+  }
+  cv.focus();
+};
 $('shopCardOpen').onclick = () => { SHOP.cardClosed = false; renderShopCard(true); cv.focus(); };
 $('shopPrev').onclick = () => { do SHOP.who = (SHOP.who + CHARS.length - 1) % CHARS.length; while (!unlocked(CHARS[SHOP.who]) || CHARS[SHOP.who].keeper); renderShopCard(true); };
 $('shopNext').onclick = () => { do SHOP.who = (SHOP.who + 1) % CHARS.length; while (!unlocked(CHARS[SHOP.who]) || CHARS[SHOP.who].keeper); renderShopCard(true); };
@@ -6185,6 +6208,7 @@ function clientOnData(d) {
     case 'tolobby': G.online = null; openLobby(); break;
     case 'addf': { const ch = CHAR[d.ch]; if (ch && !G.fighters.some(f => f.idx === d.idx)) G.fighters.push({ ch, control:'cpu', tag:'CPU', team:d.team || 0, idx:d.idx, r:38*(ch.size || 1), me:false, body:{ position:{ x:800, y:120 }, angle:0 }, tgt:null, seen:false, alive:true, ko:0, dizzy:0, facing:1, punchAnim:0, flash:0, grabbing:null, squash:0 }); break; } // an admin added a computer player
     case 'fx': G.fx = d.fx || {}; break; // an admin switched a silly effect
+    case 'daytime': G.hostDaytime = d.d; break; // the host switched day or night
     case 'hmap': if (HMAPS[d.hmap] && G.horror) { HOUSE = HMAPS[d.hmap]; G.horror.spots = HOUSE.spots.map(s => ({ ...s, who:null })); } break; // the host moved Horror to the other map
     case 'resize': { const p = G.fighters.find(f => f.idx === d.idx); if (p) p.r = +d.r || p.r; break; } // someone went giant or tiny
     case 'map': if (MAPS[d.map]) { MAP = MAPS[d.map]; G.clouds = ledgeObjs(MAP); } break; // the host moved the fight to another map
