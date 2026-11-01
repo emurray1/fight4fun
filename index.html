@@ -968,37 +968,48 @@ function drawGlasses(g, [a, b], glow = false, lens = '#e8ff6a', three = false) {
 }
 // the Admin, from Mason's drawing: a blocky black guy leaning over, with "me is admin / mason, dad, alex" on his head and "i ♥ forsken" on his body.
 // It's drawn in the picture's own numbers (centred on 320, 260), then shrunk to fit the fighter
-function drawAdmin(g, r, col) {
-  const s = r/180;
-  g.save(); g.scale(s, s); g.translate(-320, -260);
+function drawAdmin(g, r, col, walk) { // `walk`: how far along his steps he is while he walks (null when he's standing still)
+  const s = r/180, moving = walk != null, sw = moving ? Math.sin(walk) : 0, bob = moving ? -Math.abs(Math.cos(walk))*14 : 0;
+  g.save(); g.scale(s, s); g.translate(-320, -260 + bob); // he bobs up and down with each step
   g.fillStyle = col || '#000'; g.strokeStyle = '#3a3a3a'; g.lineWidth = 3; g.lineJoin = 'round';
   const block = (cx, cy, w, h, a) => { g.save(); g.translate(cx, cy); g.rotate(a); g.beginPath(); g.rect(-w/2, -h/2, w, h); g.fill(); g.stroke(); g.restore(); };
-  block(183, 341, 60, 212, 0); // the arm hanging down on the left
-  block(409, 235, 180, 56, 0.6); // the arm sticking out on the right
-  block(357, 350, 62, 155, -0.08); // the leg
+  const swing = (px, py, a, draw) => { g.save(); g.translate(px, py); g.rotate(a); g.translate(-px, -py); draw(); g.restore(); }; // turn a part around its shoulder or hip
+  g.textAlign = 'left'; g.textBaseline = 'middle';
+  if (moving) { // when he walks, he stands up straight: head on top, arms at his sides, and two legs stepping
+    swing(290, 280, sw*0.5, () => block(290, 355, 55, 150, 0)); swing(350, 280, -sw*0.5, () => block(350, 355, 55, 150, 0)); // his legs
+    swing(232, 130, -sw*0.5, () => block(232, 215, 46, 180, 0)); swing(408, 130, sw*0.5, () => block(408, 215, 46, 180, 0)); // his arms, swinging the other way to his legs
+    block(320, 200, 136, 160, 0); block(320, 70, 75, 85, 0); // his body and head
+    g.fillStyle = C.white; g.font = `14px ${BODYFONT}`; g.fillText('me is admin', 284, 52); g.fillText('mason,dad', 290, 74); g.fillText('alex', 290, 90);
+    g.fillStyle = C.maroon; g.font = `36px ${FONT}`; g.fillText('i ♥', 262, 170); g.fillText('forsken', 262, 215);
+    g.restore(); return;
+  }
+  swing(183, 240, sw*0.45, () => block(183, 341, 60, 212, 0)); // the arm hanging down on the left, swinging back and forth
+  swing(330, 190, -sw*0.3, () => block(409, 235, 180, 56, 0.6)); // the arm sticking out on the right, swinging the other way
+  swing(357, 280, -sw*0.5, () => block(357, 350, 62, 155, -0.08)); // the leg, stepping
   g.beginPath(); for (const [x, y] of [[240,318],[318,292],[398,368],[352,402]]) g.lineTo(x, y); g.closePath(); g.fill(); g.stroke(); // his hips
   block(266, 227, 136, 160, -0.45); // his body, leaning over
   block(212, 117, 75, 85, 0); // his head
-  g.textAlign = 'left'; g.textBaseline = 'middle';
   g.fillStyle = C.white; g.font = `14px ${BODYFONT}`; g.fillText('me is admin', 176, 98); g.fillText('mason,dad', 184, 120); g.fillText('alex', 184, 136);
   g.fillStyle = C.maroon; g.font = `36px ${FONT}`; g.fillText('i ♥', 197, 208); g.fillText('forsken', 197, 254);
   g.restore();
 }
-const ADMIN_HEAD = { x:-0.6, y:-0.58, k:0.45 }; // where the Admin's little square head is (and how big), so hats and crowns sit on it
-function onAdminHead(g, r, draw) { g.save(); g.translate(ADMIN_HEAD.x*r, ADMIN_HEAD.y*r); g.scale(ADMIN_HEAD.k, ADMIN_HEAD.k); draw(); g.restore(); }
+const ADMIN_HEAD = { x:-0.6, y:-0.58, k:0.45 }, ADMIN_HEAD_UP = { x:0, y:-0.84, k:0.45 }; // where the Admin's little square head is (leaning, and standing up to walk), so hats and crowns sit on it
+function onAdminHead(g, r, draw, up) { const h = up ? ADMIN_HEAD_UP : ADMIN_HEAD; g.save(); g.translate(h.x*r, h.y*r); g.scale(h.k, h.k); draw(); g.restore(); }
 function drawCharacter(g, ch, r, o = {}) {
   if (ch.id === 'admin') { // he isn't a shape like the others, so he's drawn his own way (with his things on his little head)
     const tt = performance.now()/1000;
     if (o.cubes) drawGlitchCubes(g, r, tt, false);
     if (o.wings) drawBatWings(g, r, tt);
     if (o.cape) drawCape(g, r, o.facing || 1, tt, r);
-    drawAdmin(g, r, skinColor(o.skin));
-    if (o.flash > 0) { g.globalAlpha = Math.min(0.8, o.flash*6); drawAdmin(g, r, C.white); g.globalAlpha = 1; }
+    drawAdmin(g, r, skinColor(o.skin), o.walk);
+    if (o.flash > 0) { g.globalAlpha = Math.min(0.8, o.flash*6); drawAdmin(g, r, C.white, o.walk); g.globalAlpha = 1; }
+    g.save(); if (o.walk != null) g.translate(0, -Math.abs(Math.cos(o.walk))*14*r/180); // his hat bobs along with him
     onAdminHead(g, r, () => {
       if (o.headphones) drawHeadphones(g, r, -r, !!o.hat);
       if (o.hat) drawHat(g, r, -r, o.facing || 1); else if (o.adminCrown) drawCrown(g, r, -r, C.blue);
       if (o.bow) drawBow(g, r, -r - (o.hat ? r*0.5 : 0));
-    });
+    }, o.walk != null);
+    g.restore();
     if (o.badge) drawBadge(g, r);
     if (o.cubes) drawGlitchCubes(g, r, tt, true);
     return;
@@ -2006,7 +2017,7 @@ function control(p, inp) {
   const b = p.body, ch = p.ch;
   p.punchCD -= DT; p.specCD = (p.specCD || 0) - DT; if (p.ko > 0 || p.grabbedBy || p.hitstun > 0.25) p.special = null; p.punchAnim = Math.max(0, p.punchAnim - DT); p.hitstun = Math.max(0, p.hitstun - DT); p.flash = Math.max(0, p.flash - DT);
   if (p.ko > 0) { p.ko -= DT; if (p.ko <= 0) { p.ko = 0; p.dizzy = 0; } } else p.dizzy = Math.max(0, p.dizzy - DT*7);
-  if (ch.id === 'admin') { p.dizzy = 0; p.ko = 0; } // the Admin can't get hurt
+  if (ch.id === 'admin') { p.dizzy = 0; p.ko = 0; Body.setAngle(b, 0); Body.setAngularVelocity(b, 0); } // the Admin can't get hurt, and he stays standing up (he walks instead of rolling)
   p.squash *= 0.85;
   if (p.grabbedBy) {
     p.holdT += DT;
@@ -2037,6 +2048,7 @@ function control(p, inp) {
   if (inp.grabP) { if (p.grabbing) doThrow(p); else tryGrab(p); }
   if (inp.specialP && !p.grabbing && p.specCD <= 0) startSpecial(p, grounded);
   if (grounded && inp.x) { p.walk += DT*13; p.squash = Math.sin(p.walk)*0.06; }
+  p.walking = !!(grounded && inp.x);
 }
 
 // ---------- simulation step ----------
@@ -2846,7 +2858,7 @@ function drawSmallTag(x, y, tag, cpu) {
 }
 function drawSurvivor(p, t) {
   g.fillStyle = 'rgba(0,0,0,.3)'; g.beginPath(); g.ellipse(p.x, p.y + 20, 24, 9, 0, 0, TAU); g.fill();
-  g.save(); g.translate(p.x, p.y - 4 - Math.abs(Math.sin(p.walk))*4); drawCharacter(g, p.ch, 24*(p.ch.size || 1), { facing:p.facing, ...(G.online ? {} : looks(p.ch)) }); g.restore();
+  g.save(); g.translate(p.x, p.y - 4 - Math.abs(Math.sin(p.walk))*4); const stepping = p.walk !== p.lastWalk; p.lastWalk = p.walk; drawCharacter(g, p.ch, 24*(p.ch.size || 1), { facing:p.facing, walk:stepping ? p.walk : null, ...(G.online ? {} : looks(p.ch)) }); g.restore();
 }
 function drawHorror(t, dt) {
   const Hh = G.horror, m = Hh.monster, active = m.waitT <= 0;
@@ -3246,7 +3258,7 @@ function drawFighter(p, t) {
     g.restore();
   }
   g.save(); g.translate(x, y); g.rotate(b.angle); g.scale(1 + p.squash*0.6, 1 - p.squash);
-  drawCharacter(g, p.ch, p.r, { facing:p.facing, ko:p.ko > 0, flash:p.flash, ...(G.online ? {} : looks(p.ch)) });
+  drawCharacter(g, p.ch, p.r, { facing:p.facing, ko:p.ko > 0, flash:p.flash, walk:p.walking ? p.walk : null, ...(G.online ? {} : looks(p.ch)) });
   g.restore();
   const fistR = p.r*0.3;
   const fist = (fx, fy) => { g.beginPath(); g.arc(fx, fy, fistR, 0, TAU); g.fillStyle = myColor(p.ch); g.fill(); g.lineWidth = 3.5; g.strokeStyle = C.ink; g.stroke(); };
@@ -4262,7 +4274,7 @@ function drawShop(t) {
   const found = ch.id === 'shuriken' && SHOP.floor === 2 && SHOP.sparkleHere; // Shuriken is happy he found Goofy Sparkle
   const yay = (excited || (found && SHOP.foundT < 4)) && SHOP.y === 0 && !moving ? Math.abs(Math.sin(t*7))*22 : 0;
   g.save(); g.translate(SHOP.x + (scared ? Math.sin(t*55)*2.5 : 0), SHOP_FLOOR - bottom + SHOP.y - hop - yay); g.rotate(moving ? Math.sin(t*12)*0.08 : laughing ? Math.sin(t*16)*0.1 : excited ? Math.sin(t*7)*0.12 : 0);
-  drawCharacter(g, ch, r, { facing:SHOP.facing, ...looks(ch), scared, excited, happy:found }); g.restore();
+  drawCharacter(g, ch, r, { facing:SHOP.facing, walk:moving ? t*10 : null, ...looks(ch), scared, excited, happy:found }); g.restore();
   const above = SHOP_FLOOR - bottom - 80 + SHOP.y;
   if (SHOP.youSayT > 0) drawBubble(SHOP.youSay, SHOP.x + 120, above, SHOP.x + 20);
   else if (laughing) drawBubble('Hahaha!', SHOP.x + 70, above, SHOP.x + 20);
