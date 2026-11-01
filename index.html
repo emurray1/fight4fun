@@ -3342,7 +3342,8 @@ function shopStep(dt) {
   const v = SHOP.visit; // talk, notice you, run to the stairs, climb up and away
   if (v) {
     v.t += dt;
-    if (v.phase === 'talk' && v.t > 2.2) Object.assign(v, { phase:'notice', t:0 });
+    if (v.phase === 'talk' && isAdmin()) {} // she can't see the Admin, so she never notices him: she stays and keeps chatting
+    else if (v.phase === 'talk' && v.t > 2.2) Object.assign(v, { phase:'notice', t:0 });
     else if (v.phase === 'notice' && v.t > 1.8) Object.assign(v, { phase:'run', t:0 });
     else if (v.phase === 'run') { v.x -= 560*dt; if (v.x <= STAIRS_X[1] + 90) Object.assign(v, { phase:'climb', t:0 }); }
     else if (v.phase === 'climb') { v.x -= 120*dt; if (v.t > 1) SHOP.visit = null; }
@@ -3458,14 +3459,15 @@ function drawFightyFloor(t) { // downstairs: the fighty shop
     const vs = { talk:'...and then the circle rolled right off the island! Hehe...',
       notice:kid ? 'Oh! Hi little one! I have to go back upstairs. Bye bye, sweetie!' : hex ? 'Oh! Hexstar! *trips over nothing* H-hi! I like you! Bye!' : CHARS[SHOP.who].id === 'shuriken' ? 'Um... I think he went... that way? *points everywhere* B-bye!' : friend ? `Oh! Hi ${CHARS[SHOP.who].name}! Come visit me upstairs!` : 'Oh! S-someone is here! Um... b-bye!',
       run:kid ? 'Bye bye!' : friend ? 'See you up there!' : 'Eep!' }[v.phase];
-    if (vs) drawBubble(vs, v.x - 40, 520, v.x - 6);
+    const shyLine = isAdmin() ? (SHOP.msgWho === 2 && SHOP.msgT > 0 ? SHOP.msg : '') : vs; // chatting with the other shopkeeper, taking turns
+    if (shyLine) drawBubble(shyLine, v.x - 40, 520, v.x - 6);
   }
-  const say = SHOP.msgT > 0 ? SHOP.msg : v && v.phase === 'talk' ? 'Haha! That is so funny!' : v && v.phase !== 'climb' ? (isKid() ? 'She loves little kids! She works upstairs.' : isHex() ? 'Haha... we get a bit weird around Hexstar. We like him!' : isFriend() ? 'Aww, she likes you! She works upstairs.' : 'Aww, she is so shy. She works upstairs!')
+  const say = v && isAdmin() && SHOP.msgWho === 2 ? '' : SHOP.msgT > 0 ? SHOP.msg : v && v.phase === 'talk' ? 'Haha! That is so funny!' : v && v.phase !== 'climb' ? (isKid() ? 'She loves little kids! She works upstairs.' : isHex() ? 'Haha... we get a bit weird around Hexstar. We like him!' : isFriend() ? 'Aww, she likes you! She works upstairs.' : 'Aww, she is so shy. She works upstairs!')
     : isNew() && SHOP.msgT <= 0 ? (SHOP.near ? 'Hmm... have I seen you before? No... I don\'t think so.' : SHOP.nearKeeper ? 'Um... who are you? Want to talk? Press punch, I guess.' : SHOP.nearStairs ? 'Wait, who ARE you?' : 'Huh? I\'ve never seen you before... are you new?')
     : isHex() && SHOP.msgT <= 0 ? (SHOP.near ? 'Ooh! That would look... so weird and great on you!' : SHOP.nearKeeper ? 'Hexstar! Talk to me! Or don\'t! Either is fine! Hehe!' : SHOP.nearStairs ? 'Bye Hexstar! I mean, see you! I mean... have fun!' : 'Hexstar! *waves both arms* Hi hi hi!')
     : isKid() && SHOP.msgT <= 0 ? (SHOP.near ? 'Ooh, that might be a bit big for you! Hehe.' : SHOP.nearKeeper ? 'Hi there, little buddy! Want to chat? Press punch!' : SHOP.nearStairs ? 'Careful on the stairs, little one!' : spooky() ? 'Don\'t be scared, little one! The pumpkins are just pretend!' : xmas() ? 'Ho ho ho! Somebody REALLY loves Christmas!' : 'Oh! A little one! Hello there, sweetie!')
     : SHOP.near ? 'Ooh, good choice!' : SHOP.nearKeeper ? 'Hello! Press punch to chat with me.' : SHOP.nearStairs ? 'Those stairs go up to the funny fun shop!' : spooky() ? 'Happy Halloween! Boo! Have a look around!' : xmas() ? 'Ho ho ho! Merry Christmas! Have a look around!' : 'Hi! Have a look around, or come over and talk to me!';
-  drawBubble(say, kx - 115, 360, kx - 60);
+  if (say) drawBubble(say, kx - 115, 360, kx - 60);
   if (SHOP.nearKeeper) drawPointer(kx + 150, 395, t);
 }
 function drawBubble(say, right, bottom, tipX) { // a speech bubble that ends at `right`, with its tail pointing to tipX
@@ -4488,12 +4490,18 @@ const ADMIN_TALK = {
     '*hums* Dum dee dum... dum dee dum...', 'Is it lunch time yet? It feels like lunch time.', 'Hmm, I wonder if anyone will come in today. Probably not.', 'One sunglasses, one cool hat, one super cape... yep, all here.'],
   2:['*whispers to herself* ...okay... the shop is tidy... good...', 'It\'s so quiet up here... I like it quiet.', 'Maybe I\'ll tie another bow... a blue one this time...',
     '*hums quietly* hmm hmm hmmm...', 'I hope the downstairs shopkeeper is having a good day... *blushes*', 'Nobody ever comes up here... that\'s okay...'],
+  // when you come in, the shy shopkeeper is downstairs visiting: with the Admin there, she never notices him, so she stays and they keep chatting
+  visit:[[2, '...and then the circle rolled right off the island! Hehe...'], [1, 'Haha! That is so funny!'], [2, 'And then the square jumped up and slammed down... BOOM!'], [1, 'Hahaha! I wish I could have seen it!'],
+    [2, 'It\'s so quiet in the shop today...'], [1, 'Yep. Nobody here but us.'], [2, 'D-do you like my bow? I tied it myself...'], [1, 'I love it! It\'s the best bow in the whole shop.'],
+    [2, '*blushes* Hehe...'], [1, 'Want to hear a joke? ...Hmm, I forgot it.'], [2, 'Hehe... that\'s okay.']],
   6:[[1, '...and THAT\'s why you never leave cookies next to the cape stand.'], [2, 'Hehe... crumbs everywhere...'], [1, 'Did you hear something just now?'], [2, 'N-no... it\'s just us in here.'],
     [1, 'Want some more tea?'], [2, 'Y-yes please...'], [1, 'The shop is SO empty today.'], [2, 'Mm-hm. Totally empty.'], [1, 'Pass the cookies?'], [2, 'Here you go...']],
 };
 const ADMIN_TALK_EVERY = 4; // seconds of real time between lines (by the clock, so they keep going even when the game runs slowly)
 function adminChatter() { // the next thing they say, to nobody
-  const lines = ADMIN_TALK[SHOP.floor], l = lines[SHOP.chat = ((SHOP.chat ?? -1) + 1) % lines.length];
+  const key = SHOP.floor === 1 && SHOP.visit ? 'visit' : SHOP.floor, lines = ADMIN_TALK[key];
+  if (SHOP.chatKey !== key) { SHOP.chatKey = key; SHOP.chat = -1; } // a new conversation starts from the beginning
+  const l = lines[SHOP.chat = (SHOP.chat + 1) % lines.length];
   Object.assign(SHOP, { msg:Array.isArray(l) ? l[1] : l, msgWho:Array.isArray(l) ? l[0] : 1, msgT:5.5, chatAt:performance.now() + ADMIN_TALK_EVERY*1000, joke:false });
 }
 function shopSay(text, sound, secs = 3.5, who = 1) {
