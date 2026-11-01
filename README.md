@@ -100,6 +100,10 @@ All through October the game gets spooky: a purple night sky with a moon, stars 
 
 All through December snow falls on every map, the menu hills turn snowy with Christmas trees, the shop gets twinkly lights, a wreath and Christmas trees, and the menu music turns jingly with sleigh bells. Change it under **Christmas** in settings: In December, Always or Off. If both themes are set to Always, Halloween wins.
 
+## Thanksgiving
+
+All through November autumn leaves drift down on every map, the menu hills get orange and red autumn trees and a turkey, the shop gets leaf garlands and a turkey with a big fan of tail feathers (its head bobs!), the race track trees turn orange, the top of the title card turns orange-brown, and the shopkeeper says "Happy Thanksgiving! Gobble gobble!" You can turn it on all year or off in settings. If Halloween or Christmas is on too, they win.
+
 ## Play online
 
 1. Click **play online**, type your name and click **host**.
