@@ -544,7 +544,7 @@ html.thanks .fff span{border-color:#8a4b14;color:#d2691e}
         <div class="setting"><span>Rounds to win</span><div class="seg" id="roundsSeg"></div></div>
         <div class="setting"><span>Game mode</span><div class="seg" id="modeSeg"></div></div>
         <div class="setting"><span>Computer players</span><div class="seg" id="diffSeg"></div></div>
-        <div class="mapbox"><span>map</span><div class="seg" id="mapSeg"></div><div class="seg" id="trackSeg" hidden></div><div class="seg" id="hmapSeg" hidden></div><div class="seg" id="hmonSeg" hidden></div><canvas id="mapPreview" width="480" height="270"></canvas><small id="mapDesc"></small></div>
+        <div class="mapbox"><span>map</span><div class="seg" id="mapSeg"></div><div class="seg" id="timeSeg"></div><div class="seg" id="trackSeg" hidden></div><div class="seg" id="hmapSeg" hidden></div><div class="seg" id="hmonSeg" hidden></div><canvas id="mapPreview" width="480" height="270"></canvas><small id="mapDesc"></small></div>
         <button id="fightBtn" class="btn big">make fight happen</button>
         <p id="setupMsg" class="msg" role="status"></p>
       </aside>
@@ -655,7 +655,7 @@ const DIFF = { easy:{ punch:0.3, cd:0.9, mash:0.06, label:'Easy' }, normal:{ pun
 const MAX_HP = 200; // health points: when they run out, you get dizzy
 const TOPS = { star5:1.15, star4:1.25, tri:1.3, diamond:1.15, square:0.85, circle:1, star6:1.15, heart:0.75, shuriken:1.2, arrow:1.25 };
 
-const setup = { slots:{ star:'cpu', tri:'p1', circle:'cpu', diamond:'off', square:'cpu', sparkle:'off' }, rounds:3, diff:'normal', mode:'ffa', map:'cloud', track:'gp', hmap:'house', hmonster:'cpu', teams:{ star:0, tri:1, circle:0, diamond:1, square:1, sparkle:0, hex:0, heart:1, shuriken:0 }, sound:true, music:true, volume:1, shake:true, tags:true, halloween:'auto', christmas:'auto', thanksgiving:'auto', cheatSpeed:false, cheatJump:false, cheatSleepy:false, cheatWho:'me', keepersPlay:false, keepersWatch:false };
+const setup = { slots:{ star:'cpu', tri:'p1', circle:'cpu', diamond:'off', square:'cpu', sparkle:'off' }, rounds:3, diff:'normal', mode:'ffa', map:'cloud', track:'gp', hmap:'house', hmonster:'cpu', teams:{ star:0, tri:1, circle:0, diamond:1, square:1, sparkle:0, hex:0, heart:1, shuriken:0 }, sound:true, music:true, volume:1, shake:true, tags:true, halloween:'auto', christmas:'auto', thanksgiving:'auto', daytime:'auto', dormTime:'night', cheatSpeed:false, cheatJump:false, cheatSleepy:false, cheatWho:'me', keepersPlay:false, keepersWatch:false };
 try { const s = JSON.parse(localStorage.getItem('fff-setup') || 'null'); if (s && s.slots) Object.assign(setup, s); } catch (e) {}
 for (const c of CHARS) { if (!setup.slots[c.id]) setup.slots[c.id] = 'off'; if (setup.teams[c.id] == null) setup.teams[c.id] = 0; }
 const saveSetup = () => { try { localStorage.setItem('fff-setup', JSON.stringify(setup)); } catch (e) {} };
@@ -664,6 +664,9 @@ const saveSetup = () => { try { localStorage.setItem('fff-setup', JSON.stringify
 const month = () => new Date().getMonth();
 const spooky = () => setup.halloween === 'on' || (setup.halloween === 'auto' && month() === 9 && setup.christmas !== 'on');
 const xmas = () => !spooky() && (setup.christmas === 'on' || (setup.christmas === 'auto' && month() === 11));
+// day or night for fights (and the menu): the player picks on the setup screen, or "auto" lets the holiday decide (Halloween is at night).
+// Online, everyone gets the host's choice
+const isNight = () => { const d = G.online === 'client' && G.hostDaytime ? G.hostDaytime : setup.daytime; return d === 'night' || (d !== 'day' && spooky()); };
 const thanks = () => !spooky() && !xmas() && (setup.thanksgiving === 'on' || (setup.thanksgiving === 'auto' && month() === 10)); // Thanksgiving: all of November (Halloween and Christmas win if they're on too)
 
 // ---------- shop: coins from fights buy things to wear ----------
@@ -3274,10 +3277,11 @@ function roundRect(x, y, w, h, r) { g.beginPath(); g.roundRect ? g.roundRect(x, 
 function drawSky(t, map) {
   const id = map && map.id;
   if (id === 'snow') drawSnowSky(t);
+
   else if (id === 'road') drawRoadSky(t);
   else if (id === 'lava') drawLavaSky(t);
   else {
-    const night = spooky();
+    const night = isNight();
     if (night) drawNightSky(t); else { g.fillStyle = C.blue; g.fillRect(-3000, -3000, W + 6000, H + 6000); }
     g.fillStyle = night ? '#3a2a52' : C.white; g.fillRect(-3000, -3000, W + 6000, 3110);
     const off = (t*12) % 170;
@@ -3367,6 +3371,11 @@ function drawWreath(x, y, r) {
   g.beginPath(); g.moveTo(x, y + r); g.lineTo(x - r*0.45, y + r*1.45); g.lineTo(x - r*0.1, y + r*1.1); g.lineTo(x + r*0.1, y + r*1.1); g.lineTo(x + r*0.45, y + r*1.45); g.closePath(); g.fill();
 }
 // ---------- Halloween ----------
+function drawNightTint(t) { // the other maps at night: everything goes dark blue, with stars and the moon
+  g.fillStyle = 'rgba(15,10,50,.5)'; g.fillRect(-3000, -3000, W + 6000, H + 6000);
+  for (let i=0;i<40;i++) { g.fillStyle = `rgba(255,255,230,${0.4 + 0.5*Math.abs(Math.sin(t*1.5 + i*1.7))})`; g.beginPath(); g.arc((i*263.7) % W, 30 + (i*97.3) % 260, 2, 0, TAU); g.fill(); }
+  g.fillStyle = '#fff6c8'; g.shadowColor = '#fff6c8'; g.shadowBlur = 30; g.beginPath(); g.arc(1360, 150, 55, 0, TAU); g.fill(); g.shadowBlur = 0;
+}
 function drawNightSky(t) { // dark purple, twinkling stars and a big moon
   const sky = g.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#1a0e2e'); sky.addColorStop(1, '#4a2a6a');
   g.fillStyle = sky; g.fillRect(-3000, -3000, W + 6000, H + 6000);
@@ -3609,7 +3618,7 @@ function drawRoadHazard(h, t) {
   }
 }
 function drawMenuGround(t = 0) {
-  const night = spooky(), snowy = xmas();
+  const night = isNight(), snowy = xmas();
   g.fillStyle = night ? '#1d1430' : snowy ? '#dfeefc' : C.forest; g.beginPath(); g.moveTo(-3000, H+3000); g.lineTo(-3000, 720);
   g.bezierCurveTo(200, 640, 420, 650, 640, 760); g.bezierCurveTo(900, 700, 1300, 620, W+3000, 700); g.lineTo(W+3000, H+3000); g.fill();
   if (snowy) for (const [tx, ty, s] of [[90, 732, 90], [1250, 676, 110], [1480, 700, 80]]) drawXmasTree(tx, ty, s, t);
@@ -3768,6 +3777,7 @@ function shopStep(dt) {
   SHOP.nearCage = f === 8 && !!SHOP.cage && !SHOP.cage.freed && Math.abs(SHOP.x - CAGE_X) < 170;
   SHOP.nearStairs = !!stair; SHOP.stairTo = stair ? stair.to : 0; SHOP.stairRoom = stair && stair.room != null ? stair.room : SHOP.stairRoom; // (which dorm door)
   SHOP.nearPal = (f === 10 || f === 12) && !SHOP.nearStairs ? ((f === 10 ? pbSpots() : dormSpots()).find(s => Math.abs(s.x - SHOP.x) < 70) || {}).ch || null : null; // walking up to a fighter in player breaks or a dorm room
+  SHOP.nearSwitch = f === 12 && !SHOP.nearStairs && Math.abs(SHOP.x - DORM_SWITCH_X) < 45; // the light switch in a dorm room
   if (f === 12) dormStep();
   if (f === 10) pbStep();
   SHOP.nearKeeper = !SHOP.near && !SHOP.nearStairs && !!KEEPERS[f] && Math.abs(KEEPERS[f] - SHOP.x) < (f === 6 ? 300 : 220) && (f !== 4 || (SHOP.revealed && !SHOP.chase));
@@ -3787,7 +3797,7 @@ function shopStep(dt) {
   SHOP.nearSmi = f === 1 && SHOP.smi7y && !SHOP.near && !SHOP.nearStairs && Math.abs(SMI7Y_X - SHOP.x) < 70;
   if (SHOP.nearSmi) SHOP.nearKeeper = false;
   SHOP.smiSayT = Math.max(0, (SHOP.smiSayT || 0) - dt);
-  if (h.punch && !pr.punch) { if (SHOP.nearCage) cageHit(); else if (SHOP.near) shopAct(SHOP.near.item); else if (SHOP.nearSkins) nextSkin(); else if (SHOP.nearStairs) shopStairs(); else if (SHOP.nearPal) palTalk(); else if (SHOP.nearSmi) smiTalk(); else if (SHOP.nearKeeper) shopTalk(); }
+  if (h.punch && !pr.punch) { if (SHOP.nearCage) cageHit(); else if (SHOP.near) shopAct(SHOP.near.item); else if (SHOP.nearSkins) nextSkin(); else if (SHOP.nearSwitch) dormLight(); else if (SHOP.nearStairs) shopStairs(); else if (SHOP.nearPal) palTalk(); else if (SHOP.nearSmi) smiTalk(); else if (SHOP.nearKeeper) shopTalk(); }
   if (h.grab && !pr.grab && SHOP.nearKeeper) shopLaugh();
   if (isHex()) { // Hexstar says "beep boop baap!" now and then (or when you press special), and the shopkeepers act like he never said it
     SHOP.beepCD = (SHOP.beepCD ?? 3) - dt; SHOP.beepT = Math.max(0, (SHOP.beepT || 0) - dt);
@@ -4119,6 +4129,21 @@ const DORMS = [ // who shares a room (and what they talk about in there)
     [['arrow', 'I-is there something under my bed?'], ['diamond', 'Just my secret snack stash... want to share?'], ['arrow', '*happy glitch* Yes please!']]] },
 ];
 
+// day or night in the dorms: flip the light switch in a room (or use the button on the card). At night they say good night; in the day, good morning
+const dormNight = () => setup.dormTime !== 'day';
+const DORM_DAY = [ // what each pair of roommates says in the daytime (same order as DORMS)
+  [[['heart', 'Good morning, Star! Rise and shine!'], ['star', 'Too early... *puts on shades*'], ['heart', 'Hehe! Now you look cool AND sleepy!']]],
+  [[['sparkle', 'WAKE UP! It is a brand new day!'], ['shuriken', 'Five more minutes...'], ['sparkle', '*jumps on the bed* Wheee!'], ['shuriken', '...I am up. I am up.']]],
+  [[['square', 'GOOD MORNING, TRIANGLE!'], ['tri', 'Grr... I was SO asleep.'], ['square', 'BREAKFAST TIME!'], ['tri', '...OK, breakfast is good.']]],
+  [[['hex', 'Beep boop! The sun is up!'], ['circle', 'WHAT?! Already?!'], ['hex', '*happy beeping* Good morning, Circle!']]],
+  [[['diamond', 'Good morning, Missing Arrow. Did you sleep well?'], ['arrow', 'I d-dreamed about you... *glitches*'], ['diamond', '*blushes* Hehe...']]],
+];
+const DORM_SWITCH_X = 255;
+function dormLight() { // flip the light switch: day to night, or night to day
+  setup.dormTime = dormNight() ? 'day' : 'night'; saveSetup();
+  if (SHOP.pb) { SHOP.pb.chat = null; SHOP.pb.next = performance.now() + 500; }
+  SHOP.youSay = dormNight() ? 'Lights out! Good night!' : 'Good morning, everyone!'; SHOP.youSayT = 2.2; if (sfx.grab) sfx.grab(); renderShopCard(true);
+}
 const dormName = id => unlocked(CHAR[id]) ? CHAR[id].name : '???'; // (a locked fighter's name stays a secret)
 const dormOpen = i => !DORMS[i].locked || DORMS[i].ids.includes(CHARS[SHOP.who].id); // a locked door only opens for the two who live there
 function dormSpots() { // the roommates in their room (not you, if it's your room)
@@ -4128,7 +4153,7 @@ function dormSpots() { // the roommates in their room (not you, if it's your roo
 function dormStep() { // the roommates take turns talking (by the clock)
   const pb = SHOP.pb, now = performance.now(); if (!pb || now < pb.next) return;
   const here = new Set(dormSpots().map(s => s.ch.id)); if (!here.size) return;
-  const chats = DORMS[SHOP.dorm || 0].chats.filter(c => c.every(([id]) => here.has(id)));
+  const chats = (dormNight() ? DORMS[SHOP.dorm || 0].chats : DORM_DAY[SHOP.dorm || 0]).filter(c => c.every(([id]) => here.has(id))); // (night talk or morning talk)
   if (!chats.length) { const id = [...here][0], lines = (DORMS[SHOP.dorm || 0].crush && { diamond:['Hi, Missing Arrow... *blushes*', 'I saved you some snacks, hehe.', 'You look cute when you glitch.'], arrow:['H-hi, Sly Diamond... *happy glitch*', 'Y-your eyelashes are really pretty...', '*blushes and glitches*'] }[id]) || PB_SOLO[id] || ['...']; pbSay(id, lines[Math.floor(Math.random()*lines.length)]); pb.next = now + 4200; return; } // (alone in the room) // (alone with you in their room, they say sweet things to the one they like)
   if (!pb.chat || pb.line >= pb.chat.length) { pb.chat = chats[(pb.ci = ((pb.ci ?? -1) + 1) % chats.length)]; pb.line = 0; }
   const [id, text] = pb.chat[pb.line++]; pbSay(id, text); pb.next = now + (pb.line >= pb.chat.length ? 5200 : 3600);
@@ -4147,14 +4172,17 @@ function drawDormHall(t) {
   g.fillStyle = '#5a3a6e'; g.font = `56px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('dorms', W/2, 170);
   drawStaffDoor(DORM_EXIT_X, '← player breaks', '#c9f0ff', 'FIGHTERS ONLY');
   DORMS.forEach((d, i) => { drawNameDoor(DORM_ROOM_X[i], [dormName(d.ids[0]) + ' &', dormName(d.ids[1])]); if (d.crush) drawLittleHeart(DORM_ROOM_X[i], SHOP_FLOOR - 280, 14); if (!dormOpen(i)) drawPadlock(DORM_ROOM_X[i] + 30, SHOP_FLOOR - 105, 0.22); });
+  if (dormNight()) { g.fillStyle = 'rgba(15,10,50,.3)'; g.fillRect(0, 0, W, H); } // the hallway is dim at night
   const near = SHOP.nearStairs && SHOP.stairTo === 12 ? DORM_ROOM_X[SHOP.stairRoom] : null;
   if (near != null) drawPointer(near, SHOP_FLOOR - 330, t);
 }
 function drawDormRoom(t) {
   const d = DORMS[SHOP.dorm || 0];
   drawWoodRoom(d.wall, '#7a4a2a', '#b98a5a');
-  g.fillStyle = '#1b2a4a'; g.strokeStyle = C.ink; g.lineWidth = 6; g.fillRect(760, 200, 180, 140); g.strokeRect(760, 200, 180, 140); // a window with the moon
-  g.fillStyle = '#fff6c9'; g.beginPath(); g.arc(880, 245, 24, 0, TAU); g.fill(); g.fillStyle = C.white; for (const [sx, sy] of [[790, 230], [820, 300], [905, 310], [800, 270]]) g.fillRect(sx, sy, 4, 4);
+  const night = dormNight();
+  g.fillStyle = night ? '#1b2a4a' : '#8fd3ff'; g.strokeStyle = C.ink; g.lineWidth = 6; g.fillRect(760, 200, 180, 140); g.strokeRect(760, 200, 180, 140); // a window: the moon at night, the sun in the day
+  if (night) { g.fillStyle = '#fff6c9'; g.beginPath(); g.arc(880, 245, 24, 0, TAU); g.fill(); g.fillStyle = C.white; for (const [sx, sy] of [[790, 230], [820, 300], [905, 310], [800, 270]]) g.fillRect(sx, sy, 4, 4); }
+  else { g.fillStyle = C.yellow; g.beginPath(); g.arc(800, 240, 26, 0, TAU); g.fill(); g.fillStyle = C.white; for (const [cx, cy, cr] of [[885, 300, 18], [905, 292, 22], [925, 302, 16]]) { g.beginPath(); g.arc(cx, cy, cr, 0, TAU); g.fill(); } }
   g.strokeStyle = C.ink; g.lineWidth = 4; g.beginPath(); g.moveTo(850, 200); g.lineTo(850, 340); g.moveTo(760, 270); g.lineTo(940, 270); g.stroke();
   for (const [x, col] of [[500, '#ff8fc1'], [1200, '#7fb7ff']]) { // two beds
     g.fillStyle = '#6b3d1a'; g.fillRect(x - 130, SHOP_FLOOR - 130, 20, 130); g.fillRect(x + 110, SHOP_FLOOR - 80, 20, 80);
@@ -4164,6 +4192,16 @@ function drawDormRoom(t) {
   g.fillStyle = 'rgba(255,255,255,.5)'; g.beginPath(); g.ellipse(850, SHOP_FLOOR + 30, 220, 26, 0, 0, TAU); g.fill(); // a rug
   g.fillStyle = '#5a3a6e'; g.font = `44px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(`${dormName(d.ids[0])} & ${dormName(d.ids[1])}'s room`, W/2, 160, 1000);
   drawStaffDoor(DORM_EXIT_X, '← hallway', '#efe6ff', 'DORMS');
+  // the light switch by the door (press punch next to it), and at night the room is dark, with a little lamp glowing
+  g.fillStyle = '#f3e2c7'; g.strokeStyle = C.ink; g.lineWidth = 3; g.fillRect(DORM_SWITCH_X - 16, SHOP_FLOOR - 190, 32, 46); g.strokeRect(DORM_SWITCH_X - 16, SHOP_FLOOR - 190, 32, 46);
+  g.fillStyle = night ? '#555' : C.white; g.fillRect(DORM_SWITCH_X - 6, SHOP_FLOOR - 180 + (night ? 14 : 0), 12, 14); g.strokeRect(DORM_SWITCH_X - 6, SHOP_FLOOR - 180 + (night ? 14 : 0), 12, 14);
+  if (SHOP.nearSwitch) drawPointer(DORM_SWITCH_X, SHOP_FLOOR - 260, t);
+  if (night) {
+    g.fillStyle = 'rgba(15,10,50,.38)'; g.fillRect(0, 0, W, H);
+    const glow = g.createRadialGradient(850, SHOP_FLOOR - 60, 10, 850, SHOP_FLOOR - 60, 220); glow.addColorStop(0, 'rgba(255,220,120,.35)'); glow.addColorStop(1, 'rgba(255,220,120,0)');
+    g.fillStyle = glow; g.fillRect(600, SHOP_FLOOR - 300, 500, 320);
+    g.fillStyle = '#ffd23f'; g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.moveTo(830, SHOP_FLOOR - 70); g.lineTo(870, SHOP_FLOOR - 70); g.lineTo(860, SHOP_FLOOR - 100); g.lineTo(840, SHOP_FLOOR - 100); g.closePath(); g.fill(); g.stroke(); // the night lamp
+  }
   const say = SHOP.pb && SHOP.pb.say && performance.now() < SHOP.pb.say.until ? SHOP.pb.say : null;
   for (const { ch, x } of dormSpots()) {
     const r = 46*Math.min(ch.size || 1, 1.8), bottom = ch.shape === 'circle' ? r : Math.max(...shapeVerts(ch.shape, r, true).map(v => v.y));
@@ -4869,7 +4907,7 @@ function frame(now) {
   else if (G.state === 'shop') shopStep(dt);
   G.shake *= 0.85; if (!setup.shake) G.shake = 0;
   const sx = (Math.random() - 0.5)*G.shake*scale, sy = (Math.random() - 0.5)*G.shake*scale;
-  g.setTransform(1,0,0,1,0,0); g.fillStyle = spooky() ? '#1a0e2e' : C.blue; g.fillRect(0, 0, cv.width, cv.height);
+  g.setTransform(1,0,0,1,0,0); g.fillStyle = isNight() ? '#1a0e2e' : C.blue; g.fillRect(0, 0, cv.width, cv.height);
   g.setTransform(scale, 0, 0, scale, ox + sx, oy + sy);
   const t = now/1000;
   if (G.state === 'shop') drawShop(t);
@@ -4878,7 +4916,7 @@ function frame(now) {
   else if (G.state === 'fight') {
     const flip = G.fx && G.fx.flip; if (flip) { g.save(); g.translate(W/2, H/2); g.rotate(Math.PI); g.translate(-W/2, -H/2); } // upside-down (an admin's silly effect)
     drawSky(t, MAP); if (G.boss) drawBossSky(t);
-    drawArena(t);
+    drawArena(t); if (isNight() && MAP.id !== 'cloud') drawNightTint(t);
     drawHazards(t);
     drawWaves();
     drawBans(t); drawThings(t);
@@ -4962,6 +5000,7 @@ function renderSeg(id, opts, key, after) {
 function drawMapPreview() {
   const c = $('mapPreview'), m = c.getContext('2d'), sc = c.width/W, map = MAPS[setup.map] || MAPS.cloud, race = setup.mode === 'race';
   const horror = setup.mode === 'horror';
+  $('timeSeg').hidden = race || horror; renderSeg('timeSeg', [['auto', 'Auto'], ['day', '☀️ Day'], ['night', '🌙 Night']], 'daytime', () => { drawMapPreview(); });
   $('mapSeg').hidden = race || horror; $('trackSeg').hidden = !race; $('hmapSeg').hidden = !horror; $('hmonSeg').hidden = !horror; if (horror) { HOUSE = HMAPS[setup.hmap] || HMAPS.house; renderSeg('hmonSeg', [['cpu', 'Monster: computer'], ...CHARS.filter(c => setup.slots[c.id] !== 'off' && unlocked(c)).map(c => [c.id, c.name + ' is the monster'])], 'hmonster', drawMapPreview); } // who is the monster $('roundsSeg').parentElement.hidden = race || horror; // racing and horror have their own maps and are one game
   const track = RACE_TRACKS[setup.track] || RACE_TRACKS.gp; if (race) TRACK = track.built;
   const oldG = g, oldMap = MAP; g = m; MAP = map;
@@ -5678,7 +5717,7 @@ function drawSkinBooth(t) { // a big gold mirror on a stand: it shows you in eac
 }
 function renderShopCard(force) {
   const ch = CHARS[SHOP.who], st = SHOP.near, it = st && ITEMS.find(i => i.id === st.item);
-  const key = [shop.coins, ch.id, it && it.id, it && shop.owned[it.id], ITEMS.map(i => wears(i.id, ch)).join(), SHOP.nearKeeper, SHOP.nearStairs, SHOP.stairTo, SHOP.floor, jokeOpen(), !!SHOP.revealed, SHOP.nearSmi, SHOP.nearSkins, skinOf(ch), skinRec(ch).have.join(), SHOP.nearCage, SHOP.cage && SHOP.cage.lock.left, SHOP.cage && SHOP.cage.hp, SHOP.cage && SHOP.cage.freed, SHOP.nearPal && SHOP.nearPal.id, SHOP.stairRoom, SHOP.dorm].join('|');
+  const key = [shop.coins, ch.id, it && it.id, it && shop.owned[it.id], ITEMS.map(i => wears(i.id, ch)).join(), SHOP.nearKeeper, SHOP.nearStairs, SHOP.stairTo, SHOP.floor, jokeOpen(), !!SHOP.revealed, SHOP.nearSmi, SHOP.nearSkins, skinOf(ch), skinRec(ch).have.join(), SHOP.nearCage, SHOP.cage && SHOP.cage.lock.left, SHOP.cage && SHOP.cage.hp, SHOP.cage && SHOP.cage.freed, SHOP.nearPal && SHOP.nearPal.id, SHOP.stairRoom, SHOP.dorm, SHOP.nearSwitch, setup.dormTime].join('|');
   if (!force && key === SHOP.key) return;
   SHOP.key = key; $('coinCount').textContent = shop.coins; $('shopWho').textContent = ch.name;
   const card = $('shopCard'); fillShopCard(card, ch, it);
@@ -5769,7 +5808,10 @@ function fillShopCard(card, ch, it) {
   if (!it && (SHOP.floor === 11 || SHOP.floor === 12)) {
     const d = DORMS[SHOP.dorm || 0];
     card.innerHTML = SHOP.floor === 11 ? '<h3>The dorms</h3><p>This is where the fighters sleep! Each pair of roommates shares a room, and their names are on the door. Walk up to a door to go in.</p><p class="note">The door on the left goes back to player breaks.</p>'
-      : SHOP.nearPal ? `<h3>${SHOP.nearPal.name}</h3><p>This is ${SHOP.nearPal.name}'s room. Press punch to say hi!</p>` : `<h3>${dormName(d.ids[0])} & ${dormName(d.ids[1])}'s room</h3><p>The two roommates hang out here and chat. Walk up to one and press punch to say hi.</p><p class="note">The door on the left goes back to the hallway.</p>`;
+      : SHOP.nearSwitch ? `<h3>The light switch</h3><p>It's ${dormNight() ? 'night' : 'daytime'} in the dorms. Press punch to switch to ${dormNight() ? 'day' : 'night'}!</p>`
+      : SHOP.nearPal ? `<h3>${SHOP.nearPal.name}</h3><p>This is ${SHOP.nearPal.name}'s room. Press punch to say hi!</p>` : `<h3>${dormName(d.ids[0])} & ${dormName(d.ids[1])}'s room</h3><p>The two roommates hang out here and chat. Walk up to one and press punch to say hi. The light switch by the door makes it day or night.</p><p class="note">The door on the left goes back to the hallway.</p>`;
+    const b = document.createElement('button'); b.className = 'btn'; b.id = 'dormLight'; b.textContent = dormNight() ? '☀️ make it day' : '🌙 make it night'; // (day or night from anywhere in the dorms)
+    b.onclick = () => { dormLight(); cv.focus(); }; card.append(b);
     return;
   }
   if (!it && SHOP.floor === 10) {
@@ -6085,7 +6127,7 @@ function hostStartMatch() {
   MAP = MAPS[L.map] || MAPS.cloud; G.mode = L.mode; G.online = 'host'; G.lineup = lineup; G.wins = {}; G.round = 0; G.rounds = setup.rounds; G.paused = false; NETEV.length = 0;
   for (const f of lineup) if (f.control.startsWith('net:')) { const r = Net.inputs.get(f.control.slice(4)); if (r) r.seen = null; }
   setup.track = L.track || setup.track; setup.hmap = L.hmap || setup.hmap; setup.hmonster = L.hmonster || 'cpu';
-  netBroadcast({ t:'start', rounds:G.rounds, mode:G.mode, map:MAP.id, track:setup.track, hmap:setup.hmap, hmonster:setup.hmonster, lineup:lineup.map(l => ({ ch:l.ch.id, control: l.control === 'local' ? 'host' : l.control, tag:l.tag, team:l.team })) });
+  netBroadcast({ t:'start', rounds:G.rounds, mode:G.mode, map:MAP.id, track:setup.track, hmap:setup.hmap, hmonster:setup.hmonster, daytime:setup.daytime, lineup:lineup.map(l => ({ ch:l.ch.id, control: l.control === 'local' ? 'host' : l.control, tag:l.tag, team:l.team })) });
   G.state = 'fight'; showScreen(null); cv.focus();
   if (G.mode === 'race') startRace(); else if (G.mode === 'horror') startHorror(); else startRound();
 }
@@ -6156,7 +6198,7 @@ function clientOnData(d) {
 }
 function clientLeave() { try { if (Net.host && Net.host.open) Net.host.send({ t:'bye' }); } catch (e) {} endNet('You left the team.'); }
 function clientStart(d) {
-  G.fx = {}; G.cpuMode = null;   G.online = 'client'; G.mode = d.mode || 'ffa'; G.rounds = d.rounds || 3; G.wins = {}; G.particles = []; G.banner = null; G.phase = 'countdown'; G.timer = 3; G.goT = 0; G.paused = false;
+  G.fx = {}; G.cpuMode = null; G.hostDaytime = d.daytime || 'auto'; G.online = 'client'; G.mode = d.mode || 'ffa'; G.rounds = d.rounds || 3; G.wins = {}; G.particles = []; G.banner = null; G.phase = 'countdown'; G.timer = 3; G.goT = 0; G.paused = false;
   const me = 'net:' + (Net.peer && Net.peer.id);
   if (G.mode === 'race') { // the host drives everything; these karts just show where the host says they are
     TRACK = (RACE_TRACKS[d.track] || RACE_TRACKS.gp).built;
