@@ -181,6 +181,7 @@ kbd{font-family:var(--body);border:2px solid var(--ink);border-bottom-width:4px;
 .wearing{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;border-top:3px dashed var(--grey);padding-top:8px;margin-top:2px}
 .wearing button{font-family:var(--body);font-size:18px;border:3px solid var(--ink);background:var(--yellow);padding:0 10px}
 #gameQuit{position:fixed;left:calc(14px + env(safe-area-inset-left,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));font-size:24px;padding:4px 20px;border:3px solid var(--paper);z-index:5}
+#gameAdmin{position:fixed;left:calc(130px + env(safe-area-inset-left,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));font-size:24px;padding:4px 20px;z-index:5} /* the admin can open the admin panel during any fight, even online */
 .quit-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
 .btn.red{background:var(--maroon);color:var(--paper)}
 
@@ -357,7 +358,8 @@ html.thanks .fff span{border-color:#8a4b14;color:#d2691e}
       <p>Free Missing Arrow, and get every shop item and every skin for every fighter.</p>
       <div class="ap-row"><button id="apUnlock" class="btn">unlock everything</button></div>
       <h3>Fight cheats</h3>
-      <p class="note">These work in fights on this computer (not online).</p>
+      <p class="note">These work in fights, online too. "Just me" gives them only to you (in an online fight, only to your fighter). "Everyone" gives them to every fighter.</p>
+      <div class="setting"><span>Who gets the cheats</span><div class="seg" id="apWhoSeg"></div></div>
       <div class="setting"><span>Super speed</span><div class="seg" id="apSpeedSeg"></div><small>Everyone runs twice as fast.</small></div>
       <div class="setting"><span>Giant jumps</span><div class="seg" id="apJumpSeg"></div><small>Everyone jumps way higher.</small></div>
       <div class="setting"><span>Sleepy computers</span><div class="seg" id="apSleepySeg"></div><small>The computer players just stand there and do nothing.</small></div>
@@ -465,6 +467,7 @@ html.thanks .fff span{border-color:#8a4b14;color:#d2691e}
 </div>
 
 <button id="gameQuit" class="btn black" hidden>quit</button>
+<button id="gameAdmin" class="btn admin-btn" hidden>admin</button>
 
 <div id="quitAsk" class="screen" hidden style="background:rgba(17,17,17,.45)">
   <div class="pause-card">
@@ -595,7 +598,7 @@ const DIFF = { easy:{ punch:0.3, cd:0.9, mash:0.06, label:'Easy' }, normal:{ pun
 const MAX_HP = 200; // health points: when they run out, you get dizzy
 const TOPS = { star5:1.15, star4:1.25, tri:1.3, diamond:1.15, square:0.85, circle:1, star6:1.15, heart:0.75, shuriken:1.2, arrow:1.25 };
 
-const setup = { slots:{ star:'cpu', tri:'p1', circle:'cpu', diamond:'off', square:'cpu', sparkle:'off' }, rounds:3, diff:'normal', mode:'ffa', map:'cloud', track:'gp', hmap:'house', teams:{ star:0, tri:1, circle:0, diamond:1, square:1, sparkle:0, hex:0, heart:1, shuriken:0 }, sound:true, music:true, volume:1, shake:true, tags:true, halloween:'auto', christmas:'auto', thanksgiving:'auto', cheatSpeed:false, cheatJump:false, cheatSleepy:false };
+const setup = { slots:{ star:'cpu', tri:'p1', circle:'cpu', diamond:'off', square:'cpu', sparkle:'off' }, rounds:3, diff:'normal', mode:'ffa', map:'cloud', track:'gp', hmap:'house', teams:{ star:0, tri:1, circle:0, diamond:1, square:1, sparkle:0, hex:0, heart:1, shuriken:0 }, sound:true, music:true, volume:1, shake:true, tags:true, halloween:'auto', christmas:'auto', thanksgiving:'auto', cheatSpeed:false, cheatJump:false, cheatSleepy:false, cheatWho:'me' };
 try { const s = JSON.parse(localStorage.getItem('fff-setup') || 'null'); if (s && s.slots) Object.assign(setup, s); } catch (e) {}
 for (const c of CHARS) { if (!setup.slots[c.id]) setup.slots[c.id] = 'off'; if (setup.teams[c.id] == null) setup.teams[c.id] = 0; }
 const saveSetup = () => { try { localStorage.setItem('fff-setup', JSON.stringify(setup)); } catch (e) {} };
@@ -2090,14 +2093,14 @@ function control(p, inp) {
   if (p.ko > 0) return;
   const grounded = p.grounded > 0; if (grounded) p.airJumps = 1;
   if (p.special) return runSpecial(p, inp, grounded);
-  const speed = 7*ch.speed*(p.grabbing ? 0.72 : 1)*(p.inLava ? 0.5 : 1)*(cheat('cheatSpeed') ? 2 : 1), vx = b.velocity.x;
+  const speed = 7*ch.speed*(p.grabbing ? 0.72 : 1)*(p.inLava ? 0.5 : 1)*(cheatOn(p, 'cheatSpeed') ? 2 : 1), vx = b.velocity.x;
   const slick = grounded && p.surface === 'ice';
   const accel = grounded ? (p.hitstun > 0 ? (slick ? 0.01 : 0.04) : slick ? (inp.x ? 0.07 : 0.025) : 0.2) : (inp.x ? (p.hitstun > 0 ? 0.02 : 0.08) : 0);
   Body.setVelocity(b, { x: vx + (inp.x*speed - vx)*accel, y: b.velocity.y });
   if (inp.x) p.facing = inp.x > 0 ? 1 : -1;
   if (inp.jumpP && p.hitstun < 0.2) {
-    if (grounded) { Body.setVelocity(b, { x:b.velocity.x, y:-15.5*ch.jump*(cheat('cheatJump') ? 1.7 : 1) }); p.grounded = 0; p.squash = -0.18; ev('sfx','jump'); }
-    else if (p.airJumps > 0) { p.airJumps--; Body.setVelocity(b, { x:b.velocity.x, y:-12.5*ch.jump*(cheat('cheatJump') ? 1.7 : 1) }); ev('puff', b.position.x, b.position.y + p.r); ev('sfx','jump'); }
+    if (grounded) { Body.setVelocity(b, { x:b.velocity.x, y:-15.5*ch.jump*(cheatOn(p, 'cheatJump') ? 1.7 : 1) }); p.grounded = 0; p.squash = -0.18; ev('sfx','jump'); }
+    else if (p.airJumps > 0) { p.airJumps--; Body.setVelocity(b, { x:b.velocity.x, y:-12.5*ch.jump*(cheatOn(p, 'cheatJump') ? 1.7 : 1) }); ev('puff', b.position.x, b.position.y + p.r); ev('sfx','jump'); }
   }
   const ang = wrap(b.angle), k = p.hitstun > 0 ? 0.02 : 0.14;
   Body.setAngularVelocity(b, b.angularVelocity*(p.hitstun > 0 ? 0.98 : 0.82) - ang*k);
@@ -2123,7 +2126,7 @@ function step() {
   for (const p of G.fighters) {
     if (!p.alive) continue;
     let inp = BLANK;
-    if (p.control === 'cpu') { if (live && !cheat('cheatSleepy')) inp = aiInput(p); }
+    if (p.control === 'cpu') { if (live && !sleepyCPUs()) inp = aiInput(p); }
     else if (p.control.startsWith('net:')) { const ri = netInput(p); if (live) inp = ri; }
     else { const hi = humanInput(p); if (live) inp = hi; }
     p.input = inp;
@@ -4433,18 +4436,18 @@ function applyTheme() {
 }
 applyTheme();
 const screens = ['title','setup','pause','results','howto','settings','quitAsk','online','lobby','keys','shop','codes','adminPanel'];
-function showScreen(id) { for (const s of screens) $(s).hidden = s !== id; $('glitchShopBtn').hidden = !unlocked(CHAR.arrow); $('adminBtn').hidden = !unlocked(CHAR.admin); $('gameQuit').hidden = !(id === null && G.state === 'fight'); musicUpdate(); }
+function showScreen(id) { for (const s of screens) $(s).hidden = s !== id; $('glitchShopBtn').hidden = !unlocked(CHAR.arrow); $('adminBtn').hidden = !unlocked(CHAR.admin); $('gameQuit').hidden = !(id === null && G.state === 'fight'); $('gameAdmin').hidden = !(id === null && G.state === 'fight' && unlocked(CHAR.admin)); musicUpdate(); }
 function openQuit() {
   if (G.state !== 'fight') return;
-  G.paused = !G.online; $('pause').hidden = true; $('gameQuit').hidden = true;
+  G.paused = !G.online; $('pause').hidden = true; $('gameQuit').hidden = true; $('gameAdmin').hidden = true;
   $('quitTitle').textContent = G.online === 'host' ? 'end the fight?' : G.online === 'client' ? 'leave the fight?' : 'quit the fight?';
   $('quitText').textContent = G.online === 'host' ? 'This ends the fight and the team for everyone.' : G.online === 'client' ? 'You will leave the team. Everyone else keeps playing.' : 'Nobody wins if you leave now.'; $('quitAsk').hidden = false; $('quitNo').focus();
 }
-function closeQuit() { $('quitAsk').hidden = true; $('gameQuit').hidden = false; G.paused = false; cv.focus(); }
+function closeQuit() { $('quitAsk').hidden = true; $('gameQuit').hidden = false; $('gameAdmin').hidden = !unlocked(CHAR.admin); G.paused = false; cv.focus(); }
 function togglePause() {
   if (G.state !== 'fight' || !$('quitAsk').hidden || !$('adminPanel').hidden) return;
   G.paused = !G.paused; $('pause').hidden = !G.paused;
-  $('pauseAdminBtn').hidden = !unlocked(CHAR.admin) || !!G.online; // the admin can open the admin panel in the middle of a fight
+  $('pauseAdminBtn').hidden = !unlocked(CHAR.admin); // the admin can open the admin panel in the middle of a fight
   if (G.paused) $('resumeBtn').focus(); else cv.focus();
 }
 const titleChars = $('titleChars'); PLAYABLE().forEach(c => titleChars.appendChild(charCanvas(c, 78)));
@@ -4623,18 +4626,24 @@ $('secretBtn').onclick = () => {
 $('secretIn').addEventListener('keydown', e => { if (e.key === 'Enter') $('secretBtn').click(); });
 // ---------- the admin panel: you get it with the admin code ----------
 const ONOFF_CHEAT = [[true, 'On'], [false, 'Off']];
-function openAdminPanel(inFight) { // from the main menu, or from the pause menu in the middle of a fight (then the fight stays paused behind it)
-  apInFight = !!inFight;
-  if (inFight) { $('pause').hidden = true; $('adminPanel').hidden = false; $('adminPanel').scrollTop = 0; $('apBack').focus(); } else openPage('adminPanel');
+// `from`: 'menu', 'pause' (the pause menu: the fight waits behind it) or 'game' (the admin button during a fight: an online fight keeps going behind it)
+function openAdminPanel(from) {
+  apFrom = from;
+  if (from === 'menu') openPage('adminPanel');
+  else { $('pause').hidden = true; $('gameQuit').hidden = true; $('gameAdmin').hidden = true; $('adminPanel').hidden = false; $('adminPanel').scrollTop = 0; $('apBack').focus(); }
   $('apCoins').textContent = shop.coins; $('apMsg').textContent = '';
   renderSeg('apSpeedSeg', ONOFF_CHEAT, 'cheatSpeed'); renderSeg('apJumpSeg', ONOFF_CHEAT, 'cheatJump'); renderSeg('apSleepySeg', ONOFF_CHEAT, 'cheatSleepy');
+  renderSeg('apWhoSeg', [['me', 'Just me'], ['all', 'Everyone']], 'cheatWho');
 }
-let apInFight = false;
-$('adminBtn').onclick = () => { if (!unlocked(CHAR.admin)) return; audioOn(); openAdminPanel(false); };
-$('pauseAdminBtn').onclick = () => { if (!unlocked(CHAR.admin) || G.online) return; openAdminPanel(true); };
-$('apBack').onclick = () => { // back to the paused fight, or back to the main menu
-  if (apInFight) { apInFight = false; $('adminPanel').hidden = true; $('pause').hidden = false; $('resumeBtn').focus(); return; }
-  G.state = 'title'; showScreen('title'); $('okBtn').focus();
+let apFrom = 'menu';
+$('adminBtn').onclick = () => { if (!unlocked(CHAR.admin)) return; audioOn(); openAdminPanel('menu'); };
+$('pauseAdminBtn').onclick = () => { if (!unlocked(CHAR.admin)) return; openAdminPanel('pause'); };
+$('gameAdmin').onclick = () => { if (!unlocked(CHAR.admin) || G.state !== 'fight') return; if (!G.online) G.paused = true; openAdminPanel('game'); };
+$('apBack').onclick = () => { // back to the fight, or back to the main menu
+  if (apFrom === 'pause') { $('adminPanel').hidden = true; $('pause').hidden = false; $('resumeBtn').focus(); }
+  else if (apFrom === 'game') { $('adminPanel').hidden = true; G.paused = false; $('gameQuit').hidden = G.state !== 'fight'; $('gameAdmin').hidden = G.state !== 'fight'; cv.focus(); }
+  else { G.state = 'title'; showScreen('title'); $('okBtn').focus(); }
+  apFrom = 'menu';
 };
 const apCoins = n => { shop.coins += n; saveShop(); $('apCoins').textContent = shop.coins; $('apMsg').textContent = `+${n} coins! You have ${shop.coins} now.`; if (sfx.coin) sfx.coin(); };
 $('apCoins100').onclick = () => apCoins(100);
@@ -4647,8 +4656,16 @@ $('apUnlock').onclick = () => { // Missing Arrow, every item (but the attic's go
   titleChars.innerHTML = ''; PLAYABLE().forEach(c => titleChars.appendChild(charCanvas(c, 78))); $('glitchShopBtn').hidden = !unlocked(CHAR.arrow);
   $('apMsg').textContent = 'Everything is unlocked! Missing Arrow is free, and every fighter has every item and skin. Put them on in the shop.'; if (sfx.win) sfx.win();
 };
-// fight cheats from the admin panel, for fights on this computer only
-const cheat = k => !G.online && !!setup[k];
+// fight cheats from the admin panel. Whose cheats count: this computer's (in setup), and, when you're hosting an online fight,
+// each online admin's too (they come with their button presses). "Just me" (cheatWho 'me') only gives them to that person's own fighter
+const myCheats = () => unlocked(CHAR.admin) ? { cheatSpeed:!!setup.cheatSpeed, cheatJump:!!setup.cheatJump, cheatSleepy:!!setup.cheatSleepy, cheatWho:setup.cheatWho === 'all' ? 'all' : 'me' } : null;
+function cheatSources() {
+  const out = [], mine = myCheats(); if (mine) out.push({ c:mine, owns:p => p.control !== 'cpu' && !p.control.startsWith('net:') });
+  if (G.online === 'host') for (const [id, r] of Net.inputs) if (r.ch) out.push({ c:r.ch, owns:p => p.control === 'net:' + id });
+  return out;
+}
+const cheatOn = (p, k) => G.online !== 'client' && cheatSources().some(s => s.c[k] && (s.c.cheatWho === 'all' || s.owns(p)));
+const sleepyCPUs = () => G.online !== 'client' && cheatSources().some(s => s.c.cheatSleepy);
 $('setBtn').onclick = () => { audioOn(); openPage('settings'); };
 $('shopBtn').onclick = () => { audioOn(); openShop(); };
 $('glitchShopBtn').onclick = () => { // straight into the glitch shop, as Missing Arrow (you only get the button once he's free)
@@ -5099,8 +5116,8 @@ function horrorSnapshot() {
     m:[r1(m.x), r1(m.y), r2(m.a), MSTATES.indexOf(m.state), r1(m.waitT), r1(m.walk)], left:r1(Hh.left), fl:r2(Hh.flash), e:NETEV.splice(0) };
 }
 function snapshot() {
-  const f = G.fighters.map(p => { const b = p.body; return [r1(b.position.x), r1(b.position.y), r2(b.angle), p.alive ? 1 : 0, p.ko > 0 ? r1(p.ko) : 0, Math.round(p.dizzy), p.facing, r2(p.punchAnim), p.flash > 0 ? r2(p.flash) : 0, p.grabbing ? p.grabbing.idx : -1, r2(p.squash)]; });
-  return { t:'s', ph:G.phase, tm:r2(G.timer), go:r2(G.goT), bn:G.banner, w:G.wins, f, c:G.clouds.map(c => r1(c.position.x)), hz:(G.hazards || []).map(h => [HZ_CODES.indexOf(h.type), r1(h.x), r1(h.y), r2(Math.max(0, h.warn)), h.type === 'car' ? h.dir*10 + (h.dir > 0 ? h.c : -h.c) : h.type === 'bird' ? h.dir : h.type === 'zap' ? h.wire : h.type === 'geyser' ? Math.round(h.live*100) : 0]), wv:(G.waves || []).map(w => [r1(w.x), r1(w.y), w.dir, Math.round(w.dist), w.owner]), e:NETEV.splice(0) };
+  const f = G.fighters.map(p => { const b = p.body; return [r1(b.position.x), r1(b.position.y), r2(b.angle), p.alive ? 1 : 0, p.ko > 0 ? r1(p.ko) : 0, Math.round(p.dizzy), p.facing, r2(p.punchAnim), p.flash > 0 ? r2(p.flash) : 0, p.grabbing ? p.grabbing.idx : -1, r2(p.squash), p.special && p.special.kind === 'glitch' ? [r1(p.special.x), r1(p.special.y), r2(p.special.t), p.special.boom ? 1 : 0] : 0, p.walking ? r1(p.walk) : -1]; }); // (the last two: Missing Arrow's glitch fest, and how far along his steps the Admin is)
+  return { t:'s', ph:G.phase, tm:r2(G.timer), go:r2(G.goT), bn:G.banner, w:G.wins, f, c:G.clouds.map(c => r1(c.position.x)), hz:(G.hazards || []).map(h => [HZ_CODES.indexOf(h.type), r1(h.x), r1(h.y), r2(Math.max(0, h.warn)), h.type === 'car' ? h.dir*10 + (h.dir > 0 ? h.c : -h.c) : h.type === 'bird' ? h.dir : h.type === 'zap' ? h.wire : h.type === 'geyser' ? Math.round(h.live*100) : 0]), wv:(G.waves || []).map(w => [r1(w.x), r1(w.y), w.dir, Math.round(w.dist), w.owner]), ban:(G.bans || []).map(b => [r1(b.x), b.dir]), e:NETEV.splice(0) };
 }
 
 // A stand-in for PeerJS that talks between browser tabs, used for testing with ?mock=1
@@ -5192,7 +5209,7 @@ function hostOnData(conn, d) {
   if (!Net.conns.has(id)) return;
   if (d.t === 'pick') return lobbyPick(id, d.ch);
   if (d.t === 'team') { const pl = L.players.find(p => p.id === id); if (pl && pl.ch) { L.teams[pl.ch] = 1 - (L.teams[pl.ch] || 0); broadcastLobby(); } return; }
-  if (d.t === 'i') { Net.inputs.set(id, { x:Math.max(-1, Math.min(1, +d.x || 0)), d:!!d.d, u:!!d.u, j:+d.j || 0, p:+d.p || 0, g:+d.g || 0, s:+d.s || 0 }); return; }
+  if (d.t === 'i') { const ch = d.ch && typeof d.ch === 'object' ? { cheatSpeed:!!d.ch.cheatSpeed, cheatJump:!!d.ch.cheatJump, cheatSleepy:!!d.ch.cheatSleepy, cheatWho:d.ch.cheatWho === 'all' ? 'all' : 'me' } : null; Net.inputs.set(id, { x:Math.max(-1, Math.min(1, +d.x || 0)), d:!!d.d, u:!!d.u, j:+d.j || 0, p:+d.p || 0, g:+d.g || 0, s:+d.s || 0, ch }); return; }
   if (d.t === 'bye') return hostDrop(id);
 }
 function lobbyPick(id, ch) {
@@ -5322,7 +5339,7 @@ function clientStart(d) {
     G.fighters = d.lineup.map((l, i) => ({ ch:CHAR[l.ch], control:l.control, tag:l.tag, team:0, idx:i, me:l.control === me, alive:true, caught:false, r:22, x:800, y:500, facing:1, walk:0, hidden:null, fear:0, tgt:null, seen:false }));
     HOUSE = HMAPS[d.hmap] || HMAPS.house;
     G.horror = { left:SURVIVE_TIME, spots:HOUSE.spots.map(s => ({ ...s, who:null })), flash:0, monster:{ x:HOUSE.lair.x, y:HOUSE.lair.y, r:30, a:Math.PI, state:'wait', waitT:MONSTER_WAIT, walk:0, tgt:null, seen:false } };
-  } else G.fighters = d.lineup.map((l, i) => ({ ch:CHAR[l.ch], control:l.control, tag:l.tag, team:l.team || 0, idx:i, r:38, me:l.control === me, body:{ position:{ x:800, y:560 }, angle:0 }, tgt:null, seen:false,
+  } else G.fighters = d.lineup.map((l, i) => ({ ch:CHAR[l.ch], control:l.control, tag:l.tag, team:l.team || 0, idx:i, r:38*(CHAR[l.ch].size || 1), me:l.control === me, body:{ position:{ x:800, y:560 }, angle:0 }, tgt:null, seen:false,
     alive:true, ko:0, dizzy:0, facing:1, punchAnim:0, flash:0, grabbing:null, squash:0 }));
   MAP = MAPS[d.map] || MAPS.cloud; G.clouds = ledgeObjs(MAP); G.hazards = []; G.waves = [];
   G.state = 'fight'; showScreen(null); cv.focus();
@@ -5335,9 +5352,11 @@ function applySnap(s) {
     p.tgt = { x:a[0], y:a[1], a:a[2] };
     if (!p.seen || (!p.alive && a[3]) || far) { pos.x = a[0]; pos.y = a[1]; p.body.angle = a[2]; p.seen = true; }
     p.alive = !!a[3]; p.ko = a[4]; p.dizzy = a[5]; p.facing = a[6]; p.punchAnim = a[7]; p.flash = a[8]; p.grabbing = a[9] >= 0 ? G.fighters[a[9]] : null; p.squash = a[10];
+    p.special = a[11] ? { kind:'glitch', x:a[11][0], y:a[11][1], t:a[11][2], boom:!!a[11][3] } : null; p.walking = a[12] >= 0; if (p.walking) p.walk = a[12];
   });
   if (s.c) s.c.forEach((x, i) => { if (G.clouds[i]) G.clouds[i].tx = x; });
   G.waves = (s.wv || []).map(a => ({ x:a[0], y:a[1], dir:a[2], dist:a[3], owner:a[4] }));
+  G.bans = (s.ban || []).map(a => ({ x:a[0], dir:a[1] }));
   G.hazards = (s.hz || []).map(a => { const type = HZ_CODES[a[0]] || 'ice'; return { type, x:a[1], y:a[2], warn:a[3], r: type === 'snow' ? 36 : 24, dir: type === 'car' ? Math.sign(a[4]) : a[4], c: Math.abs(a[4]) % 10, wire:a[4], live: type === 'geyser' ? a[4]/100 : a[2], ph:a[3] ? 0 : (a[1]|0) % 7 }; });
   for (const e of s.e || []) runEv(...e);
 }
@@ -5393,7 +5412,7 @@ function clientSendInput(now) {
   const h = readHeld('local'), pr = Net.prevHeld, c = Net.counters;
   if (h.jump && !pr.jump) c.j++; if (h.punch && !pr.punch) c.p++; if (h.grab && !pr.grab) c.g++; if (h.special && !pr.special) c.s++;
   Net.prevHeld = h;
-  const msg = { t:'i', x:h.x, d:h.down ? 1 : 0, u:h.jump ? 1 : 0, j:c.j, p:c.p, g:c.g, s:c.s }, key = msg.x + ',' + msg.d + ',' + msg.u + ',' + c.j + ',' + c.p + ',' + c.g + ',' + c.s;
+  const msg = { t:'i', x:h.x, d:h.down ? 1 : 0, u:h.jump ? 1 : 0, j:c.j, p:c.p, g:c.g, s:c.s, ch:myCheats() }, key = msg.x + ',' + msg.d + ',' + msg.u + ',' + c.j + ',' + c.p + ',' + c.g + ',' + c.s + JSON.stringify(msg.ch); // an admin's cheats go to the host with their button presses
   if (key !== Net.lastInput || now - Net.lastSend > 250) { try { Net.host.send(msg); } catch (e) {} Net.lastInput = key; Net.lastSend = now; }
 }
 
@@ -5404,7 +5423,7 @@ function renderLobby() {
   const isHost = Net.role === 'host', me = isHost ? 'host' : Net.you;
   $('lobbyCode').textContent = L.code;
   const box = $('lobbyRoster'); box.innerHTML = '';
-  for (const ch of CHARS.filter(c => !c.secret)) { // secret fighters aren't in online games yet
+  for (const ch of CHARS.filter(c => unlocked(c) || L.players.some(p => p.ch === c.id) || L.cpus.includes(c.id))) { // secret fighters show up if you've unlocked them (or someone else picked them)
     const owner = L.players.find(p => p.ch === ch.id), cpu = L.cpus.includes(ch.id);
     const card = document.createElement('div'); card.className = 'card';
     const cc = charCanvas(ch, 92); if (!owner && !cpu) cc.style.filter = 'grayscale(.8) opacity(.5)'; card.appendChild(cc);
