@@ -437,7 +437,7 @@ html.thanks .fff span{border-color:#8a4b14;color:#d2691e}
     <div class="page-body">
       <p class="soon">🚧 More updates coming soon! 🚧</p>
       <p>New stuff is on the way for Fight for Fun. Here's what's coming next:</p>
-      <ul class="upds-list"><li><b>💌 Confession</b>: <span id="confessWhen"></span></li><li><b>💑 First things first</b>: after the confession, the shopkeepers start dating! Coming soon...</li></ul>
+      <ul class="upds-list"><li><b>💌 Confession</b>: <span id="confessWhen"></span></li><li><b>💑 First things first</b>: <span id="datingWhen"></span></li></ul>
     </div>
   </div>
 </div>
@@ -5476,9 +5476,10 @@ const CONFESS_LINES = [['keeper2', 'u-um... Fighty? Can I t-tell you something?'
 const lsGet = k => { try { return localStorage.getItem(k); } catch { return null; } };
 const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
 const confessStart = () => +lsGet('fff-confess') || 0;
-const confessSeen = () => lsGet('fff-confessed') === '1';
+const confessSeen = () => !!lsGet('fff-confessed'); // (it holds when you saw it)
+const DATING_MIN = 60; // an hour after the confession, the shopkeepers start dating
 const confessPending = () => { const s = confessStart(); return !!s && !confessSeen() && Date.now() - s >= CONFESS_MIN*60000; }; // (time's up, and you haven't watched it yet)
-function confessDone() { lsSet('fff-confessed', '1'); SHOP.confessVisit = true; if (sfx.win) sfx.win(); } // (she stays downstairs with Fighty for the rest of your visit)
+function confessDone() { lsSet('fff-confessed', String(Date.now())); SHOP.confessVisit = true; if (sfx.win) sfx.win(); } // (she stays downstairs with Fighty for the rest of your visit)
 // until the confession happens, the fighters gossip about it (in player breaks and in their dorm rooms)
 const gossipOn = () => !!confessStart() && !confessSeen();
 const CONFESS_GOSSIP = [
@@ -5498,6 +5499,9 @@ function updsTick() { // the countdown on the page
   const text = confessSeen() ? 'It happened! They like each other 💕' : left > 0 ? `The Shy Shopkeeper has something to tell the Fighty Shopkeeper... Go to the dorm in ${Math.floor(left/60000)}:${String(Math.floor(left/1000) % 60).padStart(2, '0')}!`
     : 'Go to the dorm NOW! Find the shopkeepers\' room (the gold door at the end of the hall).';
   if ($('confessWhen').textContent !== text) $('confessWhen').textContent = text;
+  const dleft = DATING_MIN*60000 - (Date.now() - (+lsGet('fff-confessed') || 0)), dtext = !confessSeen() ? 'after the confession, the shopkeepers start dating! Coming soon...'
+    : dleft > 0 ? `The shopkeepers start dating in ${Math.floor(dleft/3600000)}:${String(Math.floor(dleft/60000) % 60).padStart(2, '0')}:${String(Math.floor(dleft/1000) % 60).padStart(2, '0')}!` : 'The shopkeepers are dating now! 💕';
+  if ($('datingWhen').textContent !== dtext) $('datingWhen').textContent = dtext;
 }
 $('updsBtn').onclick = () => { audioOn(); if (!confessStart()) lsSet('fff-confess', String(Date.now())); openPage('upds'); updsTick(); };
 // ---------- the admin panel: you get it with the admin code ----------
