@@ -4781,8 +4781,23 @@ function swapFighter(p, ch) { // (on this computer, or on the host for an online
 function renderSwap() {
   const box = $('apSwap'); box.innerHTML = '';
   const me = G.state === 'fight' && myFighter();
-  $('apSwapNote').textContent = me ? `You are ${me.ch.name}. Pick a fighter to turn into it right now!` : 'Start a fight, then press the admin button during the fight to change your fighter.';
-  if (!me) return;
+  if (!me) { // not in a fight: pick who you'll be in your next fight (your keys or controller move over to that fighter)
+    const human = c => (CTRL[setup.slots[c.id]] || CTRL.off).kind === 'human', cur = PLAYABLE().find(human);
+    $('apSwapNote').textContent = cur ? `You'll be ${cur.name} in your next fight. Pick someone else to change! (In a fight, press the admin button to change right away.)` : 'Pick who you want to be in your next fight!';
+    for (const ch of PLAYABLE()) {
+      const b = document.createElement('button'); b.className = 'btn ap-swap'; b.id = 'apSwap-' + ch.id;
+      b.append(charCanvas(ch, 48), ch.name); b.disabled = !!cur && cur.id === ch.id;
+      b.onclick = () => {
+        const ctl = cur ? setup.slots[cur.id] : 'p1';
+        if (cur) setup.slots[cur.id] = 'off';
+        setup.slots[ch.id] = ctl; saveSetup();
+        $('apMsg').textContent = `You'll be ${ch.name} in your next fight!`; renderSwap();
+      };
+      box.append(b);
+    }
+    return;
+  }
+  $('apSwapNote').textContent = `You are ${me.ch.name}. Pick a fighter to turn into it right now!`;
   for (const ch of PLAYABLE()) {
     const b = document.createElement('button'); b.className = 'btn ap-swap'; b.id = 'apSwap-' + ch.id;
     b.append(charCanvas(ch, 48), ch.name); b.disabled = G.fighters.some(f => f.ch.id === ch.id);
