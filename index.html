@@ -555,7 +555,9 @@ const TEAMS = [{ name:'Red team', color:'#ed1c24', dark:'#880015' }, { name:'Blu
 const MODES = [['ffa','Free for all'],['teams','Team vs team'],['race','Racing'],['horror','Horror']];
 const LOCAL_MODES = ['race', 'horror']; // modes with their own maps (and their own online snapshots)
 const MAPLIST = [['cloud','Cloud Island'],['snow','Snowy Hills'],['road','Roadside Fights'],['lava','Lava Rocks']];
-const allies = (a, b) => G.mode === 'teams' && a.team === b.team;
+// Missing Arrow and the Admin are brothers: they never hit each other (even in free for all, or on different teams)
+const brothers = (a, b) => (a.ch.id === 'arrow' && b.ch.id === 'admin') || (a.ch.id === 'admin' && b.ch.id === 'arrow');
+const allies = (a, b) => (G.mode === 'teams' && a.team === b.team) || brothers(a, b);
 const DIFF = { easy:{ punch:0.3, cd:0.9, mash:0.06, label:'Easy' }, normal:{ punch:0.55, cd:0.55, mash:0.13, label:'Normal' }, hard:{ punch:0.85, cd:0.36, mash:0.25, label:'Hard' } };
 const MAX_HP = 200; // health points: when they run out, you get dizzy
 const TOPS = { star5:1.15, star4:1.25, tri:1.3, diamond:1.15, square:0.85, circle:1, star6:1.15, heart:0.75, shuriken:1.2, arrow:1.25 };
@@ -1027,7 +1029,7 @@ function drawCharacter(g, ch, r, o = {}) {
     return;
   }
   const robot = ch.shape === 'star6', tt = performance.now()/1000; // Nervous Hexstar is a nervous little robot who never stops shaking
-  const shaky = robot || ch.shape === 'arrow'; // Missing Arrow trembles too, he's so scared
+  const shaky = robot || (ch.shape === 'arrow' && !o.brave); // Missing Arrow trembles too, he's so scared (unless his big brother is with him)
   if (shaky) { g.save(); g.translate(Math.sin(tt*(robot ? 45 : 33))*r*(robot ? 0.035 : 0.025), 0); }
   // Missing Arrow is glitchy, like the cage room he was stuck in: a red and blue fringe all the time, and lots of big glitches
   const glitchy = ch.shape === 'arrow', burst = glitchy && Math.sin(tt*2.3) + Math.sin(tt*5.7) + Math.sin(tt*13.1)*0.5 > 0.6, gk = Math.floor(tt*24) % 6;
@@ -1503,7 +1505,7 @@ function startRound() {
   } else {
     xs.push(...ffaXs(n)); xs.sort(() => Math.random() - 0.5);
   }
-  G.hazards = []; G.waves = []; G.bans = []; G.hzT = 3; G.hzCar = 4.5; G.hzBird = 7; G.hzZap = 3;
+  G.hazards = []; G.waves = []; G.bans = []; G.broT = 0.5; G.hzT = 3; G.hzCar = 4.5; G.hzBird = 7; G.hzZap = 3;
   G.fighters = G.lineup.map((l, i) => { const f = makeFighter(l.ch, l.control, xs[i], i); f.team = l.team || 0; f.tag = l.tag || (l.control === 'cpu' ? 'CPU' : CTRL[l.control].tag); return f; });
   Composite.add(G.engine.world, G.fighters.map(f => f.body));
   ev('clear'); G.banner = null; G.phase = 'countdown'; G.timer = 3; G.lastCount = 4; G.goT = 0; G.champ = null;
@@ -1893,6 +1895,15 @@ function updateWaves() {
   }
   G.waves = G.waves.filter(w => !w.dead);
 }
+// when they're in a fight together, Missing Arrow keeps cheering for his big brother (and he isn't scared any more)
+const BRO_LINES = ['BIG BROTHER!', 'My brother is here! I\'m not scared!', 'Go, big brother, go!', 'Brother! Ban them!', '*hugs his big brother*', 'That\'s MY brother!'];
+function brotherTalk() {
+  const m = G.fighters.find(f => f.ch.id === 'arrow' && f.alive), ad = G.fighters.find(f => f.ch.id === 'admin' && f.alive);
+  if (!m || !ad || G.phase !== 'fight') return;
+  G.broT = (G.broT ?? 0.5) - DT; if (G.broT > 0) return;
+  G.broT = 7; G.broI = ((G.broI ?? -1) + 1) % BRO_LINES.length;
+  ev('pop', m.body.position.x, m.body.position.y - m.r - 40, BRO_LINES[G.broI], C.yellow);
+}
 function updateBans() {
   if (!G.bans || !G.bans.length) return;
   for (const bn of G.bans) {
@@ -2105,7 +2116,7 @@ function step() {
   Engine.update(G.engine, STEP);
   updateHazards();
   updateWaves();
-  updateBans();
+  updateBans(); brotherTalk();
   for (const p of G.fighters) {
     if (!p.alive) continue;
     p.grounded -= DT;
@@ -2122,9 +2133,11 @@ function step() {
   const alive = G.fighters.filter(f => f.alive);
   hostSync();
   const teamsLeft = new Set(alive.map(f => f.team));
-  if (G.phase === 'fight' && (G.mode === 'teams' ? teamsLeft.size <= 1 : alive.length <= 1)) {
+  const bros = alive.length === 2 && brothers(alive[0], alive[1]); // only the two brothers are left, and they won't fight each other: the Admin wins it
+  if (G.phase === 'fight' && (bros || (G.mode === 'teams' ? teamsLeft.size <= 1 : alive.length <= 1))) {
     G.phase = 'roundEnd'; G.timer = 1.1;
-    G.roundWinner = G.mode === 'teams' ? (alive.length ? { team:alive[0].team } : null) : (alive[0] || null);
+    const top = bros ? alive.find(f => f.ch.id === 'admin') : alive[0];
+    G.roundWinner = G.mode === 'teams' ? (top ? { team:top.team } : null) : (top || null);
   }
   else if (G.phase === 'roundEnd') {
     G.timer -= DT;
@@ -3270,7 +3283,7 @@ function drawFighter(p, t) {
     g.restore();
   }
   g.save(); g.translate(x, y); g.rotate(b.angle); g.scale(1 + p.squash*0.6, 1 - p.squash);
-  drawCharacter(g, p.ch, p.r, { facing:p.facing, ko:p.ko > 0, flash:p.flash, walk:p.walking ? p.walk : null, ...(G.online ? {} : looks(p.ch)) });
+  drawCharacter(g, p.ch, p.r, { facing:p.facing, ko:p.ko > 0, flash:p.flash, walk:p.walking ? p.walk : null, brave:p.ch.id === 'arrow' && G.fighters.some(f => f.ch.id === 'admin' && f.alive), ...(G.online ? {} : looks(p.ch)) });
   g.restore();
   const fistR = p.r*0.3;
   const fist = (fx, fy) => { g.beginPath(); g.arc(fx, fy, fistR, 0, TAU); g.fillStyle = myColor(p.ch); g.fill(); g.lineWidth = 3.5; g.strokeStyle = C.ink; g.stroke(); };
@@ -3361,7 +3374,7 @@ function shopStep(dt) {
   SHOP.nearCage = f === 8 && !!SHOP.cage && !SHOP.cage.freed && Math.abs(SHOP.x - CAGE_X) < 170;
   SHOP.nearStairs = !!stair; SHOP.stairTo = stair ? stair.to : 0;
   SHOP.nearKeeper = !SHOP.near && !SHOP.nearStairs && !!KEEPERS[f] && Math.abs(KEEPERS[f] - SHOP.x) < (f === 6 ? 300 : 220) && (f !== 4 || (SHOP.revealed && !SHOP.chase));
-  if (f === 4 && !SHOP.revealed && !SHOP.chase) { // walk close and the chair spins around
+  if (f === 4 && !SHOP.revealed && !SHOP.chase && !isAdmin()) { // walk close and the chair spins around (but the manager can't see the Admin, so it never does)
     if (SHOP.spinT > 0 || Math.abs(KEEPERS[4] - SHOP.x) < 380) SHOP.spinT = (SHOP.spinT || 0) + dt;
     if (SHOP.spinT >= 0.9) { SHOP.revealed = true; SHOP.talk[4] = 0; SHOP.bossT = 0; shopSay(MANAGER_LINES[0](), 'go', 3); }
   }
@@ -4127,8 +4140,9 @@ function drawGlitchShop(t) {
 function enterCage() {
   const freed = unlocked(CHAR.arrow);
   Object.assign(SHOP, { floor:8, x:900, y:0, vy:0, facing:-1, near:null, nearKeeper:false, nearStairs:false, stairTo:0, msgT:0 });
-  SHOP.cage = { hp:3, freed, freeT:freed ? 99 : 0, shake:0, lock:newLock(), say:freed ? '' : 'H-help me! There\'s a lock on the cage! Can you pop it?', sayT:freed ? 0 : 3.5 };
-  SHOP.youSay = freed ? 'The cage is empty now...' : '...Is someone there?'; SHOP.youSayT = 2.5;
+  const bro = isAdmin(); // the Admin is his big brother, and he knows him right away
+  SHOP.cage = { hp:3, freed, freeT:freed ? 99 : 0, shake:0, lock:newLock(), say:freed ? '' : bro ? 'B-BIG BROTHER?! You found me! Please get me out of here!' : 'H-help me! There\'s a lock on the cage! Can you pop it?', sayT:freed ? 0 : 3.5 };
+  SHOP.youSay = freed ? 'The cage is empty now...' : bro ? 'Little brother! Hang on, I\'m getting you out!' : '...Is someone there?'; SHOP.youSayT = 2.5;
   musicUpdate(); if (sfx.zap) sfx.zap(); renderShopCard(true);
 }
 // Pop the Lock: a needle spins around the lock, and you press punch right when it's on the yellow dot.
@@ -4143,7 +4157,9 @@ function cageHit() { // punch at the cage: start picking the lock, or try to pop
     L.left--; L.dir = -L.dir; L.speed += LOCK_SPEEDUP; L.popT = 0.25; c.shake = 1; if (sfx.coin) sfx.coin();
     if (L.left <= 0) { // the lock springs open, and he's free!
       c.freed = true; c.freeT = 0; L.playing = false; shop.unlocked = shop.unlocked || {}; shop.unlocked.arrow = true; saveShop();
-      c.say = 'YOU SAVED ME! Thank you!! I\'ll fight with you now!'; c.sayT = 5; SHOP.youSay = 'The lock popped! You\'re free!'; SHOP.youSayT = 2.2;
+      if (isAdmin()) { c.say = 'Thank you, big brother!! I knew you would come for me!'; SHOP.youSay = 'You\'re free, little brother!'; }
+      else { c.say = 'YOU SAVED ME! Thank you!! I\'ll fight with you now!'; SHOP.youSay = 'The lock popped! You\'re free!'; }
+      c.sayT = 5; SHOP.youSayT = 2.2;
       if (sfx.win) sfx.win(); musicUpdate();
     } else { placeDot(L); if (L.left === Math.ceil(LOCK_POPS/2)) { c.say = 'You\'re doing it! Keep going!'; c.sayT = 2.5; } }
   } else lockMiss();
@@ -4556,6 +4572,9 @@ const ADMIN_TALK = {
   visit:[[2, '...and then the circle rolled right off the island! Hehe...'], [1, 'Haha! That is so funny!'], [2, 'And then the square jumped up and slammed down... BOOM!'], [1, 'Hahaha! I wish I could have seen it!'],
     [2, 'It\'s so quiet in the shop today...'], [1, 'Yep. Nobody here but us.'], [2, 'D-do you like my bow? I tied it myself...'], [1, 'I love it! It\'s the best bow in the whole shop.'],
     [2, '*blushes* Hehe...'], [1, 'Want to hear a joke? ...Hmm, I forgot it.'], [2, 'Hehe... that\'s okay.']],
+  // the manager, up in his office, keeps his chair turned away and mutters to himself
+  4:['*typing* ...click... click... clickety click...', 'Nobody EVER comes up to my office. Good.', 'Hmm? Is somebody there? ...No. Just the air conditioning.', 'Sales are up! ...No wait, I was holding it upside down.',
+    '*spins his pen* Very busy. Very important.', 'I am the boss of this whole shop. Nobody is the boss of ME.'],
   6:[[1, '...and THAT\'s why you never leave cookies next to the cape stand.'], [2, 'Hehe... crumbs everywhere...'], [1, 'Did you hear something just now?'], [2, 'N-no... it\'s just us in here.'],
     [1, 'Want some more tea?'], [2, 'Y-yes please...'], [1, 'The shop is SO empty today.'], [2, 'Mm-hm. Totally empty.'], [1, 'Pass the cookies?'], [2, 'Here you go...']],
 };
@@ -4842,6 +4861,10 @@ function fillShopCard(card, ch, it) {
   }
   if (!it && SHOP.floor === 5) {
     card.innerHTML = `<h3>RUN!</h3><p>${BOSS_NAME} is chasing you! Run right and jump into the glitchy rift at the end. Jump over the glitch cubes (he floats right through them). If he catches you, he throws you out!</p>`;
+    return;
+  }
+  if (!it && SHOP.floor === 4 && isAdmin() && !SHOP.revealed) {
+    card.innerHTML = `<h3>The manager's office</h3><p>${BOSS_NAME} can't see the Admin! His chair stays turned away, and he just keeps muttering to himself. No boss fight for you.</p><p class="note">The elevator on the right goes back down. Psst... you can still walk off the left edge of the room.</p>`;
     return;
   }
   if (!it && SHOP.floor === 4) {
