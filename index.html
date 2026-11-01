@@ -611,8 +611,8 @@ const CHARS = [
   { id:'arrow',    name:'Missing Arrow',   color:'#ffb07c', shape:'arrow',    trait:'Scared and glitchy. Special: glitch fest', speed:1.1,  power:1.0,  weight:0.95, jump:1.08, secret:true, hint:'Have you seen him? Look past the 5th floor of the shop...' },
   // the admin: you only get him with the admin code (on the "codes" page). A blocky black guy, drawn by Mason (his body in the fights is still a circle)
   // the two shopkeepers, as fighters: only for admins, once they switch it on in the admin panel
-  { id:'keeper',   name:'Fighty Shopkeeper', color:'#7f7f7f', shape:'circle', trait:'Runs the fighty shop. Cool shades, big punches', speed:0.95, power:1.1,  weight:1.15, jump:0.95, secret:true, keeper:true },
-  { id:'keeper2',  name:'Shy Shopkeeper',  color:'#a349a4', shape:'circle', trait:'Runs the funny fun shop. Shy... but quick', speed:1.1,  power:0.9,  weight:0.9,  jump:1.1, secret:true, keeper:true },
+  { id:'keeper',   name:'Fighty Shopkeeper', color:'#7f7f7f', shape:'circle', trait:'Runs the fighty shop. Special: pop-up ad', speed:0.95, power:1.1,  weight:1.15, jump:0.95, secret:true, keeper:true },
+  { id:'keeper2',  name:'Shy Shopkeeper',  color:'#a349a4', shape:'circle', trait:'Runs the funny fun shop. Special: shy pop-up', speed:1.1,  power:0.9,  weight:0.9,  jump:1.1, secret:true, keeper:true },
   { id:'admin',    name:'Admin',           color:'#222222', shape:'circle',   trait:'The boss of the whole game. Special: banned', speed:1.0,  power:1.0,  weight:1.0,  jump:1.0, size:3.2, secret:true, hint:'Do you know the code?' },
 ];
 const CHAR = Object.fromEntries(CHARS.map(c => [c.id, c]));
@@ -1618,7 +1618,7 @@ function startRound() {
   } else {
     xs.push(...ffaXs(n)); xs.sort(() => Math.random() - 0.5);
   }
-  G.hazards = []; G.waves = []; G.bans = []; G.broT = 0.5; G.hzT = 3; G.hzCar = 4.5; G.hzBird = 7; G.hzZap = 3;
+  G.hazards = []; G.waves = []; G.bans = []; G.popups = []; G.broT = 0.5; G.hzT = 3; G.hzCar = 4.5; G.hzBird = 7; G.hzZap = 3;
   G.fighters = G.lineup.map((l, i) => { const f = makeFighter(l.ch, l.control, xs[i], i); f.team = l.team || 0; f.tag = l.tag || (l.control === 'cpu' ? 'CPU' : CTRL[l.control].tag); return f; });
   Composite.add(G.engine.world, G.fighters.map(f => f.body));
   ev('clear'); G.banner = null; G.phase = 'countdown'; G.timer = 3; G.lastCount = 4; G.goT = 0; G.champ = null;
@@ -1757,6 +1757,7 @@ function aiInput(p) {
     if (SPECIALS[p.ch.id] === 'glitch' && Math.abs(dy) < 120 && Math.abs(dx) > 100 && Math.abs(dx) < 380 && Math.random() < 0.03) { p.facing = Math.sign(dx); inp.specialP = true; }
     if (SPECIALS[p.ch.id] === 'dash' && Math.abs(dy) < 40 && Math.abs(dx) > 80 && Math.abs(dx) < 300 && Math.random() < 0.03) { p.facing = Math.sign(dx); inp.specialP = true; }
     if (SPECIALS[p.ch.id] === 'ban' && Math.random() < 0.004) { p.facing = Math.sign(dx) || p.facing; inp.specialP = true; }
+    if (SPECIALS[p.ch.id] === 'popup' && Math.random() < 0.008) inp.specialP = true;
     if (SPECIALS[p.ch.id] === 'slam' && Math.abs(dx) < 160 && Math.abs(dy) < 60 && Math.random() < 0.03) inp.specialP = true;
   }
   if (p.grounded > 0 && Math.random() < 0.003) inp.jumpP = true;
@@ -1942,7 +1943,7 @@ function updateHazards() {
 }
 
 // ---------- special moves (from Mason's drawings) ----------
-const SPECIALS = { circle:'roll', square:'slam', tri:'quake', sparkle:'rush', shuriken:'dash', arrow:'glitch', admin:'ban' };
+const SPECIALS = { circle:'roll', square:'slam', tri:'quake', sparkle:'rush', shuriken:'dash', arrow:'glitch', admin:'ban', keeper:'popup', keeper2:'popup' }; // (the shopkeepers' special: a pop-up ad that covers the screen)
 // the Admin's ban (from Mason's drawing): a tall "Banned" sign zooms across the whole map and back. It does 100000000 damage, so anyone it touches is out
 const BAN_SPEED = 1100, BAN_W = 90, BAN_TOP = 130, BAN_BOTTOM = 800;
 // Missing Arrow's glitch fest: he glitches out, and a big pile of glitch blocks falls from the sky where he's pointing (50 to everyone it lands on)
@@ -1958,6 +1959,12 @@ function startSpecial(p, grounded) {
     const foes = G.fighters.filter(q => q !== p && q.alive && !q.grabbedBy && !allies(p, q)).map(q => [q, Math.hypot(q.body.position.x - b.position.x, q.body.position.y - b.position.y)]).filter(([, d]) => d < RUSH_RANGE).sort((a, c) => a[1] - c[1]);
     p.special = { kind, t:0, target:foes.length ? foes[0][0] : null, hits:0, a:Math.random()*TAU }; p.specCD = 4.5; p.trail = [];
     ev('pop', b.position.x, b.position.y - 70, 'SUGAR RUSH!', C.yellow); ev('sfx','roll');
+    return;
+  }
+  if (kind === 'popup') { // a pop-up ad for something from the shop jumps up on everyone else's screen
+    const ads = popupAds(); p.specCD = 6;
+    ev('popup', p.idx, p.ch.id, Math.floor(Math.random()*ads.length), Math.random());
+    ev('pop', b.position.x, b.position.y - p.r - 40, p.ch.id === 'keeper' ? 'BUY NOW!' : 'p-please buy...', p.ch.id === 'keeper' ? C.red : '#ff7aa8'); ev('sfx', 'ding');
     return;
   }
   if (kind === 'ban') { // the sign goes out on its own, so the Admin can keep fighting
@@ -2129,6 +2136,51 @@ function drawBans(t) { // a tall white box with a thick black border, and "Banne
     [...'Banned'].forEach((c, i) => g.fillText(c, bn.x + Math.sin(t*12 + i)*3, BAN_TOP + 62 + i*(h - 110)/5));
   }
 }
+// the shopkeepers' special: a pop-up ad for something from the shop jumps up on the screen and gets in the way for a few seconds.
+// Online, it only shows on the other players' screens (not on the shopkeeper's own). Click its X to close it early
+const POPUP_W = 420, POPUP_H = 230, POPUP_TIME = 3800;
+const popupAds = () => ITEMS.filter(i => i.price > 0 && !i.gift && !i.floor && forSale(i)); // things you can buy in the shop right now
+function showPopup(idx, chId, adI, spot) {
+  const f = G.fighters.find(q => q.idx === idx), mine = G.online && f && (G.online === 'host' ? f.control === 'local' : f.me);
+  if (mine) return;
+  const ads = popupAds(), it = ads[adI % ads.length] || ads[0];
+  G.popups = G.popups || [];
+  G.popups.push({ shy:chId === 'keeper2', it, x:120 + spot*(W - POPUP_W - 240), y:110 + ((spot*7919) % 1)*(H - POPUP_H - 260), born:performance.now() });
+}
+function popupClose(p) { return { x:p.x + POPUP_W - 40, y:p.y + 6, w:32, h:28 }; }
+function drawPopups(t) {
+  if (!G.popups || !G.popups.length) return;
+  const now = performance.now();
+  G.popups = G.popups.filter(p => now - p.born < POPUP_TIME);
+  for (const p of G.popups) {
+    const age = (now - p.born)/1000, k = Math.min(1, age*6), x = p.x, y = p.y, shy = p.shy;
+    g.save(); g.translate(x + POPUP_W/2, y + POPUP_H/2); g.scale(k, k); g.translate(-x - POPUP_W/2, -y - POPUP_H/2); // it pops open
+    g.fillStyle = 'rgba(0,0,0,.3)'; g.fillRect(x + 10, y + 10, POPUP_W, POPUP_H); // shadow
+    g.fillStyle = shy ? '#ffe3ee' : C.yellow; g.strokeStyle = C.ink; g.lineWidth = 5; g.fillRect(x, y, POPUP_W, POPUP_H); g.strokeRect(x, y, POPUP_W, POPUP_H);
+    g.fillStyle = shy ? '#ff7aa8' : C.red; g.fillRect(x, y, POPUP_W, 40); g.strokeRect(x, y, POPUP_W, 40); // the title bar, with an X to close it
+    g.fillStyle = C.white; g.font = `24px ${FONT}`; g.textAlign = 'left'; g.textBaseline = 'middle'; g.fillText(shy ? 'funny fun shop... :)' : 'FIGHTY SHOP!!!', x + 12, y + 21);
+    const c = popupClose(p); g.fillStyle = C.white; g.fillRect(c.x, c.y, c.w, c.h); g.strokeStyle = C.ink; g.lineWidth = 3; g.strokeRect(c.x, c.y, c.w, c.h);
+    g.fillStyle = C.ink; g.textAlign = 'center'; g.fillText('X', c.x + c.w/2, c.y + c.h/2 + 1);
+    g.save(); g.translate(x + 85, y + 140); // the thing they're selling
+    if (p.it.id === 'coolhat') drawHat(g, 50, -5, 1); else if (p.it.id === 'cape') { g.translate(0, -30); drawCape(g, 46, -1, t, 46); }
+    else if (p.it.id === 'batwings') drawBatWings(g, 42, t); else if (p.it.id === 'turkeyhat') { g.translate(0, 50); drawTurkey(0, 0, 70, t); }
+    else { g.scale(110, 110); drawGlasses(g, [[-0.2, 0], [0.2, 0]], p.it.id === 'goggles', '#e8ff6a', p.it.id === 'glasses3d'); }
+    g.restore();
+    g.fillStyle = shy ? '#c2185b' : C.red; g.textAlign = 'left';
+    if (shy) { g.font = `26px ${BODYFONT}`; g.fillText(`um... ${p.it.name.toLowerCase()}?`, x + 170, y + 90); g.fillText(`only ${p.it.price} coins...`, x + 170, y + 128); g.font = `22px ${BODYFONT}`; g.fillText('y-you don\'t have to...', x + 170, y + 166); }
+    else {
+      g.font = `34px ${FONT}`; g.fillText(p.it.name.toUpperCase() + '!!', x + 170, y + 90, POPUP_W - 185);
+      g.font = `28px ${FONT}`; g.fillStyle = C.ink; g.fillText(`ONLY ${p.it.price} COINS!`, x + 170, y + 132);
+      if (Math.sin(t*14) > -0.2) { g.fillStyle = C.red; g.font = `36px ${FONT}`; g.fillText('BUY NOW!!!', x + 170, y + 182); }
+    }
+    g.restore();
+  }
+}
+cv.addEventListener('pointerdown', e => { // click a pop-up's X to close it
+  if (!G.popups || !G.popups.length) return;
+  const r = cv.getBoundingClientRect(), x = (e.clientX - r.left)*W/r.width, y = (e.clientY - r.top)*H/r.height;
+  for (let i = G.popups.length - 1; i >= 0; i--) { const c = popupClose(G.popups[i]); if (x > c.x && x < c.x + c.w && y > c.y && y < c.y + c.h) { G.popups.splice(i, 1); return; } }
+});
 function drawWaves() {
   for (const w of G.waves || []) {
     const owner = G.fighters[w.owner], k = 1 - w.dist/400, h = 28*Math.max(0.3, k);
@@ -4588,7 +4640,7 @@ function frame(now) {
     drawBans(t);
     for (const p of G.fighters) if (p.alive && !p.grabbing) drawFighter(p, t);
     for (const p of G.fighters) if (p.alive && p.grabbing) drawFighter(p, t);
-    drawParticles(G.paused ? 0 : dt); if (G.boss) drawGlitches(t); drawWatchers(t); drawHUD(); drawOverlayText();
+    drawParticles(G.paused ? 0 : dt); if (G.boss) drawGlitches(t); drawWatchers(t); drawHUD(); drawPopups(t); drawOverlayText();
   } else { drawSky(t, null); drawMenuGround(t); }
   requestAnimationFrame(frame);
 }
@@ -5305,6 +5357,7 @@ function runEv(type, a, b, c, d) {
   switch (type) {
     case 'sfx': if (sfx[a]) sfx[a](); break;
     case 'pop': popText(a, b, c, d); watchReact(c); break;
+    case 'popup': showPopup(a, b, c, d); break;
     case 'burst': burst(a, b, c, d); break;
     case 'puff': puff(a, b); break;
     case 'splash': splash(a); break;
