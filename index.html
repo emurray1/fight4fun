@@ -4492,13 +4492,18 @@ function openPage(id) { backTo = G.state; G.state = id; waitingKey = null; if (i
 document.querySelectorAll('[data-back]').forEach(b => b.onclick = () => { if (backTo === 'setup') openSetup(); else { G.state = 'title'; showScreen('title'); $('okBtn').focus(); } });
 $('howBtn').onclick = () => { audioOn(); openPage('howto'); };
 // ---------- codes: type in a secret code to get something ----------
-const CODES = { masonisthebest:{ unlock:'admin', msg:'Admin code accepted! You got the Admin. Turn him on in the "who is with who" screen.' } };
+const CODES = { masonisthebest:{ unlock:'admin', item:'crown', coins:1000, msg:'Admin code accepted! You got the Admin, the Admin crown and 1000 coins! Turn him on in the "who is with who" screen.' } };
 $('codesBtn').onclick = () => { audioOn(); openPage('codes'); $('secretIn').value = ''; $('codesMsg').textContent = ''; $('secretIn').focus(); };
 $('secretBtn').onclick = () => {
-  const code = CODES[$('secretIn').value.trim().toLowerCase().replace(/\s+/g, '')];
+  const id = $('secretIn').value.trim().toLowerCase().replace(/\s+/g, ''), code = CODES[id];
   if (!code) { $('codesMsg').textContent = 'Hmm, that\'s not a code. Try again!'; if (sfx.bonk) sfx.bonk(); return; }
-  if (shop.unlocked && shop.unlocked[code.unlock]) { $('codesMsg').textContent = 'You already used that code!'; return; }
-  shop.unlocked = shop.unlocked || {}; shop.unlocked[code.unlock] = true; saveShop();
+  shop.codes = shop.codes || {}; // each code only works once (so you can't get the coins over and over)
+  if (shop.codes[id]) { $('codesMsg').textContent = 'You already used that code!'; return; }
+  shop.codes[id] = true;
+  if (code.unlock) { shop.unlocked = shop.unlocked || {}; shop.unlocked[code.unlock] = true; }
+  if (code.item) { shop.owned[code.item] = true; (shop.wear[code.item] = shop.wear[code.item] || {})[code.unlock || 'admin'] = true; } // he puts it on right away
+  if (code.coins) shop.coins += code.coins;
+  saveShop();
   titleChars.innerHTML = ''; PLAYABLE().forEach(c => titleChars.appendChild(charCanvas(c, 78)));
   $('codesMsg').textContent = code.msg; $('secretIn').value = ''; if (sfx.win) sfx.win();
 };
