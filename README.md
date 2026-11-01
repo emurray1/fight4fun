@@ -110,8 +110,6 @@ All through November autumn leaves drift down on every map, the menu hills get o
 
 **Up coming upds:** a button on the main menu that shows what is coming next in the game. For now it says more updates are coming soon.
 
-**Confession:** a button on the main menu. The Shy Shopkeeper has something to tell the Fighty Shopkeeper... but you have to wait! The first time you press it, a 5 minute countdown starts (it keeps counting even when the game is closed). When it reaches zero, come back to watch her confess that she likes the Fighty Shopkeeper, who likes her too. Then hearts float up, and you can watch it again.
-
 ## Play online
 
 1. Click **play online**, type your name and click **host**.
