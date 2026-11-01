@@ -3338,7 +3338,7 @@ function shopStep(dt) {
     rp.done = true; shopSay(rp.lines[Math.floor(Math.random()*rp.lines.length)], null, 3.4);
   } SHOP.keeperLaughT = Math.max(0, (SHOP.keeperLaughT || 0) - dt);
   SHOP.msgT = Math.max(0, SHOP.msgT - dt); SHOP.echoT = Math.max(0, (SHOP.echoT || 0) - dt);
-  if (isAdmin() && ADMIN_TALK[SHOP.floor] && (SHOP.chatT = (SHOP.chatT || 0) - dt) <= 0) adminChatter(); // the shopkeepers never stop talking
+  if (isAdmin() && ADMIN_TALK[SHOP.floor] && (SHOP.msgT < 0.5 || performance.now() >= (SHOP.chatAt || 0))) adminChatter(); // the shopkeepers never stop talking
   const v = SHOP.visit; // talk, notice you, run to the stairs, climb up and away
   if (v) {
     v.t += dt;
@@ -4491,9 +4491,10 @@ const ADMIN_TALK = {
   6:[[1, '...and THAT\'s why you never leave cookies next to the cape stand.'], [2, 'Hehe... crumbs everywhere...'], [1, 'Did you hear something just now?'], [2, 'N-no... it\'s just us in here.'],
     [1, 'Want some more tea?'], [2, 'Y-yes please...'], [1, 'The shop is SO empty today.'], [2, 'Mm-hm. Totally empty.'], [1, 'Pass the cookies?'], [2, 'Here you go...']],
 };
+const ADMIN_TALK_EVERY = 4; // seconds of real time between lines (by the clock, so they keep going even when the game runs slowly)
 function adminChatter() { // the next thing they say, to nobody
   const lines = ADMIN_TALK[SHOP.floor], l = lines[SHOP.chat = ((SHOP.chat ?? -1) + 1) % lines.length];
-  Object.assign(SHOP, { msg:Array.isArray(l) ? l[1] : l, msgWho:Array.isArray(l) ? l[0] : 1, msgT:5.5, chatT:5, joke:false });
+  Object.assign(SHOP, { msg:Array.isArray(l) ? l[1] : l, msgWho:Array.isArray(l) ? l[0] : 1, msgT:5.5, chatAt:performance.now() + ADMIN_TALK_EVERY*1000, joke:false });
 }
 function shopSay(text, sound, secs = 3.5, who = 1) {
   if (isAdmin() && ADMIN_TALK[SHOP.floor]) { if (SHOP.msgT <= 0) adminChatter(); return; } // they don't answer the Admin: they just keep going
