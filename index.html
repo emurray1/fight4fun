@@ -128,7 +128,22 @@ kbd{font-family:var(--body);border:2px solid var(--ink);border-bottom-width:4px;
 /* the admin panel button (once you've used the admin code): black with green writing, like the Hacker skin */
 .admin-btn{background:#050805;color:#39ff14;border-color:#39ff14}
 .admin-btn[hidden]{display:none}
-.ap h3{margin:14px 0 4px}
+/* the admin panel itself: a black computer screen with glowing green writing, like the Hacker skin */
+#adminPanel .panel{background:#050805;color:#39ff14;border:4px solid #39ff14;box-shadow:0 0 24px rgba(57,255,20,.45);background-image:repeating-linear-gradient(0deg,rgba(57,255,20,.05) 0 2px,transparent 2px 5px)}
+#adminPanel .whois{background:#000;border-bottom:4px solid #39ff14}
+#adminPanel .whois h2{color:#39ff14;text-shadow:0 0 10px rgba(57,255,20,.7)}
+#adminPanel .whois h2::before{content:"\25B6  "}
+#adminPanel .note,#adminPanel small,#adminPanel .setting>span{color:#9cf58a}
+#adminPanel .msg{color:#fff200}
+#adminPanel .btn{background:#0b1a0b;color:#39ff14;border:3px solid #39ff14;box-shadow:0 0 10px rgba(57,255,20,.4)}
+#adminPanel .btn:hover,#adminPanel .btn:focus-visible{background:#39ff14;color:#050805}
+#adminPanel .seg{border-color:#39ff14}
+#adminPanel .seg button{background:#0b1a0b;color:#39ff14}
+#adminPanel .seg button+button{border-left-color:#39ff14}
+#adminPanel .seg button[aria-pressed="true"]{background:#39ff14;color:#050805;font-weight:700}
+.ap h3{margin:14px 0 4px;color:#39ff14}
+.ap-big{font-size:28px;padding:10px 26px;display:flex;align-items:center;gap:10px}
+.ap-big i{font-style:normal;font-size:30px}
 .ap-row{display:flex;flex-wrap:wrap;gap:12px}
 @keyframes glitchJump{0%,88%,100%{transform:none}90%{transform:translateX(5px)}94%{transform:translateX(-4px)}}
 .page{width:min(980px,100%)}
@@ -353,22 +368,22 @@ html.thanks .fff span{border-color:#8a4b14;color:#d2691e}
 
 <div id="adminPanel" class="screen" hidden>
   <div class="panel page">
-    <header class="whois"><h2>admin panel</h2><button class="btn back" id="apBack">back</button></header>
+    <header class="whois"><h2>admin panel</h2><button class="btn back" id="apBack" data-back>back</button></header>
     <div class="page-body ap">
       <p>You're the admin! Use your powers wisely... or not.</p>
-      <h3>Coins</h3>
+      <h3>🪙 Coins</h3>
       <p>You have <b id="apCoins">0</b> coins.</p>
-      <div class="ap-row"><button id="apCoins100" class="btn">+100 coins</button><button id="apCoins1000" class="btn">+1000 coins</button></div>
-      <h3>Unlock everything</h3>
+      <div class="ap-row"><button id="apCoins100" class="btn ap-big"><i>🪙</i>+100 coins</button><button id="apCoins1000" class="btn ap-big"><i>💰</i>+1000 coins</button></div>
+      <h3>🔓 Unlock everything</h3>
       <p>Free Missing Arrow, and get every shop item and every skin for every fighter.</p>
-      <div class="ap-row"><button id="apUnlock" class="btn">unlock everything</button></div>
-      <h3>Fight cheats</h3>
+      <div class="ap-row"><button id="apUnlock" class="btn ap-big"><i>🔓</i>unlock everything</button></div>
+      <h3>⚡ Fight cheats</h3>
       <p class="note">These work in fights, online too. "Just me" gives them only to you (in an online fight, only to your fighter). "Everyone" gives them to every fighter.</p>
       <div class="setting"><span>Who gets the cheats</span><div class="seg" id="apWhoSeg"></div></div>
       <div class="setting"><span>Super speed</span><div class="seg" id="apSpeedSeg"></div><small>Everyone runs twice as fast.</small></div>
       <div class="setting"><span>Giant jumps</span><div class="seg" id="apJumpSeg"></div><small>Everyone jumps way higher.</small></div>
       <div class="setting"><span>Sleepy computers</span><div class="seg" id="apSleepySeg"></div><small>The computer players just stand there and do nothing.</small></div>
-      <h3>Shopkeepers</h3>
+      <h3>🛍️ Shopkeepers</h3>
       <div class="setting"><span>Play as the shopkeepers</span><div class="seg" id="apKeepPlaySeg"></div><small>The fighty shopkeeper and the shy shopkeeper show up as fighters you can pick.</small></div>
       <div class="setting"><span>Shopkeepers watch fights</span><div class="seg" id="apKeepWatchSeg"></div><small>They stand in the corner, watch the fight and talk about it.</small></div>
       <p id="apMsg" class="msg" role="status"></p>
