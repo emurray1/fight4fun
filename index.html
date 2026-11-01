@@ -1999,42 +1999,89 @@ function brotherTalk() {
   G.broT = 7; G.broI = ((G.broI ?? -1) + 1) % BRO_LINES.length;
   ev('pop', m.body.position.x, m.body.position.y - m.r - 40, BRO_LINES[G.broI], C.yellow);
 }
-// the shopkeepers watching a fight from the corner (an admin switch): they chat, and they react to splashes, dizzies, bans and wins
+// the shopkeepers on SHOP TV, above the fight (an admin switch): a shopping channel! They show off one thing at a time and try to sell it,
+// and you click the TV to buy it for your fighter. They still react to splashes, dizzies, bans and wins
 const WATCH_LINES = {
-  idle:[[1, 'Go go go!'], [2, 'Y-you can do it...'], [1, 'Ooh, this is a good one!'], [2, '*covers her eyes* Is it over yet?'], [1, 'I sell sunglasses, you know. Just saying.'], [2, 'Careful... careful...'], [1, 'Nice punch! Hehe!'], [2, '*cheers quietly* yay...']],
-  out:[[1, 'SPLASH! Hahaha!'], [2, 'Oh no! Are they okay?!'], [1, 'Right in the water!'], [2, 'Eep! A splash!']],
-  dizzy:[[1, 'Ha! Seeing stars!'], [2, 'S-so dizzy...'], [1, 'Ooh, that one is wobbly!']],
-  ban:[[1, 'BANNED?! Who is doing that?!'], [2, '*hides* W-where did that sign come from?!'], [1, 'I do not see anybody... but that sign is BIG!']],
-  win:[[1, 'What a fight! Winner winner!'], [2, 'Yay! *claps quietly*'], [1, 'Hahaha! Come buy something to celebrate!']],
+  out:[[1, 'SPLASH! You know what keeps you dry? ...Nothing we sell. Hahaha!'], [2, 'Oh no! A splash! ...Want to buy something to cheer up?'], [1, 'Right in the water! Shop now, swim later!']],
+  dizzy:[[1, 'Seeing stars? Buy some sunglasses!'], [2, 'S-so dizzy... maybe a nice hat would help...']],
+  ban:[[1, 'BANNED?! Who is doing that?! ...Anyway, back to the sale!'], [2, '*hides* W-where did that sign come from?!']],
+  win:[[1, 'What a fight! Winners deserve a treat! Shop now!'], [2, 'Yay! *claps quietly* ...you could buy something to celebrate...']],
 };
+const PITCH = { // [who, line] with {n} for the thing's name and {p} for its price
+  sell:[[1, '{n}! Only {p} coins! Buy now, buy now!'], [2, 'Th-the {n} would look so nice on you... only {p} coins...'], [1, 'Look at the {n}! So cool! Click the TV to buy it!'], [2, 'Um... click the TV... if you want the {n}... hehe...']],
+  owned:[[1, 'You already have the {n}! Great choice, if I say so myself!'], [2, 'Oh, you have the {n} already... it looks so nice on you...']],
+};
+const TV = { x:W/2 - 240, y:112, w:480, h:290 };
 const watching = () => setup.keepersWatch && unlocked(CHAR.admin) && G.state === 'fight' && G.mode !== 'race' && G.mode !== 'horror' && !G.boss;
-function watchSay(kind) {
-  const lines = WATCH_LINES[kind], l = lines[Math.floor(Math.random()*lines.length)], now = performance.now();
-  G.watch = { ...(G.watch || {}), who:l[0], say:l[1], until:now + 3200, next:now + 6500 };
+function tvProducts(ch) { // what they sell: the shop's things (not gifts, the attic's goggles or the glitch shop's), and skins for your fighter
+  const out = [];
+  for (const it of ITEMS) if (it.price > 0 && !it.gift && !it.floor && forSale(it) && canWear(it, ch)) out.push({ kind:'item', id:it.id, name:it.name, price:it.price });
+  for (const s of skinsFor(ch)) if (s.price > 0 && forSale(s)) out.push({ kind:'skin', id:s.id, name:s.name + ' skin', price:s.price });
+  return out;
 }
+const tvOwned = (pr, ch) => pr.kind === 'item' ? !!shop.owned[pr.id] : hasSkin(ch, pr.id);
+const tvFill = (s, pr) => s.replace('{n}', pr.name.toLowerCase()).replace('{p}', pr.price);
+function watchLine(who, say) { const now = performance.now(); G.watch = { ...(G.watch || {}), who, say, until:now + 3400, next:now + 4200 }; }
+function watchSay(kind) { const lines = WATCH_LINES[kind], l = lines[Math.floor(Math.random()*lines.length)]; watchLine(l[0], l[1]); G.watch.kind = kind; }
 function watchReact(text) { // something just happened in the fight
   if (!watching()) return;
   const kind = text === 'OUT!' ? 'out' : text === 'DIZZY!' ? 'dizzy' : text === 'BANNED!' ? 'ban' : null;
-  if (kind && !(G.watch && G.watch.kind === kind && performance.now() < G.watch.until)) { watchSay(kind); G.watch.kind = kind; }
+  if (kind && !(G.watch && G.watch.kind === kind && performance.now() < G.watch.until)) watchSay(kind);
+}
+function tvBuyer() { const me = myFighter(); return me ? me.ch : CHARS[SHOP.who || 0]; }
+function tvBuy() { // you clicked the TV: buy what they're showing, and your fighter puts it on
+  const w = G.watch, ch = tvBuyer(), pr = w && w.prod; if (!pr) return;
+  if (tvOwned(pr, ch)) { if (pr.kind === 'item') (shop.wear[pr.id] = shop.wear[pr.id] || {})[ch.id] = true; else skinRec(ch).on = pr.id; saveShop(); watchLine(1, `You already have it! ${ch.name} puts it on!`); return; }
+  if (shop.coins < pr.price) { watchLine(2, `Oh... you need ${pr.price - shop.coins} more coins... s-sorry...`); if (sfx.bonk) sfx.bonk(); return; }
+  shop.coins -= pr.price;
+  if (pr.kind === 'item') { shop.owned[pr.id] = true; (shop.wear[pr.id] = shop.wear[pr.id] || {})[ch.id] = true; }
+  else { const rec = skinRec(ch); rec.have.push(pr.id); rec.on = pr.id; }
+  saveShop(); watchLine(1, `SOLD! Thank you! ${ch.name} looks amazing in the ${pr.name.toLowerCase()}!`); w.sold = performance.now(); if (sfx.coin) sfx.coin();
+}
+cv.addEventListener('pointerdown', e => { // clicks on SHOP TV buy what's on it
+  if (!watching() || !G.watch) return;
+  const r = cv.getBoundingClientRect(), x = (e.clientX - r.left)*W/r.width, y = (e.clientY - r.top)*H/r.height;
+  if (x > TV.x && x < TV.x + TV.w && y > TV.y && y < TV.y + TV.h) tvBuy();
+});
+function drawProduct(pr, ch, t) { // the thing for sale, on a little stand in the middle of the TV
+  g.save();
+  if (pr.kind === 'skin') drawCharacter(g, ch, 42, { facing:1, skin:pr.id, beanie:false });
+  else if (pr.id === 'coolhat') { g.translate(0, 30); drawHat(g, 58, -6, 1); }
+  else if (pr.id === 'cape') { g.translate(0, -20); drawCape(g, 56, -1, t, 56); }
+  else if (pr.id === 'batwings') { g.translate(0, 10); drawBatWings(g, 52, t); }
+  else { g.scale(120, 120); drawGlasses(g, [[-0.2, 0], [0.2, 0]]); }
+  g.restore();
 }
 function drawWatchers(t) {
   if (!watching()) return;
-  const now = performance.now(), w = G.watch = G.watch || { next:now + 1500 };
-  if (G.banner && G.banner !== w.banner) { w.banner = G.banner; if (/wins/.test(G.banner.title || '')) { watchSay('win'); G.watch.kind = 'win'; } }
-  else if (now > (G.watch.next || 0)) { watchSay('idle'); G.watch.kind = 'idle'; }
-  // a TV hanging above the fight, showing the two of them just as big as they are in the shop, with what they say as subtitles
-  const tx = W/2 - 240, ty = 112, tw = 480, th = 290, talking = now < G.watch.until, bob = who => G.watch.who === who && talking ? Math.sin(t*12)*3 : 0;
+  const now = performance.now(), w = G.watch = G.watch || { next:now + 1000, prodNext:0, pi:-1 }, ch = tvBuyer(), list = tvProducts(ch);
+  if (list.length && now > (w.prodNext || 0)) { w.pi = ((w.pi ?? -1) + 1) % list.length; w.prodNext = now + 12000; w.next = 0; } // a new thing to sell every 12 seconds
+  w.prod = list.length ? list[(w.pi || 0) % list.length] : null;
+  if (G.banner && G.banner !== w.banner) { w.banner = G.banner; if (/wins/.test(G.banner.title || '')) watchSay('win'); }
+  else if (now > (w.next || 0) && w.prod) { const pool = PITCH[tvOwned(w.prod, ch) ? 'owned' : 'sell'], l = pool[Math.floor(Math.random()*pool.length)]; watchLine(l[0], tvFill(l[1], w.prod)); G.watch.kind = 'pitch'; }
+  const { x:tx, y:ty, w:tw, h:th } = TV, talking = now < G.watch.until, bob = who => G.watch.who === who && talking ? Math.sin(t*12)*3 : 0;
   g.save();
   g.fillStyle = '#2b2b33'; g.strokeStyle = C.ink; g.lineWidth = 6; roundRect(tx - 16, ty - 14, tw + 32, th + 28, 18); g.fill(); g.stroke(); // the TV's frame
   g.beginPath(); g.rect(tx, ty, tw, th); g.clip();
-  const sky = g.createLinearGradient(0, ty, 0, ty + th); sky.addColorStop(0, '#fff6e6'); sky.addColorStop(1, '#f0d9b5'); g.fillStyle = sky; g.fillRect(tx, ty, tw, th); // the shop wall behind them
-  g.save(); g.translate(0, ty + 110 - 395 + bob(1)); drawGreyKeeper(tx + 140, t); g.restore(); // the fighty shopkeeper on the left (head near the top of the screen)
-  g.save(); g.translate(0, ty + 120 - 570 + bob(2)); drawShyKeeper(tx + 350, t, { friend:talking && G.watch.who === 2, close:0, lookX:-3 }); g.restore(); // the shy one on the right
+  const wall = g.createLinearGradient(0, ty, 0, ty + th); wall.addColorStop(0, '#fff6e6'); wall.addColorStop(1, '#f0d9b5'); g.fillStyle = wall; g.fillRect(tx, ty, tw, th); // the shop wall behind them
+  g.save(); g.translate(0, ty + 140 - 395 + bob(1)); drawGreyKeeper(tx + 95, t); g.restore(); // the fighty shopkeeper on the left
+  g.save(); g.translate(0, ty + 145 - 570 + bob(2)); drawShyKeeper(tx + 395, t, { friend:talking && G.watch.who === 2, close:0, lookX:-3 }); g.restore(); // the shy one on the right
+  if (w.prod) { // the thing for sale in the middle, with its price tag
+    const px = tx + tw/2, py = ty + 130, owned = tvOwned(w.prod, ch), sold = w.sold && now - w.sold < 1500;
+    g.fillStyle = 'rgba(255,255,255,.75)'; g.strokeStyle = C.ink; g.lineWidth = 3; roundRect(px - 75, py - 70, 150, 150, 16); g.fill(); g.stroke();
+    g.save(); g.translate(px, py + Math.sin(t*2)*4); if (sold) g.scale(1.15, 1.15); drawProduct(w.prod, ch, t); g.restore();
+    g.font = `20px ${BODYFONT}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    const tag = owned ? 'yours!' : `${w.prod.price} coins`, tw2 = g.measureText(tag).width + 20;
+    g.fillStyle = owned ? C.green : C.yellow; g.strokeStyle = C.ink; g.lineWidth = 3; g.fillRect(px - tw2/2, py + 50, tw2, 26); g.strokeRect(px - tw2/2, py + 50, tw2, 26); g.fillStyle = C.ink; g.fillText(tag, px, py + 64);
+    if (!owned && Math.sin(t*5) > -0.3) { g.fillStyle = C.red; g.font = `22px ${FONT}`; g.fillText('click to buy!', px, py - 86); }
+  }
   g.fillStyle = 'rgba(0,0,0,.06)'; for (let y = ty + ((t*40) % 6); y < ty + th; y += 6) g.fillRect(tx, y, tw, 2); // TV lines
-  g.fillStyle = C.red; g.beginPath(); g.arc(tx + 22, ty + 20, 7, 0, TAU); g.fill(); g.fillStyle = C.white; g.font = `20px ${FONT}`; g.textAlign = 'left'; g.textBaseline = 'middle'; g.fillText('LIVE', tx + 34, ty + 21);
+  g.fillStyle = C.red; g.beginPath(); g.arc(tx + 22, ty + 20, 7, 0, TAU); g.fill(); g.fillStyle = C.ink; g.font = `20px ${FONT}`; g.textAlign = 'left'; g.textBaseline = 'middle'; g.fillText('LIVE', tx + 34, ty + 21);
+  g.textAlign = 'right'; g.fillStyle = C.red; g.fillText('SHOP TV', tx + tw - 12, ty + 21);
+  g.fillStyle = C.ink; g.font = `18px ${BODYFONT}`; g.fillText(`you have ${shop.coins} coins`, tx + tw - 12, ty + 44);
   if (talking) { // subtitles along the bottom of the screen
     g.fillStyle = 'rgba(0,0,0,.72)'; g.fillRect(tx, ty + th - 46, tw, 46);
-    g.fillStyle = G.watch.who === 1 ? C.yellow : '#ffaec9'; g.font = `24px ${BODYFONT}`; g.textAlign = 'center';
+    g.fillStyle = G.watch.who === 1 ? C.yellow : '#ffaec9'; g.font = `22px ${BODYFONT}`; g.textAlign = 'center';
     g.fillText(G.watch.say, tx + tw/2, ty + th - 23, tw - 20);
   }
   g.restore();
