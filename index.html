@@ -321,7 +321,7 @@ html.xmas .fff span{border-color:#1b7a34;color:#c8102e}
       <section>
         <h3>Tips</h3>
         <ul class="tips">
-          <li>Special moves: Shocked Circle rolls into people (35 damage). Yelling Square jumps up and slams down on anyone close by (45). Angry Triangle flips into the air and lands with spike waves that shoot along the ground both ways (30 each). Goofy Sparkle goes on a sugar rush: he zooms all around the closest fighter in a wild yellow scribble and hits them 4 times (10 each). Grumpy Shuriken dashes straight forward, spinning, and hits everyone in his way (30 each). Once you free him, Missing Arrow makes glitch blocks fall from the sky in front of him (50 to everyone they land on). If they miss, they do a silly flip or a dusty crash instead.</li>
+          <li>Special moves: Shocked Circle rolls into people (35 damage). Yelling Square jumps up and slams down on anyone close by (45). Angry Triangle flips into the air and lands with spike waves that shoot along the ground both ways (30 each). Goofy Sparkle goes on a sugar rush: he zooms all around the closest fighter in a wild yellow scribble and hits them 4 times (10 each). Grumpy Shuriken dashes straight forward, spinning, and hits everyone in his way (30 each). Once you free him, Missing Arrow makes glitch blocks fall from the sky in front of him (50 to everyone they land on). The Admin (from the codes page) sends out a giant "Banned" sign that zooms across the whole map and back: it does 100000000 damage, so anyone it touches is out! If they miss, they do a silly flip or a dusty crash instead.</li>
           <li>Got grabbed? Mash punch, jump or grab to wriggle free.</li>
           <li>Knocked off the edge? Use your double jump and steer back to the island.</li>
           <li>Throwing a dizzy fighter sends them much farther than throwing an awake one.</li>
@@ -539,7 +539,7 @@ const CHARS = [
   // the missing guy from the "HAVE YOU SEEN HIM?" poster: locked in a cage past the 5th floor until you break him out
   { id:'arrow',    name:'Missing Arrow',   color:'#ffb07c', shape:'arrow',    trait:'Scared and glitchy. Special: glitch fest', speed:1.1,  power:1.0,  weight:0.95, jump:1.08, secret:true, hint:'Have you seen him? Look past the 5th floor of the shop...' },
   // the admin: you only get him with the admin code (on the "codes" page). Just a stand-in for now, until Mason makes him
-  { id:'admin',    name:'Admin',           color:'#ffd700', shape:'circle',   trait:'The boss of the whole game', speed:1.0,  power:1.0,  weight:1.0,  jump:1.0, secret:true, hint:'Do you know the code?' },
+  { id:'admin',    name:'Admin',           color:'#ffd700', shape:'circle',   trait:'The boss of the whole game. Special: banned', speed:1.0,  power:1.0,  weight:1.0,  jump:1.0, secret:true, hint:'Do you know the code?' },
 ];
 const CHAR = Object.fromEntries(CHARS.map(c => [c.id, c]));
 const unlocked = ch => !ch.secret || !!(shop.unlocked && shop.unlocked[ch.id]); // secret fighters stay locked until you earn them
@@ -1447,7 +1447,7 @@ function startRound() {
   } else {
     xs.push(...ffaXs(n)); xs.sort(() => Math.random() - 0.5);
   }
-  G.hazards = []; G.waves = []; G.hzT = 3; G.hzCar = 4.5; G.hzBird = 7; G.hzZap = 3;
+  G.hazards = []; G.waves = []; G.bans = []; G.hzT = 3; G.hzCar = 4.5; G.hzBird = 7; G.hzZap = 3;
   G.fighters = G.lineup.map((l, i) => { const f = makeFighter(l.ch, l.control, xs[i], i); f.team = l.team || 0; f.tag = l.tag || (l.control === 'cpu' ? 'CPU' : CTRL[l.control].tag); return f; });
   Composite.add(G.engine.world, G.fighters.map(f => f.body));
   ev('clear'); G.banner = null; G.phase = 'countdown'; G.timer = 3; G.lastCount = 4; G.goT = 0; G.champ = null;
@@ -1585,6 +1585,7 @@ function aiInput(p) {
     if (SPECIALS[p.ch.id] === 'rush' && Math.hypot(dx, dy) < 300 && Math.random() < 0.03) inp.specialP = true;
     if (SPECIALS[p.ch.id] === 'glitch' && Math.abs(dy) < 120 && Math.abs(dx) > 100 && Math.abs(dx) < 380 && Math.random() < 0.03) { p.facing = Math.sign(dx); inp.specialP = true; }
     if (SPECIALS[p.ch.id] === 'dash' && Math.abs(dy) < 40 && Math.abs(dx) > 80 && Math.abs(dx) < 300 && Math.random() < 0.03) { p.facing = Math.sign(dx); inp.specialP = true; }
+    if (SPECIALS[p.ch.id] === 'ban' && Math.random() < 0.004) { p.facing = Math.sign(dx) || p.facing; inp.specialP = true; }
     if (SPECIALS[p.ch.id] === 'slam' && Math.abs(dx) < 160 && Math.abs(dy) < 60 && Math.random() < 0.03) inp.specialP = true;
   }
   if (p.grounded > 0 && Math.random() < 0.003) inp.jumpP = true;
@@ -1770,7 +1771,9 @@ function updateHazards() {
 }
 
 // ---------- special moves (from Mason's drawings) ----------
-const SPECIALS = { circle:'roll', square:'slam', tri:'quake', sparkle:'rush', shuriken:'dash', arrow:'glitch' };
+const SPECIALS = { circle:'roll', square:'slam', tri:'quake', sparkle:'rush', shuriken:'dash', arrow:'glitch', admin:'ban' };
+// the Admin's ban (from Mason's drawing): a tall "Banned" sign zooms across the whole map and back. It does 100000000 damage, so anyone it touches is out
+const BAN_SPEED = 1100, BAN_W = 90, BAN_TOP = 130, BAN_BOTTOM = 800;
 // Missing Arrow's glitch fest: he glitches out, and a big pile of glitch blocks falls from the sky where he's pointing (50 to everyone it lands on)
 const GLITCH_DIST = 230, GLITCH_RX = 190, GLITCH_RY = 140, GLITCH_WARN = 0.7, GLITCH_TIME = 1.4; // GLITCH_WARN: how long the blocks take to fall from the sky
 // Grumpy Shuriken's dash: he shoots straight forward, spinning like a real shuriken, and hits everyone in his way (30 each)
@@ -1784,6 +1787,11 @@ function startSpecial(p, grounded) {
     const foes = G.fighters.filter(q => q !== p && q.alive && !q.grabbedBy && !allies(p, q)).map(q => [q, Math.hypot(q.body.position.x - b.position.x, q.body.position.y - b.position.y)]).filter(([, d]) => d < RUSH_RANGE).sort((a, c) => a[1] - c[1]);
     p.special = { kind, t:0, target:foes.length ? foes[0][0] : null, hits:0, a:Math.random()*TAU }; p.specCD = 4.5; p.trail = [];
     ev('pop', b.position.x, b.position.y - 70, 'SUGAR RUSH!', C.yellow); ev('sfx','roll');
+    return;
+  }
+  if (kind === 'ban') { // the sign goes out on its own, so the Admin can keep fighting
+    (G.bans = G.bans || []).push({ owner:p, x:b.position.x + p.facing*(p.r + BAN_W/2), dir:p.facing, turned:false }); p.specCD = 0; // no cooldown: ban as much as you want
+    ev('pop', b.position.x, b.position.y - 70, 'BANNED!', C.maroon); ev('sfx','zap'); ev('shake', 8);
     return;
   }
   if (kind === 'glitch') {
@@ -1828,6 +1836,30 @@ function updateWaves() {
     if (w.dist > 380 || !onSurface(w.x, w.y)) w.dead = true;
   }
   G.waves = G.waves.filter(w => !w.dead);
+}
+function updateBans() {
+  if (!G.bans || !G.bans.length) return;
+  for (const bn of G.bans) {
+    bn.x += bn.dir*BAN_SPEED*DT;
+    if (!bn.turned && (bn.dir > 0 ? bn.x > W + 60 : bn.x < -60)) { bn.turned = true; bn.dir = -bn.dir; } // off the edge: come back the other way
+    for (const q of G.fighters) {
+      if (q === bn.owner || !q.alive || allies(bn.owner, q) || q.ch.id === 'admin') continue;
+      const pos = q.body.position; if (Math.abs(pos.x - bn.x) > BAN_W/2 + q.r || pos.y < BAN_TOP - q.r || pos.y > BAN_BOTTOM + q.r) continue;
+      ev('pop', pos.x, pos.y - 70, 'BANNED!', C.maroon); ev('pop', pos.x, pos.y - 25, '-100000000', C.red); ev('burst', pos.x, pos.y, C.maroon, 16); ev('sfx','slam'); ev('shake', 10);
+      eliminate(q);
+    }
+  }
+  G.bans = G.bans.filter(bn => !(bn.turned && (bn.dir > 0 ? bn.x > W + 80 : bn.x < -80)));
+}
+function drawBans(t) { // a tall white box with a thick black border, and "Banned" written down it in dark red
+  for (const bn of G.bans || []) {
+    const h = BAN_BOTTOM - BAN_TOP;
+    g.strokeStyle = 'rgba(136,0,21,.35)'; g.lineWidth = 6; g.lineCap = 'round'; // speed lines behind it
+    for (const y of [0.2, 0.45, 0.7, 0.9]) { g.beginPath(); g.moveTo(bn.x - bn.dir*(BAN_W/2 + 10), BAN_TOP + h*y); g.lineTo(bn.x - bn.dir*(BAN_W/2 + 90 + Math.sin(t*20 + y*9)*20), BAN_TOP + h*y); g.stroke(); }
+    g.fillStyle = C.white; g.strokeStyle = C.ink; g.lineWidth = 8; g.fillRect(bn.x - BAN_W/2, BAN_TOP, BAN_W, h); g.strokeRect(bn.x - BAN_W/2, BAN_TOP, BAN_W, h);
+    g.fillStyle = C.maroon; g.font = `96px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    [...'Banned'].forEach((c, i) => g.fillText(c, bn.x + Math.sin(t*12 + i)*3, BAN_TOP + 62 + i*(h - 110)/5));
+  }
 }
 function drawWaves() {
   for (const w of G.waves || []) {
@@ -2016,6 +2048,7 @@ function step() {
   Engine.update(G.engine, STEP);
   updateHazards();
   updateWaves();
+  updateBans();
   for (const p of G.fighters) {
     if (!p.alive) continue;
     p.grounded -= DT;
@@ -4225,6 +4258,7 @@ function frame(now) {
     drawArena(t);
     drawHazards(t);
     drawWaves();
+    drawBans(t);
     for (const p of G.fighters) if (p.alive && !p.grabbing) drawFighter(p, t);
     for (const p of G.fighters) if (p.alive && p.grabbing) drawFighter(p, t);
     drawParticles(G.paused ? 0 : dt); if (G.boss) drawGlitches(t); drawHUD(); drawOverlayText();
