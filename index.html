@@ -655,6 +655,7 @@ const ITEMS = [
   { id:'cape', name:'Super cape', price:30, desc:'A bright red cape that flutters behind you. Super!' },
   // a limited item: you can only buy it at Halloween (but once it's yours, you keep it all year)
   { id:'batwings', name:'Bat wings', price:35, desc:'Spooky bat wings that flap behind you. Only for sale at Halloween!', limited:'halloween' },
+  { id:'turkeyhat', name:'Turkey hat', price:35, desc:'A silly little turkey that sits on your head and bobs along with you. Gobble gobble! Only for sale at Thanksgiving!', limited:'thanksgiving' },
   // free, up in the dark attic... but taking them makes the eyes push you back downstairs
   { id:'goggles', name:'Glow goggles', price:0, desc:'Spooky goggles that glow in the dark. Free! ...what could go wrong?', floor:3 },
   // an easter egg: not on a stand. SMI7Y (a YouTuber) is visiting the shop 1 time in 10, and gives these away
@@ -674,11 +675,14 @@ for (const [k, v] of Object.entries(shop.wear)) if (typeof v === 'boolean') { (s
 const saveShop = () => { try { localStorage.setItem('fff-shop', JSON.stringify(shop)); } catch (e) {} };
 const canWear = (it, ch) => !(it.not && it.not.includes(ch.id));
 const wears = (id, ch) => !!(shop.owned[id] && shop.wear[id] && shop.wear[id][ch.id]);
-const forSale = it => it.limited !== 'halloween' || spooky(); // limited items are only in the shop at their holiday
+// limited items are only in the shop at their holiday (but once they're yours, you keep them all year)
+const HOLIDAYS = { halloween:{ name:'Halloween', month:'October', on:() => spooky() }, thanksgiving:{ name:'Thanksgiving', month:'November', on:() => thanks() } };
+const forSale = it => !it.limited || HOLIDAYS[it.limited].on();
+const holidayOf = it => HOLIDAYS[it.limited] || HOLIDAYS.halloween;
 // skins: new colours for a fighter, bought one fighter at a time at the skins booth on the 2nd floor
 const SKINS = [
   { id:'classic', name:'Classic', price:0 }, { id:'ice', name:'Ice', price:25, color:'#a6e6ff' }, { id:'shadow', name:'Shadow', price:30, color:'#54476e' },
-  { id:'gold', name:'Gold', price:40, color:'#ffc93a' }, { id:'rainbow', name:'Rainbow', price:60, color:'rainbow' }, { id:'pumpkin', name:'Pumpkin', price:35, color:'#ff8a1c', limited:'halloween' },
+  { id:'gold', name:'Gold', price:40, color:'#ffc93a' }, { id:'rainbow', name:'Rainbow', price:60, color:'rainbow' }, { id:'pumpkin', name:'Pumpkin', price:35, color:'#ff8a1c', limited:'halloween' }, { id:'harvest', name:'Harvest', price:35, color:'#c9752e', limited:'thanksgiving' },
   // a skin just for the Admin (`only`): black with bright green computer code running down him, like a hacker's screen
   { id:'hacker', name:'Hacker', price:75, color:'#050805', only:'admin', swatch:'repeating-linear-gradient(0deg,#050805 0 4px,#39ff14 4px 6px)' },
 ];
@@ -691,7 +695,7 @@ const skinOf = ch => (shop.skins[ch.id] && shop.skins[ch.id].on) || 'classic';
 const skinColor = id => id === 'rainbow' ? `hsl(${(performance.now()/1000*90) % 360},85%,60%)` : (SKIN[id] && SKIN[id].color) || null;
 const mySkin = ch => G.online ? 'classic' : skinOf(ch); // like the other shop things, skins show up on this computer (not in online games yet)
 const myColor = ch => skinColor(mySkin(ch)) || ch.color;
-const looks = ch => ({ skin:skinOf(ch), hat:wears('coolhat', ch), glasses:wears('shades', ch) && ch.id !== 'star', cape:wears('cape', ch), wings:wears('batwings', ch), headphones:wears('headphones', ch), bow:wears('bow', ch), badge:wears('badge', ch), cubes:wears('cubes', ch), glasses3d:wears('glasses3d', ch) && ch.id !== 'star', adminCrown:wears('crown', ch) });
+const looks = ch => ({ skin:skinOf(ch), hat:wears('coolhat', ch), glasses:wears('shades', ch) && ch.id !== 'star', cape:wears('cape', ch), wings:wears('batwings', ch), headphones:wears('headphones', ch), bow:wears('bow', ch), badge:wears('badge', ch), cubes:wears('cubes', ch), glasses3d:wears('glasses3d', ch) && ch.id !== 'star', adminCrown:wears('crown', ch), turkeyhat:wears('turkeyhat', ch) });
 // the shop room: you walk a fighter up to a stand to buy what's on it
 const SHOP = { who:null, floor:1, x:280, y:0, vy:0, facing:1, near:null, nearKeeper:false, nearStairs:false, talk:{ 1:-1, 2:-1, 4:-1, 6:-1 }, prev:{}, msg:'', msgT:0, key:'' };
 // two floors: the fighty shop downstairs, and the funny fun shop upstairs for things that don't fit downstairs
@@ -713,7 +717,14 @@ const STAND_SPOTS = { 1:[390, 610, 830], 2:[530], 3:[800], 9:[720, 1080] };
 const SKIN_X = 830; // the skins booth on the 2nd floor (a big mirror)
 const STANDS = (() => { // items fill the 1st floor, then the 2nd; an item can also ask for a floor of its own
   const free = { 1:[...STAND_SPOTS[1]], 2:[...STAND_SPOTS[2]], 3:[...STAND_SPOTS[3]], 9:[...STAND_SPOTS[9]] }, out = [];
-  for (const it of ITEMS) { if (it.gift) continue; const f = it.floor || (free[1].length ? 1 : 2); if (free[f].length) out.push({ item:it.id, floor:f, x:free[f].shift() }); }
+  let seasonal = null; // the holiday things share one stand, which shows whichever holiday it is now (the Halloween one the rest of the year)
+  for (const it of ITEMS) {
+    if (it.gift) continue;
+    if (it.limited && seasonal) continue;
+    const f = it.floor || (free[1].length ? 1 : 2); if (!free[f].length) continue;
+    if (it.limited) { seasonal = { get item() { const now = ITEMS.find(i => i.limited && HOLIDAYS[i.limited].on()); return now ? now.id : it.id; }, floor:f, x:free[f].shift() }; out.push(seasonal); }
+    else out.push({ item:it.id, floor:f, x:free[f].shift() });
+  }
   return out;
 })();
 // what each shopkeeper says when you talk to them, one line each time you press punch
@@ -1115,7 +1126,7 @@ function drawCharacter(g, ch, r, o = {}) {
     g.save(); if (o.walk != null) g.translate(0, -Math.abs(Math.cos(o.walk))*14*r/180); // his hat bobs along with him
     onAdminHead(g, r, () => {
       if (o.headphones) drawHeadphones(g, r, -r, !!o.hat);
-      if (o.hat) drawHat(g, r, -r, o.facing || 1); else if (o.adminCrown) drawCrown(g, r, -r, C.blue);
+      if (o.hat) drawHat(g, r, -r, o.facing || 1); else if (o.adminCrown) drawCrown(g, r, -r, C.blue); else if (o.turkeyhat) drawTurkeyHat(g, r, -r);
       if (o.bow) drawBow(g, r, -r - (o.hat ? r*0.5 : 0));
     }, o.walk != null);
     g.restore();
@@ -1148,6 +1159,11 @@ function drawCharacter(g, ch, r, o = {}) {
     for (const k of [-0.5, 0, 0.5]) { g.beginPath(); g.ellipse(k*r, 0, r*0.28, r*1.3, 0, 0, TAU); g.stroke(); }
     g.restore();
   }
+  if (o.skin === 'harvest') { // autumn leaves stuck all over
+    g.save(); shapePath(g, ch.shape, r); g.clip();
+    for (const [x, y, a, c] of [[-0.45, -0.2, 0.6, '#e8890c'], [0.35, 0.3, -0.5, '#a52a2a'], [0.1, -0.55, 1.2, '#f2b705'], [-0.2, 0.55, -1, '#d9480f']]) { g.save(); g.translate(x*r, y*r); g.rotate(a); g.fillStyle = c; g.beginPath(); g.ellipse(0, 0, r*0.16, r*0.08, 0, 0, TAU); g.fill(); g.restore(); }
+    g.restore();
+  }
   if (o.skin === 'gold') { // a twinkle that comes and goes
     const k = Math.max(0, Math.sin(tt*3)); if (k > 0.1) { g.fillStyle = `rgba(255,255,255,${k})`; g.beginPath(); twinklePath(g, 0.35*r, -0.35*r, 0.22*r*k, 0.04*r); g.fill(); }
   }
@@ -1165,7 +1181,7 @@ function drawCharacter(g, ch, r, o = {}) {
     for (let i=0;i<2;i++) { const a = tt*1.5 + i*Math.PI, s = (0.12 + Math.abs(Math.sin(tt*4 + i))*0.1)*r;
       g.fillStyle = i ? '#fffbe0' : '#ffe96b'; g.strokeStyle = C.ink; g.lineWidth = Math.max(1, r*0.03);
       g.beginPath(); twinklePath(g, Math.cos(a)*r*1.45, Math.sin(a)*r*1.1, s, s*0.22); g.fill(); g.stroke(); }
-    if (!o.hat && !o.adminCrown && o.beanie !== false) drawBeanie(g, r, tt); // he's a kid, so he wears a propeller beanie (unless he has the cool hat on)
+    if (!o.hat && !o.adminCrown && !o.turkeyhat && o.beanie !== false) drawBeanie(g, r, tt); // he's a kid, so he wears a propeller beanie (unless he has the cool hat on)
   }
   if (ch.shape === 'star6') { // a soft shine on his top-left point
     g.save(); g.translate(-0.42*r, -0.5*r); g.rotate(-0.8); g.fillStyle = 'rgba(255,255,255,.5)'; g.beginPath(); g.ellipse(0, 0, 0.18*r, 0.07*r, 0, 0, TAU); g.fill(); g.restore();
@@ -1180,6 +1196,7 @@ function drawCharacter(g, ch, r, o = {}) {
   if (o.headphones) drawHeadphones(g, r, -TOPS[ch.shape]*r, !!o.hat);
   if (o.hat) drawHat(g, r, -TOPS[ch.shape]*r, o.facing || 1);
   else if (o.adminCrown) drawCrown(g, r, -TOPS[ch.shape]*r, C.blue);
+  else if (o.turkeyhat) drawTurkeyHat(g, r, -TOPS[ch.shape]*r);
   if (o.bow) drawBow(g, r, -TOPS[ch.shape]*r - (o.hat ? r*0.5 : 0));
   if (burst) { // strips of him slide sideways, with scan lines and static, like a broken TV
     g.save(); shapePath(g, ch.shape, r*1.02); g.clip();
@@ -1275,6 +1292,7 @@ function drawHat(g, r, topY, facing) { // the cool hat from the shop
   g.fillStyle = 'rgba(255,255,255,.35)'; g.fillRect(-w*0.34, -h*0.9, w*0.12, h*0.4);
   g.restore();
 }
+function drawTurkeyHat(g, r, topY) { const tt = performance.now()/1000; withG(g, () => drawTurkey(0, topY + r*0.08, r*0.95, tt)); } // the Thanksgiving turkey hat: a little turkey standing on your head
 function drawCrown(g, r, topY, gem = C.red) { // the winner's crown (and the Admin crown, with a blue gem)
   const w = r*0.9, h = r*0.6, y = topY - 4;
   g.beginPath(); g.moveTo(-w/2, y); g.lineTo(-w/2, y-h); g.lineTo(-w/4, y-h*0.55); g.lineTo(0, y-h*1.1); g.lineTo(w/4, y-h*0.55); g.lineTo(w/2, y-h); g.lineTo(w/2, y); g.closePath();
@@ -1287,7 +1305,7 @@ function charCanvas(ch, px, o = {}) {
   const g = c.getContext('2d'); g.scale(d, d);
   const tall = o.crown || o.hat || o.adminCrown, r = px*(tall ? 0.27 : 0.33);
   g.translate(px/2, px*(tall ? 0.62 : 0.53));
-  drawCharacter(g, ch, r, { facing:1, ko:o.ko, hat:o.hat && !o.crown, glasses:o.glasses, cape:o.cape, wings:o.wings, skin:o.skin, headphones:o.headphones, bow:o.bow && !o.crown, badge:o.badge, cubes:o.cubes, glasses3d:o.glasses3d, adminCrown:o.adminCrown && !o.crown, beanie:!o.crown && !o.adminCrown });
+  drawCharacter(g, ch, r, { facing:1, ko:o.ko, hat:o.hat && !o.crown, glasses:o.glasses, cape:o.cape, wings:o.wings, skin:o.skin, headphones:o.headphones, bow:o.bow && !o.crown, badge:o.badge, cubes:o.cubes, glasses3d:o.glasses3d, adminCrown:o.adminCrown && !o.crown, turkeyhat:o.turkeyhat && !o.crown, beanie:!o.crown && !o.adminCrown && !o.turkeyhat });
   if (o.crown) { if (ch.id === 'admin') onAdminHead(g, r, () => drawCrown(g, r, -r)); else drawCrown(g, r, -TOPS[ch.shape]*r); }
   return c;
 }
@@ -2049,6 +2067,7 @@ function drawProduct(pr, ch, t) { // the thing for sale, on a little stand in th
   else if (pr.id === 'coolhat') { g.translate(0, 30); drawHat(g, 58, -6, 1); }
   else if (pr.id === 'cape') { g.translate(0, -20); drawCape(g, 56, -1, t, 56); }
   else if (pr.id === 'batwings') { g.translate(0, 10); drawBatWings(g, 52, t); }
+  else if (pr.id === 'turkeyhat') { g.translate(0, 40); drawTurkey(0, 0, 80, t); }
   else { g.scale(120, 120); drawGlasses(g, [[-0.2, 0], [0.2, 0]]); }
   g.restore();
 }
@@ -4512,11 +4531,12 @@ function drawShop(t) {
     if (it.id === 'coolhat') drawHat(g, 64, -6.4, 1);
     else if (it.id === 'cape') { g.translate(0, -62); drawCape(g, 64, -1, t, 64); } // draped over the stand
     else if (it.id === 'batwings') { g.translate(0, -48); if (!forSale(it) && !shop.owned[it.id]) g.globalAlpha = 0.45; drawBatWings(g, 58, t); }
+    else if (it.id === 'turkeyhat') { g.translate(0, 4); drawTurkey(0, 0, 70, t); }
     else if (it.id === 'cubes') { g.translate(0, -50); drawGlitchCubes(g, 80, t, false); drawGlitchCubes(g, 80, t, true); }
     else if (it.id === 'glasses3d') { g.translate(0, -16); g.scale(130, 130); drawGlasses(g, [[-0.2, 0], [0.2, 0]], false, null, true); }
     else { g.translate(0, -16); g.scale(130, 130); drawGlasses(g, [[-0.2, 0], [0.2, 0]], it.id === 'goggles', SHOP.pushT > 0 || SHOP.pushing ? '#ff3b3b' : '#e8ff6a'); } // the goggles turn red when the eyes get angry
     g.restore();
-    const owned = shop.owned[it.id], locked = !owned && !forSale(it), label = owned ? 'yours!' : locked ? 'Halloween only' : it.price ? `${it.price} coins` : 'FREE!';
+    const owned = shop.owned[it.id], locked = !owned && !forSale(it), label = owned ? 'yours!' : locked ? holidayOf(it).name + ' only' : it.price ? `${it.price} coins` : 'FREE!';
     g.font = `26px ${BODYFONT}`; const tw = g.measureText(label).width + 24;
     if (it.limited && !owned && !locked) { g.font = `22px ${FONT}`; g.fillStyle = C.orange; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('LIMITED!', st.x, top - (SHOP.near === st ? 190 : 130) + Math.sin(t*5)*3); g.font = `26px ${BODYFONT}`; }
     g.fillStyle = owned ? C.green : locked ? '#c9a3e6' : it.limited ? C.orange : C.yellow; g.strokeStyle = C.ink; g.lineWidth = 3; g.fillRect(st.x - tw/2, top + 20, tw, 36); g.strokeRect(st.x - tw/2, top + 20, tw, 36);
@@ -5039,7 +5059,7 @@ function shopAct(id) {
   if (id === 'goggles') { atticPush(); renderShopCard(true); return; } // you never get to keep them: the eyes push you out and take them back
   if (!canWear(it, ch)) shopSay(`${ch.name} already has cool shades! Try a different fighter.`, 'bonk');
   else if (!shop.owned[id]) {
-    if (!forSale(it)) shopSay(`The ${it.name.toLowerCase()} are only for sale at Halloween. Come back in October!`, 'bonk');
+    if (!forSale(it)) shopSay(`The ${it.name.toLowerCase()} is only for sale at ${holidayOf(it).name}. Come back in ${holidayOf(it).month}!`, 'bonk');
     else if (shop.coins < it.price) shopSay(`You need ${it.price - shop.coins} more coins. Go win some fights!`, 'bonk');
     else { shop.coins -= it.price; shop.owned[id] = true; w[ch.id] = true; saveShop(); shopSay(`Thanks! ${ch.name} looks so cool.`, 'win'); }
   } else { w[ch.id] = !w[ch.id]; saveShop(); shopSay(w[ch.id] ? `Looking cool, ${ch.name}!` : `${it.name} off. Come back any time!`, 'grab'); }
@@ -5054,7 +5074,7 @@ function nextSkin() { // punch at the booth: switch to the next skin this fighte
 function buySkin(id) {
   const ch = CHARS[SHOP.who], s = SKIN[id], rec = skinRec(ch);
   if (hasSkin(ch, id)) { rec.on = id; saveShop(); shopSay(id === 'classic' ? `Back to classic ${ch.name}!` : `Ooh, ${s.name} ${ch.name}!`, 'grab'); }
-  else if (!forSale(s)) shopSay(`The ${s.name.toLowerCase()} skin is only for sale at Halloween. Come back in October!`, 'bonk');
+  else if (!forSale(s)) shopSay(`The ${s.name.toLowerCase()} skin is only for sale at ${holidayOf(s).name}. Come back in ${holidayOf(s).month}!`, 'bonk');
   else if (shop.coins < s.price) shopSay(`You need ${s.price - shop.coins} more coins for that skin. Go win some fights!`, 'bonk');
   else { shop.coins -= s.price; rec.have.push(id); rec.on = id; saveShop(); shopSay(`Wow! ${s.name} ${ch.name} looks amazing!`, 'win'); }
   renderShopCard(true);
@@ -5062,17 +5082,17 @@ function buySkin(id) {
 function fillSkinCard(card, ch) {
   card.innerHTML = `<h3>Skins for ${ch.name}</h3><p>New colours! Each fighter has their own skins, so pick a fighter with ◀ ▶ at the top. Press punch here to switch between the skins ${ch.name} has.</p><div class="skins"></div>`;
   const box = card.querySelector('.skins');
-  for (const s of skinsFor(ch)) {
+  for (const s of skinsFor(ch).filter(s => forSale(s) || hasSkin(ch, s.id))) { // other holidays' skins hide until their holiday (unless you have them)
     const have = hasSkin(ch, s.id), on = skinOf(ch) === s.id, locked = !have && !forSale(s);
     const b = document.createElement('button'); b.id = 'skin-' + s.id; b.className = on ? 'on' : '';
     const sw = s.swatch || (s.color === 'rainbow' ? 'linear-gradient(90deg,#ed1c24,#ff7f27,#fff200,#22b14c,#00a2e8,#a349a4)' : s.color || ch.color);
-    b.innerHTML = `<i style="background:${sw}"></i>${s.name} <small>${on ? '(on)' : have ? 'wear' : locked ? 'Halloween only' : s.price + ' coins'}${s.limited && !have && !locked ? ' · LIMITED!' : ''}</small>`;
+    b.innerHTML = `<i style="background:${sw}"></i>${s.name} <small>${on ? '(on)' : have ? 'wear' : locked ? holidayOf(s).name + ' only' : s.price + ' coins'}${s.limited && !have && !locked ? ' · LIMITED!' : ''}</small>`;
     b.onclick = () => { buySkin(s.id); cv.focus(); };
     box.append(b);
   }
 }
 function drawSkinBooth(t) { // a big gold mirror on a stand: it shows you in each skin, one after another
-  const x = SKIN_X, top = SHOP_FLOOR - 260, ch = CHARS[SHOP.who], list = skinsFor(ch), shown = list[Math.floor(t/1.3) % list.length];
+  const x = SKIN_X, top = SHOP_FLOOR - 260, ch = CHARS[SHOP.who], list = skinsFor(ch).filter(s => forSale(s) || hasSkin(ch, s.id)), shown = list[Math.floor(t/1.3) % list.length];
   g.fillStyle = PINK_DARK; g.fillRect(x - 12, top + 200, 24, SHOP_FLOOR - top - 200); g.beginPath(); g.ellipse(x, SHOP_FLOOR, 60, 12, 0, 0, TAU); g.fill();
   g.fillStyle = '#e0b030'; g.strokeStyle = C.ink; g.lineWidth = 4; roundRect(x - 80, top, 160, 205, 20); g.fill(); g.stroke();
   g.fillStyle = '#e4f6ff'; roundRect(x - 64, top + 16, 128, 160, 14); g.fill();
@@ -5216,11 +5236,11 @@ function fillShopCard(card, ch, it) {
     return;
   }
   const owned = shop.owned[it.id], on = wears(it.id, ch), locked = !owned && !forSale(it);
-  const when = it.limited && !owned ? (locked ? ' It\'s not Halloween right now, so come back in October!' : ' Get them before Halloween is over!') : '';
-  card.innerHTML = `<h3>${it.name} <span class="price">${owned ? 'yours!' : locked ? 'Halloween only' : it.price ? it.price + ' coins' : 'FREE!'}</span></h3><p>${it.desc}${when}${owned ? ' It shows up in fights on this computer.' : ''}</p><div class="row"></div>`;
+  const hol = holidayOf(it), when = it.limited && !owned ? (locked ? ` It's not ${hol.name} right now, so come back in ${hol.month}!` : ` Get it before ${hol.name} is over!`) : '';
+  card.innerHTML = `<h3>${it.name} <span class="price">${owned ? 'yours!' : locked ? holidayOf(it).name + ' only' : it.price ? it.price + ' coins' : 'FREE!'}</span></h3><p>${it.desc}${when}${owned ? ' It shows up in fights on this computer.' : ''}</p><div class="row"></div>`;
   if (!canWear(it, ch)) { card.querySelector('.row').innerHTML = `<p>${ch.name} already has cool shades, so these don't go on it. Pick a different fighter with ◀ ▶ at the top.</p>`; return; }
   const b = document.createElement('button'); b.className = 'btn'; b.id = 'shopAct';
-  b.textContent = !owned ? (locked ? 'only at Halloween' : it.price ? `buy for ${it.price} coins` : 'take it (free!)') : on ? `take it off ${ch.name}` : `put it on ${ch.name}`;
+  b.textContent = !owned ? (locked ? 'only at ' + holidayOf(it).name : it.price ? `buy for ${it.price} coins` : 'take it (free!)') : on ? `take it off ${ch.name}` : `put it on ${ch.name}`;
   b.onclick = () => { shopAct(it.id); cv.focus(); };
   card.querySelector('.row').append(b, Object.assign(document.createElement('span'), { innerHTML:press }));
 }

@@ -102,7 +102,7 @@ All through December snow falls on every map, the menu hills turn snowy with Chr
 
 ## Thanksgiving
 
-All through November autumn leaves drift down on every map, the menu hills get orange and red autumn trees and a turkey, the shop gets leaf garlands and a turkey with a big fan of tail feathers (its head bobs!), the race track trees turn orange, the top of the title card turns orange-brown, and the shopkeeper says "Happy Thanksgiving! Gobble gobble!" You can turn it on all year or off in settings. If Halloween or Christmas is on too, they win.
+All through November autumn leaves drift down on every map, the menu hills get orange and red autumn trees and a turkey, the shop gets leaf garlands and a turkey with a big fan of tail feathers (its head bobs!), the race track trees turn orange, the top of the title card turns orange-brown, and the shopkeeper says "Happy Thanksgiving! Gobble gobble!" You can turn it on all year or off in settings. If Halloween or Christmas is on too, they win. In November the holiday stand on the 2nd floor (where the bat wings are at Halloween) sells the limited **Turkey hat** (35 coins): a little turkey that stands on your head and bobs along with you. There's a limited **Harvest** skin too (35 coins, orange with autumn leaves). Halloween things like the bat wings and the Pumpkin skin hide until next October, unless you already have them.
 
 ## Play online
 
