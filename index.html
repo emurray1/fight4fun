@@ -695,7 +695,8 @@ const saveShop = () => { try { localStorage.setItem('fff-shop', JSON.stringify(s
 const canWear = (it, ch) => !(it.not && it.not.includes(ch.id));
 const wears = (id, ch) => !!(shop.owned[id] && shop.wear[id] && shop.wear[id][ch.id]);
 // limited items are only in the shop at their holiday (but once they're yours, you keep them all year)
-const HOLIDAYS = { halloween:{ name:'Halloween', month:'October', on:() => spooky() }, thanksgiving:{ name:'Thanksgiving', month:'November', on:() => thanks() } };
+// (they're only for sale in the real month, even if a holiday look is switched to "Always" in settings)
+const HOLIDAYS = { halloween:{ name:'Halloween', month:'October', on:() => month() === 9 }, thanksgiving:{ name:'Thanksgiving', month:'November', on:() => month() === 10 } };
 const forSale = it => !it.limited || HOLIDAYS[it.limited].on();
 const holidayOf = it => HOLIDAYS[it.limited] || HOLIDAYS.halloween;
 // skins: new colours for a fighter, bought one fighter at a time at the skins booth on the 2nd floor
@@ -957,11 +958,12 @@ function drawFace(g, ch, r, o = {}) {
       oval(0,0.3,0.25,0.09); g.strokeStyle = '#fff'; g.lineWidth = 0.035; line(-0.18,0.3,0.18,0.3); break;
     case 'circle':
       oval(-0.2,-0.2,0.065,0.13); oval(0.2,-0.2,0.065,0.13); oval(0,0.27,0.3,0.09); break;
-    case 'diamond':
-      dot(-0.18,-0.04,0.09); dot(0.18,-0.04,0.09);
-      g.fillStyle = ch.color; g.fillRect(-0.3,-0.16,0.6,0.1); g.fillStyle = C.ink;
-      g.lineWidth = 0.06; line(-0.29,-0.07,-0.07,-0.07); line(0.07,-0.07,0.29,-0.07); line(0.1,-0.23,0.3,-0.17);
-      g.lineWidth = 0.08; g.beginPath(); g.moveTo(-0.24,0.2); g.quadraticCurveTo(0.05,0.33,0.27,0.15); g.stroke(); break;
+    case 'diamond': // like a therapist: soft eyes behind round glasses, gentle eyebrows and eyelashes (and her same sly smile)
+      dot(-0.18,-0.04,0.075); dot(0.18,-0.04,0.075);
+      g.lineWidth = 0.035; for (const s of [-1, 1]) for (let k = 0; k < 3; k++) line(s*(0.2 + k*0.06), -0.12 + k*0.02, s*(0.24 + k*0.07), -0.19 + k*0.03); // eyelashes
+      g.lineWidth = 0.05; for (const s of [-1, 1]) { g.beginPath(); g.moveTo(s*0.08, -0.3); g.quadraticCurveTo(s*0.18, -0.36, s*0.3, -0.3); g.stroke(); } // gentle eyebrows
+      if (!o.glasses && !o.glasses3d) { g.strokeStyle = '#6b3d1a'; g.lineWidth = 0.04; for (const s of [-1, 1]) { g.beginPath(); g.arc(s*0.18, -0.04, 0.15, 0, TAU); g.stroke(); } line(-0.03, -0.06, 0.03, -0.06); g.strokeStyle = C.ink; } // round glasses
+      g.lineWidth = 0.08; g.beginPath(); g.moveTo(-0.24,0.2); g.quadraticCurveTo(0.05,0.33,0.27,0.15); g.stroke(); break; // her same old sly smile
     case 'square':
       line(-0.32,-0.25,-0.1,-0.13); line(0.32,-0.25,0.1,-0.13); dot(-0.18,-0.04,0.07); dot(0.18,-0.04,0.07);
       oval(0,0.3,0.3,0.16); g.fillStyle = C.red; oval(0,0.38,0.14,0.06); break;
@@ -1206,6 +1208,16 @@ function drawCharacter(g, ch, r, o = {}) {
       g.fillStyle = i ? '#fffbe0' : '#ffe96b'; g.strokeStyle = C.ink; g.lineWidth = Math.max(1, r*0.03);
       g.beginPath(); twinklePath(g, Math.cos(a)*r*1.45, Math.sin(a)*r*1.1, s, s*0.22); g.fill(); g.stroke(); }
     if (!o.hat && !o.adminCrown && !o.turkeyhat && o.beanie !== false) drawBeanie(g, r, tt); // he's a kid, so he wears a propeller beanie (unless he has the cool hat on)
+  }
+  if (ch.id === 'diamond') { // Sly Diamond the therapist: her hair in a bun with a pencil through it, and her notebook
+    if (!o.hat) {
+      g.fillStyle = '#6b3d1a'; g.strokeStyle = C.ink; g.lineWidth = Math.max(1.5, r*0.05); g.beginPath(); g.arc(0, -1.2*r, 0.26*r, 0, TAU); g.fill(); g.stroke();
+      g.strokeStyle = '#ffd23f'; g.lineWidth = Math.max(2, r*0.07); g.lineCap = 'round'; g.beginPath(); g.moveTo(-0.38*r, -1.36*r); g.lineTo(0.38*r, -1.06*r); g.stroke(); g.lineCap = 'butt';
+    }
+    g.save(); g.translate((o.facing || 1)*0.78*r, 0.25*r); g.rotate((o.facing || 1)*0.15);
+    g.fillStyle = '#fff6c9'; g.strokeStyle = C.ink; g.lineWidth = Math.max(1.5, r*0.04); g.fillRect(-0.22*r, -0.3*r, 0.44*r, 0.58*r); g.strokeRect(-0.22*r, -0.3*r, 0.44*r, 0.58*r);
+    g.strokeStyle = '#7fb7ff'; g.lineWidth = Math.max(1, r*0.025); for (let k = 0; k < 4; k++) { g.beginPath(); g.moveTo(-0.15*r, -0.16*r + k*0.12*r); g.lineTo(0.15*r, -0.16*r + k*0.12*r); g.stroke(); }
+    g.restore();
   }
   if (ch.shape === 'star6') { // a soft shine on his top-left point
     g.save(); g.translate(-0.42*r, -0.5*r); g.rotate(-0.8); g.fillStyle = 'rgba(255,255,255,.5)'; g.beginPath(); g.ellipse(0, 0, 0.18*r, 0.07*r, 0, 0, TAU); g.fill(); g.restore();
@@ -4061,7 +4073,10 @@ function pbStep() { // the next thing someone says (by the clock, so it keeps go
 }
 function palTalk() { // you walked up to someone and pressed punch
   const p = SHOP.nearPal; if (!p) return;
-  pbSay(p.id, (PB_HI[p.id] || 'Hi, {you}!').replace('{you}', CHARS[SHOP.who].name), 3.6); SHOP.pb.next = performance.now() + 3800;
+  const you = CHARS[SHOP.who].id, crush = SHOP.floor === 12 && DORMS[SHOP.dorm || 0].crush; // (in their room, Sly Diamond and Missing Arrow are sweet to each other)
+  const line = crush ? { diamond:'Oh! Hi, Missing Arrow... *blushes*', arrow:'H-hi, Sly Diamond... *happy glitch*' }[p.id]
+    : p.id === 'shuriken' && you === 'sparkle' ? 'THERE you are, Goofy Sparkle! I looked EVERYWHERE!' : null; // (he's been looking for you!)
+  pbSay(p.id, line || (PB_HI[p.id] || 'Hi, {you}!').replace('{you}', CHARS[SHOP.who].name), 3.6); SHOP.pb.next = performance.now() + 3800;
 }
 function drawPlayerBreak(t) {
   drawWoodRoom('#fff1d6', '#7a4a2a', '#9c6b43');
@@ -4097,11 +4112,15 @@ const DORMS = [ // who shares a room (and what they talk about in there)
     [['tri', 'Grr... who snores like that?!'], ['square', 'NOT ME!'], ['tri', 'It was SO you.']]] },
   { ids:['circle', 'hex'], wall:'#dff1ff', chats:[[['hex', 'Beep... boop... I am scared of the dark.'], ['circle', 'WHAT?! Me too!'], ['hex', '*turns on his antenna light* There. Better.']],
     [['circle', 'WHAT was that noise?!'], ['hex', 'Beep! It was my tummy. Sorry.']]] },
-  { ids:['diamond', 'arrow'], wall:'#e3ffe6', chats:[[['arrow', 'I-is there something under my bed?'], ['diamond', 'Just my secret snack stash... hehe.'], ['arrow', '*phew*']],
-    [['diamond', 'Want to know a secret?'], ['arrow', 'O-only if it is not scary...'], ['diamond', 'You are my favorite roommate.'], ['arrow', '*happy glitch*']]] },
+  // Sly Diamond and Missing Arrow like each other! Their door is locked, and only the two of them can go in
+  { ids:['diamond', 'arrow'], wall:'#ffe6f2', locked:true, crush:true, chats:[
+    [['arrow', 'S-Sly Diamond... can I tell you something?'], ['diamond', 'Of course, Missing Arrow.'], ['arrow', 'I... I really like you. *glitches*'], ['diamond', '*blushes* I like you too... hehe.']],
+    [['diamond', 'You look cute when you glitch.'], ['arrow', '*glitches even more* R-really?!'], ['diamond', 'Hehe... really.']],
+    [['arrow', 'I-is there something under my bed?'], ['diamond', 'Just my secret snack stash... want to share?'], ['arrow', '*happy glitch* Yes please!']]] },
 ];
 
 const dormName = id => unlocked(CHAR[id]) ? CHAR[id].name : '???'; // (a locked fighter's name stays a secret)
+const dormOpen = i => !DORMS[i].locked || DORMS[i].ids.includes(CHARS[SHOP.who].id); // a locked door only opens for the two who live there
 function dormSpots() { // the roommates in their room (not you, if it's your room)
   const d = DORMS[SHOP.dorm || 0];
   return d.ids.map(id => CHAR[id]).filter(ch => unlocked(ch) && ch.id !== CHARS[SHOP.who].id).map((ch, i) => ({ ch, x:[640, 1060][i] }));
@@ -4110,7 +4129,7 @@ function dormStep() { // the roommates take turns talking (by the clock)
   const pb = SHOP.pb, now = performance.now(); if (!pb || now < pb.next) return;
   const here = new Set(dormSpots().map(s => s.ch.id)); if (!here.size) return;
   const chats = DORMS[SHOP.dorm || 0].chats.filter(c => c.every(([id]) => here.has(id)));
-  if (!chats.length) { const id = [...here][0], lines = PB_SOLO[id] || ['...']; pbSay(id, lines[Math.floor(Math.random()*lines.length)]); pb.next = now + 4200; return; } // (alone in the room)
+  if (!chats.length) { const id = [...here][0], lines = (DORMS[SHOP.dorm || 0].crush && { diamond:['Hi, Missing Arrow... *blushes*', 'I saved you some snacks, hehe.', 'You look cute when you glitch.'], arrow:['H-hi, Sly Diamond... *happy glitch*', 'Y-your eyelashes are really pretty...', '*blushes and glitches*'] }[id]) || PB_SOLO[id] || ['...']; pbSay(id, lines[Math.floor(Math.random()*lines.length)]); pb.next = now + 4200; return; } // (alone in the room) // (alone with you in their room, they say sweet things to the one they like)
   if (!pb.chat || pb.line >= pb.chat.length) { pb.chat = chats[(pb.ci = ((pb.ci ?? -1) + 1) % chats.length)]; pb.line = 0; }
   const [id, text] = pb.chat[pb.line++]; pbSay(id, text); pb.next = now + (pb.line >= pb.chat.length ? 5200 : 3600);
 }
@@ -4127,7 +4146,7 @@ function drawDormHall(t) {
   g.fillStyle = '#c0392b'; g.fillRect(0, SHOP_FLOOR + 8, W, 26); // a long carpet down the hallway
   g.fillStyle = '#5a3a6e'; g.font = `56px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('dorms', W/2, 170);
   drawStaffDoor(DORM_EXIT_X, '← player breaks', '#c9f0ff', 'FIGHTERS ONLY');
-  DORMS.forEach((d, i) => drawNameDoor(DORM_ROOM_X[i], [dormName(d.ids[0]) + ' &', dormName(d.ids[1])]));
+  DORMS.forEach((d, i) => { drawNameDoor(DORM_ROOM_X[i], [dormName(d.ids[0]) + ' &', dormName(d.ids[1])]); if (d.crush) drawLittleHeart(DORM_ROOM_X[i], SHOP_FLOOR - 280, 14); if (!dormOpen(i)) drawPadlock(DORM_ROOM_X[i] + 30, SHOP_FLOOR - 105, 0.22); });
   const near = SHOP.nearStairs && SHOP.stairTo === 12 ? DORM_ROOM_X[SHOP.stairRoom] : null;
   if (near != null) drawPointer(near, SHOP_FLOOR - 330, t);
 }
@@ -4152,6 +4171,7 @@ function drawDormRoom(t) {
     g.save(); g.translate(x, SHOP_FLOOR - bottom - bob); drawCharacter(g, ch, r, { facing:x < SHOP.x ? 1 : -1, ...looks(ch), happy:talking }); g.restore();
     if (SHOP.nearPal === ch) drawPointer(x, SHOP_FLOOR - bottom*2 - 70, t);
   }
+  if (d.crush) for (let i=0;i<5;i++) { const k = (t*0.4 + i/5) % 1; g.save(); g.globalAlpha = 1 - k; drawLittleHeart(850 + Math.sin(t*2 + i*2)*120, SHOP_FLOOR - 120 - k*260, 12 + i % 3*4); g.restore(); } // little hearts floating up (they like each other!)
   if (say) { const s = dormSpots().find(s => s.ch.id === say.id); if (s) drawBubble(say.text, Math.min(W - 20, s.x + 160), SHOP_FLOOR - 190, s.x); }
 }
 // ---------- the break room: both shopkeepers on their break. The longer you stay, the more stuff they give you ----------
@@ -5562,6 +5582,7 @@ function shopLaugh() { // you laugh at the joke, and the shopkeeper is happy you
 }
 function shopStairs() {
   if (SHOP.stairTo === 8) { enterCage(); return; } // the 5th floor portal goes to Missing Arrow's cage
+  if (SHOP.stairTo === 12 && !dormOpen(SHOP.stairRoom || 0)) { SHOP.youSay = `It's locked! Only ${DORMS[SHOP.stairRoom].ids.map(dormName).join(' and ')} can go in.`; SHOP.youSayT = 3; if (sfx.bonk) sfx.bonk(); renderShopCard(true); return; } // a locked dorm door
   const from = SHOP.floor, to = SHOP.stairTo || (from === 1 ? 2 : 1), back = STAIRS.find(s => s.floor === to && s.to === from);
   if (to === 3 && isKid()) { // the shy shopkeeper thinks the attic is too scary for Goofy Sparkle, so she lifts him off the ladder
     Object.assign(SHOP, { carry:true, carryT:0, x:LADDER_X, facing:-1 });
@@ -5697,7 +5718,7 @@ function fillShopCard(card, ch, it) {
     const text = { 2:SHOP.floor === 10 ? 'Go back out to the funny fun shop.' : SHOP.floor === 6 ? 'Go back out to the funny fun shop. (Your break timer will start over!)' : SHOP.floor === 1 ? 'Go up to the 2nd floor: the funny fun shop. Things that don\'t fit down here go up there.' : 'Go back down to the 2nd floor: the funny fun shop.',
       10:SHOP.floor === 11 ? 'Go back to player breaks.' : 'Go into player breaks: the fighters hang out in here when they are not fighting. Say hi!',
       11:SHOP.floor === 12 ? 'Go back out to the dorms hallway.' : 'Go to the dorms, where the fighters sleep. Each pair of roommates has a room, with their names on the door.',
-      12:`Go into ${dn[0]} and ${dn[1]}'s room.`,
+      12:dormOpen(SHOP.stairRoom || 0) ? `Go into ${dn[0]} and ${dn[1]}'s room.` : `This door is locked! Only ${dn[0]} and ${dn[1]} can go in. (Shop as one of them to get in.)`,
       6:'Go into the break room. The shopkeepers take their break in there... the longer you stay, the more stuff they give you!',
       1:SHOP.floor === 8 ? 'The portal is open! Jump in to go home, to the 1st floor.' : 'Go back down to the 1st floor: the fighty shop.',
       8:'A big swirly portal... Where does it go? Is that where HE is?', 4:SHOP.floor === 7 ? `Jump back into the portal. It goes down to the manager's office... careful, ${BOSS_NAME} is in there!` : 'Ride the elevator up to the manager\'s office. Ding!',
