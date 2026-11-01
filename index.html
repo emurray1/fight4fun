@@ -144,6 +144,9 @@ kbd{font-family:var(--body);border:2px solid var(--ink);border-bottom-width:4px;
 .ap h3{margin:14px 0 4px;color:#39ff14}
 .ap-big{font-size:28px;padding:10px 26px;display:flex;align-items:center;gap:10px}
 .ap-big i{font-style:normal;font-size:30px}
+.ap-swap{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:16px;padding:6px 8px;min-width:96px}
+.ap-swap canvas{pointer-events:none}
+#adminPanel .ap-swap:disabled{opacity:.35;box-shadow:none}
 .ap-row{display:flex;flex-wrap:wrap;gap:12px}
 @keyframes glitchJump{0%,88%,100%{transform:none}90%{transform:translateX(5px)}94%{transform:translateX(-4px)}}
 .page{width:min(980px,100%)}
@@ -377,6 +380,9 @@ html.thanks .fff span{border-color:#8a4b14;color:#d2691e}
       <h3>🔓 Unlock everything</h3>
       <p>Free Missing Arrow, and get every shop item and every skin for every fighter.</p>
       <div class="ap-row"><button id="apUnlock" class="btn ap-big"><i>🔓</i>unlock everything</button></div>
+      <h3>🔄 Change fighter</h3>
+      <p class="note" id="apSwapNote"></p>
+      <div class="ap-row" id="apSwap"></div>
       <h3>⚡ Fight cheats</h3>
       <p class="note">These work in fights, online too. "Just me" gives them only to you (in an online fight, only to your fighter). "Everyone" gives them to every fighter.</p>
       <div class="setting"><span>Who gets the cheats</span><div class="seg" id="apWhoSeg"></div></div>
@@ -4730,6 +4736,7 @@ function openAdminPanel(from) {
   renderSeg('apWhoSeg', [['me', 'Just me'], ['all', 'Everyone']], 'cheatWho');
   renderSeg('apKeepPlaySeg', ONOFF_CHEAT, 'keepersPlay', () => { titleChars.innerHTML = ''; PLAYABLE().forEach(c => titleChars.appendChild(charCanvas(c, 78))); });
   renderSeg('apKeepWatchSeg', ONOFF_CHEAT, 'keepersWatch');
+  renderSwap();
 }
 let apFrom = 'menu';
 $('adminBtn').onclick = () => { if (!unlocked(CHAR.admin)) return; audioOn(); openAdminPanel('menu'); };
@@ -4752,6 +4759,41 @@ $('apUnlock').onclick = () => { // Missing Arrow, every item (but the attic's go
   titleChars.innerHTML = ''; PLAYABLE().forEach(c => titleChars.appendChild(charCanvas(c, 78))); $('glitchShopBtn').hidden = !unlocked(CHAR.arrow);
   $('apMsg').textContent = 'Everything is unlocked! Missing Arrow is free, and every fighter has every item and skin. Put them on in the shop.'; if (sfx.win) sfx.win();
 };
+// ----- change fighter: an admin can turn into a different fighter in the middle of a fight -----
+const myFighter = () => G.fighters.find(f => f.alive !== false && !f.caught && (G.online === 'client' ? f.me : f.control !== 'cpu' && !f.control.startsWith('net:')));
+function swapFighter(p, ch) { // (on this computer, or on the host for an online player)
+  if (!p || !ch || G.fighters.some(f => f !== p && f.ch.id === ch.id) || p.ch.id === ch.id) return;
+  const oldId = p.ch.id, at = p.body ? { x:p.body.position.x, y:p.body.position.y } : { x:p.x, y:p.y };
+  if (G.mode === 'race' || G.mode === 'horror') p.ch = ch; // karts and the dark house don't have bodies to rebuild
+  else {
+    if (p.grabbing) release(p); if (p.grabbedBy) release(p.grabbedBy);
+    const nf = makeFighter(ch, p.control, at.x, p.idx);
+    Composite.remove(G.engine.world, p.body); Body.setPosition(nf.body, at); Composite.add(G.engine.world, nf.body);
+    Object.assign(nf, { team:p.team, tag:p.tag, facing:p.facing, prevHeld:p.prevHeld, netSeen:p.netSeen, me:p.me });
+    G.fighters[G.fighters.indexOf(p)] = nf;
+    for (const f of G.fighters) if (f.ai && f.ai.target === p) f.ai.target = null;
+    if (G.mode !== 'teams' && G.wins[oldId]) { G.wins[ch.id] = G.wins[oldId]; delete G.wins[oldId]; } // keep your round wins
+  }
+  if (G.lineup && G.lineup[p.idx]) G.lineup[p.idx].ch = ch; // (and a rematch keeps the new fighter)
+  ev('pop', at.x, at.y - 90, 'ADMIN SWAP!', C.green); ev('burst', at.x, at.y, C.green, 18); ev('sfx', 'zap');
+  if (G.online === 'host') netBroadcast({ t:'swap', idx:p.idx, ch:ch.id });
+}
+function renderSwap() {
+  const box = $('apSwap'); box.innerHTML = '';
+  const me = G.state === 'fight' && myFighter();
+  $('apSwapNote').textContent = me ? `You are ${me.ch.name}. Pick a fighter to turn into it right now!` : 'Start a fight, then press the admin button during the fight to change your fighter.';
+  if (!me) return;
+  for (const ch of PLAYABLE()) {
+    const b = document.createElement('button'); b.className = 'btn ap-swap'; b.id = 'apSwap-' + ch.id;
+    b.append(charCanvas(ch, 48), ch.name); b.disabled = G.fighters.some(f => f.ch.id === ch.id);
+    b.onclick = () => {
+      if (G.online === 'client') { if (Net.host) Net.host.send({ t:'swap', ch:ch.id }); }
+      else swapFighter(myFighter(), ch);
+      $('apMsg').textContent = `You turned into ${ch.name}!`; setTimeout(renderSwap, 300);
+    };
+    box.append(b);
+  }
+}
 // fight cheats from the admin panel. Whose cheats count: this computer's (in setup), and, when you're hosting an online fight,
 // each online admin's too (they come with their button presses). "Just me" (cheatWho 'me') only gives them to that person's own fighter
 const myCheats = () => unlocked(CHAR.admin) ? { cheatSpeed:!!setup.cheatSpeed, cheatJump:!!setup.cheatJump, cheatSleepy:!!setup.cheatSleepy, cheatWho:setup.cheatWho === 'all' ? 'all' : 'me' } : null;
@@ -5312,6 +5354,7 @@ function hostOnData(conn, d) {
   }
   if (!Net.conns.has(id)) return;
   if (d.t === 'pick') return lobbyPick(id, d.ch);
+  if (d.t === 'swap') { const p = G.fighters.find(f => f.control === 'net:' + id); if (G.state === 'fight' && p && CHAR[d.ch]) swapFighter(p, CHAR[d.ch]); return; } // an online admin changing fighter
   if (d.t === 'team') { const pl = L.players.find(p => p.id === id); if (pl && pl.ch) { L.teams[pl.ch] = 1 - (L.teams[pl.ch] || 0); broadcastLobby(); } return; }
   if (d.t === 'i') { const ch = d.ch && typeof d.ch === 'object' ? { cheatSpeed:!!d.ch.cheatSpeed, cheatJump:!!d.ch.cheatJump, cheatSleepy:!!d.ch.cheatSleepy, cheatWho:d.ch.cheatWho === 'all' ? 'all' : 'me' } : null; Net.inputs.set(id, { x:Math.max(-1, Math.min(1, +d.x || 0)), d:!!d.d, u:!!d.u, j:+d.j || 0, p:+d.p || 0, g:+d.g || 0, s:+d.s || 0, ch }); return; }
   if (d.t === 'bye') return hostDrop(id);
@@ -5425,6 +5468,7 @@ function clientOnData(d) {
       if (G.champ) showResults();
       break;
     case 'tolobby': G.online = null; openLobby(); break;
+    case 'swap': { const p = G.fighters.find(f => f.idx === d.idx), ch = CHAR[d.ch]; if (p && ch) { p.ch = ch; if (p.body) p.r = 38*(ch.size || 1); } break; } // someone (maybe you) changed fighter
     case 'kicked': endNet('The host removed you from the team.'); break;
     case 'full': endNet('That team is full. A team can have 6 players.', true); break;
     case 'busy': endNet('That team is in the middle of a fight. Try again when it ends.', true); break;
