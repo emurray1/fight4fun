@@ -111,6 +111,8 @@ All through November autumn leaves drift down on every map, the menu hills get o
 3. They click **play online**, type the code and click **join**.
 4. Everyone picks a fighter, and the host clicks **make fight happen**.
 
+**Public servers:** on the play online page, click **Public servers** to see five servers anyone can use, no code needed. Each one says if it's empty, how many people are waiting in the team, or if they're in the middle of a fight. Click **join** to join one, or **start it** on an empty one to become its host so other people can find you. Click **refresh** to check again.
+
 The host picks the game mode in the team lobby: Free for all, Team vs team, Racing (with a track picker) or Horror.
 
 The host's browser runs the fight, and everyone else connects to it directly using [PeerJS](https://peerjs.com/). Keep the host's game window open and in front while you play. Some school or work networks block these direct connections.

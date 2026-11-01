@@ -194,6 +194,11 @@ input:focus-visible{outline:4px solid var(--yellow);outline-offset:2px}
 .on-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px}
 .on-box{border:4px solid var(--ink);padding:14px;display:flex;flex-direction:column;gap:10px}
 .on-box h3{background:var(--indigo);color:var(--paper);margin:-14px -14px 0;padding:6px 12px}
+.pub-list{display:flex;flex-direction:column;gap:8px}
+.pub-row{display:flex;align-items:center;gap:10px;border:3px solid var(--ink);padding:6px 10px}
+.pub-row b{font-family:var(--display);font-size:22px}
+.pub-row span{flex:1;font-size:17px}
+.pub-row .btn{font-size:20px;padding:2px 14px}
 .note{font-size:16px;color:#444}
 .lobby-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px}
 .code-chip{display:flex;align-items:center;gap:10px;background:var(--paper);border:4px solid var(--ink);padding:4px 6px 4px 12px}
@@ -446,6 +451,12 @@ html.thanks .fff span{border-color:#8a4b14;color:#d2691e}
           <label for="codeIn">Type the code from your host</label>
           <input id="codeIn" class="code-in" maxlength="4" autocomplete="off" spellcheck="false" placeholder="ABCD">
           <button id="joinBtn" class="btn big">join</button>
+        </div>
+        <div class="on-box">
+          <h3>public servers</h3>
+          <p>Play with anyone who's online, no code needed! Join a server, or start an empty one for others to find.</p>
+          <button id="publicBtn" class="btn big">Public servers</button>
+          <div id="pubList" class="pub-list" hidden></div>
         </div>
       </div>
       <p id="onlineMsg" class="msg" role="status"></p>
@@ -5168,8 +5179,8 @@ function openOnline() { G.state = 'online'; showScreen('online'); onlineMsg('');
 
 // ----- host -----
 function firstFree() { const L = Net.lobby; const c = CHARS.find(c => !c.secret && !L.players.some(p => p.ch === c.id) && !L.cpus.includes(c.id)); return c ? c.id : null; }
-function hostRoom() {
-  const name = myName(), code = genCode();
+function hostRoom(fixed) { // `fixed`: a public server's code (otherwise you get a new random code)
+  const name = myName(), code = fixed || genCode();
   let peer; try { peer = makePeer(PREFIX + code); } catch (e) { return onlineMsg('Online play could not load. Check your internet connection and reload the page.'); }
   onlineMsg('Making your team…');
   Net.role = 'host'; Net.peer = peer;
@@ -5186,7 +5197,11 @@ function hostRoom() {
   });
   peer.on('error', err => {
     if (Net.peer !== peer) return;
-    if (err && err.type === 'unavailable-id') { Net.peer = null; try { peer.destroy(); } catch (e) {} return hostRoom(); }
+    if (err && err.type === 'unavailable-id') {
+      Net.peer = null; try { peer.destroy(); } catch (e) {}
+      if (fixed) { Net.role = null; $('codeIn').value = fixed; return joinRoom(); } // someone else just started this public server: join them instead
+      return hostRoom();
+    }
     if (err && err.type === 'peer-unavailable') return; // a joiner went away
     if (G.state === 'online') endNet('Could not start a team (' + (err && err.type || 'error') + '). Try again.', true);
   });
@@ -5196,6 +5211,10 @@ function hostOnData(conn, d) {
   if (Net.role !== 'host' || !d || typeof d !== 'object') return;
   const L = Net.lobby; if (!L) return;
   const id = conn.peer;
+  if (d.t === 'peek') { // someone looking at the public servers list: tell them how many are here and if we're fighting, then hang up
+    try { conn.send({ t:'peek', players:L.players.length, playing:G.state !== 'lobby' }); } catch (e) {}
+    return setTimeout(() => conn.close(), 300);
+  }
   if (d.t === 'hello') {
     if (G.state !== 'lobby') { conn.send({ t:'busy' }); return setTimeout(() => conn.close(), 300); }
     if (L.players.length >= 6) { conn.send({ t:'full' }); return setTimeout(() => conn.close(), 300); }
@@ -5477,6 +5496,42 @@ $('onlineBtn').onclick = () => { audioOn(); openOnline(); };
 $('onlineBack').onclick = () => { if (Net.role) endNet(''); G.state = 'title'; showScreen('title'); $('okBtn').focus(); };
 $('hostBtn').onclick = () => { audioOn(); if (!Net.role) hostRoom(); };
 $('joinBtn').onclick = () => { audioOn(); if (!Net.role) joinRoom(); };
+// ----- public servers: five rooms with fixed codes that anyone can find. Whoever starts an empty one is its host -----
+const PUBLIC = [['PUBA', 'Server 1'], ['PUBB', 'Server 2'], ['PUBC', 'Server 3'], ['PUBD', 'Server 4'], ['PUBE', 'Server 5']];
+let pubInfo = {}, pubPeer = null;
+function renderPublic() {
+  const box = $('pubList'); box.innerHTML = '';
+  for (const [code, name] of PUBLIC) {
+    const info = pubInfo[code], row = document.createElement('div'); row.className = 'pub-row';
+    const text = info === undefined ? 'checking...' : !info ? 'empty: be the first!' : info.playing ? `${info.players} playing, in a fight` : info.players >= 6 ? 'full' : `${info.players} waiting in the team`;
+    row.innerHTML = `<b>${name}</b><span>${text}</span>`;
+    if (info !== undefined) {
+      const b = document.createElement('button'); b.className = 'btn'; b.id = 'pub-' + code;
+      b.textContent = !info ? 'start it' : info.playing || info.players >= 6 ? 'busy' : 'join'; b.disabled = !!info && (info.playing || info.players >= 6);
+      b.onclick = () => { audioOn(); if (Net.role) return; stopPeek(); if (!info) hostRoom(code); else { $('codeIn').value = code; joinRoom(); } };
+      row.append(b);
+    }
+    box.append(row);
+  }
+  const r = document.createElement('button'); r.className = 'btn'; r.id = 'pubRefresh'; r.textContent = 'refresh'; r.onclick = peekPublic; box.append(r);
+}
+function stopPeek() { const p = pubPeer; pubPeer = null; if (p) setTimeout(() => { try { p.destroy(); } catch (e) {} }, 300); }
+function peekPublic() { // ask each public server how many people are on it (a server with nobody on it just doesn't answer)
+  stopPeek(); pubInfo = {}; $('pubList').hidden = false; renderPublic();
+  let peer; try { peer = makePeer(); } catch (e) { return onlineMsg('Online play could not load. Check your internet connection and reload the page.'); }
+  pubPeer = peer;
+  const got = (code, info) => { if (pubPeer !== peer || pubInfo[code] !== undefined) return; pubInfo[code] = info; renderPublic(); if (PUBLIC.every(([c]) => pubInfo[c] !== undefined)) stopPeek(); };
+  peer.on('open', () => {
+    for (const [code] of PUBLIC) {
+      const c = peer.connect(PREFIX + code, { reliable:true, serialization:'json' });
+      c.on('open', () => { try { c.send({ t:'peek' }); } catch (e) {} });
+      c.on('data', d => { if (d && d.t === 'peek') got(code, { players:+d.players || 0, playing:!!d.playing }); });
+      setTimeout(() => got(code, null), 4000);
+    }
+  });
+  peer.on('error', () => {}); // "nobody there" errors just mean that server is empty
+}
+$('publicBtn').onclick = () => { audioOn(); if (!Net.role) peekPublic(); };
 $('codeIn').addEventListener('input', e => { e.target.value = e.target.value.toUpperCase().replace(/[^A-Z]/g, ''); });
 $('codeIn').addEventListener('keydown', e => { if (e.key === 'Enter') $('joinBtn').click(); });
 $('copyCode').onclick = () => {
