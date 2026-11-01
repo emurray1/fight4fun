@@ -3338,6 +3338,7 @@ function shopStep(dt) {
     rp.done = true; shopSay(rp.lines[Math.floor(Math.random()*rp.lines.length)], null, 3.4);
   } SHOP.keeperLaughT = Math.max(0, (SHOP.keeperLaughT || 0) - dt);
   SHOP.msgT = Math.max(0, SHOP.msgT - dt); SHOP.echoT = Math.max(0, (SHOP.echoT || 0) - dt);
+  if (isAdmin() && ADMIN_TALK[SHOP.floor] && (SHOP.chatT = (SHOP.chatT || 0) - dt) <= 0) adminChatter(); // the shopkeepers never stop talking
   const v = SHOP.visit; // talk, notice you, run to the stairs, climb up and away
   if (v) {
     v.t += dt;
@@ -4479,7 +4480,24 @@ function openShop() {
   SHOP.enterClock = 0; SHOP.replies = CHARS[SHOP.who].id === 'shuriken' ? SHURIKEN_REPLIES.map(r => ({ ...r })) : [];
   openPage('shop'); renderShopCard(true); cv.focus();
 }
-function shopSay(text, sound, secs = 3.5, who = 1) { SHOP.msg = text; SHOP.msgT = secs; SHOP.msgWho = who; if (sound && sfx[sound]) sfx[sound](); } // `who`: which shopkeeper says it in the break room
+// nobody in the shop can see the Admin: the shopkeepers act like the shop is empty and just keep talking
+// (to themselves, or to each other in the break room). Whatever they would have said to him, they say this instead
+const isAdmin = () => CHARS[SHOP.who].id === 'admin';
+const ADMIN_TALK = {
+  1:['La la la... nobody here today. Just me and my shop.', '...so I put the sunglasses on the stand. Then I took them off. Then I put them back on.', 'Note to self: dust the cool hat. It\'s looking dusty.',
+    '*hums* Dum dee dum... dum dee dum...', 'Is it lunch time yet? It feels like lunch time.', 'Hmm, I wonder if anyone will come in today. Probably not.', 'One sunglasses, one cool hat, one super cape... yep, all here.'],
+  2:['*whispers to herself* ...okay... the shop is tidy... good...', 'It\'s so quiet up here... I like it quiet.', 'Maybe I\'ll tie another bow... a blue one this time...',
+    '*hums quietly* hmm hmm hmmm...', 'I hope the downstairs shopkeeper is having a good day... *blushes*', 'Nobody ever comes up here... that\'s okay...'],
+  6:[[1, '...and THAT\'s why you never leave cookies next to the cape stand.'], [2, 'Hehe... crumbs everywhere...'], [1, 'Did you hear something just now?'], [2, 'N-no... it\'s just us in here.'],
+    [1, 'Want some more tea?'], [2, 'Y-yes please...'], [1, 'The shop is SO empty today.'], [2, 'Mm-hm. Totally empty.'], [1, 'Pass the cookies?'], [2, 'Here you go...']],
+};
+function adminChatter() { // the next thing they say, to nobody
+  const lines = ADMIN_TALK[SHOP.floor], l = lines[SHOP.chat = ((SHOP.chat ?? -1) + 1) % lines.length];
+  Object.assign(SHOP, { msg:Array.isArray(l) ? l[1] : l, msgWho:Array.isArray(l) ? l[0] : 1, msgT:5.5, chatT:5, joke:false });
+}
+function shopSay(text, sound, secs = 3.5, who = 1) {
+  if (isAdmin() && ADMIN_TALK[SHOP.floor]) { if (SHOP.msgT <= 0) adminChatter(); return; } // they don't answer the Admin: they just keep going
+  SHOP.msg = text; SHOP.msgT = secs; SHOP.msgWho = who; if (sound && sfx[sound]) sfx[sound](); } // `who`: which shopkeeper says it in the break room
 function shopTalk() {
   const f = SHOP.floor, id = CHARS[SHOP.who].id;
   if (f === 2 && id === 'tri' && !isFriend()) { // she opens up to Angry Triangle a little more each time
@@ -4702,6 +4720,11 @@ function fillShopCard(card, ch, it) {
     const b = document.createElement('button'); b.className = 'btn'; b.id = 'smiTalk'; b.textContent = got ? 'chat' : 'say hi';
     b.onclick = () => { smiTalk(); cv.focus(); };
     card.querySelector('.row').append(b, Object.assign(document.createElement('span'), { innerHTML:press }));
+    return;
+  }
+  if (!it && SHOP.nearKeeper && isAdmin() && ADMIN_TALK[SHOP.floor]) {
+    card.innerHTML = SHOP.floor === 6 ? '<h3>The shopkeepers, on their break</h3><p>They can\'t see the Admin! They act like nobody is here, and just keep chatting with each other...</p>'
+      : `<h3>${SHOP.floor === 2 ? 'The funny fun shopkeeper' : 'The shopkeeper'}</h3><p>${SHOP.floor === 2 ? 'She can\'t' : 'They can\'t'} see the Admin! ${SHOP.floor === 2 ? 'She acts' : 'They act'} like nobody is here, and just keep talking...</p>`;
     return;
   }
   if (!it && SHOP.nearKeeper) {
