@@ -390,6 +390,15 @@ html.thanks .fff span{border-color:#8a4b14;color:#d2691e}
       <h3>🎉 Silly effects</h3>
       <p class="note" id="apFxNote"></p>
       <div class="ap-row"><button id="apFlip" class="btn ap-big"><i>🙃</i>upside-down</button><button id="apFloaty" class="btn ap-big"><i>🎈</i>floaty</button><button id="apDisco" class="btn ap-big"><i>🪩</i>disco</button><button id="apBoom" class="btn ap-big"><i>💣</i>BOOM!</button></div>
+      <h3>🧸 Spawn things</h3>
+      <p class="note" id="apSpawnNote"></p>
+      <div class="ap-row"><button id="apAddCpu" class="btn ap-big"><i>🤖</i>add a computer</button><button id="apBall" class="btn ap-big"><i>⚽</i>bouncy ball</button><button id="apPiano" class="btn ap-big"><i>🎹</i>falling piano</button><button id="apWall" class="btn ap-big"><i>🧱</i>wall</button></div>
+      <h3>🎮 Control the computers</h3>
+      <p class="note" id="apCpuNote"></p>
+      <div class="ap-row"><button id="apCpu-dance" class="btn ap-big"><i>💃</i>dance</button><button id="apCpu-eachother" class="btn ap-big"><i>⚔️</i>fight each other</button><button id="apCpu-flee" class="btn ap-big"><i>🏃</i>run away from me</button><button id="apCpu-copy" class="btn ap-big"><i>🪞</i>copy me</button><button id="apCpu-normal" class="btn ap-big"><i>🔄</i>back to normal</button></div>
+      <h3>⏱️ Time powers</h3>
+      <p class="note" id="apTimeNote"></p>
+      <div class="ap-row"><button id="apSpeed-slow" class="btn ap-big"><i>🐢</i>slow motion</button><button id="apSpeed-normal" class="btn ap-big"><i>🙂</i>normal speed</button><button id="apSpeed-fast" class="btn ap-big"><i>⚡</i>super fast</button><button id="apFreeze" class="btn ap-big"><i>🧊</i>freeze everyone</button></div>
       <h3>🗺️ Change the map</h3>
       <p class="note" id="apMapNote"></p>
       <div class="ap-row" id="apMaps"></div>
@@ -1592,12 +1601,12 @@ function makeFighter(ch, control, x, idx) {
 }
 
 function startMatch() {
-  G.boss = false; G.fx = {}; // (silly effects from the admin panel start off in a new fight)
+  G.boss = false; G.fx = {}; G.cpuMode = null; // (silly effects from the admin panel start off in a new fight)
   G.wins = {}; G.round = 0; G.rounds = setup.rounds; G.online = null; MAP = MAPS[setup.map] || MAPS.cloud; G.mode = setup.mode; G.lineup = CHARS.filter(c => setup.slots[c.id] !== 'off' && unlocked(c)).map(c => ({ ch:c, control:setup.slots[c.id], team:setup.teams[c.id] || 0 }));
   G.state = 'fight'; G.paused = false; showScreen(null); cv.focus(); if (G.mode === 'race') startRace(); else if (G.mode === 'horror') startHorror(); else startRound();
 }
 function startBossFight() { // you (shopping as your fighter) against %#@%, one round on Cloud Island
-  G.boss = true; G.fx = {}; G.wins = {}; G.round = 0; G.rounds = 1; G.online = null; MAP = MAPS.cloud; G.mode = 'ffa';
+  G.boss = true; G.fx = {}; G.cpuMode = null; G.wins = {}; G.round = 0; G.rounds = 1; G.online = null; MAP = MAPS.cloud; G.mode = 'ffa';
   G.lineup = [{ ch:CHARS[SHOP.who], control:'local', team:0, tag:'YOU' }, { ch:BOSS, control:'cpu', team:1, tag:'BOSS' }];
   G.state = 'fight'; G.paused = false; showScreen(null); musicUpdate(); cv.focus(); startRound();
 }
@@ -1628,7 +1637,7 @@ function startRound() {
   } else {
     xs.push(...ffaXs(n)); xs.sort(() => Math.random() - 0.5);
   }
-  G.hazards = []; G.waves = []; G.bans = []; G.popups = []; G.broT = 0.5; G.hzT = 3; G.hzCar = 4.5; G.hzBird = 7; G.hzZap = 3;
+  G.hazards = []; G.waves = []; G.bans = []; G.popups = []; G.things = []; G.freeze = null; G.broT = 0.5; G.hzT = 3; G.hzCar = 4.5; G.hzBird = 7; G.hzZap = 3;
   G.fighters = G.lineup.map((l, i) => { const f = makeFighter(l.ch, l.control, xs[i], i); f.team = l.team || 0; f.tag = l.tag || (l.control === 'cpu' ? 'CPU' : CTRL[l.control].tag); return f; });
   Composite.add(G.engine.world, G.fighters.map(f => f.body));
   ev('clear'); G.banner = null; G.phase = 'countdown'; G.timer = 3; G.lastCount = 4; G.goT = 0; G.champ = null;
@@ -1712,6 +1721,7 @@ function aiInput(p) {
   a.cd -= DT; a.think -= DT;
   if (p.grabbedBy) { if (Math.random() < D.mash) inp.punchP = true; return inp; }
   if (p.ko > 0) return inp;
+  const told = cpuModeInput(p); if (told) return told; // an admin told the computers what to do
   const x = b.position.x, y = b.position.y;
   // get back onto solid ground
   const gp = groundAt(x), ng = nearestGround(x);
@@ -1730,7 +1740,7 @@ function aiInput(p) {
   if (a.think <= 0 || !a.target || !a.target.alive) {
     a.think = rand(0.3, 0.7); let best = null, bd = 1e9;
     for (const q of G.fighters) {
-      if (q === p || !q.alive || (q.grabbedBy && q.grabbedBy !== p) || allies(p, q)) continue;
+      if (q === p || !q.alive || (q.grabbedBy && q.grabbedBy !== p) || allies(p, q) || (G.cpuMode === 'eachother' && q.control !== 'cpu')) continue; // ("fight each other": the computers leave the people alone)
       const d = Math.hypot(q.body.position.x - x, q.body.position.y - y) * (q.ko > 0 ? 0.55 : 1) * rand(0.85, 1.15);
       if (d < bd) { bd = d; best = q; }
     }
@@ -2371,8 +2381,10 @@ function step() {
     if (G.timer <= 0) { G.phase = 'fight'; G.goT = 0.9; ev('sfx','go'); }
   }
   G.goT = Math.max(0, G.goT - DT);
+  thawCheck();
   for (const p of G.fighters) {
     if (!p.alive) continue;
+    if (p.frozen) { p.input = BLANK; continue; } // frozen solid by an admin
     let inp = BLANK;
     if (p.control === 'cpu') { if (live && !sleepyCPUs()) inp = aiInput(p); }
     else if (p.control.startsWith('net:')) { const ri = netInput(p); if (live) inp = ri; }
@@ -2402,7 +2414,7 @@ function step() {
   Engine.update(G.engine, STEP);
   updateHazards();
   updateWaves();
-  updateBans(); brotherTalk();
+  updateBans(); brotherTalk(); updateThings();
   for (const p of G.fighters) {
     if (!p.alive) continue;
     p.grounded -= DT;
@@ -3616,6 +3628,7 @@ function drawFighter(p, t) {
   }
   g.save(); g.translate(x, y); g.rotate(b.angle); g.scale(1 + p.squash*0.6, 1 - p.squash);
   drawCharacter(g, p.ch, p.r, { facing:p.facing, ko:p.ko > 0, flash:p.flash, walk:p.walking ? p.walk : null, brave:p.ch.id === 'arrow' && G.fighters.some(f => f.ch.id === 'admin' && f.alive), ...(G.online ? {} : looks(p.ch)) });
+  if (isFrozen(p)) { g.save(); g.fillStyle = 'rgba(127,220,255,.55)'; g.strokeStyle = '#e8fbff'; g.lineWidth = 4; g.beginPath(); g.arc(0, 0, p.r*1.2, 0, TAU); g.fill(); g.stroke(); g.restore(); } // frozen in a block of ice
   g.restore();
   const fistR = p.r*0.3;
   const fist = (fx, fy) => { g.beginPath(); g.arc(fx, fy, fistR, 0, TAU); g.fillStyle = myColor(p.ch); g.fill(); g.lineWidth = 3.5; g.strokeStyle = C.ink; g.stroke(); };
@@ -4654,7 +4667,7 @@ let lastT = performance.now(), acc = 0;
 function frame(now) {
   const dt = Math.min(0.1, (now - lastT)/1000); lastT = now;
   if (G.online === 'client' && G.state === 'fight') { clientSmooth(dt); clientSendInput(now); }
-  else if (G.state === 'fight' && !G.paused) { acc += dt*1000; let n = 0; while (acc >= STEP && n < 6) { if (G.mode === 'race') raceStep(); else if (G.mode === 'horror') horrorStep(); else step(); acc -= STEP; n++; } if (n === 6) acc = 0; }
+  else if (G.state === 'fight' && !G.paused) { acc += dt*1000*((G.fx && G.fx.speed) || 1); let n = 0; while (acc >= STEP && n < 6) { if (G.mode === 'race') raceStep(); else if (G.mode === 'horror') horrorStep(); else step(); acc -= STEP; n++; } if (n === 6) acc = 0; }
   else if (G.state === 'shop') shopStep(dt);
   G.shake *= 0.85; if (!setup.shake) G.shake = 0;
   const sx = (Math.random() - 0.5)*G.shake*scale, sy = (Math.random() - 0.5)*G.shake*scale;
@@ -4670,7 +4683,7 @@ function frame(now) {
     drawArena(t);
     drawHazards(t);
     drawWaves();
-    drawBans(t);
+    drawBans(t); drawThings(t);
     for (const p of G.fighters) if (p.alive && !p.grabbing) drawFighter(p, t);
     for (const p of G.fighters) if (p.alive && p.grabbing) drawFighter(p, t);
     drawParticles(G.paused ? 0 : dt); if (G.boss) drawGlitches(t); drawDisco(t); if (flip) g.restore();
@@ -4889,7 +4902,7 @@ function openAdminPanel(from) {
   renderSeg('apWhoSeg', [['me', 'Just me'], ['all', 'Everyone']], 'cheatWho');
   renderSeg('apKeepPlaySeg', ONOFF_CHEAT, 'keepersPlay', () => { titleChars.innerHTML = ''; PLAYABLE().forEach(c => titleChars.appendChild(charCanvas(c, 78))); });
   renderSeg('apKeepWatchSeg', ONOFF_CHEAT, 'keepersWatch');
-  renderSwap(); renderPowers(); renderFx();
+  renderSwap(); renderPowers(); renderFx(); renderMore();
 }
 let apFrom = 'menu';
 $('adminBtn').onclick = () => { if (!unlocked(CHAR.admin)) return; audioOn(); openAdminPanel('menu'); };
@@ -4966,6 +4979,7 @@ function renderSwap() {
 const powerFight = () => G.state === 'fight' && G.mode !== 'race' && G.mode !== 'horror' && G.fighters && G.fighters.length && !!G.fighters[0].body;
 function adminPower(p, act, arg) { // on this computer, or on the host for an online admin
   if (act === 'fx' || act === 'boom') return adminFx(p, act, arg); // (silly effects)
+  if (act === 'spawn' || act === 'cpu' || act === 'speed' || act === 'freeze') return adminMore(p, act, arg); // (spawning, the computers, and time)
   if (act === 'rain') return ev('coinrain');
   if (act === 'map') { // the fight jumps to another map (this round starts over there)
     if (!MAPS[arg] || !powerFight() || G.online === 'client') return;
@@ -5067,6 +5081,110 @@ function renderFx() {
     const b = $(id); b.disabled = !live; b.lastChild.textContent = `${label}: ${fx[k] ? 'ON' : 'off'}`;
   }
   $('apBoom').disabled = !live;
+}
+// ----- more admin powers: spawn things, control the computers, and time powers -----
+// (they all run on this computer, or on the host for an online admin; other players see them through the host's updates)
+function adminMore(p, act, arg) {
+  if (!powerFight() || G.online === 'client') return;
+  if (act === 'spawn') return arg === 'cpu' ? addCpu(p) : spawnThing(p, arg);
+  if (act === 'cpu') { G.cpuMode = arg; G.cpuBy = p ? p.idx : -1; ev('pop', W/2, 220, { dance:'DANCE PARTY!', eachother:'Computers: fight each other!', flee:'RUN AWAY!', copy:'Copy me!', normal:'Computers back to normal' }[arg] || '', C.yellow); ev('sfx', 'zap'); return; }
+  if (act === 'speed') { G.fx = { ...(G.fx || {}), speed:{ slow:0.4, normal:1, fast:2 }[arg] || 1 }; ev('pop', W/2, 220, { slow:'Slow... motion...', normal:'Normal speed', fast:'SUPER FAST!' }[arg] || '', C.yellow); if (G.online === 'host') netBroadcast({ t:'fx', fx:G.fx }); return; }
+  if (act === 'freeze') { // everyone but you is frozen solid for 5 seconds
+    thaw(); G.freeze = { by:p ? p.idx : -1, until:G.time + 5 };
+    for (const q of G.fighters) if (q !== p && q.alive && q.body) { q.frozen = true; Body.setStatic(q.body, true); }
+    ev('pop', W/2, 220, 'FREEZE!', '#7fdcff'); ev('sfx', 'zap'); ev('shake', 6);
+  }
+}
+function thaw() { for (const q of G.fighters) if (q.frozen) { q.frozen = false; if (q.body && q.body.isStatic) Body.setStatic(q.body, false); } G.freeze = null; }
+function thawCheck() { if (G.freeze && G.time >= G.freeze.until) thaw(); }
+const isFrozen = p => p.frozen || (G.online === 'client' && G.freezeC && p.idx !== G.freezeC.by && G.freezeC.left > 0);
+// the computers doing what the admin told them (null means "fight like normal")
+function cpuModeInput(p) {
+  const mode = G.cpuMode, me = G.fighters.find(f => f.idx === G.cpuBy);
+  if (!mode || mode === 'normal' || mode === 'eachother') return null;
+  if (mode === 'dance') return { x:Math.sin(G.time*5 + p.idx*2) > 0 ? 1 : -1, down:false, jumpP:Math.random() < 0.05, punchP:Math.random() < 0.06, grabP:false, specialP:false };
+  if (!me || !me.alive || !me.body) return null;
+  if (mode === 'flee') { const dx = p.body.position.x - me.body.position.x; return { x:dx >= 0 ? 1 : -1, down:false, jumpP:Math.abs(dx) < 220 && Math.random() < 0.08, punchP:false, grabP:false, specialP:false }; }
+  if (mode === 'copy') return { ...(me.input || BLANK) };
+  return null;
+}
+function addCpu(p) { // a new computer player drops in (on your team, in Team vs team) for the rest of this round
+  const used = new Set(G.fighters.map(f => f.ch.id)), ch = PLAYABLE().find(c => !used.has(c.id));
+  if (!ch) return;
+  const idx = G.fighters.length, x = Math.max(200, Math.min(W - 200, (p ? p.body.position.x : W/2) + rand(-250, 250))), f = makeFighter(ch, 'cpu', x, idx);
+  f.team = p ? p.team || 0 : 0; f.tag = 'CPU'; Body.setPosition(f.body, { x, y:120 }); Composite.add(G.engine.world, f.body); G.fighters.push(f);
+  ev('pop', x, 80, `${ch.name} joins!`, C.green); ev('sfx', 'zap');
+  if (G.online === 'host') netBroadcast({ t:'addf', idx, ch:ch.id, team:f.team });
+}
+// bouncy balls and walls are real things you bump into; pianos fall out of the sky onto someone
+function spawnThing(p, kind) {
+  const x0 = p ? p.body.position.x : W/2, dir = p ? p.facing || 1 : 1;
+  if (kind === 'ball') {
+    const body = Bodies.circle(Math.max(80, Math.min(W - 80, x0 + dir*140)), 120, 34, { restitution:0.95, friction:0.02, frictionAir:0.002, density:0.0008, label:'thing', collisionFilter:{ category:CAT.WORLD, mask:CAT.WORLD|CAT.PLAYER } });
+    Body.setVelocity(body, { x:dir*6, y:0 }); Composite.add(G.engine.world, body); G.things.push({ kind:'ball', body });
+  } else if (kind === 'wall') {
+    const x = Math.max(60, Math.min(W - 60, x0 + dir*150)), gp = groundAt(x), top = gp ? gp.top : 640;
+    const body = Bodies.rectangle(x, top - 110, 44, 220, { isStatic:true, label:'thing', collisionFilter:{ category:CAT.WORLD, mask:CAT.WORLD|CAT.PLAYER } });
+    Composite.add(G.engine.world, body); G.things.push({ kind:'wall', body });
+  } else if (kind === 'piano') { // aimed at the closest fighter who isn't you or on your team
+    const foes = G.fighters.filter(q => q !== p && q.alive && !(p && allies(p, q))).sort((a, b) => Math.abs(a.body.position.x - x0) - Math.abs(b.body.position.x - x0));
+    const tx = foes.length ? foes[0].body.position.x : x0 + dir*200;
+    G.things.push({ kind:'piano', x:tx, y:-120, vy:0, by:p });
+  } else return;
+  ev('sfx', 'zap');
+}
+function updateThings() {
+  if (!G.things || !G.things.length) return;
+  for (const o of G.things) {
+    if (o.kind === 'ball' && o.body.position.y > WATER + 200) o.gone = true; // fell in the water
+    if (o.kind !== 'piano') continue;
+    o.vy += 2200*DT; o.y += o.vy*DT;
+    for (const q of G.fighters) { // CRASH! onto anyone under it
+      if (!q.alive || q === o.by || !q.body || Math.abs(q.body.position.x - o.x) > 75 + q.r || Math.abs(q.body.position.y - (o.y + 45)) > q.r + 20) continue;
+      hurt(q, 60); Body.setVelocity(q.body, { x:(Math.sign(q.body.position.x - o.x) || 1)*6, y:8 }); ev('pop', q.body.position.x, q.body.position.y - q.r - 40, 'CRASH!', C.ink); o.gone = true;
+    }
+    const gp = groundAt(o.x); if (!o.gone && gp && o.y + 45 >= gp.top) o.gone = true; // smashed on the ground
+    if (o.gone) { ev('burst', o.x, o.y + 30, C.ink, 14); ev('burst', o.x, o.y + 30, C.white, 10); ev('sfx', 'slam'); ev('shake', 10); }
+    if (o.y > H + 200) o.gone = true;
+  }
+  for (const o of G.things) if (o.gone && o.body) Composite.remove(G.engine.world, o.body);
+  G.things = G.things.filter(o => !o.gone);
+}
+function drawThings(t) {
+  for (const o of G.things || []) {
+    const x = o.body ? o.body.position.x : o.x, y = o.body ? o.body.position.y : o.y, a = o.body ? o.body.angle : o.a || 0;
+    g.save(); g.translate(x, y); g.rotate(a);
+    if (o.kind === 'ball') { // a beach ball
+      for (let i=0;i<6;i++) { g.fillStyle = [C.red, C.white, C.blue, C.white, C.yellow, C.white][i]; g.beginPath(); g.moveTo(0, 0); g.arc(0, 0, 34, i*TAU/6, (i + 1)*TAU/6); g.closePath(); g.fill(); }
+      g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.arc(0, 0, 34, 0, TAU); g.stroke();
+    } else if (o.kind === 'wall') { // a brick wall
+      g.fillStyle = '#b5532c'; g.fillRect(-22, -110, 44, 220); g.strokeStyle = '#7a3418'; g.lineWidth = 2;
+      for (let r = 0; r < 11; r++) { g.beginPath(); g.moveTo(-22, -110 + r*20); g.lineTo(22, -110 + r*20); g.stroke(); const off = r % 2 ? 0 : 11; g.beginPath(); g.moveTo(off - 11, -110 + r*20); g.lineTo(off - 11, -90 + r*20); g.moveTo(off + 11, -110 + r*20); g.lineTo(off + 11, -90 + r*20); g.stroke(); }
+      g.strokeStyle = C.ink; g.lineWidth = 3; g.strokeRect(-22, -110, 44, 220);
+    } else if (o.kind === 'piano') { // a grand piano, falling, with its legs sticking down
+      g.fillStyle = C.ink; g.beginPath(); g.moveTo(-75, -40); g.lineTo(55, -40); g.quadraticCurveTo(80, -40, 75, 0); g.lineTo(75, 20); g.lineTo(-75, 20); g.closePath(); g.fill();
+      g.fillStyle = C.white; g.fillRect(-72, 20, 120, 16); g.fillStyle = C.ink; for (let k = 0; k < 10; k++) if (k % 3 !== 2) g.fillRect(-66 + k*12, 20, 6, 9);
+      g.strokeStyle = C.ink; g.lineWidth = 6; for (const lx of [-62, 60]) { g.beginPath(); g.moveTo(lx, 36); g.lineTo(lx, 52); g.stroke(); }
+      if (o.vy > 300 || !o.body) { g.strokeStyle = 'rgba(0,0,0,.25)'; g.lineWidth = 4; for (const lx of [-50, 0, 50]) { g.beginPath(); g.moveTo(lx, -50); g.lineTo(lx, -110); g.stroke(); } } // whoosh lines
+    }
+    g.restore();
+  }
+}
+// the panel buttons for all of these
+const useMore = (act, arg) => { if (G.online === 'client') { if (Net.host) try { Net.host.send({ t:'apow', act, arg }); } catch (e) {} } else adminMore(myFighter(), act, arg); setTimeout(renderMore, 150); };
+$('apAddCpu').onclick = () => { useMore('spawn', 'cpu'); $('apMsg').textContent = 'A new computer player drops in!'; };
+$('apBall').onclick = () => { useMore('spawn', 'ball'); $('apMsg').textContent = 'Bouncy ball!'; };
+$('apPiano').onclick = () => { useMore('spawn', 'piano'); $('apMsg').textContent = 'Look out below! A piano!'; };
+$('apWall').onclick = () => { useMore('spawn', 'wall'); $('apMsg').textContent = 'A wall pops up next to you!'; };
+for (const m of ['dance', 'eachother', 'flee', 'copy', 'normal']) $('apCpu-' + m).onclick = () => { useMore('cpu', m); $('apMsg').textContent = $('apCpu-' + m).textContent.slice(2) + '!'; };
+for (const s of ['slow', 'normal', 'fast']) $('apSpeed-' + s).onclick = () => { useMore('speed', s); $('apMsg').textContent = $('apSpeed-' + s).textContent.slice(2) + '!'; };
+$('apFreeze').onclick = () => { useMore('freeze'); $('apMsg').textContent = 'Everyone else is frozen for 5 seconds!'; };
+function renderMore() {
+  const live = powerFight(), off = 'These work during a fight (not in races or Horror): press the admin button in a fight.';
+  $('apSpawnNote').textContent = live ? 'Drop things into the fight! (Walls and balls last until the round ends.)' : off;
+  $('apCpuNote').textContent = live ? `Tell the computer players what to do. Right now: ${{ dance:'dancing', eachother:'fighting each other', flee:'running away from you', copy:'copying you' }[G.cpuMode] || 'fighting normally'}.` : off;
+  $('apTimeNote').textContent = live ? `Speed up or slow down the whole fight, or freeze everyone but you for 5 seconds. Right now: ${{ 0.4:'slow motion', 2:'super fast' }[(G.fx && G.fx.speed) || 1] || 'normal speed'}.` : off;
+  for (const b of document.querySelectorAll('#apAddCpu, #apBall, #apPiano, #apWall, [id^="apCpu-"], [id^="apSpeed-"], #apFreeze')) b.disabled = !live;
 }
 // fight cheats from the admin panel. Whose cheats count: this computer's (in setup), and, when you're hosting an online fight,
 // each online admin's too (they come with their button presses). "Just me" (cheatWho 'me') only gives them to that person's own fighter
@@ -5531,7 +5649,7 @@ function horrorSnapshot() {
 }
 function snapshot() {
   const f = G.fighters.map(p => { const b = p.body; return [r1(b.position.x), r1(b.position.y), r2(b.angle), p.alive ? 1 : 0, p.ko > 0 ? r1(p.ko) : 0, Math.round(p.dizzy), p.facing, r2(p.punchAnim), p.flash > 0 ? r2(p.flash) : 0, p.grabbing ? p.grabbing.idx : -1, r2(p.squash), p.special && p.special.kind === 'glitch' ? [r1(p.special.x), r1(p.special.y), r2(p.special.t), p.special.boom ? 1 : 0] : 0, p.walking ? r1(p.walk) : -1, Math.round(p.r)]; }); // (the last three: Missing Arrow's glitch fest, how far along his steps the Admin is, and how big they are)
-  return { t:'s', ph:G.phase, tm:r2(G.timer), go:r2(G.goT), bn:G.banner, w:G.wins, f, c:G.clouds.map(c => r1(c.position.x)), hz:(G.hazards || []).map(h => [HZ_CODES.indexOf(h.type), r1(h.x), r1(h.y), r2(Math.max(0, h.warn)), h.type === 'car' ? h.dir*10 + (h.dir > 0 ? h.c : -h.c) : h.type === 'bird' ? h.dir : h.type === 'zap' ? h.wire : h.type === 'geyser' ? Math.round(h.live*100) : 0]), wv:(G.waves || []).map(w => [r1(w.x), r1(w.y), w.dir, Math.round(w.dist), w.owner]), ban:(G.bans || []).map(b => [r1(b.x), b.dir]), e:NETEV.splice(0) };
+  return { t:'s', ph:G.phase, tm:r2(G.timer), go:r2(G.goT), bn:G.banner, w:G.wins, f, c:G.clouds.map(c => r1(c.position.x)), hz:(G.hazards || []).map(h => [HZ_CODES.indexOf(h.type), r1(h.x), r1(h.y), r2(Math.max(0, h.warn)), h.type === 'car' ? h.dir*10 + (h.dir > 0 ? h.c : -h.c) : h.type === 'bird' ? h.dir : h.type === 'zap' ? h.wire : h.type === 'geyser' ? Math.round(h.live*100) : 0]), wv:(G.waves || []).map(w => [r1(w.x), r1(w.y), w.dir, Math.round(w.dist), w.owner]), ban:(G.bans || []).map(b => [r1(b.x), b.dir]), th:(G.things || []).map(o => [o.kind, r1(o.body ? o.body.position.x : o.x), r1(o.body ? o.body.position.y : o.y), r2(o.body ? o.body.angle : 0)]), fz:G.freeze ? [G.freeze.by, r1(G.freeze.until - G.time)] : 0, e:NETEV.splice(0) };
 }
 
 // A stand-in for PeerJS that talks between browser tabs, used for testing with ?mock=1
@@ -5678,7 +5796,7 @@ function hostToggleCpu(ch) {
   broadcastLobby();
 }
 function hostStartMatch() {
-  G.fx = {};
+  G.fx = {}; G.cpuMode = null;
   const L = Net.lobby, lineup = [];
   for (const c of CHARS) {
     const pl = L.players.find(p => p.ch === c.id);
@@ -5747,6 +5865,7 @@ function clientOnData(d) {
       if (G.champ) showResults();
       break;
     case 'tolobby': G.online = null; openLobby(); break;
+    case 'addf': { const ch = CHAR[d.ch]; if (ch && !G.fighters.some(f => f.idx === d.idx)) G.fighters.push({ ch, control:'cpu', tag:'CPU', team:d.team || 0, idx:d.idx, r:38*(ch.size || 1), me:false, body:{ position:{ x:800, y:120 }, angle:0 }, tgt:null, seen:false, alive:true, ko:0, dizzy:0, facing:1, punchAnim:0, flash:0, grabbing:null, squash:0 }); break; } // an admin added a computer player
     case 'fx': G.fx = d.fx || {}; break; // an admin switched a silly effect
     case 'resize': { const p = G.fighters.find(f => f.idx === d.idx); if (p) p.r = +d.r || p.r; break; } // someone went giant or tiny
     case 'map': if (MAPS[d.map]) { MAP = MAPS[d.map]; G.clouds = ledgeObjs(MAP); } break; // the host moved the fight to another map
@@ -5760,7 +5879,7 @@ function clientOnData(d) {
 }
 function clientLeave() { try { if (Net.host && Net.host.open) Net.host.send({ t:'bye' }); } catch (e) {} endNet('You left the team.'); }
 function clientStart(d) {
-  G.fx = {};   G.online = 'client'; G.mode = d.mode || 'ffa'; G.rounds = d.rounds || 3; G.wins = {}; G.particles = []; G.banner = null; G.phase = 'countdown'; G.timer = 3; G.goT = 0; G.paused = false;
+  G.fx = {}; G.cpuMode = null;   G.online = 'client'; G.mode = d.mode || 'ffa'; G.rounds = d.rounds || 3; G.wins = {}; G.particles = []; G.banner = null; G.phase = 'countdown'; G.timer = 3; G.goT = 0; G.paused = false;
   const me = 'net:' + (Net.peer && Net.peer.id);
   if (G.mode === 'race') { // the host drives everything; these karts just show where the host says they are
     TRACK = (RACE_TRACKS[d.track] || RACE_TRACKS.gp).built;
@@ -5788,6 +5907,7 @@ function applySnap(s) {
   if (s.c) s.c.forEach((x, i) => { if (G.clouds[i]) G.clouds[i].tx = x; });
   G.waves = (s.wv || []).map(a => ({ x:a[0], y:a[1], dir:a[2], dist:a[3], owner:a[4] }));
   G.bans = (s.ban || []).map(a => ({ x:a[0], dir:a[1] }));
+  G.things = (s.th || []).map(a => ({ kind:a[0], x:a[1], y:a[2], a:a[3] })); G.freezeC = s.fz ? { by:s.fz[0], left:s.fz[1] } : null;
   G.hazards = (s.hz || []).map(a => { const type = HZ_CODES[a[0]] || 'ice'; return { type, x:a[1], y:a[2], warn:a[3], r: type === 'snow' ? 36 : 24, dir: type === 'car' ? Math.sign(a[4]) : a[4], c: Math.abs(a[4]) % 10, wire:a[4], live: type === 'geyser' ? a[4]/100 : a[2], ph:a[3] ? 0 : (a[1]|0) % 7 }; });
   for (const e of s.e || []) runEv(...e);
 }
