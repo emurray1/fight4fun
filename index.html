@@ -538,8 +538,8 @@ const CHARS = [
   { id:'shuriken', name:'Grumpy Shuriken', color:'#b97a57', shape:'shuriken', trait:'Fast and sharp. Special: dashes forward',            speed:1.2,  power:1.1,  weight:0.85, jump:1.0 },
   // the missing guy from the "HAVE YOU SEEN HIM?" poster: locked in a cage past the 5th floor until you break him out
   { id:'arrow',    name:'Missing Arrow',   color:'#ffb07c', shape:'arrow',    trait:'Scared and glitchy. Special: glitch fest', speed:1.1,  power:1.0,  weight:0.95, jump:1.08, secret:true, hint:'Have you seen him? Look past the 5th floor of the shop...' },
-  // the admin: you only get him with the admin code (on the "codes" page). Just a stand-in for now, until Mason makes him
-  { id:'admin',    name:'Admin',           color:'#ffd700', shape:'circle',   trait:'The boss of the whole game. Special: banned', speed:1.0,  power:1.0,  weight:1.0,  jump:1.0, secret:true, hint:'Do you know the code?' },
+  // the admin: you only get him with the admin code (on the "codes" page). A blocky black guy, drawn by Mason (his body in the fights is still a circle)
+  { id:'admin',    name:'Admin',           color:'#222222', shape:'circle',   trait:'The boss of the whole game. Special: banned', speed:1.0,  power:1.0,  weight:1.0,  jump:1.0, secret:true, hint:'Do you know the code?' },
 ];
 const CHAR = Object.fromEntries(CHARS.map(c => [c.id, c]));
 const unlocked = ch => !ch.secret || !!(shop.unlocked && shop.unlocked[ch.id]); // secret fighters stay locked until you earn them
@@ -842,9 +842,6 @@ function drawFace(g, ch, r, o = {}) {
       oval(0,0.3,0.25,0.09); g.strokeStyle = '#fff'; g.lineWidth = 0.035; line(-0.18,0.3,0.18,0.3); break;
     case 'circle':
       oval(-0.2,-0.2,0.065,0.13); oval(0.2,-0.2,0.065,0.13); oval(0,0.27,0.3,0.09); break;
-    case 'admin': // a big proud smile (a stand-in face until Mason draws him)
-      oval(-0.2,-0.18,0.08,0.1); oval(0.2,-0.18,0.08,0.1);
-      g.beginPath(); g.moveTo(-0.3,0.12); g.quadraticCurveTo(0,0.45,0.3,0.12); g.closePath(); g.fill(); break;
     case 'diamond':
       dot(-0.18,-0.04,0.09); dot(0.18,-0.04,0.09);
       g.fillStyle = ch.color; g.fillRect(-0.3,-0.16,0.6,0.1); g.fillStyle = C.ink;
@@ -950,7 +947,7 @@ function drawFace(g, ch, r, o = {}) {
   g.restore();
 }
 // where each fighter's eyes are (in face units), so the shop's sunglasses sit on them
-const EYES = { admin:[[-0.2,-0.18],[0.2,-0.18]], arrow:[[-0.18,0],[0.18,0]], tri:[[-0.17,0.06],[0.17,0.06]], circle:[[-0.2,-0.2],[0.2,-0.2]], diamond:[[-0.18,-0.04],[0.18,-0.04]], square:[[-0.18,-0.04],[0.18,-0.04]], sparkle:[[-0.18,-0.1],[0.18,-0.1]],
+const EYES = { arrow:[[-0.18,0],[0.18,0]], tri:[[-0.17,0.06],[0.17,0.06]], circle:[[-0.2,-0.2],[0.2,-0.2]], diamond:[[-0.18,-0.04],[0.18,-0.04]], square:[[-0.18,-0.04],[0.18,-0.04]], sparkle:[[-0.18,-0.1],[0.18,-0.1]],
   hex:[[-0.24,-0.12],[0.17,-0.13]], heart:[[-0.3,0.04],[0.3,0.04]], shuriken:[[-0.15,-0.05],[0.17,-0.06]] };
 function drawGlasses(g, [a, b], glow = false, lens = '#e8ff6a', three = false) { // the sunglasses from the shop (or, with glow, the round glow goggles, or the red and blue 3D glasses), drawn in face units between two eyes
   const d = Math.hypot(b[0] - a[0], b[1] - a[1]), lw = Math.min(0.3, d*0.8), lh = glow ? lw : 0.2;
@@ -969,7 +966,43 @@ function drawGlasses(g, [a, b], glow = false, lens = '#e8ff6a', three = false) {
   for (const s of [-1, 1]) { g.beginPath(); g.moveTo(s*d/2 - lw*0.3, lh*0.28); g.lineTo(s*d/2 - lw*0.02, -lh*0.28); g.stroke(); }
   g.restore();
 }
+// the Admin, from Mason's drawing: a blocky black guy leaning over, with "me is admin / mason, dad, alex" on his head and "i ♥ forsken" on his body.
+// It's drawn in the picture's own numbers (centred on 320, 260), then shrunk to fit the fighter
+function drawAdmin(g, r, col) {
+  const s = r/180;
+  g.save(); g.scale(s, s); g.translate(-320, -260);
+  g.fillStyle = col || '#000'; g.strokeStyle = '#3a3a3a'; g.lineWidth = 3; g.lineJoin = 'round';
+  const block = (cx, cy, w, h, a) => { g.save(); g.translate(cx, cy); g.rotate(a); g.beginPath(); g.rect(-w/2, -h/2, w, h); g.fill(); g.stroke(); g.restore(); };
+  block(183, 341, 60, 212, 0); // the arm hanging down on the left
+  block(409, 235, 180, 56, 0.6); // the arm sticking out on the right
+  block(357, 350, 62, 155, -0.08); // the leg
+  g.beginPath(); for (const [x, y] of [[240,318],[318,292],[398,368],[352,402]]) g.lineTo(x, y); g.closePath(); g.fill(); g.stroke(); // his hips
+  block(266, 227, 136, 160, -0.45); // his body, leaning over
+  block(212, 117, 75, 85, 0); // his head
+  g.textAlign = 'left'; g.textBaseline = 'middle';
+  g.fillStyle = C.white; g.font = `14px ${BODYFONT}`; g.fillText('me is admin', 176, 98); g.fillText('mason,dad', 184, 120); g.fillText('alex', 184, 136);
+  g.fillStyle = C.maroon; g.font = `36px ${FONT}`; g.fillText('i ♥', 197, 208); g.fillText('forsken', 197, 254);
+  g.restore();
+}
+const ADMIN_HEAD = { x:-0.6, y:-0.58, k:0.45 }; // where the Admin's little square head is (and how big), so hats and crowns sit on it
+function onAdminHead(g, r, draw) { g.save(); g.translate(ADMIN_HEAD.x*r, ADMIN_HEAD.y*r); g.scale(ADMIN_HEAD.k, ADMIN_HEAD.k); draw(); g.restore(); }
 function drawCharacter(g, ch, r, o = {}) {
+  if (ch.id === 'admin') { // he isn't a shape like the others, so he's drawn his own way (with his things on his little head)
+    const tt = performance.now()/1000;
+    if (o.cubes) drawGlitchCubes(g, r, tt, false);
+    if (o.wings) drawBatWings(g, r, tt);
+    if (o.cape) drawCape(g, r, o.facing || 1, tt, r);
+    drawAdmin(g, r, skinColor(o.skin));
+    if (o.flash > 0) { g.globalAlpha = Math.min(0.8, o.flash*6); drawAdmin(g, r, C.white); g.globalAlpha = 1; }
+    onAdminHead(g, r, () => {
+      if (o.headphones) drawHeadphones(g, r, -r, !!o.hat);
+      if (o.hat) drawHat(g, r, -r, o.facing || 1); else if (o.adminCrown) drawCrown(g, r, -r, C.blue);
+      if (o.bow) drawBow(g, r, -r - (o.hat ? r*0.5 : 0));
+    });
+    if (o.badge) drawBadge(g, r);
+    if (o.cubes) drawGlitchCubes(g, r, tt, true);
+    return;
+  }
   const robot = ch.shape === 'star6', tt = performance.now()/1000; // Nervous Hexstar is a nervous little robot who never stops shaking
   const shaky = robot || ch.shape === 'arrow'; // Missing Arrow trembles too, he's so scared
   if (shaky) { g.save(); g.translate(Math.sin(tt*(robot ? 45 : 33))*r*(robot ? 0.035 : 0.025), 0); }
@@ -1135,7 +1168,7 @@ function charCanvas(ch, px, o = {}) {
   const tall = o.crown || o.hat || o.adminCrown, r = px*(tall ? 0.27 : 0.33);
   g.translate(px/2, px*(tall ? 0.62 : 0.53));
   drawCharacter(g, ch, r, { facing:1, ko:o.ko, hat:o.hat && !o.crown, glasses:o.glasses, cape:o.cape, wings:o.wings, skin:o.skin, headphones:o.headphones, bow:o.bow && !o.crown, badge:o.badge, cubes:o.cubes, glasses3d:o.glasses3d, adminCrown:o.adminCrown && !o.crown, beanie:!o.crown && !o.adminCrown });
-  if (o.crown) drawCrown(g, r, -TOPS[ch.shape]*r);
+  if (o.crown) { if (ch.id === 'admin') onAdminHead(g, r, () => drawCrown(g, r, -r)); else drawCrown(g, r, -TOPS[ch.shape]*r); }
   return c;
 }
 
