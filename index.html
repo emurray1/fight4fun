@@ -544,7 +544,7 @@ html.thanks .fff span{border-color:#8a4b14;color:#d2691e}
         <div class="setting"><span>Rounds to win</span><div class="seg" id="roundsSeg"></div></div>
         <div class="setting"><span>Game mode</span><div class="seg" id="modeSeg"></div></div>
         <div class="setting"><span>Computer players</span><div class="seg" id="diffSeg"></div></div>
-        <div class="mapbox"><span>map</span><div class="seg" id="mapSeg"></div><div class="seg" id="trackSeg" hidden></div><div class="seg" id="hmapSeg" hidden></div><canvas id="mapPreview" width="480" height="270"></canvas><small id="mapDesc"></small></div>
+        <div class="mapbox"><span>map</span><div class="seg" id="mapSeg"></div><div class="seg" id="trackSeg" hidden></div><div class="seg" id="hmapSeg" hidden></div><div class="seg" id="hmonSeg" hidden></div><canvas id="mapPreview" width="480" height="270"></canvas><small id="mapDesc"></small></div>
         <button id="fightBtn" class="btn big">make fight happen</button>
         <p id="setupMsg" class="msg" role="status"></p>
       </aside>
@@ -655,7 +655,7 @@ const DIFF = { easy:{ punch:0.3, cd:0.9, mash:0.06, label:'Easy' }, normal:{ pun
 const MAX_HP = 200; // health points: when they run out, you get dizzy
 const TOPS = { star5:1.15, star4:1.25, tri:1.3, diamond:1.15, square:0.85, circle:1, star6:1.15, heart:0.75, shuriken:1.2, arrow:1.25 };
 
-const setup = { slots:{ star:'cpu', tri:'p1', circle:'cpu', diamond:'off', square:'cpu', sparkle:'off' }, rounds:3, diff:'normal', mode:'ffa', map:'cloud', track:'gp', hmap:'house', teams:{ star:0, tri:1, circle:0, diamond:1, square:1, sparkle:0, hex:0, heart:1, shuriken:0 }, sound:true, music:true, volume:1, shake:true, tags:true, halloween:'auto', christmas:'auto', thanksgiving:'auto', cheatSpeed:false, cheatJump:false, cheatSleepy:false, cheatWho:'me', keepersPlay:false, keepersWatch:false };
+const setup = { slots:{ star:'cpu', tri:'p1', circle:'cpu', diamond:'off', square:'cpu', sparkle:'off' }, rounds:3, diff:'normal', mode:'ffa', map:'cloud', track:'gp', hmap:'house', hmonster:'cpu', teams:{ star:0, tri:1, circle:0, diamond:1, square:1, sparkle:0, hex:0, heart:1, shuriken:0 }, sound:true, music:true, volume:1, shake:true, tags:true, halloween:'auto', christmas:'auto', thanksgiving:'auto', cheatSpeed:false, cheatJump:false, cheatSleepy:false, cheatWho:'me', keepersPlay:false, keepersWatch:false };
 try { const s = JSON.parse(localStorage.getItem('fff-setup') || 'null'); if (s && s.slots) Object.assign(setup, s); } catch (e) {}
 for (const c of CHARS) { if (!setup.slots[c.id]) setup.slots[c.id] = 'off'; if (setup.teams[c.id] == null) setup.teams[c.id] = 0; }
 const saveSetup = () => { try { localStorage.setItem('fff-setup', JSON.stringify(setup)); } catch (e) {} };
@@ -2922,15 +2922,19 @@ function monsterSees(m, p, evenHidden) {
   if (d > (HOUSE.range || MON.range) || (d > MON.hear && Math.abs(wrap(Math.atan2(dy, dx) - m.a)) > MON.half)) return false;
   return clearLine(m.x, m.y, p.x, p.y);
 }
+// who plays the monster: the host picks a fighter (setup.hmonster), or 'cpu' for the computer monster. There has to be someone left to hide
+const horrorMonsterLine = () => { const l = G.lineup.find(l => l.ch.id === setup.hmonster); return l && G.lineup.length > 1 ? l : null; };
 function startHorror() {
   HOUSE = HMAPS[setup.hmap] || HMAPS.house;
   G.round = 1; G.time = 0; G.engine = null; G.clouds = []; G.hazards = []; G.waves = [];
   const spawns = [...HOUSE.spawns].sort(() => Math.random() - 0.5);
-  G.fighters = G.lineup.map((l, i) => ({ ch:l.ch, control:l.control, idx:i, team:0, tag:l.tag || (l.control === 'cpu' ? 'CPU' : CTRL[l.control].tag), alive:true, caught:false, r:22,
+  const monLine = horrorMonsterLine(); // a person (or computer fighter) the host picked to be the monster, who isn't a survivor
+  G.fighters = G.lineup.filter(l => l !== monLine).map((l, i) => ({ ch:l.ch, control:l.control, idx:i, team:0, tag:l.tag || (l.control === 'cpu' ? 'CPU' : CTRL[l.control].tag), alive:true, caught:false, r:22,
     x:spawns[i % spawns.length][0], y:spawns[i % spawns.length][1], facing:1, walk:0, hidden:null, fear:0, noHideT:0, prevHeld:null, ai:{ path:[], repath:rand(0.2, 1), spot:null, last:null } }));
   const L = HOUSE.lair;
   G.horror = { left:SURVIVE_TIME, spots:HOUSE.spots.map(s => ({ ...s, who:null })), flash:0, nextFlash:rand(8, 14), beatT:0,
-    monster:{ x:L.x, y:L.y, r:30, a:Math.PI, state:'wait', waitT:MONSTER_WAIT, path:[], repath:0, target:null, spot:null, lastSeen:null, lostT:0, searchT:0, checkT:2, walk:0 } };
+    monster:{ x:L.x, y:L.y, r:30, a:Math.PI, state:'wait', waitT:MONSTER_WAIT, path:[], repath:0, target:null, spot:null, lastSeen:null, lostT:0, searchT:0, checkT:2, walk:0,
+      ch:monLine ? monLine.ch : null, control:monLine && monLine.control !== 'cpu' ? monLine.control : null, tag:monLine ? monLine.tag || (monLine.control === 'cpu' ? 'CPU' : CTRL[monLine.control].tag) : '', prevHeld:null } };
   ev('clear'); G.banner = null; G.phase = 'countdown'; G.timer = 3; G.lastCount = 4; G.goT = 0; G.champ = null;
 }
 function leaveSpot(p, scared) {
@@ -2961,7 +2965,7 @@ function moveSurvivor(p, inp) {
   }
   p.fear = Math.max(0, p.fear - DT);
   const mx = inp.mx || 0, my = inp.my || 0, d = Math.hypot(mx, my);
-  if (d > 0) { const sp = 250*Math.min(1.25, p.ch.speed)/d; p.x += mx*sp*DT; p.y += my*sp*DT; if (Math.abs(mx) > 0.2) p.facing = Math.sign(mx); p.walk += DT*12; }
+  if (d > 0) { const sp = 250*Math.min(1.25, p.ch.speed)*(cheatOn(p, 'cheatSpeed') ? 2 : 1)/d; p.x += mx*sp*DT; p.y += my*sp*DT; if (Math.abs(mx) > 0.2) p.facing = Math.sign(mx); p.walk += DT*12; }
   pushOut(p, p.r);
   if (inp.punchP && p.noHideT <= 0) {
     const s = Hh.spots.filter(s => !s.who).sort((a, b) => Math.hypot(a.x - p.x, a.y - p.y) - Math.hypot(b.x - p.x, b.y - p.y))[0];
@@ -2992,9 +2996,27 @@ function horrorAI(p) {
   else if (ai.spot) { const dx = ai.spot.x - p.x, dy = ai.spot.y - p.y, d = Math.hypot(dx, dy) || 1; inp.mx = dx/d; inp.my = dy/d; }
   return inp;
 }
+function playerMonster(m) { // a person playing the monster: walk around, catch anyone you touch, and press punch at a hiding spot to check it
+  const Hh = G.horror, inp = m.control.startsWith('net:') ? netInput(m) : humanInput(m);
+  const mx = inp.x || 0, my = (inp.down ? 1 : 0) - (inp.up ? 1 : 0), d = Math.hypot(mx, my);
+  if (d) { const sp = 210/d; m.x += mx*sp*DT; m.y += my*sp*DT; m.walk += DT*8; m.a = Math.atan2(my, mx); }
+  pushOut(m, 24);
+  const out = G.fighters.filter(p => !p.caught);
+  m.state = out.some(p => monsterSees(m, p)) ? 'chase' : 'patrol'; // its eyes go red when it sees someone
+  if (inp.punchP) {
+    const s = Hh.spots.slice().sort((a, b) => Math.hypot(a.x - m.x, a.y - m.y) - Math.hypot(b.x - m.x, b.y - m.y))[0];
+    if (s && Math.hypot(s.x - m.x, s.y - m.y) < 95) {
+      if (s.who) { ev('pop', s.x, s.y - 60, 'FOUND YOU!', C.red); catchSurvivor(s.who); }
+      else { ev('pop', s.x, s.y - 60, 'nobody here...', C.white); ev('sfx', 'growl'); }
+    }
+  }
+  for (const p of out) if (!p.hidden && !p.caught && Math.hypot(p.x - m.x, p.y - m.y) < m.r + p.r - 6) catchSurvivor(p);
+}
 function monsterStep(m) {
   const Hh = G.horror;
   if (m.waitT > 0) { m.waitT -= DT; if (m.waitT <= 0) { m.state = 'patrol'; ev('sfx','growl'); ev('pop', m.x - 140, m.y - 90, 'READY OR NOT...', C.red); ev('shake', 6); } return; }
+  if (monsterStunned(m)) return; // frozen by an admin
+  if (m.control) return playerMonster(m); // a person is the monster
   const out = G.fighters.filter(p => !p.caught);
   let seen = null, sd = 1e9;
   for (const p of out) if (monsterSees(m, p)) { const d = Math.hypot(p.x - m.x, p.y - m.y); if (d < sd) { sd = d; seen = p; } }
@@ -3054,7 +3076,7 @@ function horrorStep() {
     if (m.waitT <= 0) Hh.left -= DT;
     const left = G.fighters.filter(p => !p.caught);
     if (!left.length || Hh.left <= 0) {
-      G.banner = left.length ? { title:left.length === 1 ? `${left[0].ch.name} survived!` : `${left.length} fighters survived!`, sub:'The sun comes up and the monster runs away.' } : { title:'The monster got everyone!', sub:'Hide better next time...' };
+      G.banner = left.length ? { title:left.length === 1 ? `${left[0].ch.name} survived!` : `${left.length} fighters survived!`, sub:'The sun comes up and the monster runs away.' } : { title:Hh.monster.ch ? `${Hh.monster.ch.name}, the monster, got everyone!` : 'The monster got everyone!', sub:'Hide better next time...' };
       ev('sfx', left.length ? 'win' : 'growl'); G.phase = 'between'; G.timer = 3;
     }
   } else if (G.phase === 'between') { G.timer -= DT; if (G.timer <= 0) showResults(); }
@@ -3161,13 +3183,16 @@ function monsterCone(m) { // what the monster can see, stopped by the walls
   return pts;
 }
 const darkCv = document.createElement('canvas'); darkCv.width = W; darkCv.height = H; const dk = darkCv.getContext('2d');
+// is the person looking at this screen the monster? Then nobody else's light shows, so the monster has to find them in the dark
+const monsterView = () => { const m = G.horror && G.horror.monster; if (!m || !m.control) return false; if (G.online === 'client') return !!m.me; if (G.online === 'host') return m.control === 'local'; return !G.fighters.some(p => p.control !== 'cpu'); }; // (on one computer, only if nobody hiding shares the screen)
 function drawDarkness(t, cone) { // everything is dark, except near you, the candles and where the monster is looking
   const Hh = G.horror;
   dk.globalCompositeOperation = 'source-over'; dk.clearRect(0, 0, W, H);
   dk.fillStyle = `rgba(4,2,10,${0.92*(1 - Hh.flash*0.85)})`; dk.fillRect(0, 0, W, H);
   dk.globalCompositeOperation = 'destination-out';
   const hole = (x, y, r, k) => { const gr = dk.createRadialGradient(x, y, r*0.25, x, y, r); gr.addColorStop(0, `rgba(0,0,0,${k})`); gr.addColorStop(1, 'rgba(0,0,0,0)'); dk.fillStyle = gr; dk.beginPath(); dk.arc(x, y, r, 0, TAU); dk.fill(); };
-  for (const p of G.fighters) if (!p.caught) { const you = p.control !== 'cpu'; hole(p.x, p.y, p.hidden ? 60 : you ? 190 : 90, you ? 1 : 0.6); }
+  if (!monsterView()) for (const p of G.fighters) if (!p.caught) { const you = p.control !== 'cpu'; hole(p.x, p.y, p.hidden ? 60 : you ? 190 : 90, you ? 1 : 0.6); }
+  const mon = Hh.monster; if (mon.control && (G.online !== 'client' || mon.me)) hole(mon.x, mon.y - 30, 230, 1); // the person playing the monster can see around it
   for (const [cx, cy] of HOUSE.candles) hole(cx, cy - 10, 85 + Math.sin(t*9 + cx)*6, 0.75);
   if (cone) { dk.fillStyle = 'rgba(0,0,0,.45)'; dk.beginPath(); cone.forEach(([x, y], i) => i ? dk.lineTo(x, y) : dk.moveTo(x, y)); dk.closePath(); dk.fill(); }
   dk.globalCompositeOperation = 'source-over';
@@ -3185,22 +3210,28 @@ function drawSurvivor(p, t) {
 }
 function drawHorror(t, dt) {
   const Hh = G.horror, m = Hh.monster, active = m.waitT <= 0;
+  const flip = G.fx && G.fx.flip; if (flip) { g.save(); g.translate(W/2, H/2); g.rotate(Math.PI); g.translate(-W/2, -H/2); } // upside-down (an admin's silly effect)
   drawHouse(t, Hh.spots);
-  const things = [...G.fighters.filter(p => !p.caught && !p.hidden), m].sort((a, b) => a.y - b.y);
+  // the monster player only sees people who are in the light: near the monster, in its vision cone, by a candle, or in a lightning flash
+  const sneaky = monsterView(), lit = p => !sneaky || Hh.flash > 0.3 || Math.hypot(p.x - m.x, p.y - m.y) < 200 || monsterSees(m, p) || HOUSE.candles.some(([cx, cy]) => Math.hypot(p.x - cx, p.y - cy) < 85);
+  const things = [...G.fighters.filter(p => !p.caught && !p.hidden && lit(p)), m].sort((a, b) => a.y - b.y);
   for (const o of things) o === m ? drawMonster(m, t) : drawSurvivor(o, t);
   const cone = active ? monsterCone(m) : null;
   drawDarkness(t, cone);
   if (cone) { g.fillStyle = m.state === 'chase' || m.state === 'grab' ? 'rgba(255,40,40,.2)' : 'rgba(255,220,80,.1)'; g.beginPath(); cone.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.closePath(); g.fill(); }
   drawMonster(m, t, true); // its eyes glow in the dark
+  if (monsterStunned(m)) { g.save(); g.fillStyle = 'rgba(127,220,255,.55)'; g.strokeStyle = '#e8fbff'; g.lineWidth = 4; g.beginPath(); g.ellipse(m.x, m.y - 40, 60, 80, 0, 0, TAU); g.fill(); g.stroke(); g.restore(); } // frozen in ice
+  if (m.ch && setup.tags) drawSmallTag(m.x, m.y - 100, m.tag + ' (monster)', !m.control);
   if (m.state === 'search' && active) { g.font = `54px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = C.white; g.fillText('?', m.x, m.y - 120); }
-  for (const s of Hh.spots) {
+  for (const s of sneaky ? [] : Hh.spots) {
     const p = s.who; if (!p) continue;
     if ((t*0.7 + s.x) % 3 > 0.2) for (const e of [-1, 1]) { g.fillStyle = C.white; g.beginPath(); g.arc(s.x + e*7, s.y - 2, 4.5, 0, TAU); g.fill(); g.fillStyle = C.ink; g.beginPath(); g.arc(s.x + e*7 + 1.5, s.y - 1, 2, 0, TAU); g.fill(); } // peeking eyes
     const k = p.fear/FEAR_MAX; g.fillStyle = C.ink; roundRect(s.x - 32, s.y - 48, 64, 10, 4); g.fill(); g.fillStyle = k > 0.7 ? C.red : k > 0.4 ? C.orange : C.yellow; roundRect(s.x - 30, s.y - 46, 60*k, 6, 3); g.fill(); // the scared meter
     if (setup.tags) drawSmallTag(s.x, s.y - 54, p.tag, p.control === 'cpu');
   }
-  if (setup.tags) for (const p of G.fighters) if (!p.caught && !p.hidden) drawSmallTag(p.x, p.y - 24 - TOPS[p.ch.shape]*24, p.tag, p.control === 'cpu');
+  if (setup.tags) for (const p of G.fighters) if (!p.caught && !p.hidden && lit(p)) drawSmallTag(p.x, p.y - 24 - TOPS[p.ch.shape]*24, p.tag, p.control === 'cpu');
   drawParticles(G.paused ? 0 : dt);
+  drawDisco(t); if (flip) g.restore(); drawCoinRain(t);
   // the top bar: who is still out, who is hiding, who got caught
   const n = G.fighters.length, cw = Math.min(230, (W - 40 - (n-1)*12)/n), total = n*cw + (n-1)*12;
   let x = (W - total)/2;
@@ -3214,7 +3245,8 @@ function drawHorror(t, dt) {
     g.globalAlpha = 1; x += cw + 12;
   }
   if (G.phase === 'fight') {
-    const msg = !active ? `the monster comes out in ${Math.ceil(m.waitT)}... HIDE!` : `survive for ${Math.ceil(Hh.left)} more seconds`;
+    const msg = sneaky ? (!active ? `you come out in ${Math.ceil(m.waitT)}... everyone is hiding!` : `find them! ${Math.ceil(Hh.left)} seconds left`) // (what the monster player sees)
+      : !active ? `the monster comes out in ${Math.ceil(m.waitT)}... HIDE!` : `survive for ${Math.ceil(Hh.left)} more seconds`;
     g.font = `34px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round'; g.lineWidth = 6; g.strokeStyle = C.ink; g.strokeText(msg, W/2, H - 22); g.fillStyle = active ? C.white : C.yellow; g.fillText(msg, W/2, H - 22);
   }
   drawOverlayText();
@@ -4764,7 +4796,7 @@ function renderSeg(id, opts, key, after) {
 function drawMapPreview() {
   const c = $('mapPreview'), m = c.getContext('2d'), sc = c.width/W, map = MAPS[setup.map] || MAPS.cloud, race = setup.mode === 'race';
   const horror = setup.mode === 'horror';
-  $('mapSeg').hidden = race || horror; $('trackSeg').hidden = !race; $('hmapSeg').hidden = !horror; if (horror) HOUSE = HMAPS[setup.hmap] || HMAPS.house; $('roundsSeg').parentElement.hidden = race || horror; // racing and horror have their own maps and are one game
+  $('mapSeg').hidden = race || horror; $('trackSeg').hidden = !race; $('hmapSeg').hidden = !horror; $('hmonSeg').hidden = !horror; if (horror) { HOUSE = HMAPS[setup.hmap] || HMAPS.house; renderSeg('hmonSeg', [['cpu', 'Monster: computer'], ...CHARS.filter(c => setup.slots[c.id] !== 'off' && unlocked(c)).map(c => [c.id, c.name + ' is the monster'])], 'hmonster', drawMapPreview); } // who is the monster $('roundsSeg').parentElement.hidden = race || horror; // racing and horror have their own maps and are one game
   const track = RACE_TRACKS[setup.track] || RACE_TRACKS.gp; if (race) TRACK = track.built;
   const oldG = g, oldMap = MAP; g = m; MAP = map;
   m.setTransform(sc, 0, 0, sc, 0, 0); m.clearRect(0, 0, W, H);
@@ -4776,7 +4808,7 @@ function drawMapPreview() {
     } finally { g = oldG; MAP = oldMap; }
     const k = KEYMAP.p1;
     const woods = HOUSE.id === 'woods';
-    $('mapDesc').textContent = `Horror: a monster is looking for you ${woods ? 'in the dark, spooky woods! The trees block the way, and the monster can\'t see through them' : 'in a dark, spooky house'}! Move with ${keyName(k.l[0])} ${keyName(k.r[0])} ${keyName(k.u[0])} ${keyName(k.d[0])}. Press ${keyName(k.punch[0])} next to ${woods ? 'a bush, hollow stump, log, tent or rock' : 'a bed, closet, box or other furniture'} to hide in it, and again to come out. Survive ${SURVIVE_TIME} seconds! Don't let it see you hide, and you can't stay hidden forever.`;
+    $('mapDesc').textContent = `Horror: a monster is looking for you ${woods ? 'in the dark, spooky woods! The trees block the way, and the monster can\'t see through them' : 'in a dark, spooky house'}! Move with ${keyName(k.l[0])} ${keyName(k.r[0])} ${keyName(k.u[0])} ${keyName(k.d[0])}. Press ${keyName(k.punch[0])} next to ${woods ? 'a bush, hollow stump, log, tent or rock' : 'a bed, closet, box or other furniture'} to hide in it, and again to come out. Survive ${SURVIVE_TIME} seconds! Don't let it see you hide, and you can't stay hidden forever.` + (CHAR[setup.hmonster] && setup.slots[setup.hmonster] !== 'off' ? ` ${CHAR[setup.hmonster].name} is the monster: walk around to catch people, and press ${keyName(k.punch[0])} next to a hiding spot to check it!` : '');
     return;
   }
   if (race) {
@@ -4808,9 +4840,11 @@ function openSetup() {
 function showResults() {
   G.state = 'results'; G.paused = false;
   const champ = G.champ, teamWin = G.mode === 'teams', race = G.mode === 'race', horror = G.mode === 'horror';
-  const winners = horror ? G.fighters.filter(f => !f.caught) : teamWin ? G.fighters.filter(f => f.team === champ.team) : [champ];
+  const mon = horror && G.horror.monster.ch ? G.horror.monster : null; // a person who played the monster
+  let winners = horror ? G.fighters.filter(f => !f.caught) : teamWin ? G.fighters.filter(f => f.team === champ.team) : [champ];
+  if (mon && !winners.length) winners = [{ ch:mon.ch, tag:mon.tag, control:mon.control || 'cpu', me:mon.me, monster:true }]; // the monster caught everyone: they win!
   const losers = horror ? G.fighters.filter(f => f.caught) : teamWin ? G.fighters.filter(f => f.team !== champ.team) : G.fighters.filter(f => f !== champ).sort(race ? (a, b) => a.place - b.place : (a, b) => (G.wins[b.ch.id] || 0) - (G.wins[a.ch.id] || 0));
-  $('winName').textContent = horror ? (!winners.length ? 'The monster wins!' : winners.length === 1 ? winners[0].ch.name + ' survived!' : 'The survivors win!') : (teamWin ? TEAMS[champ.team].name : champ.ch.name) + ' wins!';
+  $('winName').textContent = horror ? (winners[0] && winners[0].monster ? winners[0].ch.name + ' (the monster) wins!' : !winners.length ? 'The monster wins!' : winners.length === 1 ? winners[0].ch.name + ' survived!' : 'The survivors win!') : (teamWin ? TEAMS[champ.team].name : champ.ch.name) + ' wins!';
   $('winName').style.background = horror && !winners.length ? C.purple : teamWin ? TEAMS[champ.team].color : '';
   // one podium step per place: the winner (or winning team) on 1, losers on 2, 3, 4... in order of round wins
   const step = (fs, place, name) => {
@@ -4820,11 +4854,11 @@ function showResults() {
     who.append(...fs.map(f => charCanvas(f.ch, px, { ...(G.online ? {} : looks(f.ch)), crown:place === 1, ko:place !== 1 })));
     const wins = G.wins[winKey(fs[0])] || 0;
     const nm = Object.assign(document.createElement('div'), { className:'nm', textContent:name });
-    const note = horror ? (place === 1 ? 'got away!' : 'caught') : race ? (fs[0].done ? fs[0].time.toFixed(1) + ' seconds' : 'still racing') : wins ? '★'.repeat(wins) : 'no wins';
+    const note = horror ? (place === 1 ? (fs[0].monster ? 'caught everyone!' : 'got away!') : 'caught') : race ? (fs[0].done ? fs[0].time.toFixed(1) + ' seconds' : 'still racing') : wins ? '★'.repeat(wins) : 'no wins';
     const blk = document.createElement('div'); blk.className = 'pblock'; blk.innerHTML = `${place}<small>${note}</small>`;
     c.append(who, nm, blk); return c;
   };
-  const steps = horror ? [losers.length && step(losers, 2, 'caught by the monster'), winners.length && step(winners, 1, 'survived')].filter(Boolean)
+  const steps = horror ? [losers.length && step(losers, 2, 'caught by the monster'), winners.length && step(winners, 1, mon && winners[0].monster ? 'the monster' : 'survived')].filter(Boolean)
     : teamWin ? [step(losers, 2, TEAMS[1 - champ.team].name), step(winners, 1, TEAMS[champ.team].name)]
     : losers.map((f, i) => step([f], i + 2, f.ch.name));
   if (!teamWin && !horror) steps.splice(Math.min(1, steps.length), 0, step(winners, 1, champ.ch.name)); // 2nd, 1st, 3rd, 4th...
@@ -4977,7 +5011,8 @@ function renderSwap() {
 }
 // ----- fight powers and maps (admin panel): heal, knock everyone out, win the round, coin rain, giant or tiny, and changing the map -----
 const powerFight = () => G.state === 'fight' && G.mode !== 'race' && G.mode !== 'horror' && G.fighters && G.fighters.length && !!G.fighters[0].body;
-function adminPower(p, act, arg) { // on this computer, or on the host for an online admin
+function adminPower(p, act, arg, byMon) { // on this computer, or on the host for an online admin (byMon: an online admin who is the Horror monster)
+  if (G.state === 'fight' && G.mode === 'horror') return horrorPower(p, act, arg, byMon); // Horror has its own versions
   if (act === 'fx' || act === 'boom') return adminFx(p, act, arg); // (silly effects)
   if (act === 'spawn' || act === 'cpu' || act === 'speed' || act === 'freeze') return adminMore(p, act, arg); // (spawning, the computers, and time)
   if (act === 'rain') return ev('coinrain');
@@ -5007,7 +5042,8 @@ function usePower(act, arg) { // a button in the panel: online players ask the h
   if (act === 'rain') { shop.coins += 100; saveShop(); $('apCoins').textContent = shop.coins; if (sfx.coin) sfx.coin(); }
   if (G.online === 'client') { if (Net.host) try { Net.host.send({ t:'apow', act, arg }); } catch (e) {} }
   else adminPower(myFighter(), act, arg);
-  $('apMsg').textContent = { heal:'You are all better!', ko:'Everyone else is dizzy!', win:'You win the round!', rain:'It\'s raining coins! +100 coins!', size:`You are ${arg === 'normal' ? 'normal size again' : arg} now!`, map:`To ${(MAPS[arg] || {}).name || 'the new map'}!` }[act] || '';
+  const hor = G.mode === 'horror';
+  $('apMsg').textContent = { heal:hor ? 'You are back in the game!' : 'You are all better!', ko:hor ? 'The monster is frozen for 5 seconds!' : 'Everyone else is dizzy!', win:hor ? 'Game over, right now!' : 'You win the round!', rain:'It\'s raining coins! +100 coins!', size:`You are ${arg === 'normal' ? 'normal size again' : arg} now!`, map:`To ${(MAPS[arg] || {}).name || 'the new map'}!` }[act] || '';
 }
 $('apHeal').onclick = () => usePower('heal'); $('apKO').onclick = () => usePower('ko'); $('apWin').onclick = () => usePower('win'); $('apRain').onclick = () => usePower('rain');
 $('apGiant').onclick = () => usePower('size', 'giant'); $('apNormal').onclick = () => usePower('size', 'normal'); $('apTiny').onclick = () => usePower('size', 'tiny');
@@ -5026,6 +5062,7 @@ function renderPowers() {
     b.onclick = () => { if (now) { usePower('map', id); setTimeout(renderPowers, 100); } else { setup.map = id; saveSetup(); $('apMsg').textContent = `Your next fight is on ${name}!`; renderPowers(); } };
     box.append(b);
   }
+  horrorPanel(); // (Horror has its own buttons)
 }
 // coins raining down from the sky (everyone in the fight sees it)
 function drawCoinRain(t) {
@@ -5069,7 +5106,7 @@ function drawDisco(t) { // flashing party colours and spinning light beams
 }
 function useFx(act, arg) {
   if (G.online === 'client') { if (Net.host) try { Net.host.send({ t:'apow', act, arg }); } catch (e) {} }
-  else adminFx(myFighter(), act, arg);
+  else adminPower(myFighter(), act, arg); // (adminPower sends it to the Horror version when it's Horror)
   $('apMsg').textContent = act === 'boom' ? 'BOOM! Everyone else went flying!' : `${FX_NAMES[arg]} switched!`;
   setTimeout(renderFx, 150);
 }
@@ -5081,6 +5118,7 @@ function renderFx() {
     const b = $(id); b.disabled = !live; b.lastChild.textContent = `${label}: ${fx[k] ? 'ON' : 'off'}`;
   }
   $('apBoom').disabled = !live;
+  horrorPanel(); // (Horror has its own buttons)
 }
 // ----- more admin powers: spawn things, control the computers, and time powers -----
 // (they all run on this computer, or on the host for an online admin; other players see them through the host's updates)
@@ -5171,20 +5209,72 @@ function drawThings(t) {
   }
 }
 // the panel buttons for all of these
-const useMore = (act, arg) => { if (G.online === 'client') { if (Net.host) try { Net.host.send({ t:'apow', act, arg }); } catch (e) {} } else adminMore(myFighter(), act, arg); setTimeout(renderMore, 150); };
+const useMore = (act, arg) => { if (G.online === 'client') { if (Net.host) try { Net.host.send({ t:'apow', act, arg }); } catch (e) {} } else adminPower(myFighter(), act, arg); setTimeout(renderMore, 150); };
 $('apAddCpu').onclick = () => { useMore('spawn', 'cpu'); $('apMsg').textContent = 'A new computer player drops in!'; };
 $('apBall').onclick = () => { useMore('spawn', 'ball'); $('apMsg').textContent = 'Bouncy ball!'; };
 $('apPiano').onclick = () => { useMore('spawn', 'piano'); $('apMsg').textContent = 'Look out below! A piano!'; };
 $('apWall').onclick = () => { useMore('spawn', 'wall'); $('apMsg').textContent = 'A wall pops up next to you!'; };
 for (const m of ['dance', 'eachother', 'flee', 'copy', 'normal']) $('apCpu-' + m).onclick = () => { useMore('cpu', m); $('apMsg').textContent = $('apCpu-' + m).textContent.slice(2) + '!'; };
 for (const s of ['slow', 'normal', 'fast']) $('apSpeed-' + s).onclick = () => { useMore('speed', s); $('apMsg').textContent = $('apSpeed-' + s).textContent.slice(2) + '!'; };
-$('apFreeze').onclick = () => { useMore('freeze'); $('apMsg').textContent = 'Everyone else is frozen for 5 seconds!'; };
+$('apFreeze').onclick = () => { useMore('freeze'); $('apMsg').textContent = G.mode === 'horror' ? 'The monster is frozen for 5 seconds!' : 'Everyone else is frozen for 5 seconds!'; };
 function renderMore() {
   const live = powerFight(), off = 'These work during a fight (not in races or Horror): press the admin button in a fight.';
   $('apSpawnNote').textContent = live ? 'Drop things into the fight! (Walls and balls last until the round ends.)' : off;
   $('apCpuNote').textContent = live ? `Tell the computer players what to do. Right now: ${{ dance:'dancing', eachother:'fighting each other', flee:'running away from you', copy:'copying you' }[G.cpuMode] || 'fighting normally'}.` : off;
   $('apTimeNote').textContent = live ? `Speed up or slow down the whole fight, or freeze everyone but you for 5 seconds. Right now: ${{ 0.4:'slow motion', 2:'super fast' }[(G.fx && G.fx.speed) || 1] || 'normal speed'}.` : off;
   for (const b of document.querySelectorAll('#apAddCpu, #apBall, #apPiano, #apWall, [id^="apCpu-"], [id^="apSpeed-"], #apFreeze')) b.disabled = !live;
+  horrorPanel(); // (Horror has its own buttons)
+}
+// ----- the admin panel in Horror: some powers have Horror versions, and the ones that need a fight are switched off -----
+const monsterStunned = m => G.online === 'client' ? !!m.stun : !!(m.stunUntil && G.time < m.stunUntil);
+function horrorPower(p, act, arg, byMon) { // on this computer, or on the host (byMon: the admin is the person playing the monster)
+  const Hh = G.horror, m = Hh.monster;
+  if (G.online === 'client') return;
+  if (!p && !byMon && m.control && !m.control.startsWith('net:')) byMon = true; // the monster player on this computer
+  if (act === 'rain') return ev('coinrain');
+  if (act === 'fx') { // upside-down and disco work in Horror too
+    if (arg !== 'flip' && arg !== 'disco') return;
+    G.fx = { ...(G.fx || {}), [arg]:!(G.fx && G.fx[arg]) }; ev('pop', W/2, 200, `${FX_NAMES[arg]} ${G.fx[arg] ? 'ON!' : 'off'}`, C.yellow); ev('sfx', 'zap');
+    if (G.online === 'host') netBroadcast({ t:'fx', fx:G.fx });
+    return;
+  }
+  if (act === 'speed') { G.fx = { ...(G.fx || {}), speed:{ slow:0.4, normal:1, fast:2 }[arg] || 1 }; if (G.online === 'host') netBroadcast({ t:'fx', fx:G.fx }); return; }
+  if (act === 'freeze' || act === 'ko') { if (byMon) return; m.stunUntil = G.time + 5; ev('pop', m.x, m.y - 110, 'FROZEN!', '#7fdcff'); ev('sfx', 'zap'); return; } // the monster can't move for 5 seconds
+  if (act === 'heal') { // got caught? You're back in the game, somewhere else in the house
+    if (!p) p = G.fighters.find(f => f.caught && f.control !== 'cpu' && !f.control.startsWith('net:')); // (you, on this computer)
+    if (!p || !p.caught) return;
+    const sp = HOUSE.spawns[Math.floor(Math.random()*HOUSE.spawns.length)];
+    Object.assign(p, { caught:false, alive:true, x:sp[0], y:sp[1], fear:0, hidden:null });
+    ev('pop', p.x, p.y - 50, "I'M BACK!", C.green); ev('sfx', 'win');
+    return;
+  }
+  if (act === 'win') { // the sun comes up right now (the survivors win)... or, if you're the monster, you catch everyone
+    if (byMon) { for (const q of G.fighters) if (!q.caught) catchSurvivor(q); } else Hh.left = 0;
+    return;
+  }
+  if (act === 'map' && HMAPS[arg]) { setup.hmap = arg; startHorror(); if (G.online === 'host') netBroadcast({ t:'hmap', hmap:arg }); }
+}
+function horrorPanel() { // relabel the buttons for Horror (and back again for fights), and switch off the ones that don't fit
+  const hor = G.state === 'fight' && G.mode === 'horror', m = hor && G.horror.monster;
+  const imMon = hor && !!m.control && (G.online === 'client' ? !!m.me : !m.control.startsWith('net:'));
+  const set = (id, icon, text) => { const b = $(id); b.firstChild.textContent = icon; b.lastChild.textContent = text; };
+  set('apHeal', '❤️', hor ? 'un-catch me' : 'heal me'); set('apKO', '💫', hor ? 'stun the monster' : 'knock everyone out');
+  set('apWin', '🏆', hor ? (imMon ? 'catch everyone' : 'make the sun come up') : 'win the round'); set('apFreeze', '🧊', hor ? 'freeze the monster' : 'freeze everyone');
+  if (!hor) return;
+  $('apPowNote').textContent = imMon ? 'You are the monster! Catch everyone right now, or make it rain coins.' : 'Horror powers: come back if you got caught, stun the monster for 5 seconds, make the sun come up so the survivors win, or make it rain coins.';
+  $('apHeal').disabled = imMon; $('apKO').disabled = imMon; $('apFreeze').disabled = imMon; $('apWin').disabled = false; $('apRain').disabled = false;
+  for (const id of ['apGiant', 'apNormal', 'apTiny', 'apFloaty', 'apBoom', 'apAddCpu', 'apBall', 'apPiano', 'apWall', 'apCpu-dance', 'apCpu-eachother', 'apCpu-flee', 'apCpu-copy', 'apCpu-normal']) $(id).disabled = true;
+  for (const id of ['apFlip', 'apDisco', 'apSpeed-slow', 'apSpeed-normal', 'apSpeed-fast']) $(id).disabled = false;
+  $('apFxNote').textContent = 'In Horror, upside-down and disco work (floaty and BOOM only work in fights).';
+  $('apSpawnNote').textContent = 'Spawning things only works in fights, not in Horror.';
+  $('apCpuNote').textContent = 'In Horror the computers hide on their own, so this only works in fights.';
+  $('apTimeNote').textContent = 'Slow motion and super fast work in Horror too, and freeze stops the monster for 5 seconds.';
+  const box = $('apMaps'); box.innerHTML = ''; const now = G.online !== 'client'; // the Horror maps
+  $('apMapNote').textContent = now ? 'Move the game to the other Horror map (it starts over there).' : 'Only the host can change the map in an online game.';
+  for (const [id, name] of HMAP_LIST) {
+    const b = document.createElement('button'); b.className = 'btn ap-swap'; b.id = 'apMap-' + id; b.textContent = name; b.disabled = !now || HOUSE.id === id;
+    b.onclick = () => { usePower('map', id); setTimeout(renderPowers, 100); }; box.append(b);
+  }
 }
 // fight cheats from the admin panel. Whose cheats count: this computer's (in setup), and, when you're hosting an online fight,
 // each online admin's too (they come with their button presses). "Just me" (cheatWho 'me') only gives them to that person's own fighter
@@ -5645,7 +5735,7 @@ function horrorSnapshot() {
   const Hh = G.horror, m = Hh.monster;
   return { t:'hs', ph:G.phase, tm:r2(G.timer), go:r2(G.goT), bn:G.banner,
     f:G.fighters.map(p => [r1(p.x), r1(p.y), p.facing, r1(p.walk), p.caught ? 1 : 0, p.hidden ? Hh.spots.indexOf(p.hidden) : -1, r1(p.fear)]),
-    m:[r1(m.x), r1(m.y), r2(m.a), MSTATES.indexOf(m.state), r1(m.waitT), r1(m.walk)], left:r1(Hh.left), fl:r2(Hh.flash), e:NETEV.splice(0) };
+    m:[r1(m.x), r1(m.y), r2(m.a), MSTATES.indexOf(m.state), r1(m.waitT), r1(m.walk), monsterStunned(m) ? 1 : 0], left:r1(Hh.left), fl:r2(Hh.flash), e:NETEV.splice(0) };
 }
 function snapshot() {
   const f = G.fighters.map(p => { const b = p.body; return [r1(b.position.x), r1(b.position.y), r2(b.angle), p.alive ? 1 : 0, p.ko > 0 ? r1(p.ko) : 0, Math.round(p.dizzy), p.facing, r2(p.punchAnim), p.flash > 0 ? r2(p.flash) : 0, p.grabbing ? p.grabbing.idx : -1, r2(p.squash), p.special && p.special.kind === 'glitch' ? [r1(p.special.x), r1(p.special.y), r2(p.special.t), p.special.boom ? 1 : 0] : 0, p.walking ? r1(p.walk) : -1, Math.round(p.r)]; }); // (the last three: Missing Arrow's glitch fest, how far along his steps the Admin is, and how big they are)
@@ -5707,7 +5797,7 @@ function hostRoom(fixed) { // `fixed`: a public server's code (otherwise you get
   Net.role = 'host'; Net.peer = peer;
   peer.on('open', () => {
     if (Net.peer !== peer) return;
-    Net.lobby = { code, players:[{ id:'host', name, ch:null }], cpus:[], mode:setup.mode, map:setup.map, track:setup.track, hmap:setup.hmap, teams:Object.assign({}, setup.teams) };
+    Net.lobby = { code, players:[{ id:'host', name, ch:null }], cpus:[], mode:setup.mode, map:setup.map, track:setup.track, hmap:setup.hmap, hmonster:'cpu', teams:Object.assign({}, setup.teams) };
     Net.lobby.players[0].ch = firstFree();
     openLobby();
   });
@@ -5748,7 +5838,7 @@ function hostOnData(conn, d) {
   }
   if (!Net.conns.has(id)) return;
   if (d.t === 'pick') return lobbyPick(id, d.ch);
-  if (d.t === 'apow') { const p = G.fighters.find(f => f.control === 'net:' + id); if (G.state === 'fight') adminPower(p, String(d.act), String(d.arg || '')); return; } // an online admin using a fight power
+  if (d.t === 'apow') { const p = G.fighters.find(f => f.control === 'net:' + id); if (G.state === 'fight') adminPower(p, String(d.act), String(d.arg || ''), !!(G.horror && G.mode === 'horror' && G.horror.monster.control === 'net:' + id)); return; } // an online admin using a fight power
   if (d.t === 'pmove') { movePopup(+d.id, +d.x, +d.y); return netBroadcast({ t:'pmove', id:+d.id, x:+d.x || 0, y:+d.y || 0 }); } // a shopkeeper dragging their pop-up: move it here and on everyone else's screen
   if (d.t === 'swap') { const p = G.fighters.find(f => f.control === 'net:' + id); if (G.state === 'fight' && p && CHAR[d.ch]) swapFighter(p, CHAR[d.ch]); return; } // an online admin changing fighter
   if (d.t === 'team') { const pl = L.players.find(p => p.id === id); if (pl && pl.ch) { L.teams[pl.ch] = 1 - (L.teams[pl.ch] || 0); broadcastLobby(); } return; }
@@ -5808,8 +5898,8 @@ function hostStartMatch() {
   if (L.mode === 'teams' && !(lineup.some(l => l.team === 0) && lineup.some(l => l.team === 1))) { const m = $('lobbyMsg'); if (m) m.textContent = 'Each team needs at least one fighter.'; return; }
   MAP = MAPS[L.map] || MAPS.cloud; G.mode = L.mode; G.online = 'host'; G.lineup = lineup; G.wins = {}; G.round = 0; G.rounds = setup.rounds; G.paused = false; NETEV.length = 0;
   for (const f of lineup) if (f.control.startsWith('net:')) { const r = Net.inputs.get(f.control.slice(4)); if (r) r.seen = null; }
-  setup.track = L.track || setup.track; setup.hmap = L.hmap || setup.hmap;
-  netBroadcast({ t:'start', rounds:G.rounds, mode:G.mode, map:MAP.id, track:setup.track, hmap:setup.hmap, lineup:lineup.map(l => ({ ch:l.ch.id, control: l.control === 'local' ? 'host' : l.control, tag:l.tag, team:l.team })) });
+  setup.track = L.track || setup.track; setup.hmap = L.hmap || setup.hmap; setup.hmonster = L.hmonster || 'cpu';
+  netBroadcast({ t:'start', rounds:G.rounds, mode:G.mode, map:MAP.id, track:setup.track, hmap:setup.hmap, hmonster:setup.hmonster, lineup:lineup.map(l => ({ ch:l.ch.id, control: l.control === 'local' ? 'host' : l.control, tag:l.tag, team:l.team })) });
   G.state = 'fight'; showScreen(null); cv.focus();
   if (G.mode === 'race') startRace(); else if (G.mode === 'horror') startHorror(); else startRound();
 }
@@ -5867,6 +5957,7 @@ function clientOnData(d) {
     case 'tolobby': G.online = null; openLobby(); break;
     case 'addf': { const ch = CHAR[d.ch]; if (ch && !G.fighters.some(f => f.idx === d.idx)) G.fighters.push({ ch, control:'cpu', tag:'CPU', team:d.team || 0, idx:d.idx, r:38*(ch.size || 1), me:false, body:{ position:{ x:800, y:120 }, angle:0 }, tgt:null, seen:false, alive:true, ko:0, dizzy:0, facing:1, punchAnim:0, flash:0, grabbing:null, squash:0 }); break; } // an admin added a computer player
     case 'fx': G.fx = d.fx || {}; break; // an admin switched a silly effect
+    case 'hmap': if (HMAPS[d.hmap] && G.horror) { HOUSE = HMAPS[d.hmap]; G.horror.spots = HOUSE.spots.map(s => ({ ...s, who:null })); } break; // the host moved Horror to the other map
     case 'resize': { const p = G.fighters.find(f => f.idx === d.idx); if (p) p.r = +d.r || p.r; break; } // someone went giant or tiny
     case 'map': if (MAPS[d.map]) { MAP = MAPS[d.map]; G.clouds = ledgeObjs(MAP); } break; // the host moved the fight to another map
     case 'pmove': if (!(popDrag && popDrag.p.id === d.id)) movePopup(d.id, d.x, d.y); break; // (not while you're still dragging it yourself)
@@ -5886,9 +5977,11 @@ function clientStart(d) {
     G.fighters = d.lineup.map((l, i) => Object.assign(makeKart({ ch:CHAR[l.ch], control:l.control, tag:l.tag }, i), { me:l.control === me, tgt:null, seen:false }));
     G.race = { boxes:[], things:[], finished:0, endT:-1, order:[...G.fighters] };
   } else if (G.mode === 'horror') {
-    G.fighters = d.lineup.map((l, i) => ({ ch:CHAR[l.ch], control:l.control, tag:l.tag, team:0, idx:i, me:l.control === me, alive:true, caught:false, r:22, x:800, y:500, facing:1, walk:0, hidden:null, fear:0, tgt:null, seen:false }));
+    const monL = d.lineup.length > 1 ? d.lineup.find(l => l.ch === d.hmonster) : null; // the person (or computer fighter) playing the monster, same as on the host
+    G.fighters = d.lineup.filter(l => l !== monL).map((l, i) => ({ ch:CHAR[l.ch], control:l.control, tag:l.tag, team:0, idx:i, me:l.control === me, alive:true, caught:false, r:22, x:800, y:500, facing:1, walk:0, hidden:null, fear:0, tgt:null, seen:false }));
     HOUSE = HMAPS[d.hmap] || HMAPS.house;
-    G.horror = { left:SURVIVE_TIME, spots:HOUSE.spots.map(s => ({ ...s, who:null })), flash:0, monster:{ x:HOUSE.lair.x, y:HOUSE.lair.y, r:30, a:Math.PI, state:'wait', waitT:MONSTER_WAIT, walk:0, tgt:null, seen:false } };
+    G.horror = { left:SURVIVE_TIME, spots:HOUSE.spots.map(s => ({ ...s, who:null })), flash:0, monster:{ x:HOUSE.lair.x, y:HOUSE.lair.y, r:30, a:Math.PI, state:'wait', waitT:MONSTER_WAIT, walk:0, tgt:null, seen:false,
+      ch:monL ? CHAR[monL.ch] : null, control:monL && monL.control !== 'cpu' ? monL.control : null, tag:monL ? monL.tag : '', me:!!monL && monL.control === me } };
   } else G.fighters = d.lineup.map((l, i) => ({ ch:CHAR[l.ch], control:l.control, tag:l.tag, team:l.team || 0, idx:i, r:38*(CHAR[l.ch].size || 1), me:l.control === me, body:{ position:{ x:800, y:560 }, angle:0 }, tgt:null, seen:false,
     alive:true, ko:0, dizzy:0, facing:1, punchAnim:0, flash:0, grabbing:null, squash:0 }));
   MAP = MAPS[d.map] || MAPS.cloud; G.clouds = ledgeObjs(MAP); G.hazards = []; G.waves = [];
@@ -5935,7 +6028,7 @@ function applyHorrorSnap(s) {
     if (!p.seen || Math.hypot(a[0] - p.x, a[1] - p.y) > 250) { p.x = a[0]; p.y = a[1]; p.seen = true; }
     p.facing = a[2]; p.walk = a[3]; p.caught = !!a[4]; p.alive = !p.caught; p.hidden = a[5] >= 0 ? Hh.spots[a[5]] : null; if (p.hidden) p.hidden.who = p; p.fear = a[6];
   });
-  const [mx, my, ma, ms, mw, mk] = s.m;
+  const [mx, my, ma, ms, mw, mk, stun] = s.m; m.stun = !!stun; // (stun: an admin froze it)
   m.tgt = { x:mx, y:my, a:ma };
   if (!m.seen || Math.hypot(mx - m.x, my - m.y) > 250) { m.x = mx; m.y = my; m.a = ma; m.seen = true; }
   m.state = MSTATES[ms] || 'patrol'; m.waitT = mw; m.walk = mk; Hh.left = s.left; Hh.flash = s.fl;
@@ -6001,7 +6094,7 @@ function renderLobby() {
       <div class="kick-box"><b>kick?</b><ul class="plist">${others.length ? others.map(p => `<li>${dot(p)}<span>${esc(p.name)}</span><button class="kick" data-kick="${esc(p.id)}">kick</button></li>`).join('') : '<li><span>No friends here yet. Send them the code!</span></li>'}</ul></div>
       ${LOCAL_MODES.includes(L.mode) ? '' : '<div class="setting"><span>Rounds to win</span><div class="seg" id="lobRoundsSeg"></div></div>'}
       <div class="setting"><span>Game mode</span><div class="seg" id="lobModeSeg"></div></div>
-      ${L.mode === 'race' ? '<div class="setting"><span>Track</span><div class="seg" id="lobTrackSeg"></div></div>' : L.mode === 'horror' ? '<div class="setting"><span>Map</span><div class="seg" id="lobHmapSeg"></div></div>' : '<div class="setting"><span>Map</span><div class="seg" id="lobMapSeg"></div></div>'}
+      ${L.mode === 'race' ? '<div class="setting"><span>Track</span><div class="seg" id="lobTrackSeg"></div></div>' : L.mode === 'horror' ? '<div class="setting"><span>Map</span><div class="seg" id="lobHmapSeg"></div></div><div class="setting"><span>Who is the monster?</span><div class="seg" id="lobHmonSeg"></div></div>' : '<div class="setting"><span>Map</span><div class="seg" id="lobMapSeg"></div></div>'}
       <div class="setting"><span>Computer players</span><div class="seg" id="lobDiffSeg"></div></div>
       <button id="lobbyFight" class="btn big">make fight happen</button>
       <p id="lobbyMsg" class="msg" role="status"></p>
@@ -6013,12 +6106,13 @@ function renderLobby() {
     if ($('lobMapSeg')) renderSeg('lobMapSeg', MAPLIST, 'map', () => { L.map = setup.map; broadcastLobby(); });
     if ($('lobTrackSeg')) renderSeg('lobTrackSeg', RACE_TRACK_LIST, 'track', () => { L.track = setup.track; broadcastLobby(); });
     if ($('lobHmapSeg')) renderSeg('lobHmapSeg', HMAP_LIST, 'hmap', () => { L.hmap = setup.hmap; broadcastLobby(); });
+    if ($('lobHmonSeg')) { setup.hmonster = L.hmonster || 'cpu'; renderSeg('lobHmonSeg', [['cpu', 'Computer'], ...L.players.filter(p => p.ch).map(p => [p.ch, p.name]), ...L.cpus.map(c => [c, CHAR[c].name + ' (computer)'])], 'hmonster', () => { L.hmonster = setup.hmonster; broadcastLobby(); }); }
     $('lobbyFight').onclick = () => { audioOn(); hostStartMatch(); };
     $('lobbyDisband').onclick = () => endRoom('You disbanded the team.');
   } else {
     aside.innerHTML = `<h3>the team</h3>
       <ul class="plist">${L.players.map(p => `<li>${dot(p)}<span>${esc(p.name)}${p.id === 'host' ? ' (host)' : ''}${p.id === me ? ' (you)' : ''}</span></li>`).join('')}</ul>
-      <p>Mode: <b>${esc((MODES.find(m => m[0] === L.mode) || MODES[0])[1])}</b> · ${L.mode === 'race' ? `Track: <b>${esc((RACE_TRACKS[L.track] || RACE_TRACKS.gp).name)}</b>` : L.mode === 'horror' ? `Map: <b>${esc((HMAPS[L.hmap] || HMAPS.house).name)}</b>` : `Map: <b>${esc((MAPS[L.map] || MAPS.cloud).name)}</b> · Rounds to win: <b>${esc(Net.hostRounds || 3)}</b>`} · Computer players: <b>${esc((DIFF[Net.hostDiff] || DIFF.normal).label)}</b></p>
+      <p>Mode: <b>${esc((MODES.find(m => m[0] === L.mode) || MODES[0])[1])}</b> · ${L.mode === 'race' ? `Track: <b>${esc((RACE_TRACKS[L.track] || RACE_TRACKS.gp).name)}</b>` : L.mode === 'horror' ? `Map: <b>${esc((HMAPS[L.hmap] || HMAPS.house).name)}</b> · Monster: <b>${esc(L.hmonster && L.hmonster !== 'cpu' ? ((L.players.find(p => p.ch === L.hmonster) || {}).name || CHAR[L.hmonster].name) : 'the computer')}</b>` : `Map: <b>${esc((MAPS[L.map] || MAPS.cloud).name)}</b> · Rounds to win: <b>${esc(Net.hostRounds || 3)}</b>`} · Computer players: <b>${esc((DIFF[Net.hostDiff] || DIFF.normal).label)}</b></p>
       <p class="msg" style="color:var(--ink)">Pick a fighter, then wait for the host to make the fight happen.</p>
       <button id="lobbyLeave" class="btn black">leave team</button>`;
     $('lobbyLeave').onclick = () => clientLeave();
