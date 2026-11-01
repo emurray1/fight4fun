@@ -1141,7 +1141,7 @@ function drawKeeperFighter(ctx, ch, r, o) {
       drawGreyKeeper(0, t); // (with their waving arm)
     } else {
       const s = 2.1*r/255; g.scale(s, s); g.translate(0, -650);
-      drawShyKeeper(0, t, { friend:o.walk == null, close:0, lookX:0, walking:o.walk != null });
+      drawShyKeeper(0, t, { friend:o.walk == null && !o.mask, close:0, lookX:0, walking:o.walk != null, mask:o.mask }); // (asleep in her mask, she doesn't wave)
     }
     g.restore();
     if (o.flash > 0) { g.globalAlpha = Math.min(0.6, o.flash*5); g.fillStyle = C.white; g.beginPath(); g.arc(0, 0, r*1.05, 0, TAU); g.fill(); g.globalAlpha = 1; }
@@ -4437,7 +4437,7 @@ function drawTaskPointer(t) { // a bouncing arrow at the spot for the chore you 
 }
 function drawShyAsleep(t) { // tucked into her bed, with her head on the pillow
   const ch = CHAR.keeper2, r = dormR(ch)*0.6;
-  g.save(); g.translate(1750 - 60, SHOP_FLOOR - 128); g.rotate(-Math.PI/2); drawCharacter(g, ch, r, { facing:1, ...looks(ch) }); g.restore();
+  g.save(); g.translate(1750 - 60, SHOP_FLOOR - 128); g.rotate(-Math.PI/2); drawCharacter(g, ch, r, { facing:1, ...looks(ch), mask:true }); g.restore(); // (with her sleep mask on)
   g.fillStyle = '#c77dd1'; g.strokeStyle = C.ink; g.lineWidth = 4; roundRect(1750 - 70, SHOP_FLOOR - 118, 240, 80, 14); g.fill(); g.stroke(); // the quilt, pulled up
   for (let i=0;i<4;i++) { g.fillStyle = ['#e3a8ec', '#ff8fc1', '#b06cc0', '#fff1a8'][i]; g.fillRect(1750 - 50 + i*52, SHOP_FLOOR - 104, 42, 54); }
   g.fillStyle = '#5a3a6e'; g.textAlign = 'center'; g.textBaseline = 'middle';
@@ -4625,7 +4625,7 @@ function drawLittleHeart(x, y, s) {
   g.fillStyle = '#ff6fa5'; g.beginPath(); g.moveTo(x, y + s);
   g.bezierCurveTo(x - s*1.6, y - s*0.2, x - s*0.6, y - s*1.3, x, y - s*0.4); g.bezierCurveTo(x + s*0.6, y - s*1.3, x + s*1.6, y - s*0.2, x, y + s); g.fill();
 }
-function drawShyKeeper(kx, t, { friend, close, lookX, walking = false, alpha = 1, lift = 0, wiggle = 0 }) {
+function drawShyKeeper(kx, t, { friend, close, lookX, walking = false, alpha = 1, lift = 0, wiggle = 0, mask = false }) {
   g.save(); g.globalAlpha = alpha; g.translate(wiggle, -lift - (walking ? Math.abs(Math.sin(t*14))*7 : 0));
   // little shoes, then a purple dress that flares out at the bottom, with a white collar
   g.fillStyle = C.ink; for (const sx of [-22, 22]) { g.beginPath(); g.ellipse(kx + sx, SHOP_FLOOR - 6, 16, 8, 0, 0, TAU); g.fill(); }
@@ -4635,7 +4635,7 @@ function drawShyKeeper(kx, t, { friend, close, lookX, walking = false, alpha = 1
   g.closePath(); g.fill(); g.stroke();
   g.fillStyle = C.white; g.lineWidth = 3; for (const s of [-1, 1]) { g.beginPath(); g.moveTo(kx, 602); g.quadraticCurveTo(kx + s*26, 600, kx + s*24, 620); g.quadraticCurveTo(kx + s*10, 622, kx, 602); g.fill(); g.stroke(); }
   // soft black arms with round hands (one waves when she's happy)
-  const wave = Math.sin(t*3)*4, arm = (x1, y1, x2, y2) => { g.strokeStyle = C.ink; g.lineWidth = 20; g.lineCap = 'round'; g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke(); };
+  const wave = mask ? 0 : Math.sin(t*3)*4, arm = (x1, y1, x2, y2) => { g.strokeStyle = C.ink; g.lineWidth = 20; g.lineCap = 'round'; g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke(); };
   arm(kx - 32, 628, kx - 84, 690 + wave);
   if (friend) { const a = -1.1 + Math.sin(t*8)*0.35; arm(kx + 32, 628, kx + 32 + Math.cos(a)*72, 628 + Math.sin(a)*72); } // waving hi
   else arm(kx + 32, 628, kx + 84, 690 - wave);
@@ -4662,6 +4662,11 @@ function drawShyKeeper(kx, t, { friend, close, lookX, walking = false, alpha = 1
   const look = friend ? { x:lookX, y:0 } : peek ? { x:-3, y:0 } : { x:3 + close*2, y:3 };
   g.fillStyle = C.white; for (const ex of [-12, 10]) { g.beginPath(); g.arc(ex, -8, 7, 0, TAU); g.fill(); }
   g.fillStyle = C.ink; for (const ex of [-12, 10]) { g.beginPath(); g.arc(ex + look.x, -8 + look.y, 3.5, 0, TAU); g.fill(); }
+  if (mask) { // her sleep mask (when she's asleep): purple, with sleepy closed eyes drawn on it
+    g.strokeStyle = '#5a2a6e'; g.lineWidth = 6; g.beginPath(); g.moveTo(-37, -10); g.lineTo(37, -10); g.stroke(); // the strap
+    g.fillStyle = '#a349a4'; g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.ellipse(-13, -8, 16, 12, 0, 0, TAU); g.ellipse(11, -8, 16, 12, 0, 0, TAU); g.fill(); g.stroke();
+    g.strokeStyle = C.white; g.lineWidth = 2; for (const ex of [-12, 10]) { g.beginPath(); g.arc(ex, -11, 6, 0.2, Math.PI - 0.2); g.stroke(); for (const k of [-4, 0, 4]) { g.beginPath(); g.moveTo(ex + k, -5 + Math.abs(k)*0.3); g.lineTo(ex + k*1.3, -1); g.stroke(); } } // closed eyes with lashes
+  }
   g.fillStyle = `rgba(255,105,150,${friend ? 0.35 : 0.45 + close*0.4})`; for (const ex of [-20, 20]) { g.beginPath(); g.ellipse(ex, 8, 9 + close*3, 5 + close*2, 0, 0, TAU); g.fill(); }
   g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath();
   if (friend) { g.moveTo(-10, 12); g.quadraticCurveTo(1, 26, 12, 12); } else { g.moveTo(-6, 16); g.quadraticCurveTo(-1, 13, 3, 17); g.quadraticCurveTo(7, 21, 11, 17); }
