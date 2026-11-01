@@ -4180,12 +4180,16 @@ const dormR = ch => KEEPER_SHOP_R[ch.id] || 46*Math.min(ch.size || 1, 1.8);
 const dormTall = ch => dormR(ch)*(ch.keeper ? 3 : 2); // (how tall they stand, for speech bubbles)
 // when you wake her up at night, the Shy Shopkeeper gets out of bed and walks down the stairs for dinner
 const shyDown = () => dormNight() && SHOP.shyAwake;
+const eatingDinner = () => shyDown() && kDone().has('dinner'); // she's up and dinner is made: they eat together
+const KEEPER_EAT = [[['keeper', 'Mmm! This soup is the BEST!'], ['keeper2', '*nom nom* ...so yummy...'], ['keeper', 'Thanks for making dinner, helper!']],
+  [['keeper2', 'c-can I have some more?'], ['keeper', 'Of course! There is plenty!'], ['keeper2', '*happy slurp*']], [['keeper', '*slurrrp* Ahh!'], ['keeper2', 'hehe... you have soup on your face...']]];
 const KEEPER_DINNER = [[['keeper', 'There you are, sleepyhead! Dinner is almost ready!'], ['keeper2', '*yawns* ...mmm, is it soup?'], ['keeper', 'Your favourite!'], ['keeper2', '*happy* hehe...']],
   [['keeper2', 'th-thank you for making dinner...'], ['keeper', 'Anything for my best shop buddy!']]];
 function keeperSpots() { // where the two shopkeepers are in their home
   if (confessPending() || SHOP.confessVisit) return (SHOP.floor === 12 ? [{ ch:CHAR.keeper, x:1000 }, { ch:CHAR.keeper2, x:1240 }] : []).filter(s => s.ch.id !== CHARS[SHOP.who].id); // (it's time for the confession: they're both downstairs, together)
   const e = performance.now() - (SHOP.shyWokeT || 0), down = shyDown(), walking = down && e > 1200 && e < 3600; // (she says something first, then walks to the stairs)
   const spots = SHOP.floor === 13 ? (down ? (e < 3600 ? [{ ch:CHAR.keeper2, x:1750 + Math.max(0, Math.min(1, (e - 1200)/2400))*(KEEPER_UP_X - 1750), walking }] : []) : [{ ch:CHAR.keeper2, x:shySleeping() ? 1750 : 840 }])
+    : eatingDinner() ? [{ ch:CHAR.keeper, x:1350, eating:true }, { ch:CHAR.keeper2, x:1650, eating:true }] // (at the dinner table, eating together)
     : [{ ch:CHAR.keeper, x:1000 }].concat(down ? [{ ch:CHAR.keeper2, x:1560 }] : []); // (downstairs, by the dinner table)
   return spots.filter(s => s.ch.id !== CHARS[SHOP.who].id);
 }
@@ -4231,6 +4235,11 @@ function drawKeeperRoom(t, night) {
     g.fillStyle = C.white; g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.arc(px, SHOP_FLOOR - 128, 22, 0, Math.PI); g.closePath(); g.fill(); g.stroke();
     g.fillStyle = '#e67e22'; g.fillRect(px - 18, SHOP_FLOOR - 132, 36, 6);
     for (let i=0;i<2;i++) { const k = (t*0.7 + i/2) % 1; g.globalAlpha = 1 - k; g.fillStyle = C.white; g.beginPath(); g.arc(px - 6 + i*12 + Math.sin(t*3 + i)*4, SHOP_FLOOR - 140 - k*50, 6 + k*4, 0, TAU); g.fill(); g.globalAlpha = 1; }
+  }
+  if (eatingDinner()) for (const [px, k] of [[1440, 0], [1560, 1.6]]) { // spoons going from the soup up to their mouths (nom nom)
+    const up = Math.abs(Math.sin(t*2.5 + k)), sy = SHOP_FLOOR - 140 - up*110, sx = px + (px < 1500 ? -40 : 40)*up;
+    g.strokeStyle = '#999'; g.lineWidth = 5; g.beginPath(); g.moveTo(sx, sy); g.lineTo(sx + (px < 1500 ? 22 : -22), sy + 18); g.stroke(); g.fillStyle = '#bbb'; g.beginPath(); g.ellipse(sx, sy, 9, 5, 0, 0, TAU); g.fill();
+    if (up > 0.95) { g.fillStyle = '#5a3a6e'; g.font = `18px ${BODYFONT}`; g.textAlign = 'center'; g.fillText('nom', px + (px < 1500 ? -70 : 70), sy - 20); }
   }
   if (SHOP.kfx && SHOP.kfx.id === 'plant' && performance.now() - SHOP.kfx.t < 1800) { g.fillStyle = '#5ab4ff'; for (let i=0;i<6;i++) { const k = ((performance.now() - SHOP.kfx.t)/600 + i/6) % 1; g.beginPath(); g.ellipse(1660 + i*12, SHOP_FLOOR - 220 + k*140, 4, 7, 0, 0, TAU); g.fill(); } } // water drops
   g.lineWidth = 3; g.strokeStyle = C.ink;
@@ -4370,7 +4379,7 @@ function dormStep() { // the roommates take turns talking (by the clock)
   const pb = SHOP.pb, now = performance.now(); if (!pb || now < pb.next) return;
   const here = new Set(dormSpots().map(s => s.ch.id)); if (!here.size) return;
   const keepersDown = DORMS[SHOP.dorm || 0].keepers && SHOP.floor === 12;
-  const chats = (keepersDown && confessPending() ? [CONFESS_LINES] : keepersDown && SHOP.confessVisit ? KEEPER_LOVE : keepersDown && shyDown() ? KEEPER_DINNER : (gossipOn() && !DORMS[SHOP.dorm || 0].keepers ? CONFESS_GOSSIP : []).concat(dormNight() ? DORMS[SHOP.dorm || 0].chats : DORM_DAY[SHOP.dorm || 0])).filter(c => c.every(([id]) => here.has(id))); // (night talk or morning talk)
+  const chats = (keepersDown && confessPending() ? [CONFESS_LINES] : keepersDown && SHOP.confessVisit ? KEEPER_LOVE : keepersDown && eatingDinner() ? KEEPER_EAT : keepersDown && shyDown() ? KEEPER_DINNER : (gossipOn() && !DORMS[SHOP.dorm || 0].keepers ? CONFESS_GOSSIP : []).concat(dormNight() ? DORMS[SHOP.dorm || 0].chats : DORM_DAY[SHOP.dorm || 0])).filter(c => c.every(([id]) => here.has(id))); // (night talk or morning talk)
   if (!chats.length) { const id = [...here][0], lines = (DORMS[SHOP.dorm || 0].crush && { diamond:['Hi, Missing Arrow... *blushes*', 'I saved you some snacks, hehe.', 'You look cute when you glitch.'], arrow:['H-hi, Sly Diamond... *happy glitch*', 'Y-your eyelashes are really pretty...', '*blushes and glitches*'] }[id]) || (id === 'keeper2' && shySleeping() && ['Zzz...', '*snores softly*', 'zzz... one pink bow, please... zzz']) || PB_SOLO[id] || ['...']; pbSay(id, lines[Math.floor(Math.random()*lines.length)]); pb.next = now + 4200; return; } // (alone in the room) // (alone with you in their room, they say sweet things to the one they like)
   if (!pb.chat || pb.line >= pb.chat.length) { pb.chat = chats[(pb.ci = ((pb.ci ?? -1) + 1) % chats.length)]; pb.line = 0; }
   const [id, text] = pb.chat[pb.line++]; pbSay(id, text); pb.next = now + (pb.line >= pb.chat.length ? 5200 : 3600);
@@ -4447,6 +4456,7 @@ function fightyTalk() { // you walked up to the Fighty Shopkeeper at home and pr
 function doKTask() { // doing the chore you were given
   const id = SHOP.nearTask, task = KTASKS[id]; if (!task) return;
   kDone().add(id); SHOP.ktask = null; SHOP.kfx = { id, t:performance.now() };
+  if (SHOP.pb) SHOP.pb.chat = null; // (start a new chat, like eating dinner together)
   if (id === 'wake') { SHOP.shyAwake = true; SHOP.shyWokeT = performance.now(); } // (she's up for dinner, but it's still night)
   shop.coins += TASK_PAY; saveShop();
   if (task.who) { pbSay(task.who, task.done, 3.6); SHOP.pb.next = performance.now() + 3800; SHOP.youSay = `Wake up, it is dinner time! (+${TASK_PAY} coins)`; }
