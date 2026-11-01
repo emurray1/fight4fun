@@ -602,8 +602,11 @@ const forSale = it => it.limited !== 'halloween' || spooky(); // limited items a
 const SKINS = [
   { id:'classic', name:'Classic', price:0 }, { id:'ice', name:'Ice', price:25, color:'#a6e6ff' }, { id:'shadow', name:'Shadow', price:30, color:'#54476e' },
   { id:'gold', name:'Gold', price:40, color:'#ffc93a' }, { id:'rainbow', name:'Rainbow', price:60, color:'rainbow' }, { id:'pumpkin', name:'Pumpkin', price:35, color:'#ff8a1c', limited:'halloween' },
+  // a skin just for the Admin (`only`): black with bright green computer code running down him, like a hacker's screen
+  { id:'hacker', name:'Hacker', price:75, color:'#050805', only:'admin', swatch:'repeating-linear-gradient(0deg,#050805 0 4px,#39ff14 4px 6px)' },
 ];
 const SKIN = Object.fromEntries(SKINS.map(s => [s.id, s]));
+const skinsFor = ch => SKINS.filter(s => !s.only || s.only === ch.id); // the skins this fighter can have
 shop.skins = shop.skins || {}; // { fighter: { have:[skin ids], on:skin id } }
 const skinRec = ch => shop.skins[ch.id] = shop.skins[ch.id] || { have:[], on:'classic' };
 const hasSkin = (ch, id) => id === 'classic' || skinRec(ch).have.includes(id);
@@ -968,19 +971,28 @@ function drawGlasses(g, [a, b], glow = false, lens = '#e8ff6a', three = false) {
 }
 // the Admin, from Mason's drawing: a blocky black guy leaning over, with "me is admin / mason, dad, alex" on his head and "i ♥ forsken" on his body.
 // It's drawn in the picture's own numbers (centred on 320, 260), then shrunk to fit the fighter
-function drawAdmin(g, r, col, walk) { // `walk`: how far along his steps he is while he walks (null when he's standing still)
+function drawAdmin(g, r, col, walk, skin) { // `walk`: how far along his steps he is while he walks (null when he's standing still)
   const s = r/180, moving = walk != null, sw = moving ? Math.sin(walk) : 0, bob = moving ? -Math.abs(Math.cos(walk))*14 : 0;
   g.save(); g.scale(s, s); g.translate(-320, -260 + bob); // he bobs up and down with each step
-  g.fillStyle = col || '#000'; g.strokeStyle = '#3a3a3a'; g.lineWidth = 3; g.lineJoin = 'round';
-  const block = (cx, cy, w, h, a) => { g.save(); g.translate(cx, cy); g.rotate(a); g.beginPath(); g.rect(-w/2, -h/2, w, h); g.fill(); g.stroke(); g.restore(); };
+  const hacker = skin === 'hacker', GREEN = '#39ff14', tt = performance.now()/1000, headInk = hacker ? GREEN : C.white, bodyInk = hacker ? GREEN : C.maroon; // the Hacker skin: green writing and computer code
+  g.fillStyle = col || '#000'; g.strokeStyle = hacker ? GREEN : '#3a3a3a'; g.lineWidth = 3; g.lineJoin = 'round';
+  const block = (cx, cy, w, h, a) => {
+    g.save(); g.translate(cx, cy); g.rotate(a); g.beginPath(); g.rect(-w/2, -h/2, w, h); g.fill();
+    if (hacker) { // rows of green 1s and 0s running down inside each block
+      g.save(); g.clip(); g.fillStyle = 'rgba(57,255,20,.35)'; g.font = `16px monospace`; g.textAlign = 'left'; g.textBaseline = 'top';
+      const drop = (tt*60) % 18; for (let y = -h/2 - 18 + drop, i = 0; y < h/2; y += 18, i++) g.fillText('1011001010011101'.slice(i % 5, i % 5 + 12), -w/2 + 2, y);
+      g.restore(); g.fillStyle = col || '#000';
+    }
+    g.stroke(); g.restore();
+  };
   const swing = (px, py, a, draw) => { g.save(); g.translate(px, py); g.rotate(a); g.translate(-px, -py); draw(); g.restore(); }; // turn a part around its shoulder or hip
   g.textAlign = 'left'; g.textBaseline = 'middle';
   if (moving) { // when he walks, he stands up straight: head on top, arms at his sides, and two legs stepping
     swing(290, 280, sw*0.5, () => block(290, 355, 55, 150, 0)); swing(350, 280, -sw*0.5, () => block(350, 355, 55, 150, 0)); // his legs
     swing(232, 130, -sw*0.5, () => block(232, 215, 46, 180, 0)); swing(408, 130, sw*0.5, () => block(408, 215, 46, 180, 0)); // his arms, swinging the other way to his legs
     block(320, 200, 136, 160, 0); block(320, 70, 75, 85, 0); // his body and head
-    g.fillStyle = C.white; g.font = `14px ${BODYFONT}`; g.fillText('me is admin', 284, 52); g.fillText('mason,dad', 290, 74); g.fillText('alex', 290, 90);
-    g.fillStyle = C.maroon; g.font = `36px ${FONT}`; g.fillText('i ♥', 262, 170); g.fillText('forsken', 262, 215);
+    g.fillStyle = headInk; g.font = `14px ${BODYFONT}`; g.fillText('me is admin', 284, 52); g.fillText('mason,dad', 290, 74); g.fillText('alex', 290, 90);
+    g.fillStyle = bodyInk; g.font = `36px ${FONT}`; g.fillText('i ♥', 262, 170); g.fillText('forsken', 262, 215);
     g.restore(); return;
   }
   swing(183, 240, sw*0.45, () => block(183, 341, 60, 212, 0)); // the arm hanging down on the left, swinging back and forth
@@ -989,8 +1001,8 @@ function drawAdmin(g, r, col, walk) { // `walk`: how far along his steps he is w
   g.beginPath(); for (const [x, y] of [[240,318],[318,292],[398,368],[352,402]]) g.lineTo(x, y); g.closePath(); g.fill(); g.stroke(); // his hips
   block(266, 227, 136, 160, -0.45); // his body, leaning over
   block(212, 117, 75, 85, 0); // his head
-  g.fillStyle = C.white; g.font = `14px ${BODYFONT}`; g.fillText('me is admin', 176, 98); g.fillText('mason,dad', 184, 120); g.fillText('alex', 184, 136);
-  g.fillStyle = C.maroon; g.font = `36px ${FONT}`; g.fillText('i ♥', 197, 208); g.fillText('forsken', 197, 254);
+  g.fillStyle = headInk; g.font = `14px ${BODYFONT}`; g.fillText('me is admin', 176, 98); g.fillText('mason,dad', 184, 120); g.fillText('alex', 184, 136);
+  g.fillStyle = bodyInk; g.font = `36px ${FONT}`; g.fillText('i ♥', 197, 208); g.fillText('forsken', 197, 254);
   g.restore();
 }
 const ADMIN_HEAD = { x:-0.6, y:-0.58, k:0.45 }, ADMIN_HEAD_UP = { x:0, y:-0.84, k:0.45 }; // where the Admin's little square head is (leaning, and standing up to walk), so hats and crowns sit on it
@@ -1001,7 +1013,7 @@ function drawCharacter(g, ch, r, o = {}) {
     if (o.cubes) drawGlitchCubes(g, r, tt, false);
     if (o.wings) drawBatWings(g, r, tt);
     if (o.cape) drawCape(g, r, o.facing || 1, tt, r);
-    drawAdmin(g, r, skinColor(o.skin), o.walk);
+    drawAdmin(g, r, skinColor(o.skin), o.walk, o.skin);
     if (o.flash > 0) { g.globalAlpha = Math.min(0.8, o.flash*6); drawAdmin(g, r, C.white, o.walk); g.globalAlpha = 1; }
     g.save(); if (o.walk != null) g.translate(0, -Math.abs(Math.cos(o.walk))*14*r/180); // his hat bobs along with him
     onAdminHead(g, r, () => {
@@ -4685,7 +4697,7 @@ function shopAct(id) {
   renderShopCard(true);
 }
 function nextSkin() { // punch at the booth: switch to the next skin this fighter has
-  const ch = CHARS[SHOP.who], have = SKINS.filter(s => hasSkin(ch, s.id));
+  const ch = CHARS[SHOP.who], have = skinsFor(ch).filter(s => hasSkin(ch, s.id));
   if (have.length < 2) { shopSay(`Pick a skin on the card to buy one for ${ch.name}!`, 'bonk'); return; }
   const rec = skinRec(ch), i = have.findIndex(s => s.id === rec.on), next = have[(i + 1) % have.length];
   rec.on = next.id; saveShop(); shopSay(`${ch.name} is ${next.id === 'classic' ? 'back to classic' : 'now ' + next.name}!`, 'grab'); renderShopCard(true);
@@ -4701,17 +4713,17 @@ function buySkin(id) {
 function fillSkinCard(card, ch) {
   card.innerHTML = `<h3>Skins for ${ch.name}</h3><p>New colours! Each fighter has their own skins, so pick a fighter with ◀ ▶ at the top. Press punch here to switch between the skins ${ch.name} has.</p><div class="skins"></div>`;
   const box = card.querySelector('.skins');
-  for (const s of SKINS) {
+  for (const s of skinsFor(ch)) {
     const have = hasSkin(ch, s.id), on = skinOf(ch) === s.id, locked = !have && !forSale(s);
     const b = document.createElement('button'); b.id = 'skin-' + s.id; b.className = on ? 'on' : '';
-    const sw = s.color === 'rainbow' ? 'linear-gradient(90deg,#ed1c24,#ff7f27,#fff200,#22b14c,#00a2e8,#a349a4)' : s.color || ch.color;
+    const sw = s.swatch || (s.color === 'rainbow' ? 'linear-gradient(90deg,#ed1c24,#ff7f27,#fff200,#22b14c,#00a2e8,#a349a4)' : s.color || ch.color);
     b.innerHTML = `<i style="background:${sw}"></i>${s.name} <small>${on ? '(on)' : have ? 'wear' : locked ? 'Halloween only' : s.price + ' coins'}${s.limited && !have && !locked ? ' · LIMITED!' : ''}</small>`;
     b.onclick = () => { buySkin(s.id); cv.focus(); };
     box.append(b);
   }
 }
 function drawSkinBooth(t) { // a big gold mirror on a stand: it shows you in each skin, one after another
-  const x = SKIN_X, top = SHOP_FLOOR - 260, ch = CHARS[SHOP.who], shown = SKINS[Math.floor(t/1.3) % SKINS.length];
+  const x = SKIN_X, top = SHOP_FLOOR - 260, ch = CHARS[SHOP.who], list = skinsFor(ch), shown = list[Math.floor(t/1.3) % list.length];
   g.fillStyle = PINK_DARK; g.fillRect(x - 12, top + 200, 24, SHOP_FLOOR - top - 200); g.beginPath(); g.ellipse(x, SHOP_FLOOR, 60, 12, 0, 0, TAU); g.fill();
   g.fillStyle = '#e0b030'; g.strokeStyle = C.ink; g.lineWidth = 4; roundRect(x - 80, top, 160, 205, 20); g.fill(); g.stroke();
   g.fillStyle = '#e4f6ff'; roundRect(x - 64, top + 16, 128, 160, 14); g.fill();
