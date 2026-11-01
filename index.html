@@ -383,6 +383,13 @@ html.thanks .fff span{border-color:#8a4b14;color:#d2691e}
       <h3>🔄 Change fighter</h3>
       <p class="note" id="apSwapNote"></p>
       <div class="ap-row" id="apSwap"></div>
+      <h3>💪 Fight powers</h3>
+      <p class="note" id="apPowNote"></p>
+      <div class="ap-row"><button id="apHeal" class="btn ap-big"><i>❤️</i>heal me</button><button id="apKO" class="btn ap-big"><i>💫</i>knock everyone out</button><button id="apWin" class="btn ap-big"><i>🏆</i>win the round</button><button id="apRain" class="btn ap-big"><i>🪙</i>make it rain coins</button></div>
+      <div class="ap-row"><button id="apGiant" class="btn ap-big"><i>🦖</i>giant</button><button id="apNormal" class="btn ap-big"><i>🙂</i>normal size</button><button id="apTiny" class="btn ap-big"><i>🐜</i>tiny</button></div>
+      <h3>🗺️ Change the map</h3>
+      <p class="note" id="apMapNote"></p>
+      <div class="ap-row" id="apMaps"></div>
       <h3>⚡ Fight cheats</h3>
       <p class="note">These work in fights, online too. "Just me" gives them only to you (in an online fight, only to your fighter). "Everyone" gives them to every fighter.</p>
       <div class="setting"><span>Who gets the cheats</span><div class="seg" id="apWhoSeg"></div></div>
@@ -4661,7 +4668,7 @@ function frame(now) {
     drawBans(t);
     for (const p of G.fighters) if (p.alive && !p.grabbing) drawFighter(p, t);
     for (const p of G.fighters) if (p.alive && p.grabbing) drawFighter(p, t);
-    drawParticles(G.paused ? 0 : dt); if (G.boss) drawGlitches(t); drawWatchers(t); drawHUD(); drawPopups(t); drawOverlayText();
+    drawParticles(G.paused ? 0 : dt); if (G.boss) drawGlitches(t); drawWatchers(t); drawHUD(); drawCoinRain(t); drawPopups(t); drawOverlayText();
   } else { drawSky(t, null); drawMenuGround(t); }
   requestAnimationFrame(frame);
 }
@@ -4876,7 +4883,7 @@ function openAdminPanel(from) {
   renderSeg('apWhoSeg', [['me', 'Just me'], ['all', 'Everyone']], 'cheatWho');
   renderSeg('apKeepPlaySeg', ONOFF_CHEAT, 'keepersPlay', () => { titleChars.innerHTML = ''; PLAYABLE().forEach(c => titleChars.appendChild(charCanvas(c, 78))); });
   renderSeg('apKeepWatchSeg', ONOFF_CHEAT, 'keepersWatch');
-  renderSwap();
+  renderSwap(); renderPowers();
 }
 let apFrom = 'menu';
 $('adminBtn').onclick = () => { if (!unlocked(CHAR.admin)) return; audioOn(); openAdminPanel('menu'); };
@@ -4947,6 +4954,65 @@ function renderSwap() {
       $('apMsg').textContent = `You turned into ${ch.name}!`; setTimeout(renderSwap, 300);
     };
     box.append(b);
+  }
+}
+// ----- fight powers and maps (admin panel): heal, knock everyone out, win the round, coin rain, giant or tiny, and changing the map -----
+const powerFight = () => G.state === 'fight' && G.mode !== 'race' && G.mode !== 'horror' && G.fighters && G.fighters.length && !!G.fighters[0].body;
+function adminPower(p, act, arg) { // on this computer, or on the host for an online admin
+  if (act === 'rain') return ev('coinrain');
+  if (act === 'map') { // the fight jumps to another map (this round starts over there)
+    if (!MAPS[arg] || !powerFight() || G.online === 'client') return;
+    setup.map = arg; MAP = MAPS[arg]; G.round = Math.max(0, G.round - 1); startRound();
+    if (G.online === 'host') netBroadcast({ t:'map', map:arg });
+    return;
+  }
+  if (!p || !p.alive || !powerFight()) return;
+  const b = p.body, at = (q, text, col) => ev('pop', q.body.position.x, q.body.position.y - q.r - 40, text, col);
+  if (act === 'heal') { p.dizzy = 0; p.ko = 0; at(p, 'HEALED!', C.green); ev('sfx', 'win'); }
+  else if (act === 'ko') { // everyone else gets dizzy (but nobody can hurt the Admin)
+    for (const q of G.fighters) if (q !== p && q.alive && !allies(p, q) && q.ch.id !== 'admin') { q.dizzy = MAX_HP; q.ko = 3; at(q, 'DIZZY!', C.purple); }
+    ev('sfx', 'dizzy'); ev('shake', 10);
+  }
+  else if (act === 'win') { for (const q of G.fighters) if (q !== p && q.alive && !allies(p, q) && q.ch.id !== 'admin') eliminate(q); } // (the Admin can't be knocked out, even by this)
+  else if (act === 'size') {
+    const base = (p.ch.boss ? 52 : 38)*(p.ch.size || 1), r = base*({ giant:2, normal:1, tiny:0.5 }[arg] || 1), f = r/p.r;
+    if (Math.abs(f - 1) < 0.01) return;
+    Body.scale(b, f, f); p.r = r;
+    at(p, arg === 'giant' ? 'GIANT!' : arg === 'tiny' ? 'tiny!' : 'normal size', C.green); ev('sfx', 'zap');
+    if (G.online === 'host') netBroadcast({ t:'resize', idx:p.idx, r });
+  }
+}
+function usePower(act, arg) { // a button in the panel: online players ask the host to do it
+  if (act === 'rain') { shop.coins += 100; saveShop(); $('apCoins').textContent = shop.coins; if (sfx.coin) sfx.coin(); }
+  if (G.online === 'client') { if (Net.host) try { Net.host.send({ t:'apow', act, arg }); } catch (e) {} }
+  else adminPower(myFighter(), act, arg);
+  $('apMsg').textContent = { heal:'You are all better!', ko:'Everyone else is dizzy!', win:'You win the round!', rain:'It\'s raining coins! +100 coins!', size:`You are ${arg === 'normal' ? 'normal size again' : arg} now!`, map:`To ${(MAPS[arg] || {}).name || 'the new map'}!` }[act] || '';
+}
+$('apHeal').onclick = () => usePower('heal'); $('apKO').onclick = () => usePower('ko'); $('apWin').onclick = () => usePower('win'); $('apRain').onclick = () => usePower('rain');
+$('apGiant').onclick = () => usePower('size', 'giant'); $('apNormal').onclick = () => usePower('size', 'normal'); $('apTiny').onclick = () => usePower('size', 'tiny');
+function renderPowers() {
+  const live = powerFight();
+  $('apPowNote').textContent = live ? 'Use your powers right now! (Coin rain gives you 100 coins and everyone sees the coins fall.)' : 'These work during a fight (not in races or Horror): press the admin button in a fight.';
+  for (const id of ['apHeal', 'apKO', 'apWin', 'apGiant', 'apNormal', 'apTiny']) $(id).disabled = !live;
+  $('apRain').disabled = G.state !== 'fight';
+  // maps: in a fight, jump there right now (only the host can, online); from the menu, pick the map for your next fight
+  const box = $('apMaps'); box.innerHTML = '';
+  const now = live && G.online !== 'client';
+  $('apMapNote').textContent = now ? 'Pick a map to move the fight there right now! (This round starts over on the new map.)' : live ? 'Only the host can change the map in an online fight.' : 'Pick the map for your next fight.';
+  for (const [id, name] of MAPLIST) {
+    const b = document.createElement('button'); b.className = 'btn ap-swap'; b.id = 'apMap-' + id; b.textContent = name;
+    b.disabled = (live && !now) || (now ? MAP.id === id : setup.map === id);
+    b.onclick = () => { if (now) { usePower('map', id); setTimeout(renderPowers, 100); } else { setup.map = id; saveSetup(); $('apMsg').textContent = `Your next fight is on ${name}!`; renderPowers(); } };
+    box.append(b);
+  }
+}
+// coins raining down from the sky (everyone in the fight sees it)
+function drawCoinRain(t) {
+  if (!G.coinRain) return;
+  const age = (performance.now() - G.coinRain)/1000; if (age > 3) { G.coinRain = 0; return; }
+  for (let i=0;i<50;i++) {
+    const x = (i*197.3) % W + Math.sin(t*3 + i)*20, y = -40 + ((age*(380 + (i % 7)*40) + i*53) % (H + 80)), s = Math.abs(Math.cos(t*6 + i));
+    g.fillStyle = '#ffd23f'; g.strokeStyle = '#b8860b'; g.lineWidth = 3; g.beginPath(); g.ellipse(x, y, 14*s + 2, 14, 0, 0, TAU); g.fill(); g.stroke();
   }
 }
 // fight cheats from the admin panel. Whose cheats count: this computer's (in setup), and, when you're hosting an online fight,
@@ -5379,6 +5445,7 @@ function runEv(type, a, b, c, d) {
     case 'sfx': if (sfx[a]) sfx[a](); break;
     case 'pop': popText(a, b, c, d); watchReact(c); break;
     case 'popup': showPopup(a, b, c, d); break;
+    case 'coinrain': G.coinRain = performance.now(); if (sfx.coin) sfx.coin(); break;
     case 'burst': burst(a, b, c, d); break;
     case 'puff': puff(a, b); break;
     case 'splash': splash(a); break;
@@ -5410,7 +5477,7 @@ function horrorSnapshot() {
     m:[r1(m.x), r1(m.y), r2(m.a), MSTATES.indexOf(m.state), r1(m.waitT), r1(m.walk)], left:r1(Hh.left), fl:r2(Hh.flash), e:NETEV.splice(0) };
 }
 function snapshot() {
-  const f = G.fighters.map(p => { const b = p.body; return [r1(b.position.x), r1(b.position.y), r2(b.angle), p.alive ? 1 : 0, p.ko > 0 ? r1(p.ko) : 0, Math.round(p.dizzy), p.facing, r2(p.punchAnim), p.flash > 0 ? r2(p.flash) : 0, p.grabbing ? p.grabbing.idx : -1, r2(p.squash), p.special && p.special.kind === 'glitch' ? [r1(p.special.x), r1(p.special.y), r2(p.special.t), p.special.boom ? 1 : 0] : 0, p.walking ? r1(p.walk) : -1]; }); // (the last two: Missing Arrow's glitch fest, and how far along his steps the Admin is)
+  const f = G.fighters.map(p => { const b = p.body; return [r1(b.position.x), r1(b.position.y), r2(b.angle), p.alive ? 1 : 0, p.ko > 0 ? r1(p.ko) : 0, Math.round(p.dizzy), p.facing, r2(p.punchAnim), p.flash > 0 ? r2(p.flash) : 0, p.grabbing ? p.grabbing.idx : -1, r2(p.squash), p.special && p.special.kind === 'glitch' ? [r1(p.special.x), r1(p.special.y), r2(p.special.t), p.special.boom ? 1 : 0] : 0, p.walking ? r1(p.walk) : -1, Math.round(p.r)]; }); // (the last three: Missing Arrow's glitch fest, how far along his steps the Admin is, and how big they are)
   return { t:'s', ph:G.phase, tm:r2(G.timer), go:r2(G.goT), bn:G.banner, w:G.wins, f, c:G.clouds.map(c => r1(c.position.x)), hz:(G.hazards || []).map(h => [HZ_CODES.indexOf(h.type), r1(h.x), r1(h.y), r2(Math.max(0, h.warn)), h.type === 'car' ? h.dir*10 + (h.dir > 0 ? h.c : -h.c) : h.type === 'bird' ? h.dir : h.type === 'zap' ? h.wire : h.type === 'geyser' ? Math.round(h.live*100) : 0]), wv:(G.waves || []).map(w => [r1(w.x), r1(w.y), w.dir, Math.round(w.dist), w.owner]), ban:(G.bans || []).map(b => [r1(b.x), b.dir]), e:NETEV.splice(0) };
 }
 
@@ -5510,6 +5577,7 @@ function hostOnData(conn, d) {
   }
   if (!Net.conns.has(id)) return;
   if (d.t === 'pick') return lobbyPick(id, d.ch);
+  if (d.t === 'apow') { const p = G.fighters.find(f => f.control === 'net:' + id); if (G.state === 'fight') adminPower(p, String(d.act), String(d.arg || '')); return; } // an online admin using a fight power
   if (d.t === 'pmove') { movePopup(+d.id, +d.x, +d.y); return netBroadcast({ t:'pmove', id:+d.id, x:+d.x || 0, y:+d.y || 0 }); } // a shopkeeper dragging their pop-up: move it here and on everyone else's screen
   if (d.t === 'swap') { const p = G.fighters.find(f => f.control === 'net:' + id); if (G.state === 'fight' && p && CHAR[d.ch]) swapFighter(p, CHAR[d.ch]); return; } // an online admin changing fighter
   if (d.t === 'team') { const pl = L.players.find(p => p.id === id); if (pl && pl.ch) { L.teams[pl.ch] = 1 - (L.teams[pl.ch] || 0); broadcastLobby(); } return; }
@@ -5625,6 +5693,8 @@ function clientOnData(d) {
       if (G.champ) showResults();
       break;
     case 'tolobby': G.online = null; openLobby(); break;
+    case 'resize': { const p = G.fighters.find(f => f.idx === d.idx); if (p) p.r = +d.r || p.r; break; } // someone went giant or tiny
+    case 'map': if (MAPS[d.map]) { MAP = MAPS[d.map]; G.clouds = ledgeObjs(MAP); } break; // the host moved the fight to another map
     case 'pmove': if (!(popDrag && popDrag.p.id === d.id)) movePopup(d.id, d.x, d.y); break; // (not while you're still dragging it yourself)
     case 'swap': { const p = G.fighters.find(f => f.idx === d.idx), ch = CHAR[d.ch]; if (p && ch) { p.ch = ch; if (p.body) p.r = 38*(ch.size || 1); } break; } // someone (maybe you) changed fighter
     case 'kicked': endNet('The host removed you from the team.'); break;
@@ -5658,7 +5728,7 @@ function applySnap(s) {
     p.tgt = { x:a[0], y:a[1], a:a[2] };
     if (!p.seen || (!p.alive && a[3]) || far) { pos.x = a[0]; pos.y = a[1]; p.body.angle = a[2]; p.seen = true; }
     p.alive = !!a[3]; p.ko = a[4]; p.dizzy = a[5]; p.facing = a[6]; p.punchAnim = a[7]; p.flash = a[8]; p.grabbing = a[9] >= 0 ? G.fighters[a[9]] : null; p.squash = a[10];
-    p.special = a[11] ? { kind:'glitch', x:a[11][0], y:a[11][1], t:a[11][2], boom:!!a[11][3] } : null; p.walking = a[12] >= 0; if (p.walking) p.walk = a[12];
+    p.special = a[11] ? { kind:'glitch', x:a[11][0], y:a[11][1], t:a[11][2], boom:!!a[11][3] } : null; p.walking = a[12] >= 0; if (p.walking) p.walk = a[12]; if (a[13]) p.r = a[13];
   });
   if (s.c) s.c.forEach((x, i) => { if (G.clouds[i]) G.clouds[i].tx = x; });
   G.waves = (s.wv || []).map(a => ({ x:a[0], y:a[1], dir:a[2], dist:a[3], owner:a[4] }));
