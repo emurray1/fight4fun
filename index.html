@@ -738,11 +738,13 @@ const CAGE_X = 200, CAGE_PORTAL_X = 1263, LOCK_POPS = 12, LOCK_SPEED = 2.0, LOCK
 // a "fighters only" door on the 2nd floor goes into player breaks (floor 10), where the fighters hang out
 const PLAYER_DOOR_X = 680, PB_EXIT_X = 120;
 // and a door in player breaks goes to the dorms (floor 11): a hallway with a door for each pair of roommates, into their room (floor 12)
-const DORM_DOOR_X = 1500, DORM_EXIT_X = 110, DORM_ROOM_X = [330, 610, 890, 1170, 1450];
+const DORM_DOOR_X = 1500, DORM_EXIT_X = 110, DORM_ROOM_X = [320, 535, 750, 965, 1180, 1395]; // (the last door is the shopkeepers' room)
+const KEEPER_STAIRS_X = 2260, KEEPER_UP_X = 1460; // the stairs in the shopkeepers' room (downstairs, and upstairs on floor 13)
 const STAIRS = [{ floor:1, x:STAIRS_X[1], to:2 }, { floor:2, x:STAIRS_X[2], to:1 }, { floor:2, x:LADDER_X, to:3 }, { floor:3, x:ATTIC_STAIRS_X, to:2 },
   { floor:3, x:ELEVATOR_X, to:4 }, { floor:4, x:ELEVATOR_X, to:3 }, { floor:2, x:BREAK_DOOR_X, to:6 }, { floor:6, x:BREAK_DOOR_X, to:2 },
   { floor:7, x:TOP_PORTAL_X, to:8 }, { floor:8, x:CAGE_PORTAL_X, to:1 }, { floor:2, x:PLAYER_DOOR_X, to:10 }, { floor:10, x:PB_EXIT_X, to:2 },
-  { floor:10, x:DORM_DOOR_X, to:11 }, { floor:11, x:DORM_EXIT_X, to:10 }, ...DORM_ROOM_X.map((x, room) => ({ floor:11, x, to:12, room })), { floor:12, x:DORM_EXIT_X, to:11 }];
+  { floor:10, x:DORM_DOOR_X, to:11 }, { floor:11, x:DORM_EXIT_X, to:10 }, ...DORM_ROOM_X.map((x, room) => ({ floor:11, x, to:12, room })), { floor:12, x:DORM_EXIT_X, to:11 },
+  { floor:12, x:KEEPER_STAIRS_X, to:13, keepers:true }, { floor:13, x:KEEPER_UP_X, to:12 }]; // (the shopkeepers' room has an upstairs)
 const STAND_SPOTS = { 1:[390, 610, 830], 2:[530], 3:[800], 9:[720, 1080] };
 const SKIN_X = 830; // the skins booth on the 2nd floor (a big mirror)
 const STANDS = (() => { // items fill the 1st floor, then the 2nd; an item can also ask for a floor of its own
@@ -3763,9 +3765,10 @@ function shopStep(dt) {
   if (pushStep(dt) || carryStep(dt)) { SHOP.msgT = Math.max(0, SHOP.msgT - dt); renderShopCard(); return; }
   const hall = SHOP.floor === 5; // the chase hallway is much longer than the screen, and has boxes to jump over
   const frozen = hall && SHOP.chase && (SHOP.chase.t < 2.6 || SHOP.chase.done); // you freeze while the eyes open (and once you're safe)
-  let nx = Math.max(SHOP.floor === 4 && !SHOP.chase ? 0 : 70, Math.min(hall ? CHASE_LEN - 60 : W - 70, SHOP.x + (frozen ? 0 : h.x)*430*ch.speed*dt));
+  let nx = Math.max(SHOP.floor === 4 && !SHOP.chase ? 0 : 70, Math.min(hall ? CHASE_LEN - 60 : dormRoomW() - 70, SHOP.x + (frozen ? 0 : h.x)*430*ch.speed*dt));
   if (hall) nx = chaseBlock(SHOP.x, nx);
   SHOP.x = nx; if (h.x) SHOP.facing = h.x;
+  if (keeperRoom()) SHOP.cam = Math.max(0, Math.min(KEEPER_ROOM_W - W, SHOP.x - 700)); // (the shopkeepers' big room scrolls with you)
   if (SHOP.floor === 4 && !SHOP.chase) { // walk off the far left edge of the office to get to the secret 5th floor
     if (SHOP.x <= 15) { SHOP.stairTo = 7; shopStairs(); return; }
   }
@@ -3775,12 +3778,12 @@ function shopStep(dt) {
   const f = SHOP.floor;
   SHOP.near = STANDS.find(s => s.floor === f && Math.abs(s.x - SHOP.x) < 110) || null;
   SHOP.nearSkins = f === 2 && !SHOP.near && Math.abs(SKIN_X - SHOP.x) < 100;
-  const stair = !SHOP.near && STAIRS.find(s => s.floor === f && Math.abs(s.x - SHOP.x) < 100 && (f !== 8 || (SHOP.cage && SHOP.cage.freed))); // the cage room portal only opens once he is free
+  const stair = !SHOP.near && STAIRS.find(s => s.floor === f && Math.abs(s.x - SHOP.x) < 100 && (!s.keepers || keeperRoom()) && (f !== 8 || (SHOP.cage && SHOP.cage.freed))); // the cage room portal only opens once he is free
   SHOP.nearCage = f === 8 && !!SHOP.cage && !SHOP.cage.freed && Math.abs(SHOP.x - CAGE_X) < 170;
   SHOP.nearStairs = !!stair; SHOP.stairTo = stair ? stair.to : 0; SHOP.stairRoom = stair && stair.room != null ? stair.room : SHOP.stairRoom; // (which dorm door)
-  SHOP.nearPal = (f === 10 || f === 12) && !SHOP.nearStairs ? ((f === 10 ? pbSpots() : dormSpots()).find(s => Math.abs(s.x - SHOP.x) < 70) || {}).ch || null : null; // walking up to a fighter in player breaks or a dorm room
+  SHOP.nearPal = (f === 10 || f === 12 || f === 13) && !SHOP.nearStairs ? ((f === 10 ? pbSpots() : dormSpots()).find(s => Math.abs(s.x - SHOP.x) < 70) || {}).ch || null : null; // walking up to a fighter in player breaks or a dorm room
   SHOP.nearSwitch = f === 12 && !SHOP.nearStairs && Math.abs(SHOP.x - DORM_SWITCH_X) < 45; // the light switch in a dorm room
-  if (f === 12) dormStep();
+  if (f === 12 || f === 13) dormStep();
   if (f === 10) pbStep();
   SHOP.nearKeeper = !SHOP.near && !SHOP.nearStairs && !!KEEPERS[f] && Math.abs(KEEPERS[f] - SHOP.x) < (f === 6 ? 300 : 220) && (f !== 4 || (SHOP.revealed && !SHOP.chase));
   if (f === 4 && !SHOP.revealed && !SHOP.chase && !isAdmin()) { // walk close and the chair spins around (but the manager can't see the Admin, so it never does)
@@ -4058,6 +4061,7 @@ const PB_CHATS = [
   [['arrow', 'Has anyone seen my poster? HAVE YOU SEEN HIM...'], ['circle', 'WHAT?! You were missing?!'], ['arrow', 'I-I was... in a cage...']],
 ];
 const PB_SOLO = { // what each of them says on their own now and then
+  keeper:['Even shopkeepers need a day off!', 'Counting coins... 1, 2, 3... zzz', 'She is upstairs again... she LOVES it up there!', 'Are you coming down for dinner?! ...No? OK!'], keeper2:['h-hi... this is my favourite spot...', '*watches SHOP TV* ...ooh, good punch.', 'shh... I am trying on hats...', 'it is so quiet up here... I like it.'], // (in their room, the Shy Shopkeeper hangs out upstairs)
   star:['Being this cool is a full-time job.', '*adjusts shades*'], tri:['Grrr... I am NOT angry. I am resting.', 'Who keeps moving my chair?!'],
   circle:['WHAT?! Oh. It\'s just break time.', 'I am SO surprised by everything!'], diamond:['I know a secret... but I won\'t tell.', '*sneaky smile*'],
   square:['BREAK TIME IS THE BEST TIME!', 'I AM VERY RELAXED RIGHT NOW!'], sparkle:['Wheee! Break time!', 'Can I have a juice box?'],
@@ -4129,6 +4133,9 @@ const DORMS = [ // who shares a room (and what they talk about in there)
     [['arrow', 'S-Sly Diamond... can I tell you something?'], ['diamond', 'Of course, Missing Arrow.'], ['arrow', 'I... I really like you. *glitches*'], ['diamond', '*blushes* I like you too... hehe.']],
     [['diamond', 'You look cute when you glitch.'], ['arrow', '*glitches even more* R-really?!'], ['diamond', 'Hehe... really.']],
     [['arrow', 'I-is there something under my bed?'], ['diamond', 'Just my secret snack stash... want to share?'], ['arrow', '*happy glitch* Yes please!']]] },
+  { ids:['keeper', 'keeper2'], keepers:true, wall:'#f3ead9', chats:[[['keeper', 'Good night! Big sale tomorrow!'], ['keeper2', 'g-good night...'], ['keeper', 'Did you lock the shop?'], ['keeper2', '*nods* ...twice.']], // the two shopkeepers share a room too
+    [['keeper2', 'u-um... do you think the fighters liked the new hats?'], ['keeper', 'They LOVED them!'], ['keeper2', '*happy* ...hehe.']],
+    [['keeper', 'We sold SO many things today!'], ['keeper2', 'and one pink bow... *happy*']]] },
 ];
 
 // day or night in the dorms: flip the light switch in a room (or use the button on the card). At night they say good night; in the day, good morning
@@ -4139,6 +4146,7 @@ const DORM_DAY = [ // what each pair of roommates says in the daytime (same orde
   [[['square', 'GOOD MORNING, TRIANGLE!'], ['tri', 'Grr... I was SO asleep.'], ['square', 'BREAKFAST TIME!'], ['tri', '...OK, breakfast is good.']]],
   [[['hex', 'Beep boop! The sun is up!'], ['circle', 'WHAT?! Already?!'], ['hex', '*happy beeping* Good morning, Circle!']]],
   [[['diamond', 'Good morning, Missing Arrow. Did you sleep well?'], ['arrow', 'I d-dreamed about you... *glitches*'], ['diamond', '*blushes* Hehe...']]],
+  [[['keeper', 'Rise and shine! Time to open the shop!'], ['keeper2', '...five more minutes...'], ['keeper', 'Coins wait for no one!'], ['keeper2', '*sleepy wave* ok...']]],
 ];
 const DORM_SWITCH_X = 255;
 function dormLight() { // flip the light switch: day to night, or night to day
@@ -4146,11 +4154,122 @@ function dormLight() { // flip the light switch: day to night, or night to day
   if (SHOP.pb) { SHOP.pb.chat = null; SHOP.pb.next = performance.now() + 500; }
   SHOP.youSay = dormNight() ? 'Lights out! Good night!' : 'Good morning, everyone!'; SHOP.youSayT = 2.2; if (sfx.grab) sfx.grab(); renderShopCard(true);
 }
-const dormName = id => unlocked(CHAR[id]) ? CHAR[id].name : '???'; // (a locked fighter's name stays a secret)
+const dormName = id => CHAR[id].keeper || unlocked(CHAR[id]) ? CHAR[id].name : '???'; // (a locked fighter's name stays a secret, but everyone knows the shopkeepers)
 const dormOpen = i => !DORMS[i].locked || DORMS[i].ids.includes(CHARS[SHOP.who].id); // a locked door only opens for the two who live there
+const KEEPER_SHOP_R = { keeper:0.75*350/2.1, keeper2:255/2.1 }; // the size that draws the shopkeepers about as big as they are in their shops (Fighty a bit smaller)
+const dormR = ch => KEEPER_SHOP_R[ch.id] || 46*Math.min(ch.size || 1, 1.8);
+const dormTall = ch => dormR(ch)*(ch.keeper ? 3 : 2); // (how tall they stand, for speech bubbles)
 function dormSpots() { // the roommates in their room (not you, if it's your room)
   const d = DORMS[SHOP.dorm || 0];
+  if (d.keepers) return [SHOP.floor === 13 ? 'keeper2' : 'keeper'].map(id => CHAR[id]).filter(ch => ch.id !== CHARS[SHOP.who].id).map(ch => ({ ch, x:SHOP.floor === 13 ? 840 : 1000 })); // (the Shy Shopkeeper is upstairs, the Fighty one downstairs)
   return d.ids.map(id => CHAR[id]).filter(ch => unlocked(ch) && ch.id !== CHARS[SHOP.who].id).map((ch, i) => ({ ch, x:[640, 1060][i] }));
+}
+// the shopkeepers' room is extra big (wider than the screen, so it scrolls with you) and fancier than the fighters' rooms
+const KEEPER_ROOM_W = 2400;
+const keeperRoom = () => SHOP.floor === 12 && !!DORMS[SHOP.dorm || 0].keepers;
+const dormRoomW = () => keeperRoom() ? KEEPER_ROOM_W : W;
+function drawKeeperRoom(t, night) {
+  drawKeeperWalls(KEEPER_ROOM_W); // cream wallpaper with gold stripes, a dark blue ceiling with a gold trim and a red velvet floor
+  // a big window in the middle: the moon at night, the sun in the day
+  const wx = 1250, wy = 190, ww = 320, wh = 190;
+  g.fillStyle = night ? '#1b2a4a' : '#8fd3ff'; g.strokeStyle = C.ink; g.lineWidth = 8; g.fillRect(wx - ww/2, wy, ww, wh); g.strokeRect(wx - ww/2, wy, ww, wh);
+  if (night) { g.fillStyle = '#fff6c9'; g.beginPath(); g.arc(wx + 90, wy + 55, 32, 0, TAU); g.fill(); g.fillStyle = C.white; for (const [sx, sy] of [[-120, 40], [-80, 140], [40, 150], [-30, 70], [120, 130]]) g.fillRect(wx + sx, wy + sy, 5, 5); }
+  else { g.fillStyle = C.yellow; g.beginPath(); g.arc(wx - 90, wy + 60, 34, 0, TAU); g.fill(); g.fillStyle = C.white; for (const [cx, cy, cr] of [[60, 130, 22], [86, 120, 28], [112, 132, 20]]) { g.beginPath(); g.arc(wx + cx, wy + cy, cr, 0, TAU); g.fill(); } }
+  g.strokeStyle = C.ink; g.lineWidth = 5; g.beginPath(); g.moveTo(wx, wy); g.lineTo(wx, wy + wh); g.moveTo(wx - ww/2, wy + wh/2); g.lineTo(wx + ww/2, wy + wh/2); g.stroke();
+  g.fillStyle = '#a349a4'; for (const k of [-1, 1]) g.fillRect(wx + k*(ww/2 + 14) - 18, wy - 16, 36, wh + 40); // purple curtains
+  g.fillStyle = '#d4a017'; g.fillRect(wx - ww/2 - 50, wy - 24, ww + 100, 10);
+  // a gold chandelier
+  g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.moveTo(1750, 110); g.lineTo(1750, 160); g.stroke();
+  g.fillStyle = '#d4a017'; g.beginPath(); g.ellipse(1750, 170, 70, 16, 0, 0, TAU); g.fill(); g.stroke();
+  for (const k of [-60, -20, 20, 60]) { g.fillStyle = C.white; g.fillRect(1750 + k - 5, 140, 10, 22); g.fillStyle = night ? '#ffd23f' : '#ffb347'; g.beginPath(); g.ellipse(1750 + k, 134, 5, 9 + Math.sin(t*8 + k)*2, 0, 0, TAU); g.fill(); }
+  // big beds: Fighty's grey one with a top hat on the bedpost, and the Shy Shopkeeper's purple one with a canopy and hearts
+  for (const [x, col, shy] of [[1000, '#8a8a8a', false], [1500, '#c77dd1', true]]) {
+    g.fillStyle = '#4a2c14'; g.fillRect(x - 190, SHOP_FLOOR - 190, 26, 190); g.fillRect(x + 164, SHOP_FLOOR - 110, 26, 110);
+    if (shy) { g.fillStyle = 'rgba(199,125,209,.45)'; g.beginPath(); g.moveTo(x - 190, SHOP_FLOOR - 190); g.quadraticCurveTo(x, SHOP_FLOOR - 320, x + 190, SHOP_FLOOR - 190); g.lineTo(x + 190, SHOP_FLOOR - 110); g.lineTo(x - 190, SHOP_FLOOR - 190); g.fill(); drawLittleHeart(x, SHOP_FLOOR - 250, 14); }
+    else { g.save(); g.translate(x - 177, SHOP_FLOOR - 196); drawHat(g, 40, 0, 1); g.restore(); }
+    g.fillStyle = col; g.strokeStyle = C.ink; g.lineWidth = 4; roundRect(x - 170, SHOP_FLOOR - 104, 340, 66, 14); g.fill(); g.stroke();
+    g.fillStyle = C.white; roundRect(x - 160, SHOP_FLOOR - 128, 86, 32, 12); g.fill(); g.stroke();
+  }
+  // their own little shop at home: a counter with a cash register and a pile of coins
+  g.fillStyle = '#5a3a1e'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(1760, SHOP_FLOOR - 130, 300, 130); g.strokeRect(1760, SHOP_FLOOR - 130, 300, 130);
+  g.fillStyle = '#d4a017'; g.fillRect(1760, SHOP_FLOOR - 138, 300, 12);
+  g.fillStyle = '#7f7f7f'; roundRect(1810, SHOP_FLOOR - 210, 110, 72, 8); g.fill(); g.stroke(); g.fillStyle = '#c9f0ff'; g.fillRect(1825, SHOP_FLOOR - 200, 80, 26); g.strokeRect(1825, SHOP_FLOOR - 200, 80, 26);
+  g.fillStyle = C.ink; g.font = `20px ${BODYFONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('$$$', 1865, SHOP_FLOOR - 187);
+  for (let i=0;i<10;i++) { g.fillStyle = C.yellow; g.beginPath(); g.ellipse(1980 + (i % 4)*16 - 24, SHOP_FLOOR - 148 - Math.floor(i/4)*12, 14, 7, 0, 0, TAU); g.fill(); g.stroke(); }
+  g.fillStyle = '#5a3a6e'; g.font = `30px ${FONT}`; g.fillText('open 24/7 (not really)', 1910, SHOP_FLOOR - 290);
+  // a picture of the two of them on the wall
+  g.fillStyle = '#d4a017'; g.fillRect(470, 230, 170, 130); g.fillStyle = C.white; g.fillRect(482, 242, 146, 106);
+  g.fillStyle = '#7f7f7f'; g.beginPath(); g.arc(530, 290, 20, 0, TAU); g.fill(); g.fillStyle = '#a349a4'; g.beginPath(); g.arc(582, 296, 16, 0, TAU); g.fill();
+  g.fillStyle = C.ink; g.font = `16px ${BODYFONT}`; g.fillText('best shopkeepers', 555, 334);
+  g.fillStyle = 'rgba(255,255,255,.35)'; g.beginPath(); g.ellipse(1250, SHOP_FLOOR + 32, 320, 28, 0, 0, TAU); g.fill(); // a fluffy rug
+  // stairs up to their upstairs, at the far end
+  const n = 10, x0 = 2150, sw = 25, sh = (SHOP_FLOOR - 110)/n;
+  g.fillStyle = '#6b3d1a'; g.strokeStyle = C.ink; g.lineWidth = 3;
+  for (let i=0;i<n;i++) { g.fillRect(x0 + i*sw, SHOP_FLOOR - (i + 1)*sh, KEEPER_ROOM_W - x0 - i*sw, sh); g.strokeRect(x0 + i*sw, SHOP_FLOOR - (i + 1)*sh, KEEPER_ROOM_W - x0 - i*sw, sh); }
+  g.strokeStyle = '#d4a017'; g.lineWidth = 8; g.beginPath(); g.moveTo(x0 - 10, SHOP_FLOOR - 110); g.lineTo(KEEPER_ROOM_W, 0); g.stroke(); // a gold banister
+  g.lineWidth = 4; for (let i=0;i<n;i+=2) { const bx = x0 + i*sw + 10; g.beginPath(); g.moveTo(bx, SHOP_FLOOR - (i + 1)*sh); g.lineTo(bx, SHOP_FLOOR - 110 - (bx - x0 + 10)*(SHOP_FLOOR - 110)/(KEEPER_ROOM_W - x0 + 10)); g.stroke(); }
+  g.fillStyle = '#5a3a6e'; g.font = `26px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('upstairs ↗', 2120, SHOP_FLOOR - 470);
+  if (SHOP.nearStairs && SHOP.stairTo === 13) drawPointer(KEEPER_STAIRS_X, SHOP_FLOOR - 400, t);
+}
+function drawKeeperWalls(RW) { // the same fancy walls, ceiling and floor upstairs and down
+  g.fillStyle = '#fbf1dc'; g.fillRect(0, 0, RW, H);
+  g.fillStyle = 'rgba(212,160,23,.22)'; for (let x = 20; x < RW; x += 80) g.fillRect(x, 110, 24, SHOP_FLOOR - 110);
+  g.fillStyle = '#2c2c54'; g.fillRect(0, 0, RW, 110); g.fillStyle = '#d4a017'; g.fillRect(0, 104, RW, 10);
+  g.fillStyle = '#7a1f2b'; g.fillRect(0, SHOP_FLOOR, RW, H - SHOP_FLOOR);
+  g.strokeStyle = '#d4a017'; g.lineWidth = 4; for (const y of [SHOP_FLOOR + 4, SHOP_FLOOR + 60]) { g.beginPath(); g.moveTo(0, y); g.lineTo(RW, y); g.stroke(); }
+}
+// ---------- upstairs in the shopkeepers' room (floor 13): their closet, a couch and a TV, a telescope and a treasure chest ----------
+function drawKeeperUpstairs(t) {
+  const night = dormNight();
+  drawKeeperWalls(W);
+  g.fillStyle = '#5a3a6e'; g.font = `44px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('upstairs', W/2, 160);
+  // a closet full of fancy clothes: top hats and purple dresses
+  g.fillStyle = '#4a2c14'; g.strokeStyle = C.ink; g.lineWidth = 5; g.fillRect(90, SHOP_FLOOR - 420, 300, 420); g.strokeRect(90, SHOP_FLOOR - 420, 300, 420);
+  g.fillStyle = '#f3e2c7'; g.fillRect(110, SHOP_FLOOR - 400, 260, 380);
+  g.strokeStyle = C.ink; g.lineWidth = 4; g.beginPath(); g.moveTo(110, SHOP_FLOOR - 300); g.lineTo(370, SHOP_FLOOR - 300); g.stroke(); // the shelf and the rail
+  for (const x of [150, 240, 330]) { g.save(); g.translate(x, SHOP_FLOOR - 304); drawHat(g, 34, 0, 1); g.restore(); }
+  for (const [x, col] of [[160, '#a349a4'], [240, '#c77dd1'], [320, '#7f7f7f']]) {
+    g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.moveTo(x - 20, SHOP_FLOOR - 270); g.lineTo(x, SHOP_FLOOR - 285); g.lineTo(x + 20, SHOP_FLOOR - 270); g.stroke(); // a hanger
+    g.fillStyle = col; g.beginPath(); g.moveTo(x - 18, SHOP_FLOOR - 270); g.lineTo(x + 18, SHOP_FLOOR - 270); g.lineTo(x + 36, SHOP_FLOOR - 140); g.lineTo(x - 36, SHOP_FLOOR - 140); g.closePath(); g.fill(); g.stroke();
+  }
+  g.fillStyle = '#6b3d1a'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(60, SHOP_FLOOR - 420, 34, 420); g.strokeRect(60, SHOP_FLOOR - 420, 34, 420); g.fillRect(386, SHOP_FLOOR - 420, 34, 420); g.strokeRect(386, SHOP_FLOOR - 420, 34, 420); // the open closet doors
+  // a treasure chest of coins
+  g.fillStyle = '#8a5a2b'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(470, SHOP_FLOOR - 90, 150, 90); g.strokeRect(470, SHOP_FLOOR - 90, 150, 90);
+  for (let i=0;i<9;i++) { g.fillStyle = C.yellow; g.beginPath(); g.ellipse(490 + (i % 5)*28, SHOP_FLOOR - 96 - Math.floor(i/5)*12, 15, 7, 0, 0, TAU); g.fill(); g.stroke(); }
+  g.fillStyle = '#8a5a2b'; g.save(); g.translate(470, SHOP_FLOOR - 100); g.rotate(-0.5); g.fillRect(0, -40, 150, 40); g.strokeRect(0, -40, 150, 40); g.restore(); // the open lid
+  g.fillStyle = '#d4a017'; g.fillRect(535, SHOP_FLOOR - 60, 20, 24); g.strokeRect(535, SHOP_FLOOR - 60, 20, 24);
+  // a comfy couch, watching the TV (it's showing a fight!)
+  g.fillStyle = '#a349a4'; g.strokeStyle = C.ink; g.lineWidth = 4; roundRect(680, SHOP_FLOOR - 170, 60, 170, 18); g.fill(); g.stroke(); roundRect(700, SHOP_FLOOR - 90, 280, 70, 16); g.fill(); g.stroke();
+  roundRect(680, SHOP_FLOOR - 110, 60, 110, 18); g.fill(); g.stroke(); roundRect(950, SHOP_FLOOR - 110, 50, 110, 18); g.fill(); g.stroke();
+  g.fillStyle = '#5a3a1e'; g.fillRect(1060, SHOP_FLOOR - 110, 160, 110); g.strokeRect(1060, SHOP_FLOOR - 110, 160, 110);
+  g.fillStyle = C.ink; roundRect(1040, SHOP_FLOOR - 270, 200, 150, 10); g.fill();
+  g.fillStyle = night ? '#2b3a6b' : '#9fe0ff'; g.fillRect(1052, SHOP_FLOOR - 258, 176, 110);
+  g.fillStyle = C.brown; g.fillRect(1052, SHOP_FLOOR - 172, 176, 24);
+  for (const [k, col] of [[0, C.orange], [1, '#a349a4']]) { const fx = 1100 + k*80 + Math.sin(t*3 + k*2)*22, fy = SHOP_FLOOR - 184 - Math.abs(Math.sin(t*5 + k))*30; g.fillStyle = col; g.beginPath(); g.arc(fx, fy, 12, 0, TAU); g.fill(); }
+  g.fillStyle = C.white; g.font = `14px ${BODYFONT}`; g.fillText('SHOP TV', 1140, SHOP_FLOOR - 244);
+  // a round window with a telescope looking out
+  const wx = 1300, wy = 280;
+  g.fillStyle = night ? '#1b2a4a' : '#8fd3ff'; g.strokeStyle = '#d4a017'; g.lineWidth = 10; g.beginPath(); g.arc(wx, wy, 80, 0, TAU); g.fill(); g.stroke();
+  if (night) { g.fillStyle = '#fff6c9'; g.beginPath(); g.arc(wx + 30, wy - 20, 20, 0, TAU); g.fill(); g.fillStyle = C.white; for (const [sx, sy] of [[-40, -30], [-20, 40], [40, 30], [-50, 10]]) g.fillRect(wx + sx, wy + sy, 4, 4); }
+  else { g.fillStyle = C.yellow; g.beginPath(); g.arc(wx - 20, wy - 10, 26, 0, TAU); g.fill(); }
+  g.strokeStyle = C.ink; g.lineWidth = 5; g.beginPath(); for (const k of [-1, 0, 1]) { g.moveTo(1300, SHOP_FLOOR - 160); g.lineTo(1300 + k*36, SHOP_FLOOR); } g.stroke(); // the tripod
+  g.save(); g.translate(1300, SHOP_FLOOR - 170); g.rotate(-1.2); g.fillStyle = '#d4a017'; g.strokeStyle = C.ink; g.lineWidth = 4; roundRect(-30, -14, 120, 28, 8); g.fill(); g.stroke(); g.restore();
+  // the stairs going back down, with a gold railing around the hole
+  g.fillStyle = '#3a2410'; g.fillRect(KEEPER_UP_X - 100, SHOP_FLOOR, 200, H - SHOP_FLOOR);
+  g.fillStyle = '#6b3d1a'; g.strokeStyle = C.ink; g.lineWidth = 3; for (let i=0;i<3;i++) { g.fillRect(KEEPER_UP_X - 100 + i*40, SHOP_FLOOR + i*40, 200 - i*40, 40); g.strokeRect(KEEPER_UP_X - 100 + i*40, SHOP_FLOOR + i*40, 200 - i*40, 40); }
+  g.strokeStyle = '#d4a017'; g.lineWidth = 6; g.beginPath(); g.moveTo(KEEPER_UP_X - 100, SHOP_FLOOR); g.lineTo(KEEPER_UP_X - 100, SHOP_FLOOR - 90); g.lineTo(KEEPER_UP_X + 100, SHOP_FLOOR - 90); g.lineTo(KEEPER_UP_X + 100, SHOP_FLOOR); g.stroke();
+  g.lineWidth = 3; for (let x = KEEPER_UP_X - 75; x < KEEPER_UP_X + 100; x += 25) { g.beginPath(); g.moveTo(x, SHOP_FLOOR - 90); g.lineTo(x, SHOP_FLOOR); g.stroke(); }
+  g.fillStyle = '#5a3a6e'; g.font = `26px ${FONT}`; g.fillText('↓ downstairs', KEEPER_UP_X, SHOP_FLOOR - 130);
+  if (SHOP.nearStairs) drawPointer(KEEPER_UP_X, SHOP_FLOOR - 230, t);
+  if (night) { g.fillStyle = 'rgba(15,10,50,.38)'; g.fillRect(0, 0, W, H); }
+  drawDormPals(t); // the Shy Shopkeeper hangs out up here
+}
+function drawKeeperDoor(x, t) { // the shopkeepers' door: bigger and gold, with a sign
+  g.save(); g.translate(x, SHOP_FLOOR); g.scale(1.2, 1.2); g.translate(-x, -SHOP_FLOOR);
+  drawNameDoor(x, ['Fighty Shopkeeper &', 'Shy Shopkeeper'], '#d4a017');
+  g.restore();
+  g.fillStyle = '#2c2c54'; g.strokeStyle = '#d4a017'; g.lineWidth = 3; roundRect(x - 80, SHOP_FLOOR - 360, 160, 36, 8); g.fill(); g.stroke();
+  g.fillStyle = '#ffd23f'; g.font = `20px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('★ staff room ★', x, SHOP_FLOOR - 341 + Math.sin(t*3)*1.5);
 }
 function dormStep() { // the roommates take turns talking (by the clock)
   const pb = SHOP.pb, now = performance.now(); if (!pb || now < pb.next) return;
@@ -4173,15 +4292,16 @@ function drawDormHall(t) {
   g.fillStyle = '#c0392b'; g.fillRect(0, SHOP_FLOOR + 8, W, 26); // a long carpet down the hallway
   g.fillStyle = '#5a3a6e'; g.font = `56px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('dorms', W/2, 170);
   drawStaffDoor(DORM_EXIT_X, '← player breaks', '#c9f0ff', 'FIGHTERS ONLY');
-  DORMS.forEach((d, i) => { drawNameDoor(DORM_ROOM_X[i], [dormName(d.ids[0]) + ' &', dormName(d.ids[1])]); if (d.crush) drawLittleHeart(DORM_ROOM_X[i], SHOP_FLOOR - 280, 14); if (!dormOpen(i)) drawPadlock(DORM_ROOM_X[i] + 30, SHOP_FLOOR - 105, 0.22); });
+  DORMS.forEach((d, i) => { if (d.keepers) drawKeeperDoor(DORM_ROOM_X[i], t); else drawNameDoor(DORM_ROOM_X[i], [dormName(d.ids[0]) + ' &', dormName(d.ids[1])]); if (d.crush) drawLittleHeart(DORM_ROOM_X[i], SHOP_FLOOR - 280, 14); if (!dormOpen(i)) drawPadlock(DORM_ROOM_X[i] + 30, SHOP_FLOOR - 105, 0.22); });
   if (dormNight()) { g.fillStyle = 'rgba(15,10,50,.3)'; g.fillRect(0, 0, W, H); } // the hallway is dim at night
   const near = SHOP.nearStairs && SHOP.stairTo === 12 ? DORM_ROOM_X[SHOP.stairRoom] : null;
   if (near != null) drawPointer(near, SHOP_FLOOR - 330, t);
 }
 function drawDormRoom(t) {
   const d = DORMS[SHOP.dorm || 0];
+  const night = dormNight(), lampX = d.keepers ? 1250 : 850;
+  if (d.keepers) drawKeeperRoom(t, night); else {
   drawWoodRoom(d.wall, '#7a4a2a', '#b98a5a');
-  const night = dormNight();
   g.fillStyle = night ? '#1b2a4a' : '#8fd3ff'; g.strokeStyle = C.ink; g.lineWidth = 6; g.fillRect(760, 200, 180, 140); g.strokeRect(760, 200, 180, 140); // a window: the moon at night, the sun in the day
   if (night) { g.fillStyle = '#fff6c9'; g.beginPath(); g.arc(880, 245, 24, 0, TAU); g.fill(); g.fillStyle = C.white; for (const [sx, sy] of [[790, 230], [820, 300], [905, 310], [800, 270]]) g.fillRect(sx, sy, 4, 4); }
   else { g.fillStyle = C.yellow; g.beginPath(); g.arc(800, 240, 26, 0, TAU); g.fill(); g.fillStyle = C.white; for (const [cx, cy, cr] of [[885, 300, 18], [905, 292, 22], [925, 302, 16]]) { g.beginPath(); g.arc(cx, cy, cr, 0, TAU); g.fill(); } }
@@ -4192,6 +4312,7 @@ function drawDormRoom(t) {
     g.fillStyle = C.white; roundRect(x - 108, SHOP_FLOOR - 100, 60, 26, 10); g.fill(); g.stroke();
   }
   g.fillStyle = 'rgba(255,255,255,.5)'; g.beginPath(); g.ellipse(850, SHOP_FLOOR + 30, 220, 26, 0, 0, TAU); g.fill(); // a rug
+  }
   g.fillStyle = '#5a3a6e'; g.font = `44px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(`${dormName(d.ids[0])} & ${dormName(d.ids[1])}'s room`, W/2, 160, 1000);
   drawStaffDoor(DORM_EXIT_X, '← hallway', '#efe6ff', 'DORMS');
   // the light switch by the door (press punch next to it), and at night the room is dark, with a little lamp glowing
@@ -4199,20 +4320,23 @@ function drawDormRoom(t) {
   g.fillStyle = night ? '#555' : C.white; g.fillRect(DORM_SWITCH_X - 6, SHOP_FLOOR - 180 + (night ? 14 : 0), 12, 14); g.strokeRect(DORM_SWITCH_X - 6, SHOP_FLOOR - 180 + (night ? 14 : 0), 12, 14);
   if (SHOP.nearSwitch) drawPointer(DORM_SWITCH_X, SHOP_FLOOR - 260, t);
   if (night) {
-    g.fillStyle = 'rgba(15,10,50,.38)'; g.fillRect(0, 0, W, H);
-    const glow = g.createRadialGradient(850, SHOP_FLOOR - 60, 10, 850, SHOP_FLOOR - 60, 220); glow.addColorStop(0, 'rgba(255,220,120,.35)'); glow.addColorStop(1, 'rgba(255,220,120,0)');
-    g.fillStyle = glow; g.fillRect(600, SHOP_FLOOR - 300, 500, 320);
-    g.fillStyle = '#ffd23f'; g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.moveTo(830, SHOP_FLOOR - 70); g.lineTo(870, SHOP_FLOOR - 70); g.lineTo(860, SHOP_FLOOR - 100); g.lineTo(840, SHOP_FLOOR - 100); g.closePath(); g.fill(); g.stroke(); // the night lamp
-  }
-  const say = SHOP.pb && SHOP.pb.say && performance.now() < SHOP.pb.say.until ? SHOP.pb.say : null;
-  for (const { ch, x } of dormSpots()) {
-    const r = 46*Math.min(ch.size || 1, 1.8), bottom = ch.shape === 'circle' ? r : Math.max(...shapeVerts(ch.shape, r, true).map(v => v.y));
-    const talking = say && say.id === ch.id, bob = Math.abs(Math.sin(t*2 + x))*4 + (talking ? Math.abs(Math.sin(t*12))*6 : 0);
-    g.save(); g.translate(x, SHOP_FLOOR - bottom - bob); drawCharacter(g, ch, r, { facing:x < SHOP.x ? 1 : -1, ...looks(ch), happy:talking }); g.restore();
-    if (SHOP.nearPal === ch) drawPointer(x, SHOP_FLOOR - bottom*2 - 70, t);
+    g.fillStyle = 'rgba(15,10,50,.38)'; g.fillRect(0, 0, dormRoomW(), H);
+    const glow = g.createRadialGradient(lampX, SHOP_FLOOR - 60, 10, lampX, SHOP_FLOOR - 60, 220); glow.addColorStop(0, 'rgba(255,220,120,.35)'); glow.addColorStop(1, 'rgba(255,220,120,0)');
+    g.fillStyle = glow; g.fillRect(lampX - 250, SHOP_FLOOR - 300, 500, 320);
+    g.fillStyle = '#ffd23f'; g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.moveTo(lampX - 20, SHOP_FLOOR - 70); g.lineTo(lampX + 20, SHOP_FLOOR - 70); g.lineTo(lampX + 10, SHOP_FLOOR - 100); g.lineTo(lampX - 10, SHOP_FLOOR - 100); g.closePath(); g.fill(); g.stroke(); // the night lamp
   }
   if (d.crush) for (let i=0;i<5;i++) { const k = (t*0.4 + i/5) % 1; g.save(); g.globalAlpha = 1 - k; drawLittleHeart(850 + Math.sin(t*2 + i*2)*120, SHOP_FLOOR - 120 - k*260, 12 + i % 3*4); g.restore(); } // little hearts floating up (they like each other!)
-  if (say) { const s = dormSpots().find(s => s.ch.id === say.id); if (s) drawBubble(say.text, Math.min(W - 20, s.x + 160), SHOP_FLOOR - 190, s.x); }
+  drawDormPals(t);
+}
+function drawDormPals(t) { // the roommates in a dorm room (or the Shy Shopkeeper upstairs), and what they're saying
+  const say = SHOP.pb && SHOP.pb.say && performance.now() < SHOP.pb.say.until ? SHOP.pb.say : null;
+  for (const { ch, x } of dormSpots()) {
+    const r = dormR(ch), bottom = ch.shape === 'circle' ? r : Math.max(...shapeVerts(ch.shape, r, true).map(v => v.y));
+    const talking = say && say.id === ch.id, bob = Math.abs(Math.sin(t*2 + x))*4 + (talking ? Math.abs(Math.sin(t*12))*6 : 0);
+    g.save(); g.translate(x, SHOP_FLOOR - bottom - bob); drawCharacter(g, ch, r, { facing:x < SHOP.x ? 1 : -1, ...looks(ch), happy:talking }); g.restore();
+    if (SHOP.nearPal === ch) drawPointer(x, SHOP_FLOOR - dormTall(ch) - 70, t);
+  }
+  if (say) { const s = dormSpots().find(s => s.ch.id === say.id); if (s) drawBubble(say.text, Math.min(dormRoomW() - 20, s.x + 160), Math.min(SHOP_FLOOR - 190, SHOP_FLOOR - dormTall(s.ch) - 20), s.x); }
 }
 // ---------- the break room: both shopkeepers on their break. The longer you stay, the more stuff they give you ----------
 const BREAK_EVERY = 15; // seconds between treats (the timer starts over each time you come in)
@@ -4840,9 +4964,9 @@ function drawManager(g, t) { // %#@% sitting in his chair (drawn in the chair's 
   g.save(); g.translate(0, 110 + 305*0.5 - 60); drawGlitchMan(g, t, 0.5); g.restore(); // sitting up tall, so his head pokes up above the chair
 }
 function drawShop(t) {
-  const hall = SHOP.floor === 5; // the chase hallway scrolls with you
+  const hall = SHOP.floor === 5, wide = keeperRoom(); // the chase hallway (and the shopkeepers' big room) scrolls with you
   if (hall) { g.save(); g.translate(-(SHOP.cam || 0), 0); drawChaseFloor(t); }
-  else if (SHOP.floor === 12) drawDormRoom(t); else if (SHOP.floor === 11) drawDormHall(t); else if (SHOP.floor === 10) drawPlayerBreak(t); else if (SHOP.floor === 9) drawGlitchShop(t); else if (SHOP.floor === 8) drawCageFloor(t); else if (SHOP.floor === 7) drawTopFloor(t); else if (SHOP.floor === 6) drawBreakFloor(t); else if (SHOP.floor === 4) drawOfficeFloor(t); else if (SHOP.floor === 3) drawAtticFloor(t); else if (SHOP.floor === 2) drawFunnyFloor(t); else drawFightyFloor(t);
+  else if (SHOP.floor === 13) drawKeeperUpstairs(t); else if (SHOP.floor === 12) { if (wide) { g.save(); g.translate(-(SHOP.cam || 0), 0); } drawDormRoom(t); } else if (SHOP.floor === 11) drawDormHall(t); else if (SHOP.floor === 10) drawPlayerBreak(t); else if (SHOP.floor === 9) drawGlitchShop(t); else if (SHOP.floor === 8) drawCageFloor(t); else if (SHOP.floor === 7) drawTopFloor(t); else if (SHOP.floor === 6) drawBreakFloor(t); else if (SHOP.floor === 4) drawOfficeFloor(t); else if (SHOP.floor === 3) drawAtticFloor(t); else if (SHOP.floor === 2) drawFunnyFloor(t); else drawFightyFloor(t);
   // an empty pink stand upstairs, waiting for the next thing to sell (a real item takes its place once there is one)
   if (SHOP.floor === 2) {
     const spot = STAND_SPOTS[2].find(x => !STANDS.some(s => s.floor === 2 && s.x === x));
@@ -4900,6 +5024,7 @@ function drawShop(t) {
   if (SHOP.floor === 6) drawBreakPop(t);
   if (SHOP.floor === 3) drawAtticDark(t);
   if (hall) { drawChaser(t); g.restore(); drawChaseOverlay(t); }
+  if (wide) g.restore();
 }
 let lastT = performance.now(), acc = 0;
 function frame(now) {
@@ -5505,7 +5630,7 @@ $('glitchShopBtn').onclick = () => { // straight into the glitch shop, as Missin
 $('glitchShopBtn').hidden = !unlocked(CHAR.arrow); $('adminBtn').hidden = !unlocked(CHAR.admin);
 // ----- the day/night button in the corner: in the dorms it flips the lights, and in a fight it switches the sky (online, only the host can) -----
 function dayBtnPlace() { // where the button shows up right now: 'dorm', 'fight' or nothing
-  if (G.state === 'shop' && (SHOP.floor === 11 || SHOP.floor === 12)) return 'dorm';
+  if (G.state === 'shop' && SHOP.floor >= 11 && SHOP.floor <= 13) return 'dorm';
   if (G.state === 'fight' && G.mode !== 'race' && G.mode !== 'horror' && G.online !== 'client') return 'fight';
   return null;
 }
@@ -5671,7 +5796,9 @@ function shopStairs() {
     renderShopCard(true); return;
   }
   if (from === 6) { SHOP.brk = null; shopSay('Did you have a nice break? Hehe... come back soon.', 'jump'); renderShopCard(true); return; }
-  if (to === 12) { SHOP.dorm = SHOP.stairRoom || 0; SHOP.pb = { next:performance.now() + 600, chat:null, line:0 }; SHOP.youSay = 'Knock knock!'; SHOP.youSayT = 2; renderShopCard(true); return; } // into a dorm room
+  if (to === 13) { SHOP.pb = { next:performance.now() + 900, chat:null, line:0 }; SHOP.youSay = 'Ooh, an upstairs!'; SHOP.youSayT = 2; renderShopCard(true); return; } // up the shopkeepers' stairs
+  if (from === 13) { SHOP.pb = { next:performance.now() + 600, chat:null, line:0 }; renderShopCard(true); return; } // and back down (to the bottom of the stairs)
+  if (to === 12) { SHOP.dorm = SHOP.stairRoom || 0; SHOP.cam = 0; SHOP.pb = { next:performance.now() + 600, chat:null, line:0 }; SHOP.youSay = 'Knock knock!'; SHOP.youSayT = 2; renderShopCard(true); return; } // into a dorm room
   if (from === 12) { SHOP.x = DORM_ROOM_X[SHOP.dorm || 0] + 110; SHOP.facing = 1; SHOP.pb = null; renderShopCard(true); return; } // back out to the hallway, by that room's door
   if (to === 11) { SHOP.pb = null; renderShopCard(true); return; }
   if (to === 10) { SHOP.pb = { next:performance.now() + 600, chat:null, line:0 }; SHOP.youSay = 'Hi everyone! Break time!'; SHOP.youSayT = 2.5; renderShopCard(true); return; } // into player breaks
@@ -5775,12 +5902,13 @@ function fillShopCard(card, ch, it) {
   if (!it && SHOP.nearSkins) return fillSkinCard(card, ch);
   if (!it && SHOP.nearStairs) {
     const to = SHOP.stairTo, up = to > SHOP.floor;
-    const door = to === 6 || SHOP.floor === 6 || to === 10 || SHOP.floor === 10 || to === 11 || to === 12 || SHOP.floor === 11 || SHOP.floor === 12;
+    const inner = to === 13 || SHOP.floor === 13; // (the stairs inside the shopkeepers' room)
+    const door = !inner && (to === 6 || SHOP.floor === 6 || to === 10 || SHOP.floor === 10 || to === 11 || to === 12 || SHOP.floor === 11 || SHOP.floor === 12);
     const dn = DORMS[SHOP.stairRoom || 0].ids.map(dormName); // (the names on a dorm door)
     const text = { 2:SHOP.floor === 10 ? 'Go back out to the funny fun shop.' : SHOP.floor === 6 ? 'Go back out to the funny fun shop. (Your break timer will start over!)' : SHOP.floor === 1 ? 'Go up to the 2nd floor: the funny fun shop. Things that don\'t fit down here go up there.' : 'Go back down to the 2nd floor: the funny fun shop.',
       10:SHOP.floor === 11 ? 'Go back to player breaks.' : 'Go into player breaks: the fighters hang out in here when they are not fighting. Say hi!',
       11:SHOP.floor === 12 ? 'Go back out to the dorms hallway.' : 'Go to the dorms, where the fighters sleep. Each pair of roommates has a room, with their names on the door.',
-      12:dormOpen(SHOP.stairRoom || 0) ? `Go into ${dn[0]} and ${dn[1]}'s room.` : `This door is locked! Only ${dn[0]} and ${dn[1]} can go in. (Shop as one of them to get in.)`,
+      13:'Go upstairs in the shopkeepers\' room. What do they keep up there?', 12:SHOP.floor === 13 ? 'Go back downstairs to the shopkeepers\' room.' : dormOpen(SHOP.stairRoom || 0) ? `Go into ${dn[0]} and ${dn[1]}'s room.` : `This door is locked! Only ${dn[0]} and ${dn[1]} can go in. (Shop as one of them to get in.)`,
       6:'Go into the break room. The shopkeepers take their break in there... the longer you stay, the more stuff they give you!',
       1:SHOP.floor === 8 ? 'The portal is open! Jump in to go home, to the 1st floor.' : 'Go back down to the 1st floor: the fighty shop.',
       8:'A big swirly portal... Where does it go? Is that where HE is?', 4:SHOP.floor === 7 ? `Jump back into the portal. It goes down to the manager's office... careful, ${BOSS_NAME} is in there!` : 'Ride the elevator up to the manager\'s office. Ding!',
@@ -5828,9 +5956,10 @@ function fillShopCard(card, ch, it) {
     card.querySelector('.row').append(ask);
     return;
   }
-  if (!it && (SHOP.floor === 11 || SHOP.floor === 12)) {
+  if (!it && SHOP.floor >= 11 && SHOP.floor <= 13) {
     const d = DORMS[SHOP.dorm || 0];
-    card.innerHTML = SHOP.floor === 11 ? '<h3>The dorms</h3><p>This is where the fighters sleep! Each pair of roommates shares a room, and their names are on the door. Walk up to a door to go in.</p><p class="note">The door on the left goes back to player breaks.</p>'
+    card.innerHTML = SHOP.floor === 13 && !SHOP.nearPal ? '<h3>Upstairs</h3><p>The shopkeepers\' upstairs, where the Shy Shopkeeper likes to hang out! Their closet of fancy clothes, a comfy couch with a TV, a telescope and a treasure chest. The stairs on the right go back down.</p>'
+      : SHOP.floor === 11 ? '<h3>The dorms</h3><p>This is where the fighters sleep! Each pair of roommates shares a room, and their names are on the door. Walk up to a door to go in.</p><p class="note">The door on the left goes back to player breaks.</p>'
       : SHOP.nearSwitch ? `<h3>The light switch</h3><p>It's ${dormNight() ? 'night' : 'daytime'} in the dorms. Press punch to switch to ${dormNight() ? 'day' : 'night'}!</p>`
       : SHOP.nearPal ? `<h3>${SHOP.nearPal.name}</h3><p>This is ${SHOP.nearPal.name}'s room. Press punch to say hi!</p>` : `<h3>${dormName(d.ids[0])} & ${dormName(d.ids[1])}'s room</h3><p>The two roommates hang out here and chat. Walk up to one and press punch to say hi. The light switch by the door makes it day or night.</p><p class="note">The door on the left goes back to the hallway.</p>`;
     const b = document.createElement('button'); b.className = 'btn'; b.id = 'dormLight'; b.textContent = dormNight() ? '☀️ make it day' : '🌙 make it night'; // (day or night from anywhere in the dorms)
