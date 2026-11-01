@@ -69,6 +69,8 @@ After the fight, the **chase** starts. You're in a long, dark, glitched-out worl
 
 **The glitch shop:** once you've freed **Missing Arrow**, a new glitchy black **SHOP..?** button (drawn by Mason, with red and blue glitch blocks stuck on it) shows up on the main menu. Until then it's hidden. It takes you straight into the secret **glitch shop**, shopping as Missing Arrow, where nobody works and the things just float on their stands: **Glitch cubes** (40 coins: red and blue cubes that float around you and blink sideways now and then) and **3D glasses** (30 coins: red and blue lenses in white frames). Once you have them, any fighter can put them on from the "is wearing" list on the shop card. Press back to leave.
 
+**Codes:** the **codes** button on the main menu opens a page where you can type in a secret code. Right now there's one, the admin code, which unlocks the **Admin**, a secret fighter. He's a gold circle with a big smile for now, until Mason designs him. Until you enter the code, he shows up as a locked "???" on the "who is with who" screen ("Do you know the code?").
+
 To talk to the grey shopkeeper, walk up to the counter and press punch. Each time you press it, they say something new: tips, how many coins you need, and a joke.
 
 - **Sunglasses (20 coins):** dark shades with a shine. Every fighter can wear them except Cool Star, who already has its own.

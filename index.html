@@ -253,7 +253,7 @@ html.xmas .fff span{border-color:#1b7a34;color:#c8102e}
     <p id="xmasNote" class="xmas-note" hidden>🎄 Merry Christmas! 🎁</p>
     <div class="title-chars" id="titleChars"></div>
     <button id="okBtn" class="btn grey">OK</button>
-    <div class="menu"><button id="onlineBtn" class="btn">play online</button><button id="howBtn" class="btn">how to play</button><button id="keysBtn" class="btn">controls</button><button id="setBtn" class="btn">settings</button><button id="shopBtn" class="btn">shop</button><button id="glitchShopBtn" class="btn glitch-btn" hidden>SHOP..?</button></div>
+    <div class="menu"><button id="onlineBtn" class="btn">play online</button><button id="howBtn" class="btn">how to play</button><button id="keysBtn" class="btn">controls</button><button id="setBtn" class="btn">settings</button><button id="shopBtn" class="btn">shop</button><button id="codesBtn" class="btn">codes</button><button id="glitchShopBtn" class="btn glitch-btn" hidden>SHOP..?</button></div>
     <p id="notice" class="msg" role="status"></p>
     <p class="hint">OK plays on this computer. Best with a keyboard or game controllers.</p>
   </div>
@@ -331,6 +331,18 @@ html.xmas .fff span{border-color:#1b7a34;color:#c8102e}
         </ul>
       </section>
       <div class="page-foot"><button class="btn grey" data-back>got it</button></div>
+    </div>
+  </div>
+</div>
+
+<div id="codes" class="screen" hidden>
+  <div class="panel page">
+    <header class="whois"><h2>codes</h2><button class="btn back" data-back>back</button></header>
+    <div class="page-body">
+      <p>Got a secret code? Type it in here!</p>
+      <div class="setting name-row"><label for="secretIn">Code</label><input id="secretIn" maxlength="30" autocomplete="off" spellcheck="false"></div>
+      <div class="page-foot"><button id="secretBtn" class="btn">enter code</button></div>
+      <p id="codesMsg" class="msg" role="status"></p>
     </div>
   </div>
 </div>
@@ -525,7 +537,9 @@ const CHARS = [
   { id:'heart',    name:'Lovely Heart',    color:'#ff8fc1', shape:'heart',    trait:'Bouncy, jumps really high', speed:1.05, power:0.9,  weight:0.9,  jump:1.22 },
   { id:'shuriken', name:'Grumpy Shuriken', color:'#b97a57', shape:'shuriken', trait:'Fast and sharp. Special: dashes forward',            speed:1.2,  power:1.1,  weight:0.85, jump:1.0 },
   // the missing guy from the "HAVE YOU SEEN HIM?" poster: locked in a cage past the 5th floor until you break him out
-  { id:'arrow',    name:'Missing Arrow',   color:'#ffb07c', shape:'arrow',    trait:'Scared and glitchy. Special: glitch fest', speed:1.1,  power:1.0,  weight:0.95, jump:1.08, secret:true },
+  { id:'arrow',    name:'Missing Arrow',   color:'#ffb07c', shape:'arrow',    trait:'Scared and glitchy. Special: glitch fest', speed:1.1,  power:1.0,  weight:0.95, jump:1.08, secret:true, hint:'Have you seen him? Look past the 5th floor of the shop...' },
+  // the admin: you only get him with the admin code (on the "codes" page). Just a stand-in for now, until Mason makes him
+  { id:'admin',    name:'Admin',           color:'#ffd700', shape:'circle',   trait:'The boss of the whole game', speed:1.0,  power:1.0,  weight:1.0,  jump:1.0, secret:true, hint:'Do you know the code?' },
 ];
 const CHAR = Object.fromEntries(CHARS.map(c => [c.id, c]));
 const unlocked = ch => !ch.secret || !!(shop.unlocked && shop.unlocked[ch.id]); // secret fighters stay locked until you earn them
@@ -827,6 +841,9 @@ function drawFace(g, ch, r, o = {}) {
       oval(0,0.3,0.25,0.09); g.strokeStyle = '#fff'; g.lineWidth = 0.035; line(-0.18,0.3,0.18,0.3); break;
     case 'circle':
       oval(-0.2,-0.2,0.065,0.13); oval(0.2,-0.2,0.065,0.13); oval(0,0.27,0.3,0.09); break;
+    case 'admin': // a big proud smile (a stand-in face until Mason draws him)
+      oval(-0.2,-0.18,0.08,0.1); oval(0.2,-0.18,0.08,0.1);
+      g.beginPath(); g.moveTo(-0.3,0.12); g.quadraticCurveTo(0,0.45,0.3,0.12); g.closePath(); g.fill(); break;
     case 'diamond':
       dot(-0.18,-0.04,0.09); dot(0.18,-0.04,0.09);
       g.fillStyle = ch.color; g.fillRect(-0.3,-0.16,0.6,0.1); g.fillStyle = C.ink;
@@ -932,7 +949,7 @@ function drawFace(g, ch, r, o = {}) {
   g.restore();
 }
 // where each fighter's eyes are (in face units), so the shop's sunglasses sit on them
-const EYES = { arrow:[[-0.18,0],[0.18,0]], tri:[[-0.17,0.06],[0.17,0.06]], circle:[[-0.2,-0.2],[0.2,-0.2]], diamond:[[-0.18,-0.04],[0.18,-0.04]], square:[[-0.18,-0.04],[0.18,-0.04]], sparkle:[[-0.18,-0.1],[0.18,-0.1]],
+const EYES = { admin:[[-0.2,-0.18],[0.2,-0.18]], arrow:[[-0.18,0],[0.18,0]], tri:[[-0.17,0.06],[0.17,0.06]], circle:[[-0.2,-0.2],[0.2,-0.2]], diamond:[[-0.18,-0.04],[0.18,-0.04]], square:[[-0.18,-0.04],[0.18,-0.04]], sparkle:[[-0.18,-0.1],[0.18,-0.1]],
   hex:[[-0.24,-0.12],[0.17,-0.13]], heart:[[-0.3,0.04],[0.3,0.04]], shuriken:[[-0.15,-0.05],[0.17,-0.06]] };
 function drawGlasses(g, [a, b], glow = false, lens = '#e8ff6a', three = false) { // the sunglasses from the shop (or, with glow, the round glow goggles, or the red and blue 3D glasses), drawn in face units between two eyes
   const d = Math.hypot(b[0] - a[0], b[1] - a[1]), lw = Math.min(0.3, d*0.8), lh = glow ? lw : 0.2;
@@ -4206,7 +4223,7 @@ function applyTheme() {
   document.documentElement.classList.toggle('xmas', xmas()); $('xmasNote').hidden = !xmas();
 }
 applyTheme();
-const screens = ['title','setup','pause','results','howto','settings','quitAsk','online','lobby','keys','shop'];
+const screens = ['title','setup','pause','results','howto','settings','quitAsk','online','lobby','keys','shop','codes'];
 function showScreen(id) { for (const s of screens) $(s).hidden = s !== id; $('glitchShopBtn').hidden = !unlocked(CHAR.arrow); $('gameQuit').hidden = !(id === null && G.state === 'fight'); musicUpdate(); }
 function openQuit() {
   if (G.state !== 'fight') return;
@@ -4242,7 +4259,7 @@ function renderRoster() {
     if (!unlocked(ch)) { // a locked fighter: just a dark shape and a hint
       const card = document.createElement('div'); card.className = 'card off locked';
       const cc = charCanvas(ch, 92); cc.style.filter = 'brightness(0)'; card.appendChild(cc);
-      card.insertAdjacentHTML('beforeend', '<h4>???</h4><p>Locked. Have you seen him? Look past the 5th floor of the shop...</p>');
+      card.insertAdjacentHTML('beforeend', `<h4>???</h4><p>Locked. ${ch.hint}</p>`);
       box.appendChild(card); continue;
     }
     const ctl = CTRL[setup.slots[ch.id]] || CTRL.off;
@@ -4372,6 +4389,18 @@ let backTo = 'title';
 function openPage(id) { backTo = G.state; G.state = id; waitingKey = null; if (id === 'settings') renderSettings(); if (id === 'keys') { renderKeys(); $('keysMsg').textContent = ''; } fillKeyLabels(); showScreen(id); $(id).scrollTop = 0; $(id).querySelector('[data-back]').focus(); }
 document.querySelectorAll('[data-back]').forEach(b => b.onclick = () => { if (backTo === 'setup') openSetup(); else { G.state = 'title'; showScreen('title'); $('okBtn').focus(); } });
 $('howBtn').onclick = () => { audioOn(); openPage('howto'); };
+// ---------- codes: type in a secret code to get something ----------
+const CODES = { masonisthebest:{ unlock:'admin', msg:'Admin code accepted! You got the Admin. Turn him on in the "who is with who" screen.' } };
+$('codesBtn').onclick = () => { audioOn(); openPage('codes'); $('secretIn').value = ''; $('codesMsg').textContent = ''; $('secretIn').focus(); };
+$('secretBtn').onclick = () => {
+  const code = CODES[$('secretIn').value.trim().toLowerCase().replace(/\s+/g, '')];
+  if (!code) { $('codesMsg').textContent = 'Hmm, that\'s not a code. Try again!'; if (sfx.bonk) sfx.bonk(); return; }
+  if (shop.unlocked && shop.unlocked[code.unlock]) { $('codesMsg').textContent = 'You already used that code!'; return; }
+  shop.unlocked = shop.unlocked || {}; shop.unlocked[code.unlock] = true; saveShop();
+  titleChars.innerHTML = ''; PLAYABLE().forEach(c => titleChars.appendChild(charCanvas(c, 78)));
+  $('codesMsg').textContent = code.msg; $('secretIn').value = ''; if (sfx.win) sfx.win();
+};
+$('secretIn').addEventListener('keydown', e => { if (e.key === 'Enter') $('secretBtn').click(); });
 $('setBtn').onclick = () => { audioOn(); openPage('settings'); };
 $('shopBtn').onclick = () => { audioOn(); openShop(); };
 $('glitchShopBtn').onclick = () => { // straight into the glitch shop, as Missing Arrow (you only get the button once he's free)
