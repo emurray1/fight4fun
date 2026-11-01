@@ -4094,7 +4094,7 @@ function pbStep() { // the next thing someone says (by the clock, so it keeps go
 function palTalk() { // you walked up to someone and pressed punch
   const p = SHOP.nearPal; if (!p) return;
   if (keeperRoom() && p.id === 'keeper') return fightyTalk(); // at home, Fighty gives you chores
-  if (p.id === 'keeper2' && shySleeping()) { SHOP.shyAwake = true; pbSay('keeper2', 'W-what?! Oh... is it dinner time? *yawns*', 3.6); SHOP.pb.next = performance.now() + 3800; if (SHOP.ktask === 'wake') { SHOP.ktask = null; kDone().add('wake'); } renderShopCard(true); return; } // waking her up
+  if (p.id === 'keeper2' && shySleeping()) { SHOP.shyAwake = true; SHOP.shyWokeT = performance.now(); pbSay('keeper2', 'W-what?! Oh... is it dinner time? *yawns*', 3.6); SHOP.pb.next = performance.now() + 3800; if (SHOP.ktask === 'wake') { SHOP.ktask = null; kDone().add('wake'); } renderShopCard(true); return; } // waking her up
   const you = CHARS[SHOP.who].id, crush = SHOP.floor === 12 && DORMS[SHOP.dorm || 0].crush; // (in their room, Sly Diamond and Missing Arrow are sweet to each other)
   const line = crush ? { diamond:'Oh! Hi, Missing Arrow... *blushes*', arrow:'H-hi, Sly Diamond... *happy glitch*' }[p.id]
     : p.id === 'shuriken' && you === 'sparkle' ? 'THERE you are, Goofy Sparkle! I looked EVERYWHERE!' : null; // (he's been looking for you!)
@@ -4165,9 +4165,19 @@ const dormOpen = i => !DORMS[i].locked || DORMS[i].ids.includes(CHARS[SHOP.who].
 const KEEPER_SHOP_R = { keeper:0.75*350/2.1, keeper2:255/2.1 }; // the size that draws the shopkeepers about as big as they are in their shops (Fighty a bit smaller)
 const dormR = ch => KEEPER_SHOP_R[ch.id] || 46*Math.min(ch.size || 1, 1.8);
 const dormTall = ch => dormR(ch)*(ch.keeper ? 3 : 2); // (how tall they stand, for speech bubbles)
+// when you wake her up at night, the Shy Shopkeeper gets out of bed and walks down the stairs for dinner
+const shyDown = () => dormNight() && SHOP.shyAwake;
+const KEEPER_DINNER = [[['keeper', 'There you are, sleepyhead! Dinner is almost ready!'], ['keeper2', '*yawns* ...mmm, is it soup?'], ['keeper', 'Your favourite!'], ['keeper2', '*happy* hehe...']],
+  [['keeper2', 'th-thank you for making dinner...'], ['keeper', 'Anything for my best shop buddy!']]];
+function keeperSpots() { // where the two shopkeepers are in their home
+  const e = performance.now() - (SHOP.shyWokeT || 0), down = shyDown(), walking = down && e > 1200 && e < 3600; // (she says something first, then walks to the stairs)
+  const spots = SHOP.floor === 13 ? (down ? (e < 3600 ? [{ ch:CHAR.keeper2, x:1750 + Math.max(0, Math.min(1, (e - 1200)/2400))*(KEEPER_UP_X - 1750), walking }] : []) : [{ ch:CHAR.keeper2, x:shySleeping() ? 1750 : 840 }])
+    : [{ ch:CHAR.keeper, x:1000 }].concat(down ? [{ ch:CHAR.keeper2, x:1560 }] : []); // (downstairs, by the dinner table)
+  return spots.filter(s => s.ch.id !== CHARS[SHOP.who].id);
+}
 function dormSpots() { // the roommates in their room (not you, if it's your room)
   const d = DORMS[SHOP.dorm || 0];
-  if (d.keepers) return [SHOP.floor === 13 ? 'keeper2' : 'keeper'].map(id => CHAR[id]).filter(ch => ch.id !== CHARS[SHOP.who].id).map(ch => ({ ch, x:SHOP.floor === 13 ? (shySleeping() ? 1750 : 840) : 1000 })); // (the Shy Shopkeeper is upstairs, the Fighty one downstairs)
+  if (d.keepers) return keeperSpots(); // (the Shy Shopkeeper is upstairs, the Fighty one downstairs)
   return d.ids.map(id => CHAR[id]).filter(ch => unlocked(ch) && ch.id !== CHARS[SHOP.who].id).map((ch, i) => ({ ch, x:[640, 1060][i] }));
 }
 // the shopkeepers' room is extra big (wider than the screen, so it scrolls with you) and fancier than the fighters' rooms
@@ -4344,7 +4354,7 @@ function drawKeeperDoor(x, t) { // the shopkeepers' door: bigger and gold, with 
 function dormStep() { // the roommates take turns talking (by the clock)
   const pb = SHOP.pb, now = performance.now(); if (!pb || now < pb.next) return;
   const here = new Set(dormSpots().map(s => s.ch.id)); if (!here.size) return;
-  const chats = (dormNight() ? DORMS[SHOP.dorm || 0].chats : DORM_DAY[SHOP.dorm || 0]).filter(c => c.every(([id]) => here.has(id))); // (night talk or morning talk)
+  const chats = (DORMS[SHOP.dorm || 0].keepers && SHOP.floor === 12 && shyDown() ? KEEPER_DINNER : dormNight() ? DORMS[SHOP.dorm || 0].chats : DORM_DAY[SHOP.dorm || 0]).filter(c => c.every(([id]) => here.has(id))); // (night talk or morning talk)
   if (!chats.length) { const id = [...here][0], lines = (DORMS[SHOP.dorm || 0].crush && { diamond:['Hi, Missing Arrow... *blushes*', 'I saved you some snacks, hehe.', 'You look cute when you glitch.'], arrow:['H-hi, Sly Diamond... *happy glitch*', 'Y-your eyelashes are really pretty...', '*blushes and glitches*'] }[id]) || (id === 'keeper2' && shySleeping() && ['Zzz...', '*snores softly*', 'zzz... one pink bow, please... zzz']) || PB_SOLO[id] || ['...']; pbSay(id, lines[Math.floor(Math.random()*lines.length)]); pb.next = now + 4200; return; } // (alone in the room) // (alone with you in their room, they say sweet things to the one they like)
   if (!pb.chat || pb.line >= pb.chat.length) { pb.chat = chats[(pb.ci = ((pb.ci ?? -1) + 1) % chats.length)]; pb.line = 0; }
   const [id, text] = pb.chat[pb.line++]; pbSay(id, text); pb.next = now + (pb.line >= pb.chat.length ? 5200 : 3600);
@@ -4420,7 +4430,7 @@ function fightyTalk() { // you walked up to the Fighty Shopkeeper at home and pr
 function doKTask() { // doing the chore you were given
   const id = SHOP.nearTask, task = KTASKS[id]; if (!task) return;
   kDone().add(id); SHOP.ktask = null; SHOP.kfx = { id, t:performance.now() };
-  if (id === 'wake') SHOP.shyAwake = true; // (she's up for dinner, but it's still night)
+  if (id === 'wake') { SHOP.shyAwake = true; SHOP.shyWokeT = performance.now(); } // (she's up for dinner, but it's still night)
   shop.coins += TASK_PAY; saveShop();
   if (task.who) { pbSay(task.who, task.done, 3.6); SHOP.pb.next = performance.now() + 3800; SHOP.youSay = `Wake up, it is dinner time! (+${TASK_PAY} coins)`; }
   else SHOP.youSay = `${task.done} (+${TASK_PAY} coins)`;
@@ -4498,11 +4508,11 @@ function drawDormRoom(t) {
 }
 function drawDormPals(t) { // the roommates in a dorm room (or the Shy Shopkeeper upstairs), and what they're saying
   const say = SHOP.pb && SHOP.pb.say && performance.now() < SHOP.pb.say.until ? SHOP.pb.say : null;
-  for (const { ch, x } of dormSpots()) {
+  for (const { ch, x, walking } of dormSpots()) {
     if (ch.id === 'keeper2' && shySleeping()) continue; // (asleep in bed: drawn with the bed)
     const r = dormR(ch), bottom = ch.shape === 'circle' ? r : Math.max(...shapeVerts(ch.shape, r, true).map(v => v.y));
     const talking = say && say.id === ch.id, bob = Math.abs(Math.sin(t*2 + x))*4 + (talking ? Math.abs(Math.sin(t*12))*6 : 0);
-    g.save(); g.translate(x, SHOP_FLOOR - bottom - bob); drawCharacter(g, ch, r, { facing:x < SHOP.x ? 1 : -1, ...looks(ch), happy:talking }); g.restore();
+    g.save(); g.translate(x, SHOP_FLOOR - bottom - bob); drawCharacter(g, ch, r, { facing:walking ? 1 : x < SHOP.x ? 1 : -1, walk:walking ? t*10 : null, ...looks(ch), happy:talking }); g.restore();
     if (SHOP.nearPal === ch) drawPointer(x, SHOP_FLOOR - dormTall(ch) - 70, t);
   }
   if (say) { const s = dormSpots().find(s => s.ch.id === say.id); if (s) drawBubble(say.text, Math.min(dormRoomW() - 20, s.x + 160), Math.min(SHOP_FLOOR - 190, SHOP_FLOOR - dormTall(s.ch) - 20), s.x); }
