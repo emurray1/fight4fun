@@ -731,9 +731,12 @@ const TOP_PORTAL_X = 800; // there is no portal in the office: you walk off its 
 const CAGE_X = 200, CAGE_PORTAL_X = 1263, LOCK_POPS = 12, LOCK_SPEED = 2.0, LOCK_SPEEDUP = 0.14, LOCK_WIN = 0.28; // pops needed, how fast the needle spins (and speeds up), how close counts
 // a "fighters only" door on the 2nd floor goes into player breaks (floor 10), where the fighters hang out
 const PLAYER_DOOR_X = 680, PB_EXIT_X = 120;
+// and a door in player breaks goes to the dorms (floor 11): a hallway with a door for each pair of roommates, into their room (floor 12)
+const DORM_DOOR_X = 1500, DORM_EXIT_X = 110, DORM_ROOM_X = [330, 610, 890, 1170, 1450];
 const STAIRS = [{ floor:1, x:STAIRS_X[1], to:2 }, { floor:2, x:STAIRS_X[2], to:1 }, { floor:2, x:LADDER_X, to:3 }, { floor:3, x:ATTIC_STAIRS_X, to:2 },
   { floor:3, x:ELEVATOR_X, to:4 }, { floor:4, x:ELEVATOR_X, to:3 }, { floor:2, x:BREAK_DOOR_X, to:6 }, { floor:6, x:BREAK_DOOR_X, to:2 },
-  { floor:7, x:TOP_PORTAL_X, to:8 }, { floor:8, x:CAGE_PORTAL_X, to:1 }, { floor:2, x:PLAYER_DOOR_X, to:10 }, { floor:10, x:PB_EXIT_X, to:2 }];
+  { floor:7, x:TOP_PORTAL_X, to:8 }, { floor:8, x:CAGE_PORTAL_X, to:1 }, { floor:2, x:PLAYER_DOOR_X, to:10 }, { floor:10, x:PB_EXIT_X, to:2 },
+  { floor:10, x:DORM_DOOR_X, to:11 }, { floor:11, x:DORM_EXIT_X, to:10 }, ...DORM_ROOM_X.map((x, room) => ({ floor:11, x, to:12, room })), { floor:12, x:DORM_EXIT_X, to:11 }];
 const STAND_SPOTS = { 1:[390, 610, 830], 2:[530], 3:[800], 9:[720, 1080] };
 const SKIN_X = 830; // the skins booth on the 2nd floor (a big mirror)
 const STANDS = (() => { // items fill the 1st floor, then the 2nd; an item can also ask for a floor of its own
@@ -3751,8 +3754,9 @@ function shopStep(dt) {
   SHOP.nearSkins = f === 2 && !SHOP.near && Math.abs(SKIN_X - SHOP.x) < 100;
   const stair = !SHOP.near && STAIRS.find(s => s.floor === f && Math.abs(s.x - SHOP.x) < 100 && (f !== 8 || (SHOP.cage && SHOP.cage.freed))); // the cage room portal only opens once he is free
   SHOP.nearCage = f === 8 && !!SHOP.cage && !SHOP.cage.freed && Math.abs(SHOP.x - CAGE_X) < 170;
-  SHOP.nearStairs = !!stair; SHOP.stairTo = stair ? stair.to : 0;
-  SHOP.nearPal = f === 10 && !SHOP.nearStairs ? (pbSpots().find(s => Math.abs(s.x - SHOP.x) < 70) || {}).ch || null : null; // walking up to a fighter in player breaks
+  SHOP.nearStairs = !!stair; SHOP.stairTo = stair ? stair.to : 0; SHOP.stairRoom = stair && stair.room != null ? stair.room : SHOP.stairRoom; // (which dorm door)
+  SHOP.nearPal = (f === 10 || f === 12) && !SHOP.nearStairs ? ((f === 10 ? pbSpots() : dormSpots()).find(s => Math.abs(s.x - SHOP.x) < 70) || {}).ch || null : null; // walking up to a fighter in player breaks or a dorm room
+  if (f === 12) dormStep();
   if (f === 10) pbStep();
   SHOP.nearKeeper = !SHOP.near && !SHOP.nearStairs && !!KEEPERS[f] && Math.abs(KEEPERS[f] - SHOP.x) < (f === 6 ? 300 : 220) && (f !== 4 || (SHOP.revealed && !SHOP.chase));
   if (f === 4 && !SHOP.revealed && !SHOP.chase && !isAdmin()) { // walk close and the chair spins around (but the manager can't see the Admin, so it never does)
@@ -4043,7 +4047,7 @@ const PB_HI = { // what they say when you walk up and press punch ({you} is your
   shuriken:'Hmph. Hi, {you}. Have you seen Goofy Sparkle?', arrow:'O-oh! Hi {you}... please don\'t scare me.', admin:'Hello, {you}. Enjoy your break.',
 };
 const pbPals = () => PLAYABLE().filter(c => !c.keeper && c.id !== 'admin' && c.id !== CHARS[SHOP.who].id); // everyone but the shopkeepers, the Admin and you
-function pbSpots() { const pals = pbPals(), step = 1300/Math.max(1, pals.length); return pals.map((ch, i) => ({ ch, x:260 + step*(i + 0.5) })); }
+function pbSpots() { const pals = pbPals(), step = 1180/Math.max(1, pals.length); return pals.map((ch, i) => ({ ch, x:260 + step*(i + 0.5) })); }
 function pbSay(id, text, secs = 3.4) { SHOP.pb.say = { id, text, until:performance.now() + secs*1000 }; }
 function pbStep() { // the next thing someone says (by the clock, so it keeps going even when the game runs slowly)
   const pb = SHOP.pb, now = performance.now(); if (!pb || now < pb.next) return;
@@ -4062,6 +4066,7 @@ function palTalk() { // you walked up to someone and pressed punch
 function drawPlayerBreak(t) {
   drawWoodRoom('#fff1d6', '#7a4a2a', '#9c6b43');
   drawStaffDoor(PB_EXIT_X, '← shop', PINK, 'FIGHTERS ONLY');
+  drawStaffDoor(DORM_DOOR_X, 'dorms →', '#efe6ff', 'FIGHTERS ONLY'); // the way to the dorms
   g.fillStyle = '#7a4a2a'; g.font = `56px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('player breaks', 820, 175); // the sign
   for (const [x, col] of [[520, '#3f8fd9'], [1180, '#d9483f']]) { // two comfy couches
     g.fillStyle = col; g.strokeStyle = C.ink; g.lineWidth = 4; roundRect(x - 150, SHOP_FLOOR - 120, 300, 90, 20); g.fill(); g.stroke();
@@ -4080,6 +4085,74 @@ function drawPlayerBreak(t) {
     if (SHOP.nearPal === ch) drawPointer(x, SHOP_FLOOR - bottom*2 - 70, t);
   }
   if (say) { const s = pbSpots().find(s => s.ch.id === say.id); if (s) drawBubble(say.text, Math.min(W - 20, s.x + 160), SHOP_FLOOR - 190, s.x); }
+}
+// ---------- the dorms (floor 11): a hallway past player breaks, with a door for each pair of roommates and their names on it.
+// Each door goes into their room (floor 12), where the two of them hang out and chat ----------
+const DORMS = [ // who shares a room (and what they talk about in there)
+  { ids:['heart', 'star'], wall:'#ffe0ef', chats:[[['heart', 'Good night, Star! Sweet dreams!'], ['star', 'Night. ...Stay cool.'], ['heart', '*giggles* You always say that!']],
+    [['star', 'Who put a heart sticker on my sunglasses?'], ['heart', 'Hehe... it was me!'], ['star', '...It looks cool, actually.']]] },
+  { ids:['sparkle', 'shuriken'], wall:'#fff6c9', chats:[[['sparkle', 'Pillow fight!'], ['shuriken', 'No pillow fights. Go to sleep.'], ['sparkle', '*bonk* Hehe!'], ['shuriken', '...OK. ONE pillow fight.']],
+    [['shuriken', 'Do NOT run off again tomorrow.'], ['sparkle', 'I promise! ...Maybe.']]] },
+  { ids:['tri', 'square'], wall:'#ffe3d6', chats:[[['square', 'GOOD NIGHT, TRIANGLE!'], ['tri', 'Stop YELLING, I am trying to sleep!'], ['square', 'SORRY! ...sorry.']],
+    [['tri', 'Grr... who snores like that?!'], ['square', 'NOT ME!'], ['tri', 'It was SO you.']]] },
+  { ids:['circle', 'hex'], wall:'#dff1ff', chats:[[['hex', 'Beep... boop... I am scared of the dark.'], ['circle', 'WHAT?! Me too!'], ['hex', '*turns on his antenna light* There. Better.']],
+    [['circle', 'WHAT was that noise?!'], ['hex', 'Beep! It was my tummy. Sorry.']]] },
+  { ids:['diamond', 'arrow'], wall:'#e3ffe6', chats:[[['arrow', 'I-is there something under my bed?'], ['diamond', 'Just my secret snack stash... hehe.'], ['arrow', '*phew*']],
+    [['diamond', 'Want to know a secret?'], ['arrow', 'O-only if it is not scary...'], ['diamond', 'You are my favorite roommate.'], ['arrow', '*happy glitch*']]] },
+];
+
+const dormName = id => unlocked(CHAR[id]) ? CHAR[id].name : '???'; // (a locked fighter's name stays a secret)
+function dormSpots() { // the roommates in their room (not you, if it's your room)
+  const d = DORMS[SHOP.dorm || 0];
+  return d.ids.map(id => CHAR[id]).filter(ch => unlocked(ch) && ch.id !== CHARS[SHOP.who].id).map((ch, i) => ({ ch, x:[640, 1060][i] }));
+}
+function dormStep() { // the roommates take turns talking (by the clock)
+  const pb = SHOP.pb, now = performance.now(); if (!pb || now < pb.next) return;
+  const here = new Set(dormSpots().map(s => s.ch.id)); if (!here.size) return;
+  const chats = DORMS[SHOP.dorm || 0].chats.filter(c => c.every(([id]) => here.has(id)));
+  if (!chats.length) { const id = [...here][0], lines = PB_SOLO[id] || ['...']; pbSay(id, lines[Math.floor(Math.random()*lines.length)]); pb.next = now + 4200; return; } // (alone in the room)
+  if (!pb.chat || pb.line >= pb.chat.length) { pb.chat = chats[(pb.ci = ((pb.ci ?? -1) + 1) % chats.length)]; pb.line = 0; }
+  const [id, text] = pb.chat[pb.line++]; pbSay(id, text); pb.next = now + (pb.line >= pb.chat.length ? 5200 : 3600);
+}
+function drawNameDoor(x, names, color = '#b97a57') { // a brown dorm door, with the roommates' names on a little plate
+  g.fillStyle = '#5a3a1e'; g.fillRect(x - 66, SHOP_FLOOR - 260, 132, 260);
+  g.fillStyle = color; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(x - 56, SHOP_FLOOR - 250, 112, 250); g.strokeRect(x - 56, SHOP_FLOOR - 250, 112, 250);
+  g.fillStyle = '#f3e2c7'; g.lineWidth = 2; g.fillRect(x - 50, SHOP_FLOOR - 225, 100, 56); g.strokeRect(x - 50, SHOP_FLOOR - 225, 100, 56);
+  g.fillStyle = C.ink; g.font = `15px ${BODYFONT}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  names.forEach((n, i) => g.fillText(n, x, SHOP_FLOOR - 211 + i*20, 94));
+  g.fillStyle = C.yellow; g.lineWidth = 3; g.beginPath(); g.arc(x + 38, SHOP_FLOOR - 120, 8, 0, TAU); g.fill(); g.stroke();
+}
+function drawDormHall(t) {
+  drawWoodRoom('#efe6ff', '#5a3a6e', '#8a6a9e');
+  g.fillStyle = '#c0392b'; g.fillRect(0, SHOP_FLOOR + 8, W, 26); // a long carpet down the hallway
+  g.fillStyle = '#5a3a6e'; g.font = `56px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('dorms', W/2, 170);
+  drawStaffDoor(DORM_EXIT_X, '← player breaks', '#c9f0ff', 'FIGHTERS ONLY');
+  DORMS.forEach((d, i) => drawNameDoor(DORM_ROOM_X[i], [dormName(d.ids[0]) + ' &', dormName(d.ids[1])]));
+  const near = SHOP.nearStairs && SHOP.stairTo === 12 ? DORM_ROOM_X[SHOP.stairRoom] : null;
+  if (near != null) drawPointer(near, SHOP_FLOOR - 330, t);
+}
+function drawDormRoom(t) {
+  const d = DORMS[SHOP.dorm || 0];
+  drawWoodRoom(d.wall, '#7a4a2a', '#b98a5a');
+  g.fillStyle = '#1b2a4a'; g.strokeStyle = C.ink; g.lineWidth = 6; g.fillRect(760, 200, 180, 140); g.strokeRect(760, 200, 180, 140); // a window with the moon
+  g.fillStyle = '#fff6c9'; g.beginPath(); g.arc(880, 245, 24, 0, TAU); g.fill(); g.fillStyle = C.white; for (const [sx, sy] of [[790, 230], [820, 300], [905, 310], [800, 270]]) g.fillRect(sx, sy, 4, 4);
+  g.strokeStyle = C.ink; g.lineWidth = 4; g.beginPath(); g.moveTo(850, 200); g.lineTo(850, 340); g.moveTo(760, 270); g.lineTo(940, 270); g.stroke();
+  for (const [x, col] of [[500, '#ff8fc1'], [1200, '#7fb7ff']]) { // two beds
+    g.fillStyle = '#6b3d1a'; g.fillRect(x - 130, SHOP_FLOOR - 130, 20, 130); g.fillRect(x + 110, SHOP_FLOOR - 80, 20, 80);
+    g.fillStyle = col; g.strokeStyle = C.ink; g.lineWidth = 4; roundRect(x - 115, SHOP_FLOOR - 80, 230, 50, 10); g.fill(); g.stroke();
+    g.fillStyle = C.white; roundRect(x - 108, SHOP_FLOOR - 100, 60, 26, 10); g.fill(); g.stroke();
+  }
+  g.fillStyle = 'rgba(255,255,255,.5)'; g.beginPath(); g.ellipse(850, SHOP_FLOOR + 30, 220, 26, 0, 0, TAU); g.fill(); // a rug
+  g.fillStyle = '#5a3a6e'; g.font = `44px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(`${dormName(d.ids[0])} & ${dormName(d.ids[1])}'s room`, W/2, 160, 1000);
+  drawStaffDoor(DORM_EXIT_X, '← hallway', '#efe6ff', 'DORMS');
+  const say = SHOP.pb && SHOP.pb.say && performance.now() < SHOP.pb.say.until ? SHOP.pb.say : null;
+  for (const { ch, x } of dormSpots()) {
+    const r = 46*Math.min(ch.size || 1, 1.8), bottom = ch.shape === 'circle' ? r : Math.max(...shapeVerts(ch.shape, r, true).map(v => v.y));
+    const talking = say && say.id === ch.id, bob = Math.abs(Math.sin(t*2 + x))*4 + (talking ? Math.abs(Math.sin(t*12))*6 : 0);
+    g.save(); g.translate(x, SHOP_FLOOR - bottom - bob); drawCharacter(g, ch, r, { facing:x < SHOP.x ? 1 : -1, ...looks(ch), happy:talking }); g.restore();
+    if (SHOP.nearPal === ch) drawPointer(x, SHOP_FLOOR - bottom*2 - 70, t);
+  }
+  if (say) { const s = dormSpots().find(s => s.ch.id === say.id); if (s) drawBubble(say.text, Math.min(W - 20, s.x + 160), SHOP_FLOOR - 190, s.x); }
 }
 // ---------- the break room: both shopkeepers on their break. The longer you stay, the more stuff they give you ----------
 const BREAK_EVERY = 15; // seconds between treats (the timer starts over each time you come in)
@@ -4709,7 +4782,7 @@ function drawManager(g, t) { // %#@% sitting in his chair (drawn in the chair's 
 function drawShop(t) {
   const hall = SHOP.floor === 5; // the chase hallway scrolls with you
   if (hall) { g.save(); g.translate(-(SHOP.cam || 0), 0); drawChaseFloor(t); }
-  else if (SHOP.floor === 10) drawPlayerBreak(t); else if (SHOP.floor === 9) drawGlitchShop(t); else if (SHOP.floor === 8) drawCageFloor(t); else if (SHOP.floor === 7) drawTopFloor(t); else if (SHOP.floor === 6) drawBreakFloor(t); else if (SHOP.floor === 4) drawOfficeFloor(t); else if (SHOP.floor === 3) drawAtticFloor(t); else if (SHOP.floor === 2) drawFunnyFloor(t); else drawFightyFloor(t);
+  else if (SHOP.floor === 12) drawDormRoom(t); else if (SHOP.floor === 11) drawDormHall(t); else if (SHOP.floor === 10) drawPlayerBreak(t); else if (SHOP.floor === 9) drawGlitchShop(t); else if (SHOP.floor === 8) drawCageFloor(t); else if (SHOP.floor === 7) drawTopFloor(t); else if (SHOP.floor === 6) drawBreakFloor(t); else if (SHOP.floor === 4) drawOfficeFloor(t); else if (SHOP.floor === 3) drawAtticFloor(t); else if (SHOP.floor === 2) drawFunnyFloor(t); else drawFightyFloor(t);
   // an empty pink stand upstairs, waiting for the next thing to sell (a real item takes its place once there is one)
   if (SHOP.floor === 2) {
     const spot = STAND_SPOTS[2].find(x => !STANDS.some(s => s.floor === 2 && s.x === x));
@@ -5515,6 +5588,9 @@ function shopStairs() {
     renderShopCard(true); return;
   }
   if (from === 6) { SHOP.brk = null; shopSay('Did you have a nice break? Hehe... come back soon.', 'jump'); renderShopCard(true); return; }
+  if (to === 12) { SHOP.dorm = SHOP.stairRoom || 0; SHOP.pb = { next:performance.now() + 600, chat:null, line:0 }; SHOP.youSay = 'Knock knock!'; SHOP.youSayT = 2; renderShopCard(true); return; } // into a dorm room
+  if (from === 12) { SHOP.x = DORM_ROOM_X[SHOP.dorm || 0] + 110; SHOP.facing = 1; SHOP.pb = null; renderShopCard(true); return; } // back out to the hallway, by that room's door
+  if (to === 11) { SHOP.pb = null; renderShopCard(true); return; }
   if (to === 10) { SHOP.pb = { next:performance.now() + 600, chat:null, line:0 }; SHOP.youSay = 'Hi everyone! Break time!'; SHOP.youSayT = 2.5; renderShopCard(true); return; } // into player breaks
   if (from === 10) { shopSay('Did you have fun with your friends? Hehe...', 'jump'); renderShopCard(true); return; }
   // sometimes Grumpy Shuriken finds Goofy Sparkle hiding upstairs in the funny fun shop
@@ -5581,7 +5657,7 @@ function drawSkinBooth(t) { // a big gold mirror on a stand: it shows you in eac
 }
 function renderShopCard(force) {
   const ch = CHARS[SHOP.who], st = SHOP.near, it = st && ITEMS.find(i => i.id === st.item);
-  const key = [shop.coins, ch.id, it && it.id, it && shop.owned[it.id], ITEMS.map(i => wears(i.id, ch)).join(), SHOP.nearKeeper, SHOP.nearStairs, SHOP.stairTo, SHOP.floor, jokeOpen(), !!SHOP.revealed, SHOP.nearSmi, SHOP.nearSkins, skinOf(ch), skinRec(ch).have.join(), SHOP.nearCage, SHOP.cage && SHOP.cage.lock.left, SHOP.cage && SHOP.cage.hp, SHOP.cage && SHOP.cage.freed, SHOP.nearPal && SHOP.nearPal.id].join('|');
+  const key = [shop.coins, ch.id, it && it.id, it && shop.owned[it.id], ITEMS.map(i => wears(i.id, ch)).join(), SHOP.nearKeeper, SHOP.nearStairs, SHOP.stairTo, SHOP.floor, jokeOpen(), !!SHOP.revealed, SHOP.nearSmi, SHOP.nearSkins, skinOf(ch), skinRec(ch).have.join(), SHOP.nearCage, SHOP.cage && SHOP.cage.lock.left, SHOP.cage && SHOP.cage.hp, SHOP.cage && SHOP.cage.freed, SHOP.nearPal && SHOP.nearPal.id, SHOP.stairRoom, SHOP.dorm].join('|');
   if (!force && key === SHOP.key) return;
   SHOP.key = key; $('coinCount').textContent = shop.coins; $('shopWho').textContent = ch.name;
   const card = $('shopCard'); fillShopCard(card, ch, it);
@@ -5616,16 +5692,19 @@ function fillShopCard(card, ch, it) {
   if (!it && SHOP.nearSkins) return fillSkinCard(card, ch);
   if (!it && SHOP.nearStairs) {
     const to = SHOP.stairTo, up = to > SHOP.floor;
-    const door = to === 6 || SHOP.floor === 6 || to === 10 || SHOP.floor === 10;
+    const door = to === 6 || SHOP.floor === 6 || to === 10 || SHOP.floor === 10 || to === 11 || to === 12 || SHOP.floor === 11 || SHOP.floor === 12;
+    const dn = DORMS[SHOP.stairRoom || 0].ids.map(dormName); // (the names on a dorm door)
     const text = { 2:SHOP.floor === 10 ? 'Go back out to the funny fun shop.' : SHOP.floor === 6 ? 'Go back out to the funny fun shop. (Your break timer will start over!)' : SHOP.floor === 1 ? 'Go up to the 2nd floor: the funny fun shop. Things that don\'t fit down here go up there.' : 'Go back down to the 2nd floor: the funny fun shop.',
-      10:'Go into player breaks: the fighters hang out in here when they are not fighting. Say hi!',
+      10:SHOP.floor === 11 ? 'Go back to player breaks.' : 'Go into player breaks: the fighters hang out in here when they are not fighting. Say hi!',
+      11:SHOP.floor === 12 ? 'Go back out to the dorms hallway.' : 'Go to the dorms, where the fighters sleep. Each pair of roommates has a room, with their names on the door.',
+      12:`Go into ${dn[0]} and ${dn[1]}'s room.`,
       6:'Go into the break room. The shopkeepers take their break in there... the longer you stay, the more stuff they give you!',
       1:SHOP.floor === 8 ? 'The portal is open! Jump in to go home, to the 1st floor.' : 'Go back down to the 1st floor: the fighty shop.',
       8:'A big swirly portal... Where does it go? Is that where HE is?', 4:SHOP.floor === 7 ? `Jump back into the portal. It goes down to the manager's office... careful, ${BOSS_NAME} is in there!` : 'Ride the elevator up to the manager\'s office. Ding!',
       3:SHOP.floor === 4 ? 'Ride the elevator back down to the dark 3rd floor.' : 'Climb up to the 3rd floor. The shopkeepers really don\'t like to talk about it...' }[to];
     const portal = to === 8 || SHOP.floor === 8, lift = !portal && (to === 4 || SHOP.floor === 4);
-    card.innerHTML = `<h3>${door ? (to === 10 || SHOP.floor === 10 ? 'Player breaks door' : 'Break room door') : portal ? 'Portal' : lift ? 'Elevator' : to === 3 ? 'Ladder' : 'Stairs'}</h3><p>${text}</p><div class="row"></div>`;
-    const b = document.createElement('button'); b.className = 'btn'; b.id = 'shopStairs'; b.textContent = door ? (to === 6 || to === 10 ? 'go in' : 'go out') : portal ? 'jump in' : lift ? (up ? 'ride up' : 'ride down') : to === 3 ? 'climb up... if you dare' : up ? 'go upstairs' : 'go downstairs';
+    card.innerHTML = `<h3>${door ? (to === 12 ? `${dn[0]} & ${dn[1]}` : to === 11 || SHOP.floor === 11 || SHOP.floor === 12 ? 'Dorms' : to === 10 || SHOP.floor === 10 ? 'Player breaks door' : 'Break room door') : portal ? 'Portal' : lift ? 'Elevator' : to === 3 ? 'Ladder' : 'Stairs'}</h3><p>${text}</p><div class="row"></div>`;
+    const b = document.createElement('button'); b.className = 'btn'; b.id = 'shopStairs'; b.textContent = door ? (to === 6 || (to === 10 && SHOP.floor !== 11) || to === 12 || (to === 11 && SHOP.floor === 10) ? 'go in' : 'go out') : portal ? 'jump in' : lift ? (up ? 'ride up' : 'ride down') : to === 3 ? 'climb up... if you dare' : up ? 'go upstairs' : 'go downstairs';
     b.onclick = () => { shopStairs(); cv.focus(); };
     card.querySelector('.row').append(b, Object.assign(document.createElement('span'), { innerHTML:press }));
     return;
@@ -5664,6 +5743,12 @@ function fillShopCard(card, ch, it) {
     const ask = document.createElement('button'); ask.className = 'btn'; ask.id = 'shopAsk3'; ask.textContent = 'ask about the 3rd floor'; // they get scared
     ask.onclick = () => { shopAsk3(); cv.focus(); };
     card.querySelector('.row').append(ask);
+    return;
+  }
+  if (!it && (SHOP.floor === 11 || SHOP.floor === 12)) {
+    const d = DORMS[SHOP.dorm || 0];
+    card.innerHTML = SHOP.floor === 11 ? '<h3>The dorms</h3><p>This is where the fighters sleep! Each pair of roommates shares a room, and their names are on the door. Walk up to a door to go in.</p><p class="note">The door on the left goes back to player breaks.</p>'
+      : SHOP.nearPal ? `<h3>${SHOP.nearPal.name}</h3><p>This is ${SHOP.nearPal.name}'s room. Press punch to say hi!</p>` : `<h3>${dormName(d.ids[0])} & ${dormName(d.ids[1])}'s room</h3><p>The two roommates hang out here and chat. Walk up to one and press punch to say hi.</p><p class="note">The door on the left goes back to the hallway.</p>`;
     return;
   }
   if (!it && SHOP.floor === 10) {
