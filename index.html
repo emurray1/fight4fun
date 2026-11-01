@@ -2001,9 +2001,22 @@ function drawWatchers(t) {
   const now = performance.now(), w = G.watch = G.watch || { next:now + 1500 };
   if (G.banner && G.banner !== w.banner) { w.banner = G.banner; if (/wins/.test(G.banner.title || '')) { watchSay('win'); G.watch.kind = 'win'; } }
   else if (now > (G.watch.next || 0)) { watchSay('idle'); G.watch.kind = 'idle'; }
-  const spots = { 1:W - 260, 2:W - 105 }; // the fighty one, then the shy one, in the bottom right corner
-  for (const who of [1, 2]) { g.save(); g.translate(spots[who], H - 62 + (G.watch.who === who && now < G.watch.until ? Math.sin(t*12)*2 : 0)); drawCharacter(g, CHAR[who === 1 ? 'keeper' : 'keeper2'], 50, {}); g.restore(); }
-  if (now < G.watch.until) drawBubble(G.watch.say, spots[G.watch.who] + 50, H - 150, spots[G.watch.who]);
+  // a TV hanging above the fight, showing the two of them just as big as they are in the shop, with what they say as subtitles
+  const tx = W/2 - 240, ty = 112, tw = 480, th = 290, talking = now < G.watch.until, bob = who => G.watch.who === who && talking ? Math.sin(t*12)*3 : 0;
+  g.save();
+  g.fillStyle = '#2b2b33'; g.strokeStyle = C.ink; g.lineWidth = 6; roundRect(tx - 16, ty - 14, tw + 32, th + 28, 18); g.fill(); g.stroke(); // the TV's frame
+  g.beginPath(); g.rect(tx, ty, tw, th); g.clip();
+  const sky = g.createLinearGradient(0, ty, 0, ty + th); sky.addColorStop(0, '#fff6e6'); sky.addColorStop(1, '#f0d9b5'); g.fillStyle = sky; g.fillRect(tx, ty, tw, th); // the shop wall behind them
+  g.save(); g.translate(0, ty + 110 - 395 + bob(1)); drawGreyKeeper(tx + 140, t); g.restore(); // the fighty shopkeeper on the left (head near the top of the screen)
+  g.save(); g.translate(0, ty + 120 - 570 + bob(2)); drawShyKeeper(tx + 350, t, { friend:talking && G.watch.who === 2, close:0, lookX:-3 }); g.restore(); // the shy one on the right
+  g.fillStyle = 'rgba(0,0,0,.06)'; for (let y = ty + ((t*40) % 6); y < ty + th; y += 6) g.fillRect(tx, y, tw, 2); // TV lines
+  g.fillStyle = C.red; g.beginPath(); g.arc(tx + 22, ty + 20, 7, 0, TAU); g.fill(); g.fillStyle = C.white; g.font = `20px ${FONT}`; g.textAlign = 'left'; g.textBaseline = 'middle'; g.fillText('LIVE', tx + 34, ty + 21);
+  if (talking) { // subtitles along the bottom of the screen
+    g.fillStyle = 'rgba(0,0,0,.72)'; g.fillRect(tx, ty + th - 46, tw, 46);
+    g.fillStyle = G.watch.who === 1 ? C.yellow : '#ffaec9'; g.font = `24px ${BODYFONT}`; g.textAlign = 'center';
+    g.fillText(G.watch.say, tx + tw/2, ty + th - 23, tw - 20);
+  }
+  g.restore();
 }
 function updateBans() {
   if (!G.bans || !G.bans.length) return;
