@@ -729,9 +729,11 @@ const LADDER_X = 1480, ATTIC_STAIRS_X = 220, ELEVATOR_X = 1480;
 const TOP_PORTAL_X = 800; // there is no portal in the office: you walk off its left edge, and the 5th floor (with its big portal) is the next screen
 // the 5th floor's portal leads to the cage room (floor 8): Missing Arrow is locked in a cage, and you play Pop the Lock to free him
 const CAGE_X = 200, CAGE_PORTAL_X = 1263, LOCK_POPS = 12, LOCK_SPEED = 2.0, LOCK_SPEEDUP = 0.14, LOCK_WIN = 0.28; // pops needed, how fast the needle spins (and speeds up), how close counts
+// a "fighters only" door on the 2nd floor goes into player breaks (floor 10), where the fighters hang out
+const PLAYER_DOOR_X = 680, PB_EXIT_X = 120;
 const STAIRS = [{ floor:1, x:STAIRS_X[1], to:2 }, { floor:2, x:STAIRS_X[2], to:1 }, { floor:2, x:LADDER_X, to:3 }, { floor:3, x:ATTIC_STAIRS_X, to:2 },
   { floor:3, x:ELEVATOR_X, to:4 }, { floor:4, x:ELEVATOR_X, to:3 }, { floor:2, x:BREAK_DOOR_X, to:6 }, { floor:6, x:BREAK_DOOR_X, to:2 },
-  { floor:7, x:TOP_PORTAL_X, to:8 }, { floor:8, x:CAGE_PORTAL_X, to:1 }];
+  { floor:7, x:TOP_PORTAL_X, to:8 }, { floor:8, x:CAGE_PORTAL_X, to:1 }, { floor:2, x:PLAYER_DOOR_X, to:10 }, { floor:10, x:PB_EXIT_X, to:2 }];
 const STAND_SPOTS = { 1:[390, 610, 830], 2:[530], 3:[800], 9:[720, 1080] };
 const SKIN_X = 830; // the skins booth on the 2nd floor (a big mirror)
 const STANDS = (() => { // items fill the 1st floor, then the 2nd; an item can also ask for a floor of its own
@@ -3750,6 +3752,8 @@ function shopStep(dt) {
   const stair = !SHOP.near && STAIRS.find(s => s.floor === f && Math.abs(s.x - SHOP.x) < 100 && (f !== 8 || (SHOP.cage && SHOP.cage.freed))); // the cage room portal only opens once he is free
   SHOP.nearCage = f === 8 && !!SHOP.cage && !SHOP.cage.freed && Math.abs(SHOP.x - CAGE_X) < 170;
   SHOP.nearStairs = !!stair; SHOP.stairTo = stair ? stair.to : 0;
+  SHOP.nearPal = f === 10 && !SHOP.nearStairs ? (pbSpots().find(s => Math.abs(s.x - SHOP.x) < 70) || {}).ch || null : null; // walking up to a fighter in player breaks
+  if (f === 10) pbStep();
   SHOP.nearKeeper = !SHOP.near && !SHOP.nearStairs && !!KEEPERS[f] && Math.abs(KEEPERS[f] - SHOP.x) < (f === 6 ? 300 : 220) && (f !== 4 || (SHOP.revealed && !SHOP.chase));
   if (f === 4 && !SHOP.revealed && !SHOP.chase && !isAdmin()) { // walk close and the chair spins around (but the manager can't see the Admin, so it never does)
     if (SHOP.spinT > 0 || Math.abs(KEEPERS[4] - SHOP.x) < 380) SHOP.spinT = (SHOP.spinT || 0) + dt;
@@ -3767,7 +3771,7 @@ function shopStep(dt) {
   SHOP.nearSmi = f === 1 && SHOP.smi7y && !SHOP.near && !SHOP.nearStairs && Math.abs(SMI7Y_X - SHOP.x) < 70;
   if (SHOP.nearSmi) SHOP.nearKeeper = false;
   SHOP.smiSayT = Math.max(0, (SHOP.smiSayT || 0) - dt);
-  if (h.punch && !pr.punch) { if (SHOP.nearCage) cageHit(); else if (SHOP.near) shopAct(SHOP.near.item); else if (SHOP.nearSkins) nextSkin(); else if (SHOP.nearStairs) shopStairs(); else if (SHOP.nearSmi) smiTalk(); else if (SHOP.nearKeeper) shopTalk(); }
+  if (h.punch && !pr.punch) { if (SHOP.nearCage) cageHit(); else if (SHOP.near) shopAct(SHOP.near.item); else if (SHOP.nearSkins) nextSkin(); else if (SHOP.nearStairs) shopStairs(); else if (SHOP.nearPal) palTalk(); else if (SHOP.nearSmi) smiTalk(); else if (SHOP.nearKeeper) shopTalk(); }
   if (h.grab && !pr.grab && SHOP.nearKeeper) shopLaugh();
   if (isHex()) { // Hexstar says "beep boop baap!" now and then (or when you press special), and the shopkeepers act like he never said it
     SHOP.beepCD = (SHOP.beepCD ?? 3) - dt; SHOP.beepT = Math.max(0, (SHOP.beepT || 0) - dt);
@@ -3952,6 +3956,7 @@ function drawFunnyFloor(t) { // upstairs: the funny fun shop, built like the fig
   g.strokeStyle = C.ink; g.lineWidth = 5; g.beginPath(); g.moveTo(sx - 70, SHOP_FLOOR); g.lineTo(sx - 70, SHOP_FLOOR - 70); g.lineTo(sx + 70, SHOP_FLOOR - 70); g.lineTo(sx + 70, SHOP_FLOOR); g.stroke();
   drawFloorSign(sx, SHOP_FLOOR - 120, '1st floor ↓', '#f3e2c7');
   drawStaffDoor(BREAK_DOOR_X, 'break room', '#f3e2c7'); // in the corner: the door to the break room
+  drawStaffDoor(PLAYER_DOOR_X, 'player breaks', '#c9f0ff', 'FIGHTERS ONLY'); // and the fighters' own break room
   if (spooky()) { drawWeb(0, 110, 150, 1); drawWeb(W, 110, 150, -1); drawPumpkin(470, SHOP_FLOOR, 30, t); drawPumpkin(690, SHOP_FLOOR, 24, t); }
   if (xmas()) { drawLights(0, W, 110, t); drawXmasTree(680, SHOP_FLOOR, 100, t); }
   if (thanks()) { drawLeafGarland(0, W, 110, t); drawTurkey(680, SHOP_FLOOR, 80, t); }
@@ -3999,14 +4004,82 @@ function drawFunnyFloor(t) { // upstairs: the funny fun shop, built like the fig
   if (!(SHOP.sparkleHere && SHOP.foundT < 5.4 && SHOP.msgT <= 0)) drawBubble(say, kx - 40, 520, kx - 6); // quiet while Shuriken and Goofy Sparkle say hi
   if (SHOP.nearKeeper) drawPointer(kx + 70, 566, t);
 }
-function drawStaffDoor(x, label, color) { // a wooden door with two panels, a gold knob, a "staff only" plaque and a sign above
+function drawStaffDoor(x, label, color, plaque = 'STAFF ONLY') { // a wooden door with two panels, a gold knob, a "staff only" plaque and a sign above
   g.fillStyle = '#4f3427'; g.fillRect(x - 62, SHOP_FLOOR - 250, 124, 250);
   g.fillStyle = '#a8744a'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(x - 52, SHOP_FLOOR - 240, 104, 240); g.strokeRect(x - 52, SHOP_FLOOR - 240, 104, 240);
   g.strokeStyle = '#7a5236'; g.strokeRect(x - 38, SHOP_FLOOR - 222, 76, 90); g.strokeRect(x - 38, SHOP_FLOOR - 118, 76, 96);
   g.fillStyle = '#f3e2c7'; g.strokeStyle = C.ink; g.lineWidth = 2; g.fillRect(x - 34, SHOP_FLOOR - 190, 68, 24); g.strokeRect(x - 34, SHOP_FLOOR - 190, 68, 24);
-  g.fillStyle = C.ink; g.font = `14px ${BODYFONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('STAFF ONLY', x, SHOP_FLOOR - 177, 62);
+  g.fillStyle = C.ink; g.font = `14px ${BODYFONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(plaque, x, SHOP_FLOOR - 177, 62);
   g.fillStyle = C.yellow; g.lineWidth = 3; g.beginPath(); g.arc(x + 36, SHOP_FLOOR - 120, 8, 0, TAU); g.fill(); g.stroke();
   drawFloorSign(x, SHOP_FLOOR - 285, label, color);
+}
+// ---------- player breaks (floor 10): a lounge behind a door on the 2nd floor, where the fighters (not the shopkeepers) hang out and chat ----------
+
+// little conversations: they only happen if everyone in them is in the room. [fighter, what they say]
+const PB_CHATS = [
+  [['tri', 'Who ate my snacks?!'], ['circle', 'WHAT?! Not me!'], ['diamond', '...hehe. Not me either.']],
+  [['star', 'Nice shades, huh?'], ['square', 'THEY ARE VERY NICE SHADES!'], ['star', 'No need to yell, buddy.']],
+  [['sparkle', 'Wanna play tag?!'], ['shuriken', 'There you are, Goofy Sparkle! I looked EVERYWHERE.'], ['sparkle', 'Hehe! Tag, you\'re it!']],
+  [['hex', 'Beep boop baap! H-hi everyone!'], ['heart', 'Hi Hexstar! You\'re so sweet.'], ['hex', '*happy beeping*']],
+  [['arrow', 'I-is it safe in here?'], ['admin', 'You\'re safe, little brother. I\'m right here.'], ['arrow', '*stops shaking* ...thanks, big brother.']],
+  [['admin', 'Who wants to see me ban something?'], ['tri', 'NOT the snack table!'], ['admin', 'Fine. The snack table is safe... for now.']],
+  [['heart', 'Group hug?'], ['shuriken', 'No.'], ['heart', '*hugs anyway*'], ['shuriken', '...fine. Just this once.']],
+  [['circle', 'Did you see that piano fall out of the sky?!'], ['diamond', 'I did. I might have known it was coming...'], ['circle', 'WHAT?!']],
+  [['square', 'I WON MY LAST FIGHT!'], ['star', 'Cool. I won mine too.'], ['square', 'COOL!']],
+  [['sparkle', 'Is it Thanksgiving? Do we get pie?'], ['heart', 'Pie for everyone!'], ['tri', 'Pie is the ONLY thing that makes me less angry.']],
+  [['arrow', 'Has anyone seen my poster? HAVE YOU SEEN HIM...'], ['circle', 'WHAT?! You were missing?!'], ['arrow', 'I-I was... in a cage...']],
+];
+const PB_SOLO = { // what each of them says on their own now and then
+  star:['Being this cool is a full-time job.', '*adjusts shades*'], tri:['Grrr... I am NOT angry. I am resting.', 'Who keeps moving my chair?!'],
+  circle:['WHAT?! Oh. It\'s just break time.', 'I am SO surprised by everything!'], diamond:['I know a secret... but I won\'t tell.', '*sneaky smile*'],
+  square:['BREAK TIME IS THE BEST TIME!', 'I AM VERY RELAXED RIGHT NOW!'], sparkle:['Wheee! Break time!', 'Can I have a juice box?'],
+  hex:['Beep boop baap!', 'I am... resting my circuits.'], heart:['Love you all!', 'Who wants a cookie?'],
+  shuriken:['Hmph.', 'Has anyone seen Goofy Sparkle? ...Again?'], arrow:['*trembles* I-it\'s nice in here...', '*glitches a little*'],
+  admin:['I am the boss of the whole game.', 'i ♥ forsken'],
+};
+const PB_HI = { // what they say when you walk up and press punch ({you} is your fighter's name)
+  star:'Oh hey, {you}. Cool of you to stop by.', tri:'What do YOU want, {you}?! ...fine. Hi.', circle:'WHAT?! Oh, hi {you}!', diamond:'Hello, {you}... I knew you would come.',
+  square:'HI {you}! WELCOME TO THE BREAK ROOM!', sparkle:'{you}! Wanna play?!', hex:'Beep boop! Hi {you}! *nervous wave*', heart:'Aww, hi {you}! Want a hug?',
+  shuriken:'Hmph. Hi, {you}. Have you seen Goofy Sparkle?', arrow:'O-oh! Hi {you}... please don\'t scare me.', admin:'Hello, {you}. Enjoy your break.',
+};
+const pbPals = () => PLAYABLE().filter(c => !c.keeper && c.id !== 'admin' && c.id !== CHARS[SHOP.who].id); // everyone but the shopkeepers, the Admin and you
+function pbSpots() { const pals = pbPals(), step = 1300/Math.max(1, pals.length); return pals.map((ch, i) => ({ ch, x:260 + step*(i + 0.5) })); }
+function pbSay(id, text, secs = 3.4) { SHOP.pb.say = { id, text, until:performance.now() + secs*1000 }; }
+function pbStep() { // the next thing someone says (by the clock, so it keeps going even when the game runs slowly)
+  const pb = SHOP.pb, now = performance.now(); if (!pb || now < pb.next) return;
+  const here = new Set(pbPals().map(c => c.id)); if (!here.size) return;
+  if (!pb.chat || pb.line >= pb.chat.length) { // start a new conversation (or someone says something on their own)
+    const ok = PB_CHATS.filter(c => c.every(([id]) => here.has(id)) && c !== pb.last);
+    pb.chat = ok.length && Math.random() < 0.75 ? ok[Math.floor(Math.random()*ok.length)] : null; pb.line = 0; pb.last = pb.chat;
+    if (!pb.chat) { const ids = [...here], id = ids[Math.floor(Math.random()*ids.length)], lines = PB_SOLO[id] || ['...']; pbSay(id, lines[Math.floor(Math.random()*lines.length)]); pb.next = now + 3800; return; }
+  }
+  const [id, text] = pb.chat[pb.line++]; pbSay(id, text); pb.next = now + (pb.line >= pb.chat.length ? 5200 : 3600);
+}
+function palTalk() { // you walked up to someone and pressed punch
+  const p = SHOP.nearPal; if (!p) return;
+  pbSay(p.id, (PB_HI[p.id] || 'Hi, {you}!').replace('{you}', CHARS[SHOP.who].name), 3.6); SHOP.pb.next = performance.now() + 3800;
+}
+function drawPlayerBreak(t) {
+  drawWoodRoom('#fff1d6', '#7a4a2a', '#9c6b43');
+  drawStaffDoor(PB_EXIT_X, '← shop', PINK, 'FIGHTERS ONLY');
+  g.fillStyle = '#7a4a2a'; g.font = `56px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('player breaks', 820, 175); // the sign
+  for (const [x, col] of [[520, '#3f8fd9'], [1180, '#d9483f']]) { // two comfy couches
+    g.fillStyle = col; g.strokeStyle = C.ink; g.lineWidth = 4; roundRect(x - 150, SHOP_FLOOR - 120, 300, 90, 20); g.fill(); g.stroke();
+    roundRect(x - 165, SHOP_FLOOR - 80, 330, 60, 18); g.fill(); g.stroke();
+    g.fillStyle = C.ink; g.fillRect(x - 150, SHOP_FLOOR - 20, 12, 20); g.fillRect(x + 138, SHOP_FLOOR - 20, 12, 20);
+  }
+  g.fillStyle = '#6b3d1a'; g.fillRect(820 - 70, SHOP_FLOOR - 70, 140, 14); g.fillRect(820 - 8, SHOP_FLOOR - 60, 16, 60); // a snack table with chips and juice boxes
+  g.fillStyle = C.yellow; g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.ellipse(800, SHOP_FLOOR - 80, 30, 10, 0, 0, TAU); g.fill(); g.stroke();
+  for (const [x, c] of [[845, C.green], [865, C.orange]]) { g.fillStyle = c; g.fillRect(x - 7, SHOP_FLOOR - 100, 14, 26); g.strokeRect(x - 7, SHOP_FLOOR - 100, 14, 26); }
+  // everyone hanging out, with whoever is talking bouncing a little
+  const say = SHOP.pb && SHOP.pb.say && performance.now() < SHOP.pb.say.until ? SHOP.pb.say : null;
+  for (const { ch, x } of pbSpots()) {
+    const r = 42*Math.min(ch.size || 1, 1.8), bottom = ch.shape === 'circle' ? r : Math.max(...shapeVerts(ch.shape, r, true).map(v => v.y));
+    const talking = say && say.id === ch.id, bob = Math.abs(Math.sin(t*2 + x))*4 + (talking ? Math.abs(Math.sin(t*12))*6 : 0);
+    g.save(); g.translate(x, SHOP_FLOOR - bottom - bob); drawCharacter(g, ch, r, { facing:x < SHOP.x ? 1 : -1, ...looks(ch), happy:talking }); g.restore();
+    if (SHOP.nearPal === ch) drawPointer(x, SHOP_FLOOR - bottom*2 - 70, t);
+  }
+  if (say) { const s = pbSpots().find(s => s.ch.id === say.id); if (s) drawBubble(say.text, Math.min(W - 20, s.x + 160), SHOP_FLOOR - 190, s.x); }
 }
 // ---------- the break room: both shopkeepers on their break. The longer you stay, the more stuff they give you ----------
 const BREAK_EVERY = 15; // seconds between treats (the timer starts over each time you come in)
@@ -4636,7 +4709,7 @@ function drawManager(g, t) { // %#@% sitting in his chair (drawn in the chair's 
 function drawShop(t) {
   const hall = SHOP.floor === 5; // the chase hallway scrolls with you
   if (hall) { g.save(); g.translate(-(SHOP.cam || 0), 0); drawChaseFloor(t); }
-  else if (SHOP.floor === 9) drawGlitchShop(t); else if (SHOP.floor === 8) drawCageFloor(t); else if (SHOP.floor === 7) drawTopFloor(t); else if (SHOP.floor === 6) drawBreakFloor(t); else if (SHOP.floor === 4) drawOfficeFloor(t); else if (SHOP.floor === 3) drawAtticFloor(t); else if (SHOP.floor === 2) drawFunnyFloor(t); else drawFightyFloor(t);
+  else if (SHOP.floor === 10) drawPlayerBreak(t); else if (SHOP.floor === 9) drawGlitchShop(t); else if (SHOP.floor === 8) drawCageFloor(t); else if (SHOP.floor === 7) drawTopFloor(t); else if (SHOP.floor === 6) drawBreakFloor(t); else if (SHOP.floor === 4) drawOfficeFloor(t); else if (SHOP.floor === 3) drawAtticFloor(t); else if (SHOP.floor === 2) drawFunnyFloor(t); else drawFightyFloor(t);
   // an empty pink stand upstairs, waiting for the next thing to sell (a real item takes its place once there is one)
   if (SHOP.floor === 2) {
     const spot = STAND_SPOTS[2].find(x => !STANDS.some(s => s.floor === 2 && s.x === x));
@@ -5442,6 +5515,8 @@ function shopStairs() {
     renderShopCard(true); return;
   }
   if (from === 6) { SHOP.brk = null; shopSay('Did you have a nice break? Hehe... come back soon.', 'jump'); renderShopCard(true); return; }
+  if (to === 10) { SHOP.pb = { next:performance.now() + 600, chat:null, line:0 }; SHOP.youSay = 'Hi everyone! Break time!'; SHOP.youSayT = 2.5; renderShopCard(true); return; } // into player breaks
+  if (from === 10) { shopSay('Did you have fun with your friends? Hehe...', 'jump'); renderShopCard(true); return; }
   // sometimes Grumpy Shuriken finds Goofy Sparkle hiding upstairs in the funny fun shop
   const lookingForSparkle = SHOP.floor === 2 && CHARS[SHOP.who].id === 'shuriken';
   SHOP.sparkleHere = lookingForSparkle && Math.random() < 0.5; SHOP.foundT = 0; // a 50/50 chance
@@ -5506,7 +5581,7 @@ function drawSkinBooth(t) { // a big gold mirror on a stand: it shows you in eac
 }
 function renderShopCard(force) {
   const ch = CHARS[SHOP.who], st = SHOP.near, it = st && ITEMS.find(i => i.id === st.item);
-  const key = [shop.coins, ch.id, it && it.id, it && shop.owned[it.id], ITEMS.map(i => wears(i.id, ch)).join(), SHOP.nearKeeper, SHOP.nearStairs, SHOP.stairTo, SHOP.floor, jokeOpen(), !!SHOP.revealed, SHOP.nearSmi, SHOP.nearSkins, skinOf(ch), skinRec(ch).have.join(), SHOP.nearCage, SHOP.cage && SHOP.cage.lock.left, SHOP.cage && SHOP.cage.hp, SHOP.cage && SHOP.cage.freed].join('|');
+  const key = [shop.coins, ch.id, it && it.id, it && shop.owned[it.id], ITEMS.map(i => wears(i.id, ch)).join(), SHOP.nearKeeper, SHOP.nearStairs, SHOP.stairTo, SHOP.floor, jokeOpen(), !!SHOP.revealed, SHOP.nearSmi, SHOP.nearSkins, skinOf(ch), skinRec(ch).have.join(), SHOP.nearCage, SHOP.cage && SHOP.cage.lock.left, SHOP.cage && SHOP.cage.hp, SHOP.cage && SHOP.cage.freed, SHOP.nearPal && SHOP.nearPal.id].join('|');
   if (!force && key === SHOP.key) return;
   SHOP.key = key; $('coinCount').textContent = shop.coins; $('shopWho').textContent = ch.name;
   const card = $('shopCard'); fillShopCard(card, ch, it);
@@ -5541,15 +5616,16 @@ function fillShopCard(card, ch, it) {
   if (!it && SHOP.nearSkins) return fillSkinCard(card, ch);
   if (!it && SHOP.nearStairs) {
     const to = SHOP.stairTo, up = to > SHOP.floor;
-    const door = to === 6 || SHOP.floor === 6;
-    const text = { 2:SHOP.floor === 6 ? 'Go back out to the funny fun shop. (Your break timer will start over!)' : SHOP.floor === 1 ? 'Go up to the 2nd floor: the funny fun shop. Things that don\'t fit down here go up there.' : 'Go back down to the 2nd floor: the funny fun shop.',
+    const door = to === 6 || SHOP.floor === 6 || to === 10 || SHOP.floor === 10;
+    const text = { 2:SHOP.floor === 10 ? 'Go back out to the funny fun shop.' : SHOP.floor === 6 ? 'Go back out to the funny fun shop. (Your break timer will start over!)' : SHOP.floor === 1 ? 'Go up to the 2nd floor: the funny fun shop. Things that don\'t fit down here go up there.' : 'Go back down to the 2nd floor: the funny fun shop.',
+      10:'Go into player breaks: the fighters hang out in here when they are not fighting. Say hi!',
       6:'Go into the break room. The shopkeepers take their break in there... the longer you stay, the more stuff they give you!',
       1:SHOP.floor === 8 ? 'The portal is open! Jump in to go home, to the 1st floor.' : 'Go back down to the 1st floor: the fighty shop.',
       8:'A big swirly portal... Where does it go? Is that where HE is?', 4:SHOP.floor === 7 ? `Jump back into the portal. It goes down to the manager's office... careful, ${BOSS_NAME} is in there!` : 'Ride the elevator up to the manager\'s office. Ding!',
       3:SHOP.floor === 4 ? 'Ride the elevator back down to the dark 3rd floor.' : 'Climb up to the 3rd floor. The shopkeepers really don\'t like to talk about it...' }[to];
     const portal = to === 8 || SHOP.floor === 8, lift = !portal && (to === 4 || SHOP.floor === 4);
-    card.innerHTML = `<h3>${door ? 'Break room door' : portal ? 'Portal' : lift ? 'Elevator' : to === 3 ? 'Ladder' : 'Stairs'}</h3><p>${text}</p><div class="row"></div>`;
-    const b = document.createElement('button'); b.className = 'btn'; b.id = 'shopStairs'; b.textContent = door ? (to === 6 ? 'go in' : 'go out') : portal ? 'jump in' : lift ? (up ? 'ride up' : 'ride down') : to === 3 ? 'climb up... if you dare' : up ? 'go upstairs' : 'go downstairs';
+    card.innerHTML = `<h3>${door ? (to === 10 || SHOP.floor === 10 ? 'Player breaks door' : 'Break room door') : portal ? 'Portal' : lift ? 'Elevator' : to === 3 ? 'Ladder' : 'Stairs'}</h3><p>${text}</p><div class="row"></div>`;
+    const b = document.createElement('button'); b.className = 'btn'; b.id = 'shopStairs'; b.textContent = door ? (to === 6 || to === 10 ? 'go in' : 'go out') : portal ? 'jump in' : lift ? (up ? 'ride up' : 'ride down') : to === 3 ? 'climb up... if you dare' : up ? 'go upstairs' : 'go downstairs';
     b.onclick = () => { shopStairs(); cv.focus(); };
     card.querySelector('.row').append(b, Object.assign(document.createElement('span'), { innerHTML:press }));
     return;
@@ -5588,6 +5664,10 @@ function fillShopCard(card, ch, it) {
     const ask = document.createElement('button'); ask.className = 'btn'; ask.id = 'shopAsk3'; ask.textContent = 'ask about the 3rd floor'; // they get scared
     ask.onclick = () => { shopAsk3(); cv.focus(); };
     card.querySelector('.row').append(ask);
+    return;
+  }
+  if (!it && SHOP.floor === 10) {
+    card.innerHTML = SHOP.nearPal ? `<h3>${SHOP.nearPal.name}</h3><p>${SHOP.nearPal.name} is on a break. Press punch to say hi!</p>` : '<h3>Player breaks</h3><p>The fighters hang out here when they are not fighting. Listen to them chat, or walk up to someone and press punch to say hi.</p><p class="note">The door on the left goes back out to the funny fun shop.</p>';
     return;
   }
   if (!it && SHOP.floor === 6) {
