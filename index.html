@@ -125,6 +125,11 @@ kbd{font-family:var(--body);border:2px solid var(--ink);border-bottom-width:4px;
 /* the glitch shop button: black, with red and blue glitch blocks stuck on it, and it jumps sideways now and then */
 .menu .glitch-btn{background:#000;color:#fff;box-shadow:-6px -6px 0 #ed1c24,7px 6px 0 #00a2e8;animation:glitchJump 2.4s steps(1) infinite}
 .menu .glitch-btn[hidden]{display:none}
+/* the admin panel button (once you've used the admin code): black with green writing, like the Hacker skin */
+.admin-btn{background:#050805;color:#39ff14;border-color:#39ff14}
+.admin-btn[hidden]{display:none}
+.ap h3{margin:14px 0 4px}
+.ap-row{display:flex;flex-wrap:wrap;gap:12px}
 @keyframes glitchJump{0%,88%,100%{transform:none}90%{transform:translateX(5px)}94%{transform:translateX(-4px)}}
 .page{width:min(980px,100%)}
 .page-body{padding:20px 26px 26px;display:flex;flex-direction:column;gap:22px}
@@ -258,7 +263,7 @@ html.thanks .fff span{border-color:#8a4b14;color:#d2691e}
     <p id="thanksNote" class="thanks-note" hidden>🦃 Happy Thanksgiving! 🍂</p>
     <div class="title-chars" id="titleChars"></div>
     <button id="okBtn" class="btn grey">OK</button>
-    <div class="menu"><button id="onlineBtn" class="btn">play online</button><button id="howBtn" class="btn">how to play</button><button id="keysBtn" class="btn">controls</button><button id="setBtn" class="btn">settings</button><button id="shopBtn" class="btn">shop</button><button id="codesBtn" class="btn">codes</button><button id="glitchShopBtn" class="btn glitch-btn" hidden>SHOP..?</button></div>
+    <div class="menu"><button id="onlineBtn" class="btn">play online</button><button id="howBtn" class="btn">how to play</button><button id="keysBtn" class="btn">controls</button><button id="setBtn" class="btn">settings</button><button id="shopBtn" class="btn">shop</button><button id="codesBtn" class="btn">codes</button><button id="adminBtn" class="btn admin-btn" hidden>admin panel</button><button id="glitchShopBtn" class="btn glitch-btn" hidden>SHOP..?</button></div>
     <p id="notice" class="msg" role="status"></p>
     <p class="hint">OK plays on this computer. Best with a keyboard or game controllers.</p>
   </div>
@@ -336,6 +341,27 @@ html.thanks .fff span{border-color:#8a4b14;color:#d2691e}
         </ul>
       </section>
       <div class="page-foot"><button class="btn grey" data-back>got it</button></div>
+    </div>
+  </div>
+</div>
+
+<div id="adminPanel" class="screen" hidden>
+  <div class="panel page">
+    <header class="whois"><h2>admin panel</h2><button class="btn back" id="apBack">back</button></header>
+    <div class="page-body ap">
+      <p>You're the admin! Use your powers wisely... or not.</p>
+      <h3>Coins</h3>
+      <p>You have <b id="apCoins">0</b> coins.</p>
+      <div class="ap-row"><button id="apCoins100" class="btn">+100 coins</button><button id="apCoins1000" class="btn">+1000 coins</button></div>
+      <h3>Unlock everything</h3>
+      <p>Free Missing Arrow, and get every shop item and every skin for every fighter.</p>
+      <div class="ap-row"><button id="apUnlock" class="btn">unlock everything</button></div>
+      <h3>Fight cheats</h3>
+      <p class="note">These work in fights on this computer (not online).</p>
+      <div class="setting"><span>Super speed</span><div class="seg" id="apSpeedSeg"></div><small>Everyone runs twice as fast.</small></div>
+      <div class="setting"><span>Giant jumps</span><div class="seg" id="apJumpSeg"></div><small>Everyone jumps way higher.</small></div>
+      <div class="setting"><span>Sleepy computers</span><div class="seg" id="apSleepySeg"></div><small>The computer players just stand there and do nothing.</small></div>
+      <p id="apMsg" class="msg" role="status"></p>
     </div>
   </div>
 </div>
@@ -481,6 +507,7 @@ html.thanks .fff span{border-color:#8a4b14;color:#d2691e}
     <p>Press Esc or Start to keep fighting</p>
     <button id="resumeBtn" class="btn grey">keep fighting</button>
     <button id="quitBtn" class="btn">leave fight</button>
+    <button id="pauseAdminBtn" class="btn admin-btn" hidden>admin panel</button>
   </div>
 </div>
 
@@ -568,7 +595,7 @@ const DIFF = { easy:{ punch:0.3, cd:0.9, mash:0.06, label:'Easy' }, normal:{ pun
 const MAX_HP = 200; // health points: when they run out, you get dizzy
 const TOPS = { star5:1.15, star4:1.25, tri:1.3, diamond:1.15, square:0.85, circle:1, star6:1.15, heart:0.75, shuriken:1.2, arrow:1.25 };
 
-const setup = { slots:{ star:'cpu', tri:'p1', circle:'cpu', diamond:'off', square:'cpu', sparkle:'off' }, rounds:3, diff:'normal', mode:'ffa', map:'cloud', track:'gp', hmap:'house', teams:{ star:0, tri:1, circle:0, diamond:1, square:1, sparkle:0, hex:0, heart:1, shuriken:0 }, sound:true, music:true, volume:1, shake:true, tags:true, halloween:'auto', christmas:'auto', thanksgiving:'auto' };
+const setup = { slots:{ star:'cpu', tri:'p1', circle:'cpu', diamond:'off', square:'cpu', sparkle:'off' }, rounds:3, diff:'normal', mode:'ffa', map:'cloud', track:'gp', hmap:'house', teams:{ star:0, tri:1, circle:0, diamond:1, square:1, sparkle:0, hex:0, heart:1, shuriken:0 }, sound:true, music:true, volume:1, shake:true, tags:true, halloween:'auto', christmas:'auto', thanksgiving:'auto', cheatSpeed:false, cheatJump:false, cheatSleepy:false };
 try { const s = JSON.parse(localStorage.getItem('fff-setup') || 'null'); if (s && s.slots) Object.assign(setup, s); } catch (e) {}
 for (const c of CHARS) { if (!setup.slots[c.id]) setup.slots[c.id] = 'off'; if (setup.teams[c.id] == null) setup.teams[c.id] = 0; }
 const saveSetup = () => { try { localStorage.setItem('fff-setup', JSON.stringify(setup)); } catch (e) {} };
@@ -2063,14 +2090,14 @@ function control(p, inp) {
   if (p.ko > 0) return;
   const grounded = p.grounded > 0; if (grounded) p.airJumps = 1;
   if (p.special) return runSpecial(p, inp, grounded);
-  const speed = 7*ch.speed*(p.grabbing ? 0.72 : 1)*(p.inLava ? 0.5 : 1), vx = b.velocity.x;
+  const speed = 7*ch.speed*(p.grabbing ? 0.72 : 1)*(p.inLava ? 0.5 : 1)*(cheat('cheatSpeed') ? 2 : 1), vx = b.velocity.x;
   const slick = grounded && p.surface === 'ice';
   const accel = grounded ? (p.hitstun > 0 ? (slick ? 0.01 : 0.04) : slick ? (inp.x ? 0.07 : 0.025) : 0.2) : (inp.x ? (p.hitstun > 0 ? 0.02 : 0.08) : 0);
   Body.setVelocity(b, { x: vx + (inp.x*speed - vx)*accel, y: b.velocity.y });
   if (inp.x) p.facing = inp.x > 0 ? 1 : -1;
   if (inp.jumpP && p.hitstun < 0.2) {
-    if (grounded) { Body.setVelocity(b, { x:b.velocity.x, y:-15.5*ch.jump }); p.grounded = 0; p.squash = -0.18; ev('sfx','jump'); }
-    else if (p.airJumps > 0) { p.airJumps--; Body.setVelocity(b, { x:b.velocity.x, y:-12.5*ch.jump }); ev('puff', b.position.x, b.position.y + p.r); ev('sfx','jump'); }
+    if (grounded) { Body.setVelocity(b, { x:b.velocity.x, y:-15.5*ch.jump*(cheat('cheatJump') ? 1.7 : 1) }); p.grounded = 0; p.squash = -0.18; ev('sfx','jump'); }
+    else if (p.airJumps > 0) { p.airJumps--; Body.setVelocity(b, { x:b.velocity.x, y:-12.5*ch.jump*(cheat('cheatJump') ? 1.7 : 1) }); ev('puff', b.position.x, b.position.y + p.r); ev('sfx','jump'); }
   }
   const ang = wrap(b.angle), k = p.hitstun > 0 ? 0.02 : 0.14;
   Body.setAngularVelocity(b, b.angularVelocity*(p.hitstun > 0 ? 0.98 : 0.82) - ang*k);
@@ -2096,7 +2123,7 @@ function step() {
   for (const p of G.fighters) {
     if (!p.alive) continue;
     let inp = BLANK;
-    if (p.control === 'cpu') { if (live) inp = aiInput(p); }
+    if (p.control === 'cpu') { if (live && !cheat('cheatSleepy')) inp = aiInput(p); }
     else if (p.control.startsWith('net:')) { const ri = netInput(p); if (live) inp = ri; }
     else { const hi = humanInput(p); if (live) inp = hi; }
     p.input = inp;
@@ -4405,8 +4432,8 @@ function applyTheme() {
   document.documentElement.classList.toggle('thanks', thanks()); $('thanksNote').hidden = !thanks();
 }
 applyTheme();
-const screens = ['title','setup','pause','results','howto','settings','quitAsk','online','lobby','keys','shop','codes'];
-function showScreen(id) { for (const s of screens) $(s).hidden = s !== id; $('glitchShopBtn').hidden = !unlocked(CHAR.arrow); $('gameQuit').hidden = !(id === null && G.state === 'fight'); musicUpdate(); }
+const screens = ['title','setup','pause','results','howto','settings','quitAsk','online','lobby','keys','shop','codes','adminPanel'];
+function showScreen(id) { for (const s of screens) $(s).hidden = s !== id; $('glitchShopBtn').hidden = !unlocked(CHAR.arrow); $('adminBtn').hidden = !unlocked(CHAR.admin); $('gameQuit').hidden = !(id === null && G.state === 'fight'); musicUpdate(); }
 function openQuit() {
   if (G.state !== 'fight') return;
   G.paused = !G.online; $('pause').hidden = true; $('gameQuit').hidden = true;
@@ -4415,8 +4442,9 @@ function openQuit() {
 }
 function closeQuit() { $('quitAsk').hidden = true; $('gameQuit').hidden = false; G.paused = false; cv.focus(); }
 function togglePause() {
-  if (G.state !== 'fight' || !$('quitAsk').hidden) return;
+  if (G.state !== 'fight' || !$('quitAsk').hidden || !$('adminPanel').hidden) return;
   G.paused = !G.paused; $('pause').hidden = !G.paused;
+  $('pauseAdminBtn').hidden = !unlocked(CHAR.admin) || !!G.online; // the admin can open the admin panel in the middle of a fight
   if (G.paused) $('resumeBtn').focus(); else cv.focus();
 }
 const titleChars = $('titleChars'); PLAYABLE().forEach(c => titleChars.appendChild(charCanvas(c, 78)));
@@ -4590,9 +4618,37 @@ $('secretBtn').onclick = () => {
   if (code.coins) shop.coins += code.coins;
   saveShop();
   titleChars.innerHTML = ''; PLAYABLE().forEach(c => titleChars.appendChild(charCanvas(c, 78)));
-  $('codesMsg').textContent = code.msg; $('secretIn').value = ''; if (sfx.win) sfx.win();
+  $('codesMsg').textContent = code.msg; $('secretIn').value = ''; $('adminBtn').hidden = !unlocked(CHAR.admin); if (sfx.win) sfx.win();
 };
 $('secretIn').addEventListener('keydown', e => { if (e.key === 'Enter') $('secretBtn').click(); });
+// ---------- the admin panel: you get it with the admin code ----------
+const ONOFF_CHEAT = [[true, 'On'], [false, 'Off']];
+function openAdminPanel(inFight) { // from the main menu, or from the pause menu in the middle of a fight (then the fight stays paused behind it)
+  apInFight = !!inFight;
+  if (inFight) { $('pause').hidden = true; $('adminPanel').hidden = false; $('adminPanel').scrollTop = 0; $('apBack').focus(); } else openPage('adminPanel');
+  $('apCoins').textContent = shop.coins; $('apMsg').textContent = '';
+  renderSeg('apSpeedSeg', ONOFF_CHEAT, 'cheatSpeed'); renderSeg('apJumpSeg', ONOFF_CHEAT, 'cheatJump'); renderSeg('apSleepySeg', ONOFF_CHEAT, 'cheatSleepy');
+}
+let apInFight = false;
+$('adminBtn').onclick = () => { if (!unlocked(CHAR.admin)) return; audioOn(); openAdminPanel(false); };
+$('pauseAdminBtn').onclick = () => { if (!unlocked(CHAR.admin) || G.online) return; openAdminPanel(true); };
+$('apBack').onclick = () => { // back to the paused fight, or back to the main menu
+  if (apInFight) { apInFight = false; $('adminPanel').hidden = true; $('pause').hidden = false; $('resumeBtn').focus(); return; }
+  G.state = 'title'; showScreen('title'); $('okBtn').focus();
+};
+const apCoins = n => { shop.coins += n; saveShop(); $('apCoins').textContent = shop.coins; $('apMsg').textContent = `+${n} coins! You have ${shop.coins} now.`; if (sfx.coin) sfx.coin(); };
+$('apCoins100').onclick = () => apCoins(100);
+$('apCoins1000').onclick = () => apCoins(1000);
+$('apUnlock').onclick = () => { // Missing Arrow, every item (but the attic's goggles, which the eyes never let you keep) and every skin for every fighter
+  shop.unlocked = { ...(shop.unlocked || {}), arrow:true };
+  for (const it of ITEMS) if (it.id !== 'goggles') shop.owned[it.id] = true;
+  for (const ch of CHARS) { const rec = skinRec(ch); for (const s of skinsFor(ch)) if (s.id !== 'classic' && !rec.have.includes(s.id)) rec.have.push(s.id); }
+  saveShop();
+  titleChars.innerHTML = ''; PLAYABLE().forEach(c => titleChars.appendChild(charCanvas(c, 78))); $('glitchShopBtn').hidden = !unlocked(CHAR.arrow);
+  $('apMsg').textContent = 'Everything is unlocked! Missing Arrow is free, and every fighter has every item and skin. Put them on in the shop.'; if (sfx.win) sfx.win();
+};
+// fight cheats from the admin panel, for fights on this computer only
+const cheat = k => !G.online && !!setup[k];
 $('setBtn').onclick = () => { audioOn(); openPage('settings'); };
 $('shopBtn').onclick = () => { audioOn(); openShop(); };
 $('glitchShopBtn').onclick = () => { // straight into the glitch shop, as Missing Arrow (you only get the button once he's free)
@@ -4601,7 +4657,7 @@ $('glitchShopBtn').onclick = () => { // straight into the glitch shop, as Missin
   Object.assign(SHOP, { floor:9, x:300, visit:null, smi7y:false, smiSayT:0, enterT:0, replies:[], youSay:'A... a shop? Just for me?', youSayT:3 });
   musicUpdate(); if (sfx.zap) sfx.zap(); renderShopCard(true);
 };
-$('glitchShopBtn').hidden = !unlocked(CHAR.arrow);
+$('glitchShopBtn').hidden = !unlocked(CHAR.arrow); $('adminBtn').hidden = !unlocked(CHAR.admin);
 $('shopCardOpen').onclick = () => { SHOP.cardClosed = false; renderShopCard(true); cv.focus(); };
 $('shopPrev').onclick = () => { do SHOP.who = (SHOP.who + CHARS.length - 1) % CHARS.length; while (!unlocked(CHARS[SHOP.who])); renderShopCard(true); };
 $('shopNext').onclick = () => { do SHOP.who = (SHOP.who + 1) % CHARS.length; while (!unlocked(CHARS[SHOP.who])); renderShopCard(true); };
