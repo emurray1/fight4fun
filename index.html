@@ -539,7 +539,7 @@ const CHARS = [
   // the missing guy from the "HAVE YOU SEEN HIM?" poster: locked in a cage past the 5th floor until you break him out
   { id:'arrow',    name:'Missing Arrow',   color:'#ffb07c', shape:'arrow',    trait:'Scared and glitchy. Special: glitch fest', speed:1.1,  power:1.0,  weight:0.95, jump:1.08, secret:true, hint:'Have you seen him? Look past the 5th floor of the shop...' },
   // the admin: you only get him with the admin code (on the "codes" page). A blocky black guy, drawn by Mason (his body in the fights is still a circle)
-  { id:'admin',    name:'Admin',           color:'#222222', shape:'circle',   trait:'The boss of the whole game. Special: banned', speed:1.0,  power:1.0,  weight:1.0,  jump:1.0, secret:true, hint:'Do you know the code?' },
+  { id:'admin',    name:'Admin',           color:'#222222', shape:'circle',   trait:'The boss of the whole game. Special: banned', speed:1.0,  power:1.0,  weight:1.0,  jump:1.0, size:3.2, secret:true, hint:'Do you know the code?' },
 ];
 const CHAR = Object.fromEntries(CHARS.map(c => [c.id, c]));
 const unlocked = ch => !ch.secret || !!(shop.unlocked && shop.unlocked[ch.id]); // secret fighters stay locked until you earn them
@@ -1432,7 +1432,7 @@ function buildWorld() {
 }
 
 function makeFighter(ch, control, x, idx) {
-  const r = ch.boss ? 52 : 38; // the boss is bigger
+  const r = (ch.boss ? 52 : 38)*(ch.size || 1); // the boss is bigger (and so is the Admin)
   const opts = { friction:0.5, frictionStatic:0.8, frictionAir:0.012, restitution:0.05, density:0.0016*ch.weight, label:'fighter',
     collisionFilter:{ group:0, category:CAT.PLAYER, mask:CAT.WORLD|CAT.PLAYER } };
   const body = ch.shape === 'circle' ? Bodies.circle(x, 560, r, opts) : Bodies.fromVertices(x, 560, [shapeVerts(ch.shape, r, false)], opts);
@@ -2846,7 +2846,7 @@ function drawSmallTag(x, y, tag, cpu) {
 }
 function drawSurvivor(p, t) {
   g.fillStyle = 'rgba(0,0,0,.3)'; g.beginPath(); g.ellipse(p.x, p.y + 20, 24, 9, 0, 0, TAU); g.fill();
-  g.save(); g.translate(p.x, p.y - 4 - Math.abs(Math.sin(p.walk))*4); drawCharacter(g, p.ch, 24, { facing:p.facing, ...(G.online ? {} : looks(p.ch)) }); g.restore();
+  g.save(); g.translate(p.x, p.y - 4 - Math.abs(Math.sin(p.walk))*4); drawCharacter(g, p.ch, 24*(p.ch.size || 1), { facing:p.facing, ...(G.online ? {} : looks(p.ch)) }); g.restore();
 }
 function drawHorror(t, dt) {
   const Hh = G.horror, m = Hh.monster, active = m.waitT <= 0;
@@ -4254,7 +4254,7 @@ function drawShop(t) {
   }
   if (SHOP.floor === 1 && SHOP.smi7y) drawSmi7y(t);
   // you
-  const ch = CHARS[SHOP.who], r = 50, moving = Math.abs(SHOP.prev.x || 0) > 0 && SHOP.y === 0;
+  const ch = CHARS[SHOP.who], r = 50*(ch.size || 1), moving = Math.abs(SHOP.prev.x || 0) > 0 && SHOP.y === 0;
   const bottom = ch.shape === 'circle' ? r : Math.max(...shapeVerts(ch.shape, r, true).map(v => v.y));
   const laughing = SHOP.laughT > 0, hop = (moving ? Math.abs(Math.sin(t*12))*8 : 0) + (laughing ? Math.abs(Math.sin(t*16))*12 : 0);
   const scared = !laughing && spooky() && ch.id === 'sparkle'; // the Halloween decorations scare him, but he's brave and stays
