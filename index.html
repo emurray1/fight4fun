@@ -77,6 +77,7 @@ button:focus-visible,.ctl:focus-visible{outline:4px solid var(--yellow);outline-
 .mapbox small{font-size:16px;color:#444}
 .msg{margin:0;min-height:1.3em;color:var(--maroon);font-size:18px}
 .soon{font-size:30px;text-align:center;margin:10px 0}
+.upds-list{font-size:20px;line-height:1.5}
 .howto{border-top:4px dashed var(--ink);margin:0 24px;padding:14px 0 22px;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px 24px;font-size:17px;line-height:1.35}
 .howto b{font-family:var(--display);font-weight:400;font-size:22px;display:block}
 kbd{font-family:var(--body);border:2px solid var(--ink);border-bottom-width:4px;padding:0 5px;background:var(--soft);font-size:15px}
@@ -435,7 +436,8 @@ html.thanks .fff span{border-color:#8a4b14;color:#d2691e}
     <header class="whois"><h2>up coming upds</h2><button class="btn back" data-back>back</button></header>
     <div class="page-body">
       <p class="soon">🚧 More updates coming soon! 🚧</p>
-      <p>New stuff is on the way for Fight for Fun. Check back here to see what's coming next!</p>
+      <p>New stuff is on the way for Fight for Fun. Here's what's coming next:</p>
+      <ul class="upds-list"><li><b>💌 Confession</b>: <span id="confessWhen"></span></li></ul>
     </div>
   </div>
 </div>
@@ -4096,7 +4098,7 @@ function pbStep() { // the next thing someone says (by the clock, so it keeps go
   const pb = SHOP.pb, now = performance.now(); if (!pb || now < pb.next) return;
   const here = new Set(pbPals().map(c => c.id)); if (!here.size) return;
   if (!pb.chat || pb.line >= pb.chat.length) { // start a new conversation (or someone says something on their own)
-    const ok = PB_CHATS.filter(c => c.every(([id]) => here.has(id)) && c !== pb.last);
+    const ok = (gossipOn() ? CONFESS_GOSSIP.concat(CONFESS_GOSSIP, PB_CHATS) : PB_CHATS).filter(c => c.every(([id]) => here.has(id)) && c !== pb.last);
     pb.chat = ok.length && Math.random() < 0.75 ? ok[Math.floor(Math.random()*ok.length)] : null; pb.line = 0; pb.last = pb.chat;
     if (!pb.chat) { const ids = [...here], id = ids[Math.floor(Math.random()*ids.length)], lines = PB_SOLO[id] || ['...']; pbSay(id, lines[Math.floor(Math.random()*lines.length)]); pb.next = now + 3800; return; }
   }
@@ -4181,6 +4183,7 @@ const shyDown = () => dormNight() && SHOP.shyAwake;
 const KEEPER_DINNER = [[['keeper', 'There you are, sleepyhead! Dinner is almost ready!'], ['keeper2', '*yawns* ...mmm, is it soup?'], ['keeper', 'Your favourite!'], ['keeper2', '*happy* hehe...']],
   [['keeper2', 'th-thank you for making dinner...'], ['keeper', 'Anything for my best shop buddy!']]];
 function keeperSpots() { // where the two shopkeepers are in their home
+  if (confessPending() || SHOP.confessVisit) return (SHOP.floor === 12 ? [{ ch:CHAR.keeper, x:1000 }, { ch:CHAR.keeper2, x:1240 }] : []).filter(s => s.ch.id !== CHARS[SHOP.who].id); // (it's time for the confession: they're both downstairs, together)
   const e = performance.now() - (SHOP.shyWokeT || 0), down = shyDown(), walking = down && e > 1200 && e < 3600; // (she says something first, then walks to the stairs)
   const spots = SHOP.floor === 13 ? (down ? (e < 3600 ? [{ ch:CHAR.keeper2, x:1750 + Math.max(0, Math.min(1, (e - 1200)/2400))*(KEEPER_UP_X - 1750), walking }] : []) : [{ ch:CHAR.keeper2, x:shySleeping() ? 1750 : 840 }])
     : [{ ch:CHAR.keeper, x:1000 }].concat(down ? [{ ch:CHAR.keeper2, x:1560 }] : []); // (downstairs, by the dinner table)
@@ -4269,6 +4272,7 @@ function drawKeeperRoom(t, night) {
   g.lineWidth = 4; for (let i=0;i<n;i+=2) { const bx = x0 + i*sw + 10; g.beginPath(); g.moveTo(bx, SHOP_FLOOR - (i + 1)*sh); g.lineTo(bx, SHOP_FLOOR - 110 - (bx - x0 + 10)*(SHOP_FLOOR - 110)/(KEEPER_ROOM_W - x0 + 10)); g.stroke(); }
   g.fillStyle = '#5a3a6e'; g.font = `26px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('upstairs ↗', 2120, SHOP_FLOOR - 470);
   if (SHOP.nearStairs && SHOP.stairTo === 13) drawPointer(KEEPER_STAIRS_X, SHOP_FLOOR - 400, t);
+  if (confessSeen()) for (let i=0;i<6;i++) { const k = (t*0.35 + i/6) % 1; g.save(); g.globalAlpha = 1 - k; drawLittleHeart(1120 + Math.sin(t*2 + i*2)*110, SHOP_FLOOR - 140 - k*300, 10 + i % 3*5); g.restore(); } // hearts, now they like each other
   drawTaskPointer(t);
 }
 function drawKeeperBed(x, shy) { // a big bed: Fighty's grey one with a top hat on the bedpost, or the Shy Shopkeeper's purple one with a canopy and a heart
@@ -4365,10 +4369,12 @@ function drawKeeperDoor(x, t) { // the shopkeepers' door: bigger and gold, with 
 function dormStep() { // the roommates take turns talking (by the clock)
   const pb = SHOP.pb, now = performance.now(); if (!pb || now < pb.next) return;
   const here = new Set(dormSpots().map(s => s.ch.id)); if (!here.size) return;
-  const chats = (DORMS[SHOP.dorm || 0].keepers && SHOP.floor === 12 && shyDown() ? KEEPER_DINNER : dormNight() ? DORMS[SHOP.dorm || 0].chats : DORM_DAY[SHOP.dorm || 0]).filter(c => c.every(([id]) => here.has(id))); // (night talk or morning talk)
+  const keepersDown = DORMS[SHOP.dorm || 0].keepers && SHOP.floor === 12;
+  const chats = (keepersDown && confessPending() ? [CONFESS_LINES] : keepersDown && SHOP.confessVisit ? KEEPER_LOVE : keepersDown && shyDown() ? KEEPER_DINNER : (gossipOn() && !DORMS[SHOP.dorm || 0].keepers ? CONFESS_GOSSIP : []).concat(dormNight() ? DORMS[SHOP.dorm || 0].chats : DORM_DAY[SHOP.dorm || 0])).filter(c => c.every(([id]) => here.has(id))); // (night talk or morning talk)
   if (!chats.length) { const id = [...here][0], lines = (DORMS[SHOP.dorm || 0].crush && { diamond:['Hi, Missing Arrow... *blushes*', 'I saved you some snacks, hehe.', 'You look cute when you glitch.'], arrow:['H-hi, Sly Diamond... *happy glitch*', 'Y-your eyelashes are really pretty...', '*blushes and glitches*'] }[id]) || (id === 'keeper2' && shySleeping() && ['Zzz...', '*snores softly*', 'zzz... one pink bow, please... zzz']) || PB_SOLO[id] || ['...']; pbSay(id, lines[Math.floor(Math.random()*lines.length)]); pb.next = now + 4200; return; } // (alone in the room) // (alone with you in their room, they say sweet things to the one they like)
   if (!pb.chat || pb.line >= pb.chat.length) { pb.chat = chats[(pb.ci = ((pb.ci ?? -1) + 1) % chats.length)]; pb.line = 0; }
   const [id, text] = pb.chat[pb.line++]; pbSay(id, text); pb.next = now + (pb.line >= pb.chat.length ? 5200 : 3600);
+  if (pb.chat === CONFESS_LINES && pb.line >= pb.chat.length) confessDone(); // (you saw the whole confession)
 }
 function drawNameDoor(x, names, color = '#b97a57') { // a brown dorm door, with the roommates' names on a little plate
   g.fillStyle = '#5a3a1e'; g.fillRect(x - 66, SHOP_FLOOR - 260, 132, 260);
@@ -4427,7 +4433,7 @@ const KTASKS = { // each chore, and where you do it
   plant:{ name:'Water the plant', ask:'Our plant looks thirsty. Can you water it? It is next to the fridge.', hint:'The plant is next to the fridge.', floor:12, x:1690, done:'*splish splash* The plant looks happy!' },
 };
 const TASK_PAY = 20, TOY_X = 1150;
-const shySleeping = () => SHOP.floor === 13 && dormNight() && !SHOP.shyAwake; // at night, the Shy Shopkeeper is asleep in her bed (until you wake her up for dinner)
+const shySleeping = () => SHOP.floor === 13 && dormNight() && !SHOP.shyAwake && !confessPending() && !SHOP.confessVisit; // at night, the Shy Shopkeeper is asleep in her bed (until you wake her up for dinner)
 const kDone = () => SHOP.kdone || (SHOP.kdone = new Set());
 function nextKTask() { return (dormNight() ? ['wake'] : []).concat(['dinner', 'fire', 'plant']).find(id => !kDone().has(id)) || null; } // (she can only be woken up at night)
 function fightyTalk() { // you walked up to the Fighty Shopkeeper at home and pressed punch
@@ -5452,8 +5458,38 @@ $('secretBtn').onclick = () => {
   $('codesMsg').textContent = code.msg; $('secretIn').value = ''; $('adminBtn').hidden = !unlocked(CHAR.admin); if (sfx.win) sfx.win();
 };
 $('secretIn').addEventListener('keydown', e => { if (e.key === 'Enter') $('secretBtn').click(); });
-// ---------- up coming upds: what's coming next (nothing listed yet) ----------
-$('updsBtn').onclick = () => { audioOn(); openPage('upds'); };
+// ---------- up coming upds: what's coming next ----------
+// the confession: the first time you open this page, a 40 minute countdown starts (it keeps counting when the game is closed).
+// When it's done, go to the shopkeepers' room in the dorms to watch the Shy Shopkeeper tell the Fighty Shopkeeper she likes them
+const CONFESS_MIN = 40;
+const CONFESS_LINES = [['keeper2', 'u-um... Fighty? Can I t-tell you something?'], ['keeper', 'Sure! What is it?'], ['keeper2', 'I... I really, really like you... *blushes*'], ['keeper', '...!!'], ['keeper', 'I like you too!'], ['keeper2', '*happy squeak* hehe...']];
+const lsGet = k => { try { return localStorage.getItem(k); } catch { return null; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
+const confessStart = () => +lsGet('fff-confess') || 0;
+const confessSeen = () => lsGet('fff-confessed') === '1';
+const confessPending = () => { const s = confessStart(); return !!s && !confessSeen() && Date.now() - s >= CONFESS_MIN*60000; }; // (time's up, and you haven't watched it yet)
+function confessDone() { lsSet('fff-confessed', '1'); SHOP.confessVisit = true; if (sfx.win) sfx.win(); } // (she stays downstairs with Fighty for the rest of your visit)
+// until the confession happens, the fighters gossip about it (in player breaks and in their dorm rooms)
+const gossipOn = () => !!confessStart() && !confessSeen();
+const CONFESS_GOSSIP = [
+  [['heart', 'Did you hear? The Shy Shopkeeper has a secret for Fighty!'], ['star', 'Psh. Everyone knows she likes Fighty.'], ['heart', 'Eeee! I can not wait!']],
+  [['sparkle', 'Is the Shy Shopkeeper gonna say the L word?!'], ['shuriken', '...What L word?'], ['sparkle', 'LOVE! Hehe!'], ['shuriken', '*groans* ...okay, that is a little cute.']],
+  [['square', 'I HEARD SHE IS GOING TO CONFESS!'], ['tri', 'Shh! Do not YELL it! ...But yes. Me too.']],
+  [['circle', 'WHAT?! The Shy Shopkeeper likes Fighty?!'], ['hex', 'Beep boop... my love sensors say yes.']],
+  [['diamond', 'I know a secret about the shopkeepers... hehe.'], ['arrow', 'I-is it the same one everyone is talking about?'], ['diamond', '...Maybe.']],
+  [['star', 'She is going to tell Fighty. In the dorms. Soon.'], ['tri', 'How do YOU know?!'], ['star', 'I know everything. *adjusts shades*']],
+  [['sparkle', 'Do you think Fighty likes her too?'], ['heart', 'I hope so! They would be SO cute!']],
+  [['hex', 'Beep... should we go to the dorms to watch?'], ['square', 'YES! I MEAN... yes. Quietly.']],
+];
+const KEEPER_LOVE = [[['keeper2', '*blushes* ...hehe.'], ['keeper', 'Hehe... *blushes too*']], [['keeper', 'Want to run the shop together tomorrow?'], ['keeper2', 'y-yes please!']]];
+function updsTick() { // the countdown on the page
+  if (G.state !== 'upds') return; setTimeout(updsTick, 500);
+  const left = CONFESS_MIN*60000 - (Date.now() - confessStart());
+  const text = confessSeen() ? 'It happened! They like each other 💕' : left > 0 ? `The Shy Shopkeeper has something to tell the Fighty Shopkeeper... Go to the dorm in ${Math.floor(left/60000)}:${String(Math.floor(left/1000) % 60).padStart(2, '0')}!`
+    : 'Go to the dorm NOW! Find the shopkeepers\' room (the gold door at the end of the hall).';
+  if ($('confessWhen').textContent !== text) $('confessWhen').textContent = text;
+}
+$('updsBtn').onclick = () => { audioOn(); if (!confessStart()) lsSet('fff-confess', String(Date.now())); openPage('upds'); updsTick(); };
 // ---------- the admin panel: you get it with the admin code ----------
 const ONOFF_CHEAT = [[true, 'On'], [false, 'Off']];
 // `from`: 'menu', 'pause' (the pause menu: the fight waits behind it) or 'game' (the admin button during a fight: an online fight keeps going behind it)
@@ -5996,7 +6032,7 @@ function shopStairs() {
   if (to === 14) { SHOP.youSay = 'A secret 3rd floor!'; SHOP.youSayT = 2.5; renderShopCard(true); return; } // up the ladder
   if (to === 13) { SHOP.pb = { next:performance.now() + 900, chat:null, line:0 }; if (from === 12) { SHOP.youSay = 'Ooh, an upstairs!'; SHOP.youSayT = 2; } renderShopCard(true); return; } // up the shopkeepers' stairs
   if (from === 13) { SHOP.pb = { next:performance.now() + 600, chat:null, line:0 }; renderShopCard(true); return; } // and back down (to the bottom of the stairs)
-  if (to === 12) { SHOP.dorm = SHOP.stairRoom || 0; SHOP.cam = 0; SHOP.ktask = null; SHOP.kdone = new Set(); SHOP.shyAwake = false; SHOP.pb = { next:performance.now() + 600, chat:null, line:0 }; SHOP.youSay = 'Knock knock!'; SHOP.youSayT = 2; renderShopCard(true); return; } // into a dorm room
+  if (to === 12) { SHOP.dorm = SHOP.stairRoom || 0; SHOP.cam = 0; SHOP.ktask = null; SHOP.kdone = new Set(); SHOP.shyAwake = false; SHOP.confessVisit = false; SHOP.pb = { next:performance.now() + 600, chat:null, line:0 }; SHOP.youSay = 'Knock knock!'; SHOP.youSayT = 2; renderShopCard(true); return; } // into a dorm room
   if (from === 12) { SHOP.x = DORM_ROOM_X[SHOP.dorm || 0] + 110; SHOP.facing = 1; SHOP.pb = null; renderShopCard(true); return; } // back out to the hallway, by that room's door
   if (to === 11) { SHOP.pb = null; renderShopCard(true); return; }
   if (to === 10) { SHOP.pb = { next:performance.now() + 600, chat:null, line:0 }; SHOP.youSay = 'Hi everyone! Break time!'; SHOP.youSayT = 2.5; renderShopCard(true); return; } // into player breaks
