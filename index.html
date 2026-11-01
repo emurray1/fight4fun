@@ -3664,9 +3664,7 @@ function drawFunnyFloor(t) { // upstairs: the funny fun shop, built like the fig
   g.font = `46px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('funny fun shop', 0, 2, 320);
   g.restore();
   const empty = !STANDS.some(s => s.floor === 2);
-  const secret = (performance.now()/1000) % 16 > 12; // now and then she whispers her secret to herself, when she thinks nobody is listening
   const say = SHOP.msgT > 0 ? SHOP.msg
-    : secret ? '*whispers to herself* I like fighty... but I\'ll make sure no one knows...'
     : SHOP.nearStairs && SHOP.stairTo === 3 ? 'D-don\'t go up there... please...'
     : SHOP.nearStairs && SHOP.stairTo === 6 ? 'That\'s our break room... you can come in. Hehe...'
     : isNew() ? (SHOP.near ? 'W-who are you? ...that would look nice on you, I guess...' : SHOP.nearKeeper ? 'I-I\'ve never seen you before... d-do you want to talk?' : SHOP.nearStairs ? 'Bye... um... whoever you are...' : 'W-who are you?! I\'ve never seen you before...')
