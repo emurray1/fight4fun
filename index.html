@@ -76,6 +76,8 @@ button:focus-visible,.ctl:focus-visible{outline:4px solid var(--yellow);outline-
 .mapbox canvas{width:100%;aspect-ratio:16/9;border:3px solid var(--sky);display:block}
 .mapbox small{font-size:16px;color:#444}
 .msg{margin:0;min-height:1.3em;color:var(--maroon);font-size:18px}
+.soon{font-size:30px;text-align:center;margin:10px 0}
+#confessCv{display:block;width:100%;max-width:800px;margin:10px auto;border:3px solid currentColor;border-radius:8px}
 .howto{border-top:4px dashed var(--ink);margin:0 24px;padding:14px 0 22px;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px 24px;font-size:17px;line-height:1.35}
 .howto b{font-family:var(--display);font-weight:400;font-size:22px;display:block}
 kbd{font-family:var(--body);border:2px solid var(--ink);border-bottom-width:4px;padding:0 5px;background:var(--soft);font-size:15px}
@@ -288,7 +290,7 @@ html.thanks .fff span{border-color:#8a4b14;color:#d2691e}
     <p id="thanksNote" class="thanks-note" hidden>🦃 Happy Thanksgiving! 🍂</p>
     <div class="title-chars" id="titleChars"></div>
     <button id="okBtn" class="btn grey">OK</button>
-    <div class="menu"><button id="onlineBtn" class="btn">play online</button><button id="howBtn" class="btn">how to play</button><button id="keysBtn" class="btn">controls</button><button id="setBtn" class="btn">settings</button><button id="shopBtn" class="btn">shop</button><button id="codesBtn" class="btn">codes</button><button id="adminBtn" class="btn admin-btn" hidden>admin panel</button><button id="glitchShopBtn" class="btn glitch-btn" hidden>SHOP..?</button></div>
+    <div class="menu"><button id="onlineBtn" class="btn">play online</button><button id="howBtn" class="btn">how to play</button><button id="keysBtn" class="btn">controls</button><button id="setBtn" class="btn">settings</button><button id="shopBtn" class="btn">shop</button><button id="codesBtn" class="btn">codes</button><button id="updsBtn" class="btn">up coming upds</button><button id="confessBtn" class="btn">confession</button><button id="adminBtn" class="btn admin-btn" hidden>admin panel</button><button id="glitchShopBtn" class="btn glitch-btn" hidden>SHOP..?</button></div>
     <p id="notice" class="msg" role="status"></p>
     <p class="hint">OK plays on this computer. Best with a keyboard or game controllers.</p>
   </div>
@@ -425,6 +427,27 @@ html.thanks .fff span{border-color:#8a4b14;color:#d2691e}
       <div class="setting name-row"><label for="secretIn">Code</label><input id="secretIn" maxlength="30" autocomplete="off" spellcheck="false"></div>
       <div class="page-foot"><button id="secretBtn" class="btn">enter code</button></div>
       <p id="codesMsg" class="msg" role="status"></p>
+    </div>
+  </div>
+</div>
+
+<div id="upds" class="screen" hidden>
+  <div class="panel page">
+    <header class="whois"><h2>up coming upds</h2><button class="btn back" data-back>back</button></header>
+    <div class="page-body">
+      <p class="soon">🚧 More updates coming soon! 🚧</p>
+      <p>New stuff is on the way for Fight for Fun. Check back here to see what's coming next!</p>
+    </div>
+  </div>
+</div>
+
+<div id="confess" class="screen" hidden>
+  <div class="panel page">
+    <header class="whois"><h2>confession</h2><button class="btn back" data-back>back</button></header>
+    <div class="page-body">
+      <p id="confessMsg" class="msg" role="status"></p>
+      <canvas id="confessCv" width="800" height="450"></canvas>
+      <div class="page-foot"><button id="confessAgain" class="btn" hidden>watch again</button></div>
     </div>
   </div>
 </div>
@@ -1413,7 +1436,7 @@ const sfx = {
 
 // ---------- menu music: an original bouncy polka loop, made with Web Audio ----------
 const Music = { timer:null, next:0, step:0, gain:null };
-const MENU_STATES = new Set(['title','setup','howto','settings','online','lobby','shop']);
+const MENU_STATES = new Set(['title','setup','howto','settings','online','lobby','shop','upds','confess']);
 function hz(n) { const m = /([A-G])(#?)(\d)/.exec(n); const i = { C:0, D:2, E:4, F:5, G:7, A:9, B:11 }[m[1]] + (m[2] ? 1 : 0); return 440*Math.pow(2, (i + 12*(+m[3] + 1) - 69)/12); }
 const TUNE = [ // [note, length in eighth notes], 16 bars of 2/4
   ['G4',1],['C5',1],['E5',1],['C5',1], ['G4',1],['C5',1],['E5',2], ['D5',1],['B4',1],['G4',1],['B4',1], ['D5',1],['F5',1],['D5',2],
@@ -5248,7 +5271,7 @@ function applyTheme() {
   document.documentElement.classList.toggle('thanks', thanks()); $('thanksNote').hidden = !thanks();
 }
 applyTheme();
-const screens = ['title','setup','pause','results','howto','settings','quitAsk','online','lobby','keys','shop','codes','adminPanel'];
+const screens = ['title','setup','pause','results','howto','settings','quitAsk','online','lobby','keys','shop','codes','adminPanel','upds','confess'];
 function showScreen(id) { for (const s of screens) $(s).hidden = s !== id; $('glitchShopBtn').hidden = !unlocked(CHAR.arrow); $('adminBtn').hidden = !unlocked(CHAR.admin); $('gameQuit').hidden = !(id === null && G.state === 'fight'); $('gameAdmin').hidden = !(id === null && G.state === 'fight' && unlocked(CHAR.admin)); musicUpdate(); }
 function openQuit() {
   if (G.state !== 'fight') return;
@@ -5441,6 +5464,44 @@ $('secretBtn').onclick = () => {
   $('codesMsg').textContent = code.msg; $('secretIn').value = ''; $('adminBtn').hidden = !unlocked(CHAR.admin); if (sfx.win) sfx.win();
 };
 $('secretIn').addEventListener('keydown', e => { if (e.key === 'Enter') $('secretBtn').click(); });
+// ---------- up coming upds: what's coming next (nothing listed yet) ----------
+$('updsBtn').onclick = () => { audioOn(); openPage('upds'); };
+// ---------- the confession: after a few minutes, the Shy Shopkeeper tells the Fighty Shopkeeper she likes them ----------
+const CONFESS_MIN = 5; // how many minutes you wait (counting from the first time you press the button)
+const CONFESS_LINES = [['keeper2', 'u-um... Fighty? Can I t-tell you something?'], ['keeper', 'Sure! What is it?'], ['keeper2', 'I... I really, really like you... *blushes*'], ['keeper', '...!!'], ['keeper', 'I like you too!'], ['keeper2', '*happy squeak* hehe...']];
+let confessScene = null, confessRaf = 0;
+function confessStart() { // when the countdown started (saved, so it keeps counting after you close the game)
+  let s = 0; try { s = +localStorage.getItem('fff-confess') || 0; } catch {}
+  if (!s) { s = Date.now(); try { localStorage.setItem('fff-confess', String(s)); } catch {} }
+  return s;
+}
+function drawConfess() {
+  if (G.state !== 'confess') return; confessRaf = requestAnimationFrame(drawConfess);
+  const cv2 = $('confessCv'), t = performance.now()/1000, left = CONFESS_MIN*60000 - (Date.now() - confessStart());
+  const msg = left > 0 ? `The Shy Shopkeeper has something to tell the Fighty Shopkeeper... Come back in ${Math.floor(left/60000)}:${String(Math.floor(left/1000) % 60).padStart(2, '0')}!` : 'The Shy Shopkeeper is telling the Fighty Shopkeeper a big secret...';
+  if ($('confessMsg').textContent !== msg) $('confessMsg').textContent = msg;
+  let say = null, hearts = false;
+  if (left <= 0) {
+    if (!confessScene) confessScene = performance.now();
+    const i = Math.floor((performance.now() - confessScene)/2800);
+    if (i < CONFESS_LINES.length) say = CONFESS_LINES[i]; else hearts = true;
+    if ($('confessAgain').hidden !== (i < CONFESS_LINES.length)) $('confessAgain').hidden = i < CONFESS_LINES.length; // (once it's over, you can watch it again)
+  } else if (t % 6 < 2.6) say = ['keeper2', '*nervous* ...n-not yet...'];
+  withG(cv2.getContext('2d'), () => {
+    g.save(); g.setTransform(cv2.width/W, 0, 0, cv2.height/H, 0, 0);
+    drawKeeperWalls(W); drawHomePlant(1400, t);
+    const at = { keeper:600, keeper2:1000 };
+    for (const id of ['keeper', 'keeper2']) {
+      const ch = CHAR[id], r = dormR(ch), talking = say && say[0] === id;
+      g.save(); g.translate(at[id], SHOP_FLOOR - r - (talking ? Math.abs(Math.sin(t*12))*6 : 0)); drawCharacter(g, ch, r, { facing:id === 'keeper' ? 1 : -1, ...looks(ch), happy:hearts }); g.restore();
+    }
+    if (say) drawBubble(say[1], at[say[0]] + 200, SHOP_FLOOR - dormTall(CHAR[say[0]]) - 20, at[say[0]]);
+    if (hearts) for (let i=0;i<9;i++) { const k = (t*0.35 + i/9) % 1; g.save(); g.globalAlpha = 1 - k; drawLittleHeart(800 + Math.sin(t*2 + i*1.7)*260, SHOP_FLOOR - 80 - k*560, 14 + i % 3*6); g.restore(); } // they like each other!
+    g.restore();
+  });
+}
+$('confessBtn').onclick = () => { audioOn(); confessStart(); confessScene = null; $('confessAgain').hidden = true; openPage('confess'); cancelAnimationFrame(confessRaf); drawConfess(); };
+$('confessAgain').onclick = () => { confessScene = performance.now(); $('confessAgain').hidden = true; };
 // ---------- the admin panel: you get it with the admin code ----------
 const ONOFF_CHEAT = [[true, 'On'], [false, 'Off']];
 // `from`: 'menu', 'pause' (the pause menu: the fight waits behind it) or 'game' (the admin button during a fight: an online fight keeps going behind it)
