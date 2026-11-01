@@ -368,6 +368,9 @@ html.thanks .fff span{border-color:#8a4b14;color:#d2691e}
       <div class="setting"><span>Super speed</span><div class="seg" id="apSpeedSeg"></div><small>Everyone runs twice as fast.</small></div>
       <div class="setting"><span>Giant jumps</span><div class="seg" id="apJumpSeg"></div><small>Everyone jumps way higher.</small></div>
       <div class="setting"><span>Sleepy computers</span><div class="seg" id="apSleepySeg"></div><small>The computer players just stand there and do nothing.</small></div>
+      <h3>Shopkeepers</h3>
+      <div class="setting"><span>Play as the shopkeepers</span><div class="seg" id="apKeepPlaySeg"></div><small>The fighty shopkeeper and the shy shopkeeper show up as fighters you can pick.</small></div>
+      <div class="setting"><span>Shopkeepers watch fights</span><div class="seg" id="apKeepWatchSeg"></div><small>They stand in the corner, watch the fight and talk about it.</small></div>
       <p id="apMsg" class="msg" role="status"></p>
     </div>
   </div>
@@ -586,10 +589,13 @@ const CHARS = [
   // the missing guy from the "HAVE YOU SEEN HIM?" poster: locked in a cage past the 5th floor until you break him out
   { id:'arrow',    name:'Missing Arrow',   color:'#ffb07c', shape:'arrow',    trait:'Scared and glitchy. Special: glitch fest', speed:1.1,  power:1.0,  weight:0.95, jump:1.08, secret:true, hint:'Have you seen him? Look past the 5th floor of the shop...' },
   // the admin: you only get him with the admin code (on the "codes" page). A blocky black guy, drawn by Mason (his body in the fights is still a circle)
+  // the two shopkeepers, as fighters: only for admins, once they switch it on in the admin panel
+  { id:'keeper',   name:'Fighty Shopkeeper', color:'#7f7f7f', shape:'circle', trait:'Runs the fighty shop. Cool shades, big punches', speed:0.95, power:1.1,  weight:1.15, jump:0.95, secret:true, keeper:true },
+  { id:'keeper2',  name:'Shy Shopkeeper',  color:'#a349a4', shape:'circle', trait:'Runs the funny fun shop. Shy... but quick', speed:1.1,  power:0.9,  weight:0.9,  jump:1.1, secret:true, keeper:true },
   { id:'admin',    name:'Admin',           color:'#222222', shape:'circle',   trait:'The boss of the whole game. Special: banned', speed:1.0,  power:1.0,  weight:1.0,  jump:1.0, size:3.2, secret:true, hint:'Do you know the code?' },
 ];
 const CHAR = Object.fromEntries(CHARS.map(c => [c.id, c]));
-const unlocked = ch => !ch.secret || !!(shop.unlocked && shop.unlocked[ch.id]); // secret fighters stay locked until you earn them
+const unlocked = ch => ch.keeper ? !!(setup.keepersPlay && shop.unlocked && shop.unlocked.admin) : !ch.secret || !!(shop.unlocked && shop.unlocked[ch.id]); // secret fighters stay locked until you earn them (and the shopkeepers are for admins who switch them on)
 const PLAYABLE = () => CHARS.filter(unlocked);
 const CONTROLS = [
   { id:'off', label:'Off', kind:'off' }, { id:'cpu', label:'Computer', kind:'cpu' },
@@ -609,7 +615,7 @@ const DIFF = { easy:{ punch:0.3, cd:0.9, mash:0.06, label:'Easy' }, normal:{ pun
 const MAX_HP = 200; // health points: when they run out, you get dizzy
 const TOPS = { star5:1.15, star4:1.25, tri:1.3, diamond:1.15, square:0.85, circle:1, star6:1.15, heart:0.75, shuriken:1.2, arrow:1.25 };
 
-const setup = { slots:{ star:'cpu', tri:'p1', circle:'cpu', diamond:'off', square:'cpu', sparkle:'off' }, rounds:3, diff:'normal', mode:'ffa', map:'cloud', track:'gp', hmap:'house', teams:{ star:0, tri:1, circle:0, diamond:1, square:1, sparkle:0, hex:0, heart:1, shuriken:0 }, sound:true, music:true, volume:1, shake:true, tags:true, halloween:'auto', christmas:'auto', thanksgiving:'auto', cheatSpeed:false, cheatJump:false, cheatSleepy:false, cheatWho:'me' };
+const setup = { slots:{ star:'cpu', tri:'p1', circle:'cpu', diamond:'off', square:'cpu', sparkle:'off' }, rounds:3, diff:'normal', mode:'ffa', map:'cloud', track:'gp', hmap:'house', teams:{ star:0, tri:1, circle:0, diamond:1, square:1, sparkle:0, hex:0, heart:1, shuriken:0 }, sound:true, music:true, volume:1, shake:true, tags:true, halloween:'auto', christmas:'auto', thanksgiving:'auto', cheatSpeed:false, cheatJump:false, cheatSleepy:false, cheatWho:'me', keepersPlay:false, keepersWatch:false };
 try { const s = JSON.parse(localStorage.getItem('fff-setup') || 'null'); if (s && s.slots) Object.assign(setup, s); } catch (e) {}
 for (const c of CHARS) { if (!setup.slots[c.id]) setup.slots[c.id] = 'off'; if (setup.teams[c.id] == null) setup.teams[c.id] = 0; }
 const saveSetup = () => { try { localStorage.setItem('fff-setup', JSON.stringify(setup)); } catch (e) {} };
@@ -1057,7 +1063,27 @@ function drawAdmin(g, r, col, walk, skin) { // `walk`: how far along his steps h
 }
 const ADMIN_HEAD = { x:-0.6, y:-0.58, k:0.45 }, ADMIN_HEAD_UP = { x:0, y:-0.84, k:0.45 }; // where the Admin's little square head is (leaning, and standing up to walk), so hats and crowns sit on it
 function onAdminHead(g, r, draw, up) { const h = up ? ADMIN_HEAD_UP : ADMIN_HEAD; g.save(); g.translate(h.x*r, h.y*r); g.scale(h.k, h.k); draw(); g.restore(); }
+function withG(ctx, fn) { const old = g; g = ctx; try { fn(); } finally { g = old; } } // run one of the shop's drawings on another canvas
+// the shopkeepers as fighters: their shop pictures, shrunk to fit. The fighty one is drawn from behind the counter, so they get legs here
+function drawKeeperFighter(ctx, ch, r, o) {
+  const t = performance.now()/1000, step = o.walk != null ? Math.sin(o.walk) : 0;
+  withG(ctx, () => {
+    g.save();
+    if (ch.id === 'keeper') {
+      const s = 2.1*r/350; g.scale(s, s); g.translate(0, -505);
+      g.strokeStyle = C.ink; g.lineWidth = 34; g.lineCap = 'round'; // legs, stepping when they walk
+      for (const k of [-1, 1]) { g.beginPath(); g.moveTo(k*34, 600); g.lineTo(k*34 + k*step*22, 668); g.stroke(); }
+      drawGreyKeeper(0, t); // (with their waving arm)
+    } else {
+      const s = 2.1*r/255; g.scale(s, s); g.translate(0, -650);
+      drawShyKeeper(0, t, { friend:o.walk == null, close:0, lookX:0, walking:o.walk != null });
+    }
+    g.restore();
+    if (o.flash > 0) { g.globalAlpha = Math.min(0.6, o.flash*5); g.fillStyle = C.white; g.beginPath(); g.arc(0, 0, r*1.05, 0, TAU); g.fill(); g.globalAlpha = 1; }
+  });
+}
 function drawCharacter(g, ch, r, o = {}) {
+  if (ch.keeper) return drawKeeperFighter(g, ch, r, o);
   if (ch.id === 'admin') { // he isn't a shape like the others, so he's drawn his own way (with his things on his little head)
     const tt = performance.now()/1000;
     if (o.cubes) drawGlitchCubes(g, r, tt, false);
@@ -1952,6 +1978,33 @@ function brotherTalk() {
   G.broT = 7; G.broI = ((G.broI ?? -1) + 1) % BRO_LINES.length;
   ev('pop', m.body.position.x, m.body.position.y - m.r - 40, BRO_LINES[G.broI], C.yellow);
 }
+// the shopkeepers watching a fight from the corner (an admin switch): they chat, and they react to splashes, dizzies, bans and wins
+const WATCH_LINES = {
+  idle:[[1, 'Go go go!'], [2, 'Y-you can do it...'], [1, 'Ooh, this is a good one!'], [2, '*covers her eyes* Is it over yet?'], [1, 'I sell sunglasses, you know. Just saying.'], [2, 'Careful... careful...'], [1, 'Nice punch! Hehe!'], [2, '*cheers quietly* yay...']],
+  out:[[1, 'SPLASH! Hahaha!'], [2, 'Oh no! Are they okay?!'], [1, 'Right in the water!'], [2, 'Eep! A splash!']],
+  dizzy:[[1, 'Ha! Seeing stars!'], [2, 'S-so dizzy...'], [1, 'Ooh, that one is wobbly!']],
+  ban:[[1, 'BANNED?! Who is doing that?!'], [2, '*hides* W-where did that sign come from?!'], [1, 'I do not see anybody... but that sign is BIG!']],
+  win:[[1, 'What a fight! Winner winner!'], [2, 'Yay! *claps quietly*'], [1, 'Hahaha! Come buy something to celebrate!']],
+};
+const watching = () => setup.keepersWatch && unlocked(CHAR.admin) && G.state === 'fight' && G.mode !== 'race' && G.mode !== 'horror' && !G.boss;
+function watchSay(kind) {
+  const lines = WATCH_LINES[kind], l = lines[Math.floor(Math.random()*lines.length)], now = performance.now();
+  G.watch = { ...(G.watch || {}), who:l[0], say:l[1], until:now + 3200, next:now + 6500 };
+}
+function watchReact(text) { // something just happened in the fight
+  if (!watching()) return;
+  const kind = text === 'OUT!' ? 'out' : text === 'DIZZY!' ? 'dizzy' : text === 'BANNED!' ? 'ban' : null;
+  if (kind && !(G.watch && G.watch.kind === kind && performance.now() < G.watch.until)) { watchSay(kind); G.watch.kind = kind; }
+}
+function drawWatchers(t) {
+  if (!watching()) return;
+  const now = performance.now(), w = G.watch = G.watch || { next:now + 1500 };
+  if (G.banner && G.banner !== w.banner) { w.banner = G.banner; if (/wins/.test(G.banner.title || '')) { watchSay('win'); G.watch.kind = 'win'; } }
+  else if (now > (G.watch.next || 0)) { watchSay('idle'); G.watch.kind = 'idle'; }
+  const spots = { 1:W - 260, 2:W - 105 }; // the fighty one, then the shy one, in the bottom right corner
+  for (const who of [1, 2]) { g.save(); g.translate(spots[who], H - 62 + (G.watch.who === who && now < G.watch.until ? Math.sin(t*12)*2 : 0)); drawCharacter(g, CHAR[who === 1 ? 'keeper' : 'keeper2'], 50, {}); g.restore(); }
+  if (now < G.watch.until) drawBubble(G.watch.say, spots[G.watch.who] + 50, H - 150, spots[G.watch.who]);
+}
 function updateBans() {
   if (!G.bans || !G.bans.length) return;
   for (const bn of G.bans) {
@@ -2088,7 +2141,8 @@ function control(p, inp) {
   const b = p.body, ch = p.ch;
   p.punchCD -= DT; p.specCD = (p.specCD || 0) - DT; if (p.ko > 0 || p.grabbedBy || p.hitstun > 0.25) p.special = null; p.punchAnim = Math.max(0, p.punchAnim - DT); p.hitstun = Math.max(0, p.hitstun - DT); p.flash = Math.max(0, p.flash - DT);
   if (p.ko > 0) { p.ko -= DT; if (p.ko <= 0) { p.ko = 0; p.dizzy = 0; } } else p.dizzy = Math.max(0, p.dizzy - DT*7);
-  if (ch.id === 'admin') { p.dizzy = 0; p.ko = 0; Body.setAngle(b, 0); Body.setAngularVelocity(b, 0); } // the Admin can't get hurt, and he stays standing up (he walks instead of rolling)
+  if (ch.id === 'admin') { p.dizzy = 0; p.ko = 0; Body.setAngle(b, 0); Body.setAngularVelocity(b, 0); }
+  if (ch.keeper) { Body.setAngle(b, 0); Body.setAngularVelocity(b, 0); } // the shopkeepers stand up and walk too (no rolling around) // the Admin can't get hurt, and he stays standing up (he walks instead of rolling)
   p.squash *= 0.85;
   if (p.grabbedBy) {
     p.holdT += DT;
@@ -4433,7 +4487,7 @@ function frame(now) {
     drawBans(t);
     for (const p of G.fighters) if (p.alive && !p.grabbing) drawFighter(p, t);
     for (const p of G.fighters) if (p.alive && p.grabbing) drawFighter(p, t);
-    drawParticles(G.paused ? 0 : dt); if (G.boss) drawGlitches(t); drawHUD(); drawOverlayText();
+    drawParticles(G.paused ? 0 : dt); if (G.boss) drawGlitches(t); drawWatchers(t); drawHUD(); drawOverlayText();
   } else { drawSky(t, null); drawMenuGround(t); }
   requestAnimationFrame(frame);
 }
@@ -4480,6 +4534,7 @@ function teamButton(id, team, fn) {
 function renderRoster() {
   const box = $('roster'); box.innerHTML = '';
   for (const ch of CHARS) {
+    if (!unlocked(ch) && ch.keeper) continue; // the shopkeepers don't show up at all unless an admin switched them on
     if (!unlocked(ch)) { // a locked fighter: just a dark shape and a hint
       const card = document.createElement('div'); card.className = 'card off locked';
       const cc = charCanvas(ch, 92); cc.style.filter = 'brightness(0)'; card.appendChild(cc);
@@ -4645,6 +4700,8 @@ function openAdminPanel(from) {
   $('apCoins').textContent = shop.coins; $('apMsg').textContent = '';
   renderSeg('apSpeedSeg', ONOFF_CHEAT, 'cheatSpeed'); renderSeg('apJumpSeg', ONOFF_CHEAT, 'cheatJump'); renderSeg('apSleepySeg', ONOFF_CHEAT, 'cheatSleepy');
   renderSeg('apWhoSeg', [['me', 'Just me'], ['all', 'Everyone']], 'cheatWho');
+  renderSeg('apKeepPlaySeg', ONOFF_CHEAT, 'keepersPlay', () => { titleChars.innerHTML = ''; PLAYABLE().forEach(c => titleChars.appendChild(charCanvas(c, 78))); });
+  renderSeg('apKeepWatchSeg', ONOFF_CHEAT, 'keepersWatch');
 }
 let apFrom = 'menu';
 $('adminBtn').onclick = () => { if (!unlocked(CHAR.admin)) return; audioOn(); openAdminPanel('menu'); };
@@ -4687,8 +4744,8 @@ $('glitchShopBtn').onclick = () => { // straight into the glitch shop, as Missin
 };
 $('glitchShopBtn').hidden = !unlocked(CHAR.arrow); $('adminBtn').hidden = !unlocked(CHAR.admin);
 $('shopCardOpen').onclick = () => { SHOP.cardClosed = false; renderShopCard(true); cv.focus(); };
-$('shopPrev').onclick = () => { do SHOP.who = (SHOP.who + CHARS.length - 1) % CHARS.length; while (!unlocked(CHARS[SHOP.who])); renderShopCard(true); };
-$('shopNext').onclick = () => { do SHOP.who = (SHOP.who + 1) % CHARS.length; while (!unlocked(CHARS[SHOP.who])); renderShopCard(true); };
+$('shopPrev').onclick = () => { do SHOP.who = (SHOP.who + CHARS.length - 1) % CHARS.length; while (!unlocked(CHARS[SHOP.who]) || CHARS[SHOP.who].keeper); renderShopCard(true); };
+$('shopNext').onclick = () => { do SHOP.who = (SHOP.who + 1) % CHARS.length; while (!unlocked(CHARS[SHOP.who]) || CHARS[SHOP.who].keeper); renderShopCard(true); };
 function openShop() {
   const mine = CHARS.findIndex(ch => (CTRL[setup.slots[ch.id]] || CTRL.off).kind === 'human');
   Object.assign(SHOP, { floor:1, x:280, y:0, vy:0, facing:1, near:null, nearKeeper:false, nearStairs:false, prev:readHeld('local'), msg:'', msgT:0, echoT:0, carry:false, pushT:0, pushing:false, youSayT:0, chase:null, bossT:-1, cam:0 });
@@ -5095,7 +5152,7 @@ function ev(type, a, b, c, d) { runEv(type, a, b, c, d); if (G.online === 'host'
 function runEv(type, a, b, c, d) {
   switch (type) {
     case 'sfx': if (sfx[a]) sfx[a](); break;
-    case 'pop': popText(a, b, c, d); break;
+    case 'pop': popText(a, b, c, d); watchReact(c); break;
     case 'burst': burst(a, b, c, d); break;
     case 'puff': puff(a, b); break;
     case 'splash': splash(a); break;
