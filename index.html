@@ -387,6 +387,9 @@ html.thanks .fff span{border-color:#8a4b14;color:#d2691e}
       <p class="note" id="apPowNote"></p>
       <div class="ap-row"><button id="apHeal" class="btn ap-big"><i>❤️</i>heal me</button><button id="apKO" class="btn ap-big"><i>💫</i>knock everyone out</button><button id="apWin" class="btn ap-big"><i>🏆</i>win the round</button><button id="apRain" class="btn ap-big"><i>🪙</i>make it rain coins</button></div>
       <div class="ap-row"><button id="apGiant" class="btn ap-big"><i>🦖</i>giant</button><button id="apNormal" class="btn ap-big"><i>🙂</i>normal size</button><button id="apTiny" class="btn ap-big"><i>🐜</i>tiny</button></div>
+      <h3>🎉 Silly effects</h3>
+      <p class="note" id="apFxNote"></p>
+      <div class="ap-row"><button id="apFlip" class="btn ap-big"><i>🙃</i>upside-down</button><button id="apFloaty" class="btn ap-big"><i>🎈</i>floaty</button><button id="apDisco" class="btn ap-big"><i>🪩</i>disco</button><button id="apBoom" class="btn ap-big"><i>💣</i>BOOM!</button></div>
       <h3>🗺️ Change the map</h3>
       <p class="note" id="apMapNote"></p>
       <div class="ap-row" id="apMaps"></div>
@@ -1589,12 +1592,12 @@ function makeFighter(ch, control, x, idx) {
 }
 
 function startMatch() {
-  G.boss = false;
+  G.boss = false; G.fx = {}; // (silly effects from the admin panel start off in a new fight)
   G.wins = {}; G.round = 0; G.rounds = setup.rounds; G.online = null; MAP = MAPS[setup.map] || MAPS.cloud; G.mode = setup.mode; G.lineup = CHARS.filter(c => setup.slots[c.id] !== 'off' && unlocked(c)).map(c => ({ ch:c, control:setup.slots[c.id], team:setup.teams[c.id] || 0 }));
   G.state = 'fight'; G.paused = false; showScreen(null); cv.focus(); if (G.mode === 'race') startRace(); else if (G.mode === 'horror') startHorror(); else startRound();
 }
 function startBossFight() { // you (shopping as your fighter) against %#@%, one round on Cloud Island
-  G.boss = true; G.wins = {}; G.round = 0; G.rounds = 1; G.online = null; MAP = MAPS.cloud; G.mode = 'ffa';
+  G.boss = true; G.fx = {}; G.wins = {}; G.round = 0; G.rounds = 1; G.online = null; MAP = MAPS.cloud; G.mode = 'ffa';
   G.lineup = [{ ch:CHARS[SHOP.who], control:'local', team:0, tag:'YOU' }, { ch:BOSS, control:'cpu', team:1, tag:'BOSS' }];
   G.state = 'fight'; G.paused = false; showScreen(null); musicUpdate(); cv.focus(); startRound();
 }
@@ -2394,6 +2397,7 @@ function step() {
     if (!passAll) G.clouds.forEach(c => { if (b.bounds.max.y <= c.bounds.min.y + 12) mask |= c.collisionFilter.category; });
     b.collisionFilter.mask = mask;
   }
+  G.engine.gravity.y = G.fx && G.fx.floaty ? 0.55 : 1.7; // floaty: low gravity (an admin's silly effect)
   if (MAP.lava) lavaPhysics();
   Engine.update(G.engine, STEP);
   updateHazards();
@@ -4661,6 +4665,7 @@ function frame(now) {
   else if (G.state === 'fight' && G.mode === 'race') drawRace(t, dt);
   else if (G.state === 'fight' && G.mode === 'horror') drawHorror(t, dt);
   else if (G.state === 'fight') {
+    const flip = G.fx && G.fx.flip; if (flip) { g.save(); g.translate(W/2, H/2); g.rotate(Math.PI); g.translate(-W/2, -H/2); } // upside-down (an admin's silly effect)
     drawSky(t, MAP); if (G.boss) drawBossSky(t);
     drawArena(t);
     drawHazards(t);
@@ -4668,7 +4673,8 @@ function frame(now) {
     drawBans(t);
     for (const p of G.fighters) if (p.alive && !p.grabbing) drawFighter(p, t);
     for (const p of G.fighters) if (p.alive && p.grabbing) drawFighter(p, t);
-    drawParticles(G.paused ? 0 : dt); if (G.boss) drawGlitches(t); drawWatchers(t); drawHUD(); drawCoinRain(t); drawPopups(t); drawOverlayText();
+    drawParticles(G.paused ? 0 : dt); if (G.boss) drawGlitches(t); drawDisco(t); if (flip) g.restore();
+    drawWatchers(t); drawHUD(); drawCoinRain(t); drawPopups(t); drawOverlayText();
   } else { drawSky(t, null); drawMenuGround(t); }
   requestAnimationFrame(frame);
 }
@@ -4883,7 +4889,7 @@ function openAdminPanel(from) {
   renderSeg('apWhoSeg', [['me', 'Just me'], ['all', 'Everyone']], 'cheatWho');
   renderSeg('apKeepPlaySeg', ONOFF_CHEAT, 'keepersPlay', () => { titleChars.innerHTML = ''; PLAYABLE().forEach(c => titleChars.appendChild(charCanvas(c, 78))); });
   renderSeg('apKeepWatchSeg', ONOFF_CHEAT, 'keepersWatch');
-  renderSwap(); renderPowers();
+  renderSwap(); renderPowers(); renderFx();
 }
 let apFrom = 'menu';
 $('adminBtn').onclick = () => { if (!unlocked(CHAR.admin)) return; audioOn(); openAdminPanel('menu'); };
@@ -4959,6 +4965,7 @@ function renderSwap() {
 // ----- fight powers and maps (admin panel): heal, knock everyone out, win the round, coin rain, giant or tiny, and changing the map -----
 const powerFight = () => G.state === 'fight' && G.mode !== 'race' && G.mode !== 'horror' && G.fighters && G.fighters.length && !!G.fighters[0].body;
 function adminPower(p, act, arg) { // on this computer, or on the host for an online admin
+  if (act === 'fx' || act === 'boom') return adminFx(p, act, arg); // (silly effects)
   if (act === 'rain') return ev('coinrain');
   if (act === 'map') { // the fight jumps to another map (this round starts over there)
     if (!MAPS[arg] || !powerFight() || G.online === 'client') return;
@@ -5014,6 +5021,52 @@ function drawCoinRain(t) {
     const x = (i*197.3) % W + Math.sin(t*3 + i)*20, y = -40 + ((age*(380 + (i % 7)*40) + i*53) % (H + 80)), s = Math.abs(Math.cos(t*6 + i));
     g.fillStyle = '#ffd23f'; g.strokeStyle = '#b8860b'; g.lineWidth = 3; g.beginPath(); g.ellipse(x, y, 14*s + 2, 14, 0, 0, TAU); g.fill(); g.stroke();
   }
+}
+// ----- silly effects (admin panel): upside-down, floaty (low gravity) and disco for the whole fight, and BOOM to blast everyone away -----
+const FX_NAMES = { flip:'Upside-down', floaty:'Floaty', disco:'Disco' };
+function adminFx(p, act, arg) { // on this computer, or on the host for an online admin
+  if (!powerFight()) return;
+  if (act === 'fx' && FX_NAMES[arg]) {
+    G.fx = { ...(G.fx || {}), [arg]:!(G.fx && G.fx[arg]) };
+    ev('pop', W/2, 200, `${FX_NAMES[arg]} ${G.fx[arg] ? 'ON!' : 'off'}`, C.yellow); ev('sfx', 'zap');
+    if (G.online === 'host') netBroadcast({ t:'fx', fx:G.fx });
+  }
+  else if (act === 'boom' && p && p.alive) { // everyone else goes flying away from you
+    const b = p.body;
+    for (const q of G.fighters) {
+      if (q === p || !q.alive || allies(p, q)) continue;
+      const dx = q.body.position.x - b.position.x || 1;
+      Body.setVelocity(q.body, { x:Math.sign(dx)*24, y:-22 }); q.hitstun = 0.6;
+    }
+    ev('pop', b.position.x, b.position.y - p.r - 50, 'BOOM!', C.orange); ev('burst', b.position.x, b.position.y, C.orange, 30); ev('burst', b.position.x, b.position.y, C.yellow, 20); ev('sfx', 'slam'); ev('shake', 18);
+  }
+}
+function drawDisco(t) { // flashing party colours and spinning light beams
+  if (!G.fx || !G.fx.disco) return;
+  g.save(); g.globalAlpha = 0.22; g.fillStyle = `hsl(${(t*240) % 360},90%,60%)`; g.fillRect(0, 0, W, H);
+  g.globalAlpha = 0.18;
+  for (let i=0;i<6;i++) {
+    const a = t*1.4 + i*TAU/6; g.fillStyle = `hsl(${(i*60 + t*120) % 360},95%,60%)`;
+    g.beginPath(); g.moveTo(W/2, 60); g.lineTo(W/2 + Math.cos(a - 0.12)*1600, 60 + Math.sin(a - 0.12)*1600); g.lineTo(W/2 + Math.cos(a + 0.12)*1600, 60 + Math.sin(a + 0.12)*1600); g.closePath(); g.fill();
+  }
+  g.globalAlpha = 1; g.fillStyle = '#ccc'; g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.arc(W/2, 60, 30, 0, TAU); g.fill(); g.stroke(); // the disco ball
+  for (let i=0;i<8;i++) { g.fillStyle = `hsl(${(i*45 + t*200) % 360},90%,75%)`; g.fillRect(W/2 - 24 + (i % 4)*12, 44 + Math.floor(i/4)*14, 10, 10); }
+  g.restore();
+}
+function useFx(act, arg) {
+  if (G.online === 'client') { if (Net.host) try { Net.host.send({ t:'apow', act, arg }); } catch (e) {} }
+  else adminFx(myFighter(), act, arg);
+  $('apMsg').textContent = act === 'boom' ? 'BOOM! Everyone else went flying!' : `${FX_NAMES[arg]} switched!`;
+  setTimeout(renderFx, 150);
+}
+$('apFlip').onclick = () => useFx('fx', 'flip'); $('apFloaty').onclick = () => useFx('fx', 'floaty'); $('apDisco').onclick = () => useFx('fx', 'disco'); $('apBoom').onclick = () => useFx('boom');
+function renderFx() {
+  const live = powerFight(), fx = G.fx || {};
+  $('apFxNote').textContent = live ? 'These change the whole fight for everyone. Press again to switch one off.' : 'These work during a fight (not in races or Horror): press the admin button in a fight.';
+  for (const [id, k, label] of [['apFlip', 'flip', 'upside-down'], ['apFloaty', 'floaty', 'floaty'], ['apDisco', 'disco', 'disco']]) {
+    const b = $(id); b.disabled = !live; b.lastChild.textContent = `${label}: ${fx[k] ? 'ON' : 'off'}`;
+  }
+  $('apBoom').disabled = !live;
 }
 // fight cheats from the admin panel. Whose cheats count: this computer's (in setup), and, when you're hosting an online fight,
 // each online admin's too (they come with their button presses). "Just me" (cheatWho 'me') only gives them to that person's own fighter
@@ -5625,6 +5678,7 @@ function hostToggleCpu(ch) {
   broadcastLobby();
 }
 function hostStartMatch() {
+  G.fx = {};
   const L = Net.lobby, lineup = [];
   for (const c of CHARS) {
     const pl = L.players.find(p => p.ch === c.id);
@@ -5693,6 +5747,7 @@ function clientOnData(d) {
       if (G.champ) showResults();
       break;
     case 'tolobby': G.online = null; openLobby(); break;
+    case 'fx': G.fx = d.fx || {}; break; // an admin switched a silly effect
     case 'resize': { const p = G.fighters.find(f => f.idx === d.idx); if (p) p.r = +d.r || p.r; break; } // someone went giant or tiny
     case 'map': if (MAPS[d.map]) { MAP = MAPS[d.map]; G.clouds = ledgeObjs(MAP); } break; // the host moved the fight to another map
     case 'pmove': if (!(popDrag && popDrag.p.id === d.id)) movePopup(d.id, d.x, d.y); break; // (not while you're still dragging it yourself)
@@ -5705,7 +5760,7 @@ function clientOnData(d) {
 }
 function clientLeave() { try { if (Net.host && Net.host.open) Net.host.send({ t:'bye' }); } catch (e) {} endNet('You left the team.'); }
 function clientStart(d) {
-  G.online = 'client'; G.mode = d.mode || 'ffa'; G.rounds = d.rounds || 3; G.wins = {}; G.particles = []; G.banner = null; G.phase = 'countdown'; G.timer = 3; G.goT = 0; G.paused = false;
+  G.fx = {};   G.online = 'client'; G.mode = d.mode || 'ffa'; G.rounds = d.rounds || 3; G.wins = {}; G.particles = []; G.banner = null; G.phase = 'countdown'; G.timer = 3; G.goT = 0; G.paused = false;
   const me = 'net:' + (Net.peer && Net.peer.id);
   if (G.mode === 'race') { // the host drives everything; these karts just show where the host says they are
     TRACK = (RACE_TRACKS[d.track] || RACE_TRACKS.gp).built;
