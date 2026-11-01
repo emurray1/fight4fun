@@ -585,6 +585,7 @@ const ITEMS = [
   // gifts from the shopkeepers when you hang out with them in the break room
   { id:'bow', name:'Pink bow', price:0, desc:'A pink bow, tied by the funny fun shopkeeper on her break.', gift:true },
   { id:'badge', name:'Staff badge', price:0, desc:'A gold star badge from the fighty shopkeeper. You\'re one of the team now!', gift:true },
+  { id:'crown', name:'Admin crown', price:0, desc:'A gold crown with a blue gem. You get it for playing a game with the Admin!', gift:true },
   // the glitch shop (floor 9), behind the glitch blocks on the 5th floor: only Missing Arrow can get in
   { id:'cubes', name:'Glitch cubes', price:40, desc:'Little red and blue glitch cubes that float around you, and blink to a new spot now and then.', floor:9 },
   { id:'glasses3d', name:'3D glasses', price:30, desc:'Red and blue glasses. Everything looks glitchy through them!', floor:9, not:['star'] },
@@ -610,7 +611,7 @@ const skinOf = ch => (shop.skins[ch.id] && shop.skins[ch.id].on) || 'classic';
 const skinColor = id => id === 'rainbow' ? `hsl(${(performance.now()/1000*90) % 360},85%,60%)` : (SKIN[id] && SKIN[id].color) || null;
 const mySkin = ch => G.online ? 'classic' : skinOf(ch); // like the other shop things, skins show up on this computer (not in online games yet)
 const myColor = ch => skinColor(mySkin(ch)) || ch.color;
-const looks = ch => ({ skin:skinOf(ch), hat:wears('coolhat', ch), glasses:wears('shades', ch) && ch.id !== 'star', cape:wears('cape', ch), wings:wears('batwings', ch), headphones:wears('headphones', ch), bow:wears('bow', ch), badge:wears('badge', ch), cubes:wears('cubes', ch), glasses3d:wears('glasses3d', ch) && ch.id !== 'star' });
+const looks = ch => ({ skin:skinOf(ch), hat:wears('coolhat', ch), glasses:wears('shades', ch) && ch.id !== 'star', cape:wears('cape', ch), wings:wears('batwings', ch), headphones:wears('headphones', ch), bow:wears('bow', ch), badge:wears('badge', ch), cubes:wears('cubes', ch), glasses3d:wears('glasses3d', ch) && ch.id !== 'star', adminCrown:wears('crown', ch) });
 // the shop room: you walk a fighter up to a stand to buy what's on it
 const SHOP = { who:null, floor:1, x:280, y:0, vy:0, facing:1, near:null, nearKeeper:false, nearStairs:false, talk:{ 1:-1, 2:-1, 4:-1, 6:-1 }, prev:{}, msg:'', msgT:0, key:'' };
 // two floors: the fighty shop downstairs, and the funny fun shop upstairs for things that don't fit downstairs
@@ -1011,7 +1012,7 @@ function drawCharacter(g, ch, r, o = {}) {
     for (let i=0;i<2;i++) { const a = tt*1.5 + i*Math.PI, s = (0.12 + Math.abs(Math.sin(tt*4 + i))*0.1)*r;
       g.fillStyle = i ? '#fffbe0' : '#ffe96b'; g.strokeStyle = C.ink; g.lineWidth = Math.max(1, r*0.03);
       g.beginPath(); twinklePath(g, Math.cos(a)*r*1.45, Math.sin(a)*r*1.1, s, s*0.22); g.fill(); g.stroke(); }
-    if (!o.hat && o.beanie !== false) drawBeanie(g, r, tt); // he's a kid, so he wears a propeller beanie (unless he has the cool hat on)
+    if (!o.hat && !o.adminCrown && o.beanie !== false) drawBeanie(g, r, tt); // he's a kid, so he wears a propeller beanie (unless he has the cool hat on)
   }
   if (ch.shape === 'star6') { // a soft shine on his top-left point
     g.save(); g.translate(-0.42*r, -0.5*r); g.rotate(-0.8); g.fillStyle = 'rgba(255,255,255,.5)'; g.beginPath(); g.ellipse(0, 0, 0.18*r, 0.07*r, 0, 0, TAU); g.fill(); g.restore();
@@ -1025,6 +1026,7 @@ function drawCharacter(g, ch, r, o = {}) {
   if (o.badge) drawBadge(g, r);
   if (o.headphones) drawHeadphones(g, r, -TOPS[ch.shape]*r, !!o.hat);
   if (o.hat) drawHat(g, r, -TOPS[ch.shape]*r, o.facing || 1);
+  else if (o.adminCrown) drawCrown(g, r, -TOPS[ch.shape]*r, C.blue);
   if (o.bow) drawBow(g, r, -TOPS[ch.shape]*r - (o.hat ? r*0.5 : 0));
   if (burst) { // strips of him slide sideways, with scan lines and static, like a broken TV
     g.save(); shapePath(g, ch.shape, r*1.02); g.clip();
@@ -1120,19 +1122,19 @@ function drawHat(g, r, topY, facing) { // the cool hat from the shop
   g.fillStyle = 'rgba(255,255,255,.35)'; g.fillRect(-w*0.34, -h*0.9, w*0.12, h*0.4);
   g.restore();
 }
-function drawCrown(g, r, topY) {
+function drawCrown(g, r, topY, gem = C.red) { // the winner's crown (and the Admin crown, with a blue gem)
   const w = r*0.9, h = r*0.6, y = topY - 4;
   g.beginPath(); g.moveTo(-w/2, y); g.lineTo(-w/2, y-h); g.lineTo(-w/4, y-h*0.55); g.lineTo(0, y-h*1.1); g.lineTo(w/4, y-h*0.55); g.lineTo(w/2, y-h); g.lineTo(w/2, y); g.closePath();
   g.fillStyle = C.yellow; g.fill(); g.lineWidth = Math.max(2, r*0.07); g.strokeStyle = C.ink; g.stroke();
-  g.fillStyle = C.red; g.beginPath(); g.arc(0, y-h*0.35, r*0.08, 0, TAU); g.fill();
+  g.fillStyle = gem; g.beginPath(); g.arc(0, y-h*0.35, r*0.08, 0, TAU); g.fill();
 }
 function charCanvas(ch, px, o = {}) {
   const c = document.createElement('canvas'), d = Math.min(2, window.devicePixelRatio || 1);
   c.width = px*d; c.height = px*d; c.style.width = c.style.height = px + 'px';
   const g = c.getContext('2d'); g.scale(d, d);
-  const tall = o.crown || o.hat, r = px*(tall ? 0.27 : 0.33);
+  const tall = o.crown || o.hat || o.adminCrown, r = px*(tall ? 0.27 : 0.33);
   g.translate(px/2, px*(tall ? 0.62 : 0.53));
-  drawCharacter(g, ch, r, { facing:1, ko:o.ko, hat:o.hat && !o.crown, glasses:o.glasses, cape:o.cape, wings:o.wings, skin:o.skin, headphones:o.headphones, bow:o.bow && !o.crown, badge:o.badge, cubes:o.cubes, glasses3d:o.glasses3d, beanie:!o.crown });
+  drawCharacter(g, ch, r, { facing:1, ko:o.ko, hat:o.hat && !o.crown, glasses:o.glasses, cape:o.cape, wings:o.wings, skin:o.skin, headphones:o.headphones, bow:o.bow && !o.crown, badge:o.badge, cubes:o.cubes, glasses3d:o.glasses3d, adminCrown:o.adminCrown && !o.crown, beanie:!o.crown && !o.adminCrown });
   if (o.crown) drawCrown(g, r, -TOPS[ch.shape]*r);
   return c;
 }
@@ -1939,6 +1941,7 @@ function control(p, inp) {
   const b = p.body, ch = p.ch;
   p.punchCD -= DT; p.specCD = (p.specCD || 0) - DT; if (p.ko > 0 || p.grabbedBy || p.hitstun > 0.25) p.special = null; p.punchAnim = Math.max(0, p.punchAnim - DT); p.hitstun = Math.max(0, p.hitstun - DT); p.flash = Math.max(0, p.flash - DT);
   if (p.ko > 0) { p.ko -= DT; if (p.ko <= 0) { p.ko = 0; p.dizzy = 0; } } else p.dizzy = Math.max(0, p.dizzy - DT*7);
+  if (ch.id === 'admin') { p.dizzy = 0; p.ko = 0; } // the Admin can't get hurt
   p.squash *= 0.85;
   if (p.grabbedBy) {
     p.holdT += DT;
@@ -2017,7 +2020,14 @@ function step() {
     if (!p.alive) continue;
     p.grounded -= DT;
     const pos = p.body.position;
-    if (pos.y > WATER + 30 || pos.x < -260 || pos.x > W + 260) eliminate(p);
+    if (pos.y > WATER + 30 || pos.x < -260 || pos.x > W + 260) {
+      if (p.ch.id !== 'admin') eliminate(p);
+      else { // the Admin can't be knocked out: he pops right back down from the sky
+        if (p.grabbing) release(p); if (p.grabbedBy) release(p.grabbedBy);
+        const x = ffaXs(1)[0]; Body.setPosition(p.body, { x, y:150 }); Body.setVelocity(p.body, { x:0, y:0 }); Body.setAngularVelocity(p.body, 0);
+        ev('pop', x, 120, 'ADMIN IS BACK!', C.yellow); ev('sfx','zap');
+      }
+    }
   }
   const alive = G.fighters.filter(f => f.alive);
   hostSync();
@@ -2506,7 +2516,7 @@ function walkPath(o, path) { // which way to go to follow a path (cutting corner
   return { x:dx/d, y:dy/d };
 }
 function monsterSees(m, p, evenHidden) {
-  if (p.caught || (p.hidden && !evenHidden)) return false;
+  if (p.caught || (p.hidden && !evenHidden) || p.ch.id === 'admin') return false; // the monster pretends it can't see the Admin
   const dx = p.x - m.x, dy = p.y - m.y, d = Math.hypot(dx, dy);
   if (d > (HOUSE.range || MON.range) || (d > MON.hear && Math.abs(wrap(Math.atan2(dy, dx) - m.a)) > MON.half)) return false;
   return clearLine(m.x, m.y, p.x, p.y);
@@ -2530,6 +2540,12 @@ function leaveSpot(p, scared) {
 }
 function catchSurvivor(p) {
   const m = G.horror.monster;
+  if (p.ch.id === 'admin') { // the Admin can't be caught: the monster gets scared and runs off to look somewhere else
+    if (!p.nopeT || G.time - p.nopeT > 1.5) { p.nopeT = G.time; ev('pop', p.x, p.y - 50, 'NOPE!', C.yellow); ev('sfx','bonk'); }
+    const w = HOUSE.waypoints.reduce((a, b) => Math.hypot(b[0] - p.x, b[1] - p.y) > Math.hypot(a[0] - p.x, a[1] - p.y) ? b : a);
+    Object.assign(m, { state:'patrol', target:null, spot:null, path:findPath(m.x, m.y, w[0], w[1]) });
+    return;
+  }
   leaveSpot(p); p.caught = true; p.alive = false;
   ev('pop', p.x, p.y - 50, 'CAUGHT!', C.red); ev('sfx','scream'); ev('shake', 12); ev('burst', p.x, p.y, C.purple, 14);
   Object.assign(m, { state:'search', lastSeen:{ x:p.x, y:p.y }, searchT:0, path:[], target:null });
@@ -4359,6 +4375,10 @@ function showResults() {
   const won = winners.some(f => on ? (f.me || f.control === 'local') : f.tag !== 'CPU' && !f.ch.boss);
   const earned = 10 + (won ? 15 : 0); shop.coins += earned; saveShop();
   $('coinNote').textContent = `+${earned} coins${won ? ' (10 for the fight, 15 for winning)' : ' for the fight'}. You have ${shop.coins} coins to spend in the shop.`;
+  if (!on && !shop.owned.crown && G.fighters.some(f => f.ch.id === 'admin')) { // play a game with the Admin, and you get his crown
+    shop.owned.crown = true; (shop.wear.crown = shop.wear.crown || {}).admin = true; saveShop();
+    $('coinNote').textContent += ' You played with the Admin, so you got the Admin crown! Put it on any fighter in the shop.';
+  }
   if (on === 'host') netBroadcast({ t:'results', champ: champ && !teamWin ? champ.idx : -1, team: teamWin ? champ.team : null, w:G.wins,
     rk: race ? G.fighters.map(f => [f.place, r1(f.time), f.done ? 1 : 0]) : null, hc: horror ? G.fighters.map(f => f.caught ? 1 : 0) : null });
   $('rematchBtn').hidden = on === 'client'; $('disbandBtn').hidden = on === 'client';
