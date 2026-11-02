@@ -10,6 +10,7 @@ Open `index.html` in a web browser, or play the GitHub Pages version.
 
 ## Special moves
 
+- **Cool Star** does a **star shot** (from Mason's drawing): a spinning yellow star zooms straight forward and hits the first fighter it touches (40 damage). Cool Star can keep fighting while it flies.
 - **Shocked Circle** rolls into people (35 damage). If it misses, it does a flip.
 - **Angry Triangle** flips into the air and lands with spike waves that shoot along the ground both ways (30 damage each).
 - **Yelling Square** jumps up and slams down on anyone close by (45 damage). If it misses, it crashes into a puff of dust.
