@@ -655,6 +655,7 @@ const CHARS = [
 const CHAR = Object.fromEntries(CHARS.map(c => [c.id, c]));
 const unlocked = ch => ch.keeper ? !!(setup.keepersPlay && shop.unlocked && shop.unlocked.admin) : !ch.secret || !!(shop.unlocked && shop.unlocked[ch.id]); // secret fighters stay locked until you earn them (and the shopkeepers are for admins who switch them on)
 const PLAYABLE = () => CHARS.filter(unlocked);
+const TITLE_ROW = () => PLAYABLE().filter(c => c.id !== 'admin'); // the fighters on the main menu (the Admin keeps himself hidden there)
 const CONTROLS = [
   { id:'off', label:'Off', kind:'off' }, { id:'cpu', label:'Computer', kind:'cpu' },
   { id:'p1', label:'Keys: WASD', kind:'human', tag:'P1' }, { id:'p2', label:'Keys: Arrows', kind:'human', tag:'P2' },
@@ -5363,7 +5364,7 @@ function togglePause() {
   $('pauseAdminBtn').hidden = !unlocked(CHAR.admin); // the admin can open the admin panel in the middle of a fight
   if (G.paused) $('resumeBtn').focus(); else cv.focus();
 }
-const titleChars = $('titleChars'); PLAYABLE().forEach(c => titleChars.appendChild(charCanvas(c, 78)));
+const titleChars = $('titleChars'); TITLE_ROW().forEach(c => titleChars.appendChild(charCanvas(c, 78)));
 
 function nextControl(id) {
   const cur = setup.slots[id], order = CONTROLS.map(c => c.id);
@@ -5537,7 +5538,7 @@ $('secretBtn').onclick = () => {
   if (code.item) { shop.owned[code.item] = true; (shop.wear[code.item] = shop.wear[code.item] || {})[code.unlock || 'admin'] = true; } // he puts it on right away
   if (code.coins) shop.coins += code.coins;
   saveShop();
-  titleChars.innerHTML = ''; PLAYABLE().forEach(c => titleChars.appendChild(charCanvas(c, 78)));
+  titleChars.innerHTML = ''; TITLE_ROW().forEach(c => titleChars.appendChild(charCanvas(c, 78)));
   $('codesMsg').textContent = code.msg; $('secretIn').value = ''; $('adminBtn').hidden = !unlocked(CHAR.admin); if (sfx.win) sfx.win();
 };
 $('secretIn').addEventListener('keydown', e => { if (e.key === 'Enter') $('secretBtn').click(); });
@@ -5578,7 +5579,7 @@ function updsTick() { // the countdown on the page
     : dleft > 0 ? `The shopkeepers start dating in ${Math.floor(dleft/3600000)}:${String(Math.floor(dleft/60000) % 60).padStart(2, '0')}:${String(Math.floor(dleft/1000) % 60).padStart(2, '0')}!` : 'The shopkeepers are dating now! 💕';
   if ($('datingWhen').textContent !== dtext) $('datingWhen').textContent = dtext;
   const d2left = dleft + DATE2_MIN*60000, d2text = !confessSeen() || dleft > 0 ? 'the shopkeepers go on their 2nd date, at a place to eat! If you are there, you get an item. Coming soon...'
-    : d2left > 0 ? `Their 2nd date, at a place to eat, is in ${Math.floor(d2left/60000)}:${String(Math.floor(d2left/1000) % 60).padStart(2, '0')}! If you are there, you get an item.` : 'Their 2nd date is happening now! 🍝 (The place to eat is coming soon.)';
+    : d2left > 0 ? `Their 2nd date, at a place to eat, is in ${Math.floor(d2left/60000)}:${String(Math.floor(d2left/1000) % 60).padStart(2, '0')}! If you are there, you get an item.` : 'Their 2nd date is happening now! 🍝 Press the dinner place button to go!';
   if ($('dateWhen').textContent !== d2text) $('dateWhen').textContent = d2text;
   const wleft = weddingLeft(), mmss = ms => `${Math.floor(ms/60000)}:${String(Math.floor(ms/1000) % 60).padStart(2, '0')}`, wtext = wleft === Infinity || d2left > 0 ? 'the shopkeepers get married! If you are there, you get a new fighter and an item. Coming soon...'
     : wleft > 0 ? `The wedding is in ${mmss(wleft)}! It only lasts ${WEDDING_LONG} minutes, so don't miss it. Press the wedding button when it starts!` : wleft > -WEDDING_LONG*60000 ? `The wedding is happening NOW! Press the wedding button! (${mmss(wleft + WEDDING_LONG*60000)} left)`
@@ -5616,7 +5617,7 @@ function placeStep() { // getting your present, if you're there at the right tim
   const left = weddingLeft();
   if (SHOP.floor === WEDDING_FLOOR && left <= 0 && left > -WEDDING_LONG*60000 && !unlocked(CHAR.flower)) {
     shop.unlocked = shop.unlocked || {}; shop.unlocked.flower = true; shop.owned.flowercrown = true; saveShop(); if (sfx.win) sfx.win();
-    titleChars.innerHTML = ''; PLAYABLE().forEach(c => titleChars.appendChild(charCanvas(c, 78)));
+    titleChars.innerHTML = ''; TITLE_ROW().forEach(c => titleChars.appendChild(charCanvas(c, 78)));
     SHOP.youSay = 'I made it to the wedding! Yay!'; SHOP.youSayT = 3; renderShopCard(true);
   }
 }
@@ -5678,7 +5679,7 @@ function openAdminPanel(from) {
   $('apCoins').textContent = shop.coins; $('apMsg').textContent = '';
   renderSeg('apSpeedSeg', ONOFF_CHEAT, 'cheatSpeed'); renderSeg('apJumpSeg', ONOFF_CHEAT, 'cheatJump'); renderSeg('apSleepySeg', ONOFF_CHEAT, 'cheatSleepy');
   renderSeg('apWhoSeg', [['me', 'Just me'], ['all', 'Everyone']], 'cheatWho');
-  renderSeg('apKeepPlaySeg', ONOFF_CHEAT, 'keepersPlay', () => { titleChars.innerHTML = ''; PLAYABLE().forEach(c => titleChars.appendChild(charCanvas(c, 78))); });
+  renderSeg('apKeepPlaySeg', ONOFF_CHEAT, 'keepersPlay', () => { titleChars.innerHTML = ''; TITLE_ROW().forEach(c => titleChars.appendChild(charCanvas(c, 78))); });
   renderSeg('apKeepWatchSeg', ONOFF_CHEAT, 'keepersWatch');
   renderSwap(); renderPowers(); renderFx(); renderMore();
 }
@@ -5700,7 +5701,7 @@ $('apUnlock').onclick = () => { // Missing Arrow, every item (but the attic's go
   for (const it of ITEMS) if (it.id !== 'goggles') shop.owned[it.id] = true;
   for (const ch of CHARS) { const rec = skinRec(ch); for (const s of skinsFor(ch)) if (s.id !== 'classic' && !rec.have.includes(s.id)) rec.have.push(s.id); }
   saveShop();
-  titleChars.innerHTML = ''; PLAYABLE().forEach(c => titleChars.appendChild(charCanvas(c, 78))); $('glitchShopBtn').hidden = !unlocked(CHAR.arrow);
+  titleChars.innerHTML = ''; TITLE_ROW().forEach(c => titleChars.appendChild(charCanvas(c, 78))); $('glitchShopBtn').hidden = !unlocked(CHAR.arrow);
   $('apMsg').textContent = 'Everything is unlocked! Missing Arrow is free, and every fighter has every item and skin. Put them on in the shop.'; if (sfx.win) sfx.win();
 };
 // ----- change fighter: an admin can turn into a different fighter in the middle of a fight -----
