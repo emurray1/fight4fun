@@ -77,7 +77,11 @@ button:focus-visible,.ctl:focus-visible{outline:4px solid var(--yellow);outline-
 .mapbox small{font-size:16px;color:#444}
 .msg{margin:0;min-height:1.3em;color:var(--maroon);font-size:18px}
 .soon{font-size:30px;text-align:center;margin:10px 0}
-.upds-list{font-size:20px;line-height:1.5}
+.upds-list{font-size:20px;line-height:1.5;padding-left:0;list-style:none;margin-top:4px}
+.upds-list li{padding:10px 4px;border-bottom:3px solid var(--ink,#222)}
+.upds-list li:first-child{border-top:3px solid var(--ink,#222)}
+.chapter{font-size:26px;margin:22px 0 6px}
+.chapter-lock{font-size:20px;color:#777;padding:12px;border:3px dashed #999;text-align:center}
 .howto{border-top:4px dashed var(--ink);margin:0 24px;padding:14px 0 22px;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px 24px;font-size:17px;line-height:1.35}
 .howto b{font-family:var(--display);font-weight:400;font-size:22px;display:block}
 kbd{font-family:var(--body);border:2px solid var(--ink);border-bottom-width:4px;padding:0 5px;background:var(--soft);font-size:15px}
@@ -437,9 +441,14 @@ html.thanks .fff span{border-color:#8a4b14;color:#d2691e}
     <div class="page-body">
       <p class="soon">🚧 More updates coming soon! 🚧</p>
       <p>New stuff is on the way for Fight for Fun. Here's what's coming next:</p>
+      <h3 class="chapter">📖 Chapter 1: Confession <span id="ch1Done"></span></h3>
       <ul class="upds-list"><li><b>💌 Confession</b>: <span id="confessWhen"></span></li><li><b>💑 First things first</b>: <span id="datingWhen"></span></li><li><b>🍝 One more thing</b>: <span id="dateWhen"></span></li><li><b>💍 The big day</b>: <span id="weddingWhen"></span></li></ul>
-      <div class="page-foot"><button id="dormBtn" class="btn">💌 dorm</button><button id="parkBtn" class="btn">🌳 park</button><button id="dinnerBtn" class="btn">🍝 dinner place</button><button id="weddingBtn" class="btn">💒 wedding</button></div>
-      <div class="page-foot" id="againRow" hidden><button id="againBtn" class="btn">🔁 do it again</button><span id="againPick" hidden><button id="againConfess" class="btn">💌 confession</button><button id="againPark" class="btn">🌳 1st date</button><button id="againDate" class="btn">🍝 2nd date</button><button id="againWedding" class="btn">💍 wedding</button></span></div>
+      <h3 class="chapter" id="ch2Head">📖 Chapter 2: Admins attack <span id="ch2Done"></span></h3>
+      <p id="ch2Lock" class="chapter-lock">🔒 Finish chapter 1 first! (It's done once the shopkeepers get married.)</p>
+      <ul class="upds-list" id="ch2List"><li><b>🛡️ Admins attack</b>: <span id="attackWhen"></span></li></ul>
+      <p id="kickMsg" hidden style="color:#c0392b;font-size:22px"><b>🥾 The Admin KICKED YOU OUT!</b> You ran out of time on a task. Press the admin room button to try again!</p>
+      <div class="page-foot"><button id="dormBtn" class="btn">💌 dorm</button><button id="parkBtn" class="btn">🌳 park</button><button id="dinnerBtn" class="btn">🍝 dinner place</button><button id="weddingBtn" class="btn">💒 wedding</button><button id="attackBtn" class="btn" hidden>🛡️ admin room</button></div>
+      <div class="page-foot" id="againRow" hidden><button id="againBtn" class="btn">🔁 do it again</button><span id="againPick" hidden><button id="againConfess" class="btn">💌 confession</button><button id="againPark" class="btn">🌳 1st date</button><button id="againDate" class="btn">🍝 2nd date</button><button id="againWedding" class="btn">💍 wedding</button><button id="againAttack" class="btn">🛡️ admins attack</button></span></div>
     </div>
   </div>
 </div>
@@ -3906,7 +3915,7 @@ function shopStep(dt) {
   const f = SHOP.floor;
   SHOP.near = shopCleared() ? null : STANDS.find(s => s.floor === f && Math.abs(s.x - SHOP.x) < 110) || null; // (no stands while the shop is cleared for the wedding)
   SHOP.nearSkins = f === 2 && !SHOP.near && !shopCleared() && Math.abs(SKIN_X - SHOP.x) < 100;
-  const stair = !SHOP.near && STAIRS.find(s => s.floor === f && Math.abs(s.x - SHOP.x) < 100 && (!s.keepers || keeperRoom()) && (!s.admin || unlocked(CHAR.admin)) && (f !== 8 || (SHOP.cage && SHOP.cage.freed))); // the cage room portal only opens once he is free
+  const stair = !SHOP.near && STAIRS.find(s => s.floor === f && Math.abs(s.x - SHOP.x) < 100 && (!s.keepers || keeperRoom()) && (!s.admin || unlocked(CHAR.admin) || attackOn()) && (f !== 8 || (SHOP.cage && SHOP.cage.freed))); // the cage room portal only opens once he is free
   SHOP.nearCage = f === 8 && !!SHOP.cage && !SHOP.cage.freed && Math.abs(SHOP.x - CAGE_X) < 170;
   SHOP.nearStairs = !!stair; SHOP.stairTo = stair ? stair.to : 0; SHOP.stairRoom = stair && stair.room != null ? stair.room : SHOP.stairRoom; // (which dorm door)
   SHOP.nearPal = (f === 10 || f === 12 || f === 13) && !SHOP.nearStairs ? ((f === 10 ? pbSpots() : dormSpots()).find(s => Math.abs(s.x - SHOP.x) < 70) || {}).ch || null : null; // walking up to a fighter in player breaks or a dorm room
@@ -3918,6 +3927,7 @@ function shopStep(dt) {
   if (f === DINNER_FLOOR || f === WEDDING_FLOOR) placeStep();
   SHOP.nearWed = wedSpot(); SHOP.nearPark = parkSpot(); if (f === WEDDING_FLOOR) bouquetStep(); // (things to do at the wedding)
   if (f === 10) pbStep();
+  attackStep(dt); if (SHOP.floor !== f) return; // (the Admin's tasks, in the admin room: he might kick you out)
   SHOP.nearKeeper = !SHOP.near && !SHOP.nearStairs && !!KEEPERS[f] && Math.abs(KEEPERS[f] - SHOP.x) < (f === 6 ? 300 : 220) && (f !== 4 || (SHOP.revealed && !SHOP.chase));
   if (f === 4 && !SHOP.revealed && !SHOP.chase && !isAdmin()) { // walk close and the chair spins around (but the manager can't see the Admin, so it never does)
     if (SHOP.spinT > 0 || Math.abs(KEEPERS[4] - SHOP.x) < 380) SHOP.spinT = (SHOP.spinT || 0) + dt;
@@ -3936,7 +3946,7 @@ function shopStep(dt) {
   if (SHOP.nearSmi) SHOP.nearKeeper = false;
   crowdStep(); // (the fighters talking to the shopkeepers about the wedding, until it happens)
   SHOP.smiSayT = Math.max(0, (SHOP.smiSayT || 0) - dt);
-  if (h.punch && !pr.punch) { if (SHOP.nearCage) cageHit(); else if (SHOP.near) shopAct(SHOP.near.item); else if (SHOP.nearSkins) nextSkin(); else if (SHOP.nearSwitch) dormLight(); else if (SHOP.nearPaper) readPaper(); else if (SHOP.nearWed) wedAct(); else if (SHOP.nearPark) parkAct(); else if (SHOP.nearTask) doKTask(); else if (SHOP.nearToys) playToys(); else if (SHOP.nearStairs) shopStairs(); else if (SHOP.nearPal) palTalk(); else if (SHOP.nearSmi) smiTalk(); else if (SHOP.nearKeeper) shopTalk(); }
+  if (h.punch && !pr.punch) { if (SHOP.nearCage) cageHit(); else if (SHOP.near) shopAct(SHOP.near.item); else if (SHOP.nearSkins) nextSkin(); else if (SHOP.nearSwitch) dormLight(); else if (SHOP.nearAtk) atkAct(); else if (SHOP.nearPaper) readPaper(); else if (SHOP.nearWed) wedAct(); else if (SHOP.nearPark) parkAct(); else if (SHOP.nearTask) doKTask(); else if (SHOP.nearToys) playToys(); else if (SHOP.nearStairs) shopStairs(); else if (SHOP.nearPal) palTalk(); else if (SHOP.nearSmi) smiTalk(); else if (SHOP.nearKeeper) shopTalk(); }
   if (h.grab && !pr.grab && SHOP.nearKeeper) shopLaugh();
   if (isHex()) { // Hexstar says "beep boop baap!" now and then (or when you press special), and the shopkeepers act like he never said it
     SHOP.beepCD = (SHOP.beepCD ?? 3) - dt; SHOP.beepT = Math.max(0, (SHOP.beepT || 0) - dt);
@@ -4563,7 +4573,7 @@ function drawKeeperAttic(t) {
   g.lineWidth = 7; for (const y of [SHOP_FLOOR - 30, SHOP_FLOOR + 30, SHOP_FLOOR + 90]) { g.beginPath(); g.moveTo(ATTIC_HOLE_X - 40, y); g.lineTo(ATTIC_HOLE_X + 40, y); g.stroke(); }
   g.fillStyle = '#5a3a6e'; g.font = `24px ${FONT}`; g.fillText('↓ down', ATTIC_HOLE_X, SHOP_FLOOR - 100);
   if (SHOP.nearStairs && SHOP.stairTo === 13) drawPointer(ATTIC_HOLE_X + 60, SHOP_FLOOR - 200, t);
-  if (unlocked(CHAR.admin)) { drawStaffDoor(ADMIN_DOOR_X, 'admin', '#1f3d1f', 'ADMINS ONLY'); if (SHOP.nearStairs && SHOP.stairTo === 15) drawPointer(ADMIN_DOOR_X + 80, SHOP_FLOOR - 330, t); } // the admin door (only admins can see it)
+  if (unlocked(CHAR.admin) || attackOn()) { drawStaffDoor(ADMIN_DOOR_X, 'admin', '#1f3d1f', 'ADMINS ONLY'); if (SHOP.nearStairs && SHOP.stairTo === 15) drawPointer(ADMIN_DOOR_X + 80, SHOP_FLOOR - 330, t); } // the admin door (only admins can see it)
   if (night) { g.fillStyle = 'rgba(15,10,50,.38)'; g.fillRect(0, 0, W, H); }
 }
 // ---------- chores in the shopkeepers' home: the Fighty Shopkeeper gives you chores (wake her up, make dinner...) for coins.
@@ -5394,7 +5404,7 @@ function drawManager(g, t) { // %#@% sitting in his chair (drawn in the chair's 
 function drawShop(t) {
   const hall = SHOP.floor === 5, wide = keeperRoom(); // the chase hallway (and the shopkeepers' big room) scrolls with you
   if (hall) { g.save(); g.translate(-(SHOP.cam || 0), 0); drawChaseFloor(t); }
-  else if (SHOP.floor === PARK_FLOOR) drawParkPlace(t); else if (SHOP.floor === DINNER_FLOOR) drawDinnerPlace(t); else if (SHOP.floor === WEDDING_FLOOR) drawWeddingHall(t); else if (SHOP.floor === 15) drawAdminRoom(t); else if (SHOP.floor === 14) drawKeeperAttic(t); else if (SHOP.floor === 12 || SHOP.floor === 13) { if (wide) { g.save(); g.translate(-(SHOP.cam || 0), 0); } if (SHOP.floor === 13) drawKeeperUpstairs(t); else drawDormRoom(t); } else if (SHOP.floor === 11) drawDormHall(t); else if (SHOP.floor === 10) drawPlayerBreak(t); else if (SHOP.floor === 9) drawGlitchShop(t); else if (SHOP.floor === 8) drawCageFloor(t); else if (SHOP.floor === 7) drawTopFloor(t); else if (SHOP.floor === 6) drawBreakFloor(t); else if (SHOP.floor === 4) drawOfficeFloor(t); else if (SHOP.floor === 3) drawAtticFloor(t); else if (SHOP.floor === 2) drawFunnyFloor(t); else drawFightyFloor(t);
+  else if (SHOP.floor === PARK_FLOOR) drawParkPlace(t); else if (SHOP.floor === DINNER_FLOOR) drawDinnerPlace(t); else if (SHOP.floor === WEDDING_FLOOR) drawWeddingHall(t); else if (SHOP.floor === 15) { drawAdminRoom(t); drawAttack(t); } else if (SHOP.floor === 14) drawKeeperAttic(t); else if (SHOP.floor === 12 || SHOP.floor === 13) { if (wide) { g.save(); g.translate(-(SHOP.cam || 0), 0); } if (SHOP.floor === 13) drawKeeperUpstairs(t); else drawDormRoom(t); } else if (SHOP.floor === 11) drawDormHall(t); else if (SHOP.floor === 10) drawPlayerBreak(t); else if (SHOP.floor === 9) drawGlitchShop(t); else if (SHOP.floor === 8) drawCageFloor(t); else if (SHOP.floor === 7) drawTopFloor(t); else if (SHOP.floor === 6) drawBreakFloor(t); else if (SHOP.floor === 4) drawOfficeFloor(t); else if (SHOP.floor === 3) drawAtticFloor(t); else if (SHOP.floor === 2) drawFunnyFloor(t); else drawFightyFloor(t);
   // an empty pink stand upstairs, waiting for the next thing to sell (a real item takes its place once there is one)
   if (SHOP.floor === 2 && !shopCleared()) {
     const spot = STAND_SPOTS[2].find(x => !STANDS.some(s => s.floor === 2 && s.x === x));
@@ -5731,12 +5741,19 @@ function updsTick() { // the countdown on the page
     : wleft > 0 ? `The wedding is in ${mmss(wleft)}! It only lasts ${WEDDING_LONG} minutes, so don't miss it. Press the wedding button when it starts!` : wleft > -WEDDING_LONG*60000 ? `The wedding is happening NOW! Press the wedding button! (${mmss(wleft + WEDDING_LONG*60000)} left)`
     : unlocked(CHAR.flower) ? 'They got married! 💍' : 'They got married! 💍 (You missed the wedding...)';
   if ($('weddingWhen').textContent !== wtext) $('weddingWhen').textContent = wtext;
+  const ch1 = wleft !== Infinity && wleft <= -WEDDING_LONG*60000, al = attackLeft(); // chapter 1 is done once the wedding is over: then chapter 2 opens
+  $('ch1Done').textContent = ch1 ? '✅' : ''; $('ch2Done').textContent = ch1 && al <= -ATTACK_LONG*60000 ? '✅' : '';
+  $('ch2Lock').hidden = ch1; $('ch2List').hidden = !ch1; $('ch2Head').style.opacity = ch1 ? 1 : 0.5;
+  const atext = attackText(); if ($('attackWhen').textContent !== atext) $('attackWhen').textContent = atext;
+  $('attackBtn').hidden = !(attackLeft() <= 0 && attackLeft() > -ATTACK_LONG*60000);
   againShow();
 }
-$('updsBtn').onclick = () => { $('againPick').hidden = true; audioOn(); if (!confessStart()) lsSet('fff-confess', String(Date.now())); openPage('upds'); updsTick(); };
+$('updsBtn').onclick = () => { $('againPick').hidden = true; $('kickMsg').hidden = true; audioOn(); if (!confessStart()) lsSet('fff-confess', String(Date.now())); openPage('upds'); updsTick(); };
 // do it again: once you've been through part of the story, you can do it again right away, any time (no waiting, and the countdowns don't start over)
-const againOk = { park:() => againOk.confess(), confess:() => confessSeen() || !!shop.owned.chefhat || unlocked(CHAR.flower), date:() => !!shop.owned.chefhat, wedding:() => unlocked(CHAR.flower) };
-function againShow() { const any = Object.values(againOk).some(f => f()); $('againRow').hidden = !any; $('againConfess').hidden = !againOk.confess(); $('againPark').hidden = !againOk.park(); $('againDate').hidden = !againOk.date(); $('againWedding').hidden = !againOk.wedding(); }
+const againOk = { park:() => againOk.confess(), confess:() => confessSeen() || !!shop.owned.chefhat || unlocked(CHAR.flower), date:() => !!shop.owned.chefhat, wedding:() => unlocked(CHAR.flower), attack:() => attackLeft() <= 0 };
+function againShow() { const any = Object.values(againOk).some(f => f()); $('againRow').hidden = !any; $('againConfess').hidden = !againOk.confess(); $('againPark').hidden = !againOk.park(); $('againDate').hidden = !againOk.date(); $('againWedding').hidden = !againOk.wedding(); $('againAttack').hidden = !againOk.attack(); }
+$('againAttack').onclick = () => goPlace(15, 'attack');
+$('attackBtn').onclick = () => goPlace(15);
 $('againConfess').onclick = () => goKeeperRoom('confess');
 $('againPark').onclick = () => goPlace(PARK_FLOOR, 'park');
 $('dormBtn').onclick = () => goKeeperRoom(null); // teleport to the shopkeepers' room in the dorms (where the confession happens)
@@ -5924,11 +5941,89 @@ function goKeeperRoom(replay) { // straight to the shopkeepers' room in the dorm
   SHOP.youSay = replay || confessPending() ? 'Shh... I think she is about to tell Fighty something!' : 'Whoosh! Teleported to the dorms!'; SHOP.youSayT = 3; renderShopCard(true);
 }
 function goPlace(floor, replay = null) { // the buttons on the up coming page take you straight there, walking as your fighter (the back button goes home)
-  audioOn(); openShop(); Object.assign(SHOP, { floor, x:200, facing:1, visit:null, enterT:0, smi7y:false, smiSayT:0, pb:null, replay });
-  SHOP.youSay = floor === PARK_FLOOR ? 'What a nice day in the park!' : floor === DINNER_FLOOR ? 'Mmm, it smells like spaghetti!' : 'Ooh, a wedding hall!'; SHOP.youSayT = 2.5; renderShopCard(true);
+  audioOn(); openShop(); Object.assign(SHOP, { floor, x:floor === 15 ? 420 : 200, facing:1, visit:null, enterT:0, smi7y:false, smiSayT:0, pb:null, replay, atk:null });
+  SHOP.youSay = floor === PARK_FLOOR ? 'What a nice day in the park!' : floor === DINNER_FLOOR ? 'Mmm, it smells like spaghetti!' : floor === 15 ? 'Uh oh... the Admin is here!' : 'Ooh, a wedding hall!'; SHOP.youSayT = 2.5; renderShopCard(true);
 }
 $('dinnerBtn').onclick = () => goPlace(DINNER_FLOOR);
 $('weddingBtn').onclick = () => goPlace(WEDDING_FLOOR);
+// admins attack: 20 minutes after the wedding is over, the Admin takes over the admin room (floor 15). It lasts 3 minutes, and the admin door is open for everyone.
+// Go in and he gives you tasks, one at a time, with a timer. Do them all and he lets you stay (and gives you 300 coins). Run out of time and he KICKS YOU OUT!
+const ATTACK_MIN = 20, ATTACK_LONG = 3, ATTACK_TASKS_N = 6;
+function attackLeft() { // how long until the attack starts (below zero once it's started)
+  const w = weddingLeft(); if (w === Infinity) return Infinity;
+  if (w > -WEDDING_LONG*60000) return w + (WEDDING_LONG + ATTACK_MIN)*60000; // (the wedding isn't over yet)
+  let at = +lsGet('fff-attack') || 0;
+  if (!at) { const plan = Date.now() + w + (WEDDING_LONG + ATTACK_MIN)*60000; at = plan > Date.now() - ATTACK_LONG*60000 ? plan : Date.now() + ATTACK_MIN*60000; lsSet('fff-attack', String(at)); } // (if it already went by before you ever looked, it's 20 minutes from now)
+  return at - Date.now();
+}
+const attackOn = () => { if (SHOP.replay === 'attack') return true; const l = attackLeft(); return l <= 0 && l > -ATTACK_LONG*60000; };
+const ATK_PCS = [520, 820, 1120], ATK_SERVERS = [1350, 1470];
+function atkTask(i) { // a random task (never the same kind twice in a row)
+  const kinds = ['pc', 'server', 'jump', 'spot', 'freeze'].filter(k => k !== (SHOP.atk && SHOP.atk.task && SHOP.atk.task.k)), k = kinds[Math.floor(Math.random()*kinds.length)];
+  const secs = Math.max(5, 9 - i*0.7), pick = a => a[Math.floor(Math.random()*a.length)];
+  if (k === 'pc') { const n = Math.floor(Math.random()*3); return { k, x:ATK_PCS[n], say:`Fix computer ${n + 1}! Press punch on it!`, secs }; }
+  if (k === 'server') { const x = pick(ATK_SERVERS); return { k, x, say:`Unplug the ${x === 1350 ? 'left' : 'right'} server! Press punch!`, secs }; }
+  if (k === 'jump') return { k, n:3, done:0, say:'Jump 3 times! NOW!', secs };
+  if (k === 'spot') return { k, x:450 + Math.floor(Math.random()*7)*120, held:0, say:'Stand on the red X!', secs };
+  return { k, x0:SHOP.x, say:'FREEZE! Do not move!', secs:3 }; // (just don't move until the time is up)
+}
+function atkNext() { const a = SHOP.atk; a.i++; if (a.i >= ATTACK_TASKS_N) return atkWin(); a.task = atkTask(a.i); a.t0 = performance.now(); a.up = SHOP.y < 0; if (sfx.beep) sfx.beep(); renderShopCard(true); }
+function atkWin() {
+  const a = SHOP.atk; a.won = true; a.task = null;
+  if (SHOP.replay !== 'attack' && !lsGet('fff-attackwon')) { lsSet('fff-attackwon', '1'); shop.coins += 300; saveShop(); a.say = 'Hmph... FINE. You can stay. Here are 300 coins.'; } else a.say = 'Hmph... FINE. You can stay.';
+  if (sfx.win) sfx.win(); SHOP.youSay = 'I did all the tasks!'; SHOP.youSayT = 3; renderShopCard(true);
+}
+function kickOut() { // the Admin kicks you out: all the way back to the up coming page
+  SHOP.atk = null; if (sfx.bonk) sfx.bonk();
+  openPage('upds'); $('kickMsg').hidden = false; $('againPick').hidden = true; updsTick();
+}
+function atkDone() { if (sfx.ding) sfx.ding(); SHOP.youSay = ['Done!', 'Got it!', 'Easy!', 'There!'][Math.floor(Math.random()*4)]; SHOP.youSayT = 1.2; atkNext(); }
+function attackStep(dt) {
+  SHOP.nearAtk = false;
+  if (SHOP.floor !== 15 || !attackOn()) { SHOP.atk = null; return; }
+  const now = performance.now();
+  if (!SHOP.atk) { SHOP.atk = { i:-1, t0:now, task:null, say:'INTRUDER!! Do my tasks... or you get KICKED OUT!' }; if (sfx.beep) sfx.beep(); return; }
+  const a = SHOP.atk; if (a.won) return;
+  if (!a.task) { if (now - a.t0 >= 3000) atkNext(); return; } // (the Admin yells first, then the tasks start)
+  const tk = a.task, up = SHOP.y < 0, gone = (now - a.t0)/1000;
+  if (tk.k === 'jump') { if (up && !a.up && ++tk.done >= tk.n) { a.up = up; return atkDone(); } }
+  if (tk.k === 'spot') { tk.held = Math.abs(SHOP.x - tk.x) < 40 && !up ? tk.held + dt : 0; if (tk.held >= 0.6) return atkDone(); }
+  if (tk.k === 'freeze') { if (Math.abs(SHOP.x - tk.x0) > 8 || up) return kickOut(); if (gone >= tk.secs) return atkDone(); }
+  a.up = up;
+  if (tk.k === 'pc' || tk.k === 'server') SHOP.nearAtk = Math.abs(SHOP.x - tk.x) < 80;
+  if (gone >= tk.secs) kickOut();
+}
+function atkAct() { if (SHOP.atk && SHOP.atk.task && SHOP.nearAtk) atkDone(); }
+function drawAttack(t) { // the Admin taking over the room: red alarms, him yelling, and your task with its timer
+  const a = SHOP.atk; if (!attackOn()) return;
+  if (!(a && a.won)) { g.fillStyle = `rgba(255,30,30,${0.12 + Math.abs(Math.sin(t*4))*0.12})`; g.fillRect(0, 0, W, H); } // flashing red alarm
+  for (const x of [300, 1300]) { g.fillStyle = Math.sin(t*8) > 0 ? '#ff3b3b' : '#7a0000'; g.beginPath(); g.arc(x, 40, 22, Math.PI, 0); g.fill(); } // alarm lights
+  const ch = CHAR.admin, r = dormR(ch), ax = 300, angry = !(a && a.won);
+  g.save(); g.translate(ax, SHOP_FLOOR - r - (angry ? Math.abs(Math.sin(t*10))*5 : 0)); drawCharacter(g, ch, r, { facing:1, ...looks(ch) }); g.restore();
+  const say = a ? (a.task ? a.task.say : a.say) : '';
+  if (say) drawBubble(say, ax + 380, SHOP_FLOOR - dormTall(ch) - 20, ax);
+  const lbl = (x, y, text, on) => { g.font = `20px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; const w = g.measureText(text).width + 20; g.fillStyle = on ? '#ffd23f' : '#0b2a14'; g.strokeStyle = '#39ff14'; g.lineWidth = 2; g.fillRect(x - w/2, y - 15, w, 30); g.strokeRect(x - w/2, y - 15, w, 30); g.fillStyle = on ? C.ink : '#39ff14'; g.fillText(text, x, y + 1); };
+  const want = a && a.task && a.task.x; // name tags, so you know which is which (the one he wants lights up)
+  ATK_PCS.forEach((x, i) => lbl(x, SHOP_FLOOR - 312, `computer ${i + 1}`, want === x && a.task.k === 'pc'));
+  ATK_SERVERS.forEach((x, i) => lbl(x, SHOP_FLOOR - 382, i ? 'right' : 'left', want === x && a.task.k === 'server'));
+  if (!a || !a.task) return;
+  const tk = a.task, left = Math.max(0, 1 - (performance.now() - a.t0)/1000/tk.secs);
+  g.fillStyle = 'rgba(0,0,0,.6)'; g.fillRect(W/2 - 320, 206, 640, 64); // the task and its timer, under the title
+  g.fillStyle = C.white; g.font = `26px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(`TASK ${a.i + 1}/${ATTACK_TASKS_N}`, W/2, 226);
+  g.fillStyle = '#333'; g.fillRect(W/2 - 300, 248, 600, 14); g.fillStyle = left > 0.35 ? '#39ff14' : '#ff3b3b'; g.fillRect(W/2 - 300, 248, 600*left, 14);
+  if (tk.k === 'jump') { g.fillStyle = '#ffd23f'; g.font = `40px ${FONT}`; g.fillText(`${tk.done}/${tk.n}`, SHOP.x, SHOP_FLOOR - 260); }
+  if (tk.k === 'spot') { g.strokeStyle = '#ff3b3b'; g.lineWidth = 10; g.beginPath(); g.moveTo(tk.x - 30, SHOP_FLOOR + 10); g.lineTo(tk.x + 30, SHOP_FLOOR + 50); g.moveTo(tk.x + 30, SHOP_FLOOR + 10); g.lineTo(tk.x - 30, SHOP_FLOOR + 50); g.stroke(); }
+  if (tk.k === 'pc' || tk.k === 'server') { // a dashed line from you to the one he means
+    g.strokeStyle = '#ffd23f'; g.lineWidth = 4; g.setLineDash([12, 10]); g.lineDashOffset = -t*40; g.beginPath(); g.moveTo(SHOP.x, SHOP_FLOOR - 40); g.lineTo(tk.x, SHOP_FLOOR - (tk.k === 'pc' ? 60 : 180)); g.stroke(); g.setLineDash([]); g.lineDashOffset = 0;
+    drawPointer(tk.x + 40, SHOP_FLOOR - (tk.k === 'pc' ? 360 : 430), t);
+  }
+}
+function attackText() { // for the up coming page
+  const l = attackLeft();
+  return l === Infinity || weddingLeft() > -WEDDING_LONG*60000 ? 'after the wedding, the Admin attacks the admin room! Do his tasks, or you get kicked out. Coming soon...'
+    : l > 0 ? `The Admin attacks in ${mmss(l)}! Go to the admin room and do his tasks, or you get kicked out!` : l > -ATTACK_LONG*60000 ? `The Admin is attacking NOW! Press the admin room button! (${mmss(l + ATTACK_LONG*60000)} left)`
+    : lsGet('fff-attackwon') ? 'You did all the Admin\'s tasks! 🛡️' : 'The attack is over.';
+}
 // ---------- the admin panel: you get it with the admin code ----------
 const ONOFF_CHEAT = [[true, 'On'], [false, 'Off']];
 // `from`: 'menu', 'pause' (the pause menu: the fight waits behind it) or 'game' (the admin button during a fight: an online fight keeps going behind it)
@@ -6576,7 +6671,7 @@ function drawSkinBooth(t) { // a big gold mirror on a stand: it shows you in eac
 }
 function renderShopCard(force) {
   const ch = CHARS[SHOP.who], st = SHOP.near, it = st && ITEMS.find(i => i.id === st.item);
-  const key = [shop.coins, ch.id, SHOP.floor >= DINNER_FLOOR ? placeMsg() : '', SHOP.nearWed, SHOP.nearPark, SHOP.nearPaper, SHOP.ktask, SHOP.nearTask, SHOP.nearToys, it && it.id, it && shop.owned[it.id], ITEMS.map(i => wears(i.id, ch)).join(), SHOP.nearKeeper, SHOP.nearStairs, SHOP.stairTo, SHOP.floor, jokeOpen(), !!SHOP.revealed, SHOP.nearSmi, SHOP.nearSkins, skinOf(ch), skinRec(ch).have.join(), SHOP.nearCage, SHOP.cage && SHOP.cage.lock.left, SHOP.cage && SHOP.cage.hp, SHOP.cage && SHOP.cage.freed, SHOP.nearPal && SHOP.nearPal.id, SHOP.stairRoom, SHOP.dorm, SHOP.nearSwitch, setup.dormTime].join('|');
+  const key = [shop.coins, ch.id, SHOP.floor >= DINNER_FLOOR ? placeMsg() : '', SHOP.floor === 15 && attackOn(), !!(SHOP.atk && SHOP.atk.won), SHOP.nearWed, SHOP.nearPark, SHOP.nearPaper, SHOP.ktask, SHOP.nearTask, SHOP.nearToys, it && it.id, it && shop.owned[it.id], ITEMS.map(i => wears(i.id, ch)).join(), SHOP.nearKeeper, SHOP.nearStairs, SHOP.stairTo, SHOP.floor, jokeOpen(), !!SHOP.revealed, SHOP.nearSmi, SHOP.nearSkins, skinOf(ch), skinRec(ch).have.join(), SHOP.nearCage, SHOP.cage && SHOP.cage.lock.left, SHOP.cage && SHOP.cage.hp, SHOP.cage && SHOP.cage.freed, SHOP.nearPal && SHOP.nearPal.id, SHOP.stairRoom, SHOP.dorm, SHOP.nearSwitch, setup.dormTime].join('|');
   if (!force && key === SHOP.key) return;
   SHOP.key = key; $('coinCount').textContent = shop.coins; $('shopWho').textContent = ch.name;
   const card = $('shopCard'); fillShopCard(card, ch, it);
@@ -6676,6 +6771,7 @@ function fillShopCard(card, ch, it) {
       : SHOP.nearPal && SHOP.nearPal.id === 'keeper2' && shySleeping() ? '<h3>Shy Shopkeeper</h3><p>She is fast asleep... Press punch to wake her up!</p>'
       : SHOP.nearPaper ?
  '<h3>A paper on the wall</h3><p>Someone wrote a secret code on it: <b style="font-size:1.6em">50028</b></p><p class="note">Maybe try it on the codes page, on the main menu...</p>'
+      : SHOP.floor === 15 && attackOn() ? (SHOP.atk && SHOP.atk.won ? '<h3>Admins attack</h3><p>You did all the Admin\'s tasks! He has to let you stay.</p>' : '<h3>Admins attack!</h3><p>The Admin took over the admin room! Do every task he gives you before the timer runs out... or he KICKS YOU OUT!</p>')
       : SHOP.floor === 15 ? '<h3>The admin room</h3><p>The secret admin room! Only admins can get in here. The door on the left goes back to the 3rd floor.</p>'
       : SHOP.floor === 14 ? '<h3>The 3rd floor</h3><p>A cozy little attic at the very top of the shopkeepers\' home. There is a paper pinned to the wall... walk up to it!</p>'
       : SHOP.floor === 13 && !SHOP.nearPal ? '<h3>Upstairs</h3><p>The shopkeepers\' upstairs, where the Shy Shopkeeper sleeps and hangs out! Her bed, their closet of fancy clothes, a comfy couch with a TV, a telescope and a treasure chest. The stairs on the right go back down.</p>'
