@@ -22,6 +22,8 @@ Open `index.html` in a web browser, or play the GitHub Pages version.
 
 Every fighter has 200 hp. When it runs out, they get dizzy and can be thrown.
 
+The computer fighters are **aggressive**: they pick who to chase quickly, punch more often, hop around and never stand still for long, jump up after you, and use their specials a lot (even more on Hard). Cool Star fires star shots from far away, and Nervous Hexstar fires his laser once his tank has some energy.
+
 ## Game modes
 
 - **Free for all:** everyone for themselves. The last fighter on the island wins the round.
