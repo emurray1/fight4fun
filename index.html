@@ -295,7 +295,7 @@ html.crumble .title-card::before,html.crumble #setup .page::before{content:'';po
 /* the code is gone: the main menu, from Mason's drawing (lime green with scribbles, the Admin in the middle, the buttons in a white box on the left,
    the shopkeepers together in a frame, and the fighters in a grey box in the corner) */
 html.gone #title .fff,html.gone #title .title-card .band,html.gone #title .hint{display:none}
-html.gone #title .title-card{position:fixed;left:3vw;top:18vh;width:min(320px,40vw);max-height:64vh;overflow:auto;transform:none;animation:none;translate:none;background:#fff;border:5px solid #7f7f7f;box-shadow:none;padding:10px 8px 14px;gap:8px}
+html.gone #title .title-card{position:fixed;left:3vw;top:18vh;width:min(320px,40vw);max-height:64vh;overflow-y:auto;overflow-x:hidden;transform:none;animation:none;translate:none;background:#fff;border:5px solid #7f7f7f;box-shadow:none;padding:10px 8px 14px;gap:8px}
 html.gone #title .title-card h1{font-size:44px}
 html.gone #title .title-card .btn{font-size:20px;padding:4px 12px;transform:none}
 html.gone #title .title-card .menu{gap:6px}
@@ -488,9 +488,9 @@ html.adminlook .story-note{color:#1f8a0f}
       <ul class="upds-list" id="ch2List"><li><b>🛡️ Admins attack</b>: <span id="attackWhen"></span></li><li><b>🛸 Arriving admins</b>: <span id="arriveWhen"></span></li><li><b>🕳️ The code is gone</b>: <span id="goneWhen"></span></li><li><b>🏠 Once in a life time</b>: <span id="lifeWhen"></span></li></ul>
       <h3 class="chapter" id="ch3Head">📖 Chapter 3: They are gone... <span id="ch3Done"></span></h3>
       <p id="ch3Lock" class="chapter-lock">🔒 Finish chapter 2 first!</p>
-      <ul class="upds-list" id="ch3List"><li><b>💔 They are gone...</b>: <span id="fellWhen"></span></li></ul>
+      <ul class="upds-list" id="ch3List"><li><b>💔 They are gone...</b>: <span id="fellWhen"></span></li><li><b>🌀 The void</b>: <span id="voidWhen"></span></li><li><b>👁️ uoy teg lliw ti</b>: <span id="eyesWhen"></span></li><li><b>📺 It's only them</b>: <span id="onlyWhen"></span></li></ul>
       <p id="kickMsg" hidden style="color:#c0392b;font-size:22px"><b>🥾 The Admin KICKED YOU OUT!</b> You ran out of time on a task. Press the admin room button to try again!</p>
-      <div class="page-foot"><button id="dormBtn" class="btn">💌 dorm</button><button id="parkBtn" class="btn">🌳 park</button><button id="dinnerBtn" class="btn">🍝 dinner place</button><button id="weddingBtn" class="btn">💒 wedding</button><button id="attackBtn" class="btn" hidden>🛡️ admin room</button><button id="fellBtn" class="btn" hidden>💔 dorm hall</button></div>
+      <div class="page-foot"><button id="dormBtn" class="btn">💌 dorm</button><button id="parkBtn" class="btn">🌳 park</button><button id="dinnerBtn" class="btn">🍝 dinner place</button><button id="weddingBtn" class="btn">💒 wedding</button><button id="attackBtn" class="btn" hidden>🛡️ admin room</button><button id="fellBtn" class="btn" hidden>💔 dorm hall</button><button id="onlyBtn" class="btn" hidden>📺 break room</button></div>
       <div class="page-foot" id="againRow" hidden><button id="againBtn" class="btn">🔁 do it again</button><span id="againPick" hidden><button id="againConfess" class="btn">💌 confession</button><button id="againPark" class="btn">🌳 1st date</button><button id="againDate" class="btn">🍝 2nd date</button><button id="againWedding" class="btn">💍 wedding</button><button id="againAttack" class="btn">🛡️ admins attack</button><button id="againFell" class="btn">💔 they are gone</button></span></div>
     </div>
   </div>
@@ -3965,7 +3965,7 @@ function shopStep(dt) {
   SHOP.toyT = Math.max(0, (SHOP.toyT || 0) - dt);
   if (pushStep(dt) || carryStep(dt)) { SHOP.msgT = Math.max(0, SHOP.msgT - dt); renderShopCard(); return; }
   const hall = SHOP.floor === 5; // the chase hallway is much longer than the screen, and has boxes to jump over
-  const frozen = hall && SHOP.chase && (SHOP.chase.t < 2.6 || SHOP.chase.done); // you freeze while the eyes open (and once you're safe)
+  const frozen = (hall && SHOP.chase && (SHOP.chase.t < 2.6 || SHOP.chase.done)) || voidWatching() || onlyThemHere(); // you freeze while the eyes open (and once you're safe)
   let nx = Math.max(SHOP.floor === 4 && !SHOP.chase ? 0 : 70, Math.min(hall ? CHASE_LEN - 60 : dormRoomW() - 70, SHOP.x + (frozen ? 0 : h.x)*430*ch.speed*dt));
   if (hall) nx = chaseBlock(SHOP.x, nx);
   if (pkOn()) nx = pkBlock(SHOP.x, nx); // (the broken dorm hall: bits of floor to jump between)
@@ -3974,10 +3974,10 @@ function shopStep(dt) {
   if (SHOP.floor === 4 && !SHOP.chase) { // walk off the far left edge of the office to get to the secret 5th floor
     if (SHOP.x <= 15) { SHOP.stairTo = 7; shopStairs(); return; }
   }
-  pkStep();
+  pkStep(); voidStep(); // (the dorm hall parkour, and the void)
   const groundY = hall && onCrate(SHOP.x) ? -CRATE_H : pkOn() ? pkGround() : 0;
   SHOP.vy += 2600*dt; SHOP.y = Math.min(groundY, SHOP.y + SHOP.vy*dt); if (SHOP.y === groundY) SHOP.vy = 0;
-  if (h.jump && !pr.jump && SHOP.y === groundY) { SHOP.vy = -1000*ch.jump; sfx.jump(); }
+  if (h.jump && !pr.jump && SHOP.y === groundY && !frozen) { SHOP.vy = -1000*ch.jump; sfx.jump(); }
   const f = SHOP.floor;
   SHOP.near = shopCleared() ? null : STANDS.find(s => s.floor === f && Math.abs(s.x - SHOP.x) < 110) || null; // (no stands while the shop is cleared for the wedding)
   SHOP.nearSkins = f === 2 && !SHOP.near && !shopCleared() && Math.abs(SKIN_X - SHOP.x) < 100;
@@ -4013,7 +4013,7 @@ function shopStep(dt) {
   crumbleKeeperStep(f); // (the shopkeepers noticing the game falling apart)
   crowdStep(); // (the fighters talking to the shopkeepers about the wedding, until it happens)
   SHOP.smiSayT = Math.max(0, (SHOP.smiSayT || 0) - dt);
-  if (h.punch && !pr.punch) { if (SHOP.nearCage) cageHit(); else if (SHOP.near) shopAct(SHOP.near.item); else if (SHOP.nearSkins) nextSkin(); else if (SHOP.nearSwitch) dormLight(); else if (SHOP.nearAtk) atkAct(); else if (SHOP.nearPaper) readPaper(); else if (SHOP.nearWed) wedAct(); else if (SHOP.nearPark) parkAct(); else if (SHOP.nearTask) doKTask(); else if (SHOP.nearToys) playToys(); else if (SHOP.nearStairs) shopStairs(); else if (SHOP.nearPal) palTalk(); else if (SHOP.nearSmi) smiTalk(); else if (SHOP.nearKeeper) shopTalk(); }
+  if (h.punch && !pr.punch) { if (SHOP.nearVoidCage >= 0) voidHit(); else if (SHOP.nearCage) cageHit(); else if (SHOP.near) shopAct(SHOP.near.item); else if (SHOP.nearSkins) nextSkin(); else if (SHOP.nearSwitch) dormLight(); else if (SHOP.nearAtk) atkAct(); else if (SHOP.nearPaper) readPaper(); else if (SHOP.nearWed) wedAct(); else if (SHOP.nearPark) parkAct(); else if (SHOP.nearTask) doKTask(); else if (SHOP.nearToys) playToys(); else if (SHOP.nearStairs) shopStairs(); else if (SHOP.nearPal) palTalk(); else if (SHOP.nearSmi) smiTalk(); else if (SHOP.nearKeeper) shopTalk(); }
   if (h.grab && !pr.grab && SHOP.nearKeeper) shopLaugh();
   if (isHex()) { // Hexstar says "beep boop baap!" now and then (or when you press special), and the shopkeepers act like he never said it
     SHOP.beepCD = (SHOP.beepCD ?? 3) - dt; SHOP.beepT = Math.max(0, (SHOP.beepT || 0) - dt);
@@ -4307,14 +4307,14 @@ const PB_HI = { // what they say when you walk up and press punch ({you} is your
   square:'HI {you}! WELCOME TO THE BREAK ROOM!', sparkle:'{you}! Wanna play?!', hex:'Beep boop! Hi {you}! *nervous wave*', heart:'Aww, hi {you}! Want a hug?',
   shuriken:'Hmph. Hi, {you}. Have you seen Goofy Sparkle?', arrow:'O-oh! Hi {you}... please don\'t scare me.', admin:'Hello, {you}. Enjoy your break.',
 };
-const pbPals = () => PLAYABLE().filter(c => !c.keeper && c.id !== 'admin' && c.id !== CHARS[SHOP.who].id && !(c.id === 'sparkle' && noShop()) && !(c.id === 'shuriken' && theyGone())); // everyone but the shopkeepers, the Admin and you
+const pbPals = () => PLAYABLE().filter(c => !c.keeper && c.id !== 'admin' && c.id !== CHARS[SHOP.who].id && !(c.id === 'sparkle' && noShop()) && !(c.id === 'shuriken' && theyGone()) && !voidTaskNow()); // everyone but the shopkeepers, the Admin and you (and nobody while the void is open: they're all in it)
 function pbSpots() { const pals = pbPals(), step = 1180/Math.max(1, pals.length); return pals.map((ch, i) => ({ ch, x:260 + step*(i + 0.5) })); }
 function pbSay(id, text, secs = 3.4) { SHOP.pb.say = { id, text, until:performance.now() + secs*1000 }; }
 function pbStep() { // the next thing someone says (by the clock, so it keeps going even when the game runs slowly)
   const pb = SHOP.pb, now = performance.now(); if (!pb || now < pb.next) return;
   const here = new Set(pbPals().map(c => c.id)); if (!here.size) return;
   if (!pb.chat || pb.line >= pb.chat.length) { // start a new conversation (or someone says something on their own)
-    const ok = (crumbling() ? (theyGone() ? SAD_CHATS : scaredAll() ? SCARED_CHATS : codeGone() ? GOOFY_COMFORT.concat(GOOFY_COMFORT, CRUMBLE_CHATS) : CRUMBLE_CHATS.concat(CRUMBLE_CHATS, PB_CHATS)) : gossipOn() ? CONFESS_GOSSIP.concat(CONFESS_GOSSIP, PB_CHATS) : PB_CHATS).filter(c => c.every(([id]) => here.has(id)) && c !== pb.last);
+    const ok = (crumbling() ? (watchOn() ? EYE_CHATS : theyGone() ? SAD_CHATS : scaredAll() ? SCARED_CHATS : codeGone() ? GOOFY_COMFORT.concat(GOOFY_COMFORT, CRUMBLE_CHATS) : CRUMBLE_CHATS.concat(CRUMBLE_CHATS, PB_CHATS)) : gossipOn() ? CONFESS_GOSSIP.concat(CONFESS_GOSSIP, PB_CHATS) : PB_CHATS).filter(c => c.every(([id]) => here.has(id)) && c !== pb.last);
     pb.chat = ok.length && Math.random() < 0.9 ? ok[Math.floor(Math.random()*ok.length)] : null; pb.line = 0; pb.last = pb.chat;
     if (!pb.chat) { const ids = [...here], id = ids[Math.floor(Math.random()*ids.length)], lines = PB_SOLO[id] || ['...']; pbSay(id, lines[Math.floor(Math.random()*lines.length)]); pb.next = now + 3000; return; }
   }
@@ -4405,6 +4405,8 @@ const KEEPER_EAT = [[['keeper', 'Mmm! This soup is the BEST!'], ['keeper2', '*no
 const KEEPER_DINNER = [[['keeper', 'There you are, sleepyhead! Dinner is almost ready!'], ['keeper2', '*yawns* ...mmm, is it soup?'], ['keeper', 'Your favourite!'], ['keeper2', '*happy* hehe...']],
   [['keeper2', 'th-thank you for making dinner...'], ['keeper', 'Anything for my best shop buddy!']]];
 function keeperSpots() { // where the two shopkeepers are in their home
+  if (onlyOn()) return []; // (it's only them: they're in the break room)
+  if (voidTaskNow()) return SHOP.floor === 12 ? [{ ch:CHAR.keeper, x:1000 }] : []; // (the void: Fighty came home to ask you for help, even if you're playing as him)
   if (noShop()) return (SHOP.floor === 12 && !theyGone() ? [{ ch:CHAR.keeper, x:1000 }, { ch:CHAR.keeper2, x:1240 }] : []).filter(s => s.ch.id !== CHARS[SHOP.who].id); // (no shop: they're both home, downstairs, keeping Goofy safe)
   if (confessPending() || SHOP.confessVisit || SHOP.replay === 'confess') return (SHOP.floor === 12 ? [{ ch:CHAR.keeper, x:1000 }, { ch:CHAR.keeper2, x:1240 }] : []).filter(s => s.ch.id !== CHARS[SHOP.who].id); // (it's time for the confession: they're both downstairs, together)
   const e = performance.now() - (SHOP.shyWokeT || 0), down = shyDown(), walking = down && e > 1200 && e < 3600; // (she says something first, then walks to the stairs)
@@ -4416,7 +4418,7 @@ function keeperSpots() { // where the two shopkeepers are in their home
 function dormSpots() { // the roommates in their room (not you, if it's your room)
   const d = DORMS[SHOP.dorm || 0];
   if (d.keepers) return keeperSpots(); // (the Shy Shopkeeper is upstairs, the Fighty one downstairs)
-  return d.ids.map(id => CHAR[id]).filter(ch => unlocked(ch) && ch.id !== CHARS[SHOP.who].id && !(ch.id === 'sparkle' && noShop()) && !(ch.id === 'shuriken' && theyGone())).map((ch, i) => ({ ch, x:[640, 1060][i] }));
+  return d.ids.map(id => CHAR[id]).filter(ch => unlocked(ch) && ch.id !== CHARS[SHOP.who].id && !(ch.id === 'sparkle' && noShop()) && !(ch.id === 'shuriken' && theyGone()) && !voidTaskNow()).map((ch, i) => ({ ch, x:[640, 1060][i] }));
 }
 // the shopkeepers' room is extra big (wider than the screen, so it scrolls with you) and fancier than the fighters' rooms
 const KEEPER_ROOM_W = 2400;
@@ -4599,7 +4601,7 @@ function dormStep() { // the roommates take turns talking (by the clock)
   const pb = SHOP.pb, now = performance.now(); if (!pb || now < pb.next) return;
   const here = new Set(dormSpots().map(s => s.ch.id)); if (!here.size) return;
   const keepersDown = DORMS[SHOP.dorm || 0].keepers && SHOP.floor === 12;
-  const chats = (keepersDown && noShop() ? HIDE_GOOFY_LINES : keepersDown && (confessPending() || SHOP.replay === 'confess') ? [CONFESS_LINES] : keepersDown && SHOP.confessVisit ? KEEPER_LOVE : keepersDown && eatingDinner() ? KEEPER_EAT : keepersDown && shyDown() ? KEEPER_DINNER : (crumbling() && !DORMS[SHOP.dorm || 0].keepers ? (theyGone() ? SAD_CHATS : scaredAll() ? SCARED_CHATS : codeGone() ? GOOFY_COMFORT.concat(GOOFY_COMFORT, CRUMBLE_CHATS) : CRUMBLE_CHATS) : gossipOn() && !DORMS[SHOP.dorm || 0].keepers ? CONFESS_GOSSIP : []).concat(dormNight() ? DORMS[SHOP.dorm || 0].chats : DORM_DAY[SHOP.dorm || 0])).filter(c => c.every(([id]) => here.has(id))); // (night talk or morning talk)
+  const chats = (keepersDown && voidTaskNow() ? VOID_ASK_LINES : keepersDown && noShop() ? (saved() ? SAVED_LINES : HIDE_GOOFY_LINES) : keepersDown && (confessPending() || SHOP.replay === 'confess') ? [CONFESS_LINES] : keepersDown && SHOP.confessVisit ? KEEPER_LOVE : keepersDown && eatingDinner() ? KEEPER_EAT : keepersDown && shyDown() ? KEEPER_DINNER : (crumbling() && !DORMS[SHOP.dorm || 0].keepers ? (watchOn() ? EYE_CHATS : theyGone() ? SAD_CHATS : scaredAll() ? SCARED_CHATS : codeGone() ? GOOFY_COMFORT.concat(GOOFY_COMFORT, CRUMBLE_CHATS) : CRUMBLE_CHATS) : gossipOn() && !DORMS[SHOP.dorm || 0].keepers ? CONFESS_GOSSIP : []).concat(dormNight() ? DORMS[SHOP.dorm || 0].chats : DORM_DAY[SHOP.dorm || 0])).filter(c => c.every(([id]) => here.has(id))); // (night talk or morning talk)
   if (!chats.length) { const id = [...here][0], lines = (DORMS[SHOP.dorm || 0].crush && { diamond:['Hi, Missing Arrow... *blushes*', 'I saved you some snacks, hehe.', 'You look cute when you glitch.'], arrow:['H-hi, Sly Diamond... *happy glitch*', 'Y-your eyelashes are really pretty...', '*blushes and glitches*'] }[id]) || (id === 'keeper2' && shySleeping() && ['Zzz...', '*snores softly*', 'zzz... one pink bow, please... zzz']) || PB_SOLO[id] || ['...']; pbSay(id, lines[Math.floor(Math.random()*lines.length)]); pb.next = now + 3200; return; } // (alone in the room) // (alone with you in their room, they say sweet things to the one they like)
   if (!pb.chat || pb.line >= pb.chat.length) { pb.chat = chats[(pb.ci = ((pb.ci ?? -1) + 1) % chats.length)]; pb.line = 0; }
   const [id, text] = pb.chat[pb.line++]; pbSay(id, text); pb.next = now + (pb.line >= pb.chat.length ? 4000 : 3000);
@@ -4668,6 +4670,7 @@ const kDone = () => SHOP.kdone || (SHOP.kdone = new Set());
 function nextKTask() { return (dormNight() ? ['wake'] : []).concat(['dinner', 'fire', 'plant']).find(id => !kDone().has(id)) || null; } // (she can only be woken up at night)
 function fightyTalk() { // you walked up to the Fighty Shopkeeper at home and pressed punch
   SHOP.pb.next = performance.now() + 5000;
+  if (voidTaskNow()) { SHOP.ktask = 'void'; pbSay('keeper', KTASKS.void.ask, 5); renderShopCard(true); return; } // (the void: he needs YOU to save them)
   if (isKid()) return pbSay('keeper', 'No chores for you, little buddy! Go upstairs and play with the toys!', 4.5);
   if (SHOP.ktask) return pbSay('keeper', KTASKS[SHOP.ktask].ask, 4.5); // (a reminder)
   const id = nextKTask();
@@ -4930,6 +4933,7 @@ function drawBreakFloor(t) {
   g.fillStyle = '#2c2f36'; g.fillRect(1440, 530, 90, 106); g.fillStyle = '#555'; g.fillRect(1462, 590, 46, 10);
   g.fillStyle = Math.sin(t*4) > 0 ? '#7dff8a' : '#2e6b35'; g.beginPath(); g.arc(1515, 548, 6, 0, TAU); g.fill();
   g.fillStyle = C.white; g.fillRect(1470, 606, 30, 30);
+  if (onlyOn()) { drawOnlyThem(t); return; } // (it's only them: the two of them, watching their memories)
   if (codeGone()) { drawCracks(SHOP_FLOOR); drawRubble(t, 0); return; } // (and broken)
   // the shy shopkeeper, having her tea break
   const kid = isKid(), hex = isHex(), friend = isFriend() || kid || hex, scared3 = SHOP.keeperScaredT > 0;
@@ -5492,7 +5496,7 @@ function drawManager(g, t) { // %#@% sitting in his chair (drawn in the chair's 
 function drawShop(t) {
   const hall = SHOP.floor === 5, wide = keeperRoom(); // the chase hallway (and the shopkeepers' big room) scrolls with you
   if (hall) { g.save(); g.translate(-(SHOP.cam || 0), 0); drawChaseFloor(t); }
-  else if (SHOP.floor === PARK_FLOOR) drawParkPlace(t); else if (SHOP.floor === DINNER_FLOOR) drawDinnerPlace(t); else if (SHOP.floor === WEDDING_FLOOR) drawWeddingHall(t); else if (SHOP.floor === 15) { drawAdminRoom(t); drawAttack(t); } else if (SHOP.floor === 14) drawKeeperAttic(t); else if (SHOP.floor === 12 || SHOP.floor === 13) { if (wide) { g.save(); g.translate(-(SHOP.cam || 0), 0); } if (SHOP.floor === 13) drawKeeperUpstairs(t); else drawDormRoom(t); } else if (SHOP.floor === 11) drawDormHall(t); else if (SHOP.floor === 10) drawPlayerBreak(t); else if (SHOP.floor === 9) drawGlitchShop(t); else if (SHOP.floor === 8) drawCageFloor(t); else if (SHOP.floor === 7) drawTopFloor(t); else if (SHOP.floor === 6) drawBreakFloor(t); else if (SHOP.floor === 4) drawOfficeFloor(t); else if (SHOP.floor === 3) drawAtticFloor(t); else if (SHOP.floor === 2) drawFunnyFloor(t); else drawFightyFloor(t);
+  else if (SHOP.floor === VOID_FLOOR) drawVoid(t); else if (SHOP.floor === PARK_FLOOR) drawParkPlace(t); else if (SHOP.floor === DINNER_FLOOR) drawDinnerPlace(t); else if (SHOP.floor === WEDDING_FLOOR) drawWeddingHall(t); else if (SHOP.floor === 15) { drawAdminRoom(t); drawAttack(t); } else if (SHOP.floor === 14) drawKeeperAttic(t); else if (SHOP.floor === 12 || SHOP.floor === 13) { if (wide) { g.save(); g.translate(-(SHOP.cam || 0), 0); } if (SHOP.floor === 13) drawKeeperUpstairs(t); else drawDormRoom(t); } else if (SHOP.floor === 11) drawDormHall(t); else if (SHOP.floor === 10) drawPlayerBreak(t); else if (SHOP.floor === 9) drawGlitchShop(t); else if (SHOP.floor === 8) drawCageFloor(t); else if (SHOP.floor === 7) drawTopFloor(t); else if (SHOP.floor === 6) drawBreakFloor(t); else if (SHOP.floor === 4) drawOfficeFloor(t); else if (SHOP.floor === 3) drawAtticFloor(t); else if (SHOP.floor === 2) drawFunnyFloor(t); else drawFightyFloor(t);
   if (SHOP.floor <= 2) drawShopStory(t); // (the shop changes with the story too)
   if (codeGone() && SHOP.floor >= 11 && SHOP.floor <= 13) drawBrokenDorm(t); // (the dorms are broken too, once the code is gone)
   if (SHOP.floor === 11) drawFell(t); // (they are gone: the scene, then the shopkeepers trying to save them)
@@ -5543,7 +5547,7 @@ function drawShop(t) {
   const found = ch.id === 'shuriken' && SHOP.floor === 2 && SHOP.sparkleHere; // Shuriken is happy he found Goofy Sparkle
   const yay = (excited || (found && SHOP.foundT < 4)) && SHOP.y === 0 && !moving ? Math.abs(Math.sin(t*7))*22 : 0;
   g.save(); g.translate(SHOP.x + (scared ? Math.sin(t*55)*2.5 : 0), SHOP_FLOOR - bottom + SHOP.y - hop - yay); g.rotate(moving ? Math.sin(t*12)*0.08 : laughing ? Math.sin(t*16)*0.1 : excited ? Math.sin(t*7)*0.12 : 0);
-  drawCharacter(g, ch, r, { facing:SHOP.facing, walk:moving ? t*10 : null, ...looks(ch), scared, excited, happy:found }); g.restore();
+  if (!onlyThemHere()) drawCharacter(g, ch, r, { facing:SHOP.facing, walk:moving ? t*10 : null, ...looks(ch), scared, excited, happy:found }); g.restore(); /* (it's only them: you're not there, you just watch) */
   const above = SHOP_FLOOR - bottom - 80 + SHOP.y;
   if (SHOP.youSayT > 0) drawBubble(SHOP.youSay, SHOP.x + 120, above, SHOP.x + 20);
   else if (laughing) drawBubble('Hahaha!', SHOP.x + 70, above, SHOP.x + 20);
@@ -5586,7 +5590,8 @@ function frame(now) {
     drawParticles(G.paused ? 0 : dt); if (zoomed) g.restore(); if (G.boss) drawGlitches(t); drawDisco(t); if (flip) g.restore();
     drawWatchers(t); drawHUD(); drawCoinRain(t); drawPopups(t); drawOverlayText();
   } else { drawSky(t, null); drawMenuGround(t); }
-  if (G.state !== 'fight' && storyOk && storyStage() >= 6) drawGlitch(t); // (glitchy, in green and black)
+  if (G.state !== 'fight' && storyOk && storyStage() >= 6 && !onlyThemHere()) drawGlitch(t); // (glitchy, in green and black)
+  if (G.state !== 'fight' && watchOn() && !onlyThemHere()) drawWatcher(t); // (uoy teg lliw ti: something is looking at you)
   requestAnimationFrame(frame);
 }
 
@@ -5846,8 +5851,12 @@ function updsTick() { // the countdown on the page
   const gtext = goneText(); if ($('goneWhen').textContent !== gtext) $('goneWhen').textContent = gtext;
   const ltext = lifeText(); if ($('lifeWhen').textContent !== ltext) $('lifeWhen').textContent = ltext;
   const ch2 = ch1 && lifeLeft() <= 0; // chapter 3 opens once chapter 2 is done
-  $('ch3Lock').hidden = ch2; $('ch3List').hidden = !ch2; $('ch3Head').style.opacity = ch2 ? 1 : 0.5; $('ch3Done').textContent = lsGet('fff-fell') ? '✅' : '';
+  $('ch3Lock').hidden = ch2; $('ch3List').hidden = !ch2; $('ch3Head').style.opacity = ch2 ? 1 : 0.5; $('ch3Done').textContent = saved() && onlyLeft() <= 0 ? '✅' : '';
   const ftext = fellText(); if ($('fellWhen').textContent !== ftext) $('fellWhen').textContent = ftext;
+  const vtext = voidText(); if ($('voidWhen').textContent !== vtext) $('voidWhen').textContent = vtext;
+  const etext = eyesText(); if ($('eyesWhen').textContent !== etext) $('eyesWhen').textContent = etext;
+  const otext = onlyText(); if ($('onlyWhen').textContent !== otext) $('onlyWhen').textContent = otext;
+  $('onlyBtn').hidden = !(onlyLeft() <= 0);
   $('fellBtn').hidden = !(fellLeft() <= 0);
   $('attackBtn').hidden = !(attackLeft() <= 0 && attackLeft() > -ATTACK_LONG*60000);
   againShow();
@@ -5859,6 +5868,7 @@ function againShow() { const any = Object.values(againOk).some(f => f()); $('aga
 $('againAttack').onclick = () => goPlace(15, 'attack');
 $('againFell').onclick = () => goPlace(11, 'fell');
 $('fellBtn').onclick = () => goPlace(11);
+$('onlyBtn').onclick = () => { goPlace(6); SHOP.youSayT = 0; }; // (you just watch them, so you don't say anything)
 $('attackBtn').onclick = () => goPlace(15);
 $('againConfess').onclick = () => goKeeperRoom('confess');
 $('againPark').onclick = () => goPlace(PARK_FLOOR, 'park');
@@ -6233,6 +6243,7 @@ function pkBlock(x0, x1) { const p = pkAt(x1); return p && p[2] < SHOP.y - 4 ? x
 function pkStep() {
   if (!pkOn()) { SHOP.pkIn = false; return; }
   if (!SHOP.pkIn) { SHOP.pkIn = true; const p = pkAt(SHOP.x) || DORM_PK.reduce((a, b) => Math.abs((a[0] + a[1])/2 - SHOP.x) < Math.abs((b[0] + b[1])/2 - SHOP.x) ? a : b); if (!pkAt(SHOP.x)) SHOP.x = (p[0] + p[1])/2; SHOP.y = p[2]; SHOP.vy = 0; } // (walking in, you land on a bit of floor)
+  if (SHOP.y > 260 && SHOP.ktask === 'void' && voidTaskNow()) return goVoid(); // (with Fighty's task, jumping in takes you down into the void)
   if (SHOP.y > 260) { Object.assign(SHOP, { x:160, y:0, vy:0, facing:1 }); SHOP.youSay = 'Whoa! I fell into the code! ...Back to the start.'; SHOP.youSayT = 2.5; if (sfx.bonk) sfx.bonk(); renderShopCard(true); }
 }
 // once there's no shop (once in a life time), everyone is scared: they shake (in the shop, the dorms, player breaks and on the menu) and talk about how scared they are.
@@ -6320,7 +6331,7 @@ function drawHiddenGoofy(t) { // Goofy Sparkle, hiding in the attic and playing 
 // and the shopkeepers stay at the edge of the pit with a rope, trying to pull them out
 const FELL_MIN = 20, FELL_SCENE = 15;
 const fellLeft = () => { const l = lifeLeft(); return l === Infinity ? Infinity : l + FELL_MIN*60000; };
-const theyGone = () => storyOk && storyStage() >= 9;
+const theyGone = () => storyOk && storyStage() >= 9 && !saved(); // (until you save them from the void)
 function fellText() { // for the up coming page
   const l = fellLeft(), l0 = lifeLeft();
   return l === Infinity || l0 > 0 ? 'something bad happens to two of the fighters... Coming soon...'
@@ -6349,7 +6360,7 @@ function drawFell(t) { // in the dorm hall: the scene, or the shopkeepers trying
   if (SHOP.floor !== 11) { SHOP.fellT0 = undefined; return; }
   const s = fellScene();
   if (s < 0 && !theyGone()) return;
-  const at = (ch, x, y, o = {}) => { if (CHARS[SHOP.who].id === ch) return; const r = dormR(CHAR[ch]); g.save(); g.translate(x, y - r); drawCharacter(g, CHAR[ch], r, { ...looks(CHAR[ch]), ...o }); g.restore(); };
+  const at = (ch, x, y, o = {}) => { const r = dormR(CHAR[ch]); g.save(); g.translate(x, y - r); drawCharacter(g, CHAR[ch], r, { ...looks(CHAR[ch]), ...o }); g.restore(); };
   if (s >= 0) {
     const fall = s < 5.5 ? 0 : (s - 5.5)*(s - 5.5)*260, sx = FELL_X, shake = s > 3.5 && s < 5.5 ? Math.sin(t*50)*4 : 0;
     if (s < 5.5) { for (let i=0;i<3;i++) { const k = (t*1.4 + i/3) % 1; g.save(); g.translate(sx + 30 + k*220, SHOP_FLOOR - 60 - Math.sin(k*Math.PI)*60); g.rotate(t*12); g.fillStyle = '#9aa0a6'; g.strokeStyle = C.ink; g.lineWidth = 2; g.beginPath(); for (let p=0;p<8;p++) { const a = p*Math.PI/4, rr = p % 2 ? 5 : 13; g.lineTo(Math.cos(a)*rr, Math.sin(a)*rr); } g.closePath(); g.fill(); g.stroke(); g.restore(); } } // throwing shurikens at the code
@@ -6361,15 +6372,174 @@ function drawFell(t) { // in the dorm hall: the scene, or the shopkeepers trying
     return;
   }
   // afterwards: the two shopkeepers on the edges of the pit, holding a rope down into the code
-  at('keeper', 760, SHOP_FLOOR - 20, { facing:1, pose:'pull' }); at('keeper2', 1180, SHOP_FLOOR - 30, { facing:-1, pose:'pull' }); // (leaning back, tugging the rope)
-  g.strokeStyle = '#c9a26b'; g.lineWidth = 6; g.beginPath(); g.moveTo(852, SHOP_FLOOR - 112); g.quadraticCurveTo(FELL_X, SHOP_FLOOR + 40 + Math.sin(t*5)*12, 1090, SHOP_FLOOR - 138); /* (from his hands to hers) */ g.moveTo(FELL_X, SHOP_FLOOR + 30); g.lineTo(FELL_X + Math.sin(t*1.5)*12, H); g.stroke(); // the rope
-  const say = SAVE_LINES[Math.floor(t/3.2) % SAVE_LINES.length], wx = say[0] === 'keeper' ? 760 : 1180; drawBubble(say[1], Math.min(W - 20, wx + 220), SHOP_FLOOR - 230, wx);
+  const alone = voidTaskNow(); // (once the void opens, the Shy Shopkeeper and everyone else have fallen in too, and Fighty went home to find help)
+  if (!alone) at('keeper', 760, SHOP_FLOOR - 20, { facing:1, pose:'pull' });
+  if (!alone) at('keeper2', 1180, SHOP_FLOOR - 30, { facing:-1, pose:'pull' }); // (leaning back, tugging the rope)
+  g.strokeStyle = '#c9a26b'; g.lineWidth = 6; g.beginPath();
+  if (alone) { g.moveTo(1150, SHOP_FLOOR - 30); g.quadraticCurveTo(1060, SHOP_FLOOR + 10, FELL_X + Math.sin(t*1.5)*12, H); } // (just the rope, hanging down into the pit: she fell in too)
+  else { g.moveTo(852, SHOP_FLOOR - 112); g.quadraticCurveTo(FELL_X, SHOP_FLOOR + 40 + Math.sin(t*5)*12, 1090, SHOP_FLOOR - 138); /* (from his hands to hers) */ g.moveTo(FELL_X, SHOP_FLOOR + 30); g.lineTo(FELL_X + Math.sin(t*1.5)*12, H); }
+  g.stroke(); // the rope
+  if (!alone) { const say = SAVE_LINES[Math.floor(t/3.2) % SAVE_LINES.length], wx = say[0] === 'keeper' ? 760 : 1180; drawBubble(say[1], Math.min(W - 20, wx + 220), SHOP_FLOOR - 230, wx); }
+  if (SHOP.ktask === 'void') drawPointer(FELL_X + 40, SHOP_FLOOR - 120, t); // (jump in here!)
 }
-const STORY_NOTES = ['', '💕 The shopkeepers are in love! 💕', '🌳 The shopkeepers are dating! 🌳', '🍝 Date night at Café Fun! 🍝', '💍 Just married! 💍', '🛡️ The Admin is watching... 🛡️', '💥 Everything is falling apart! 💥', '🕳️ The code is gone... the 1st floor is gone! 🕳️', '🏠 There is no shop now... 🏠', '💔 They are gone...'];
+// the void (chapter 3): 20 minutes after they are gone, the Fighty Shopkeeper comes home and gives you a task: save them!
+// Jump into the code pit in the dorm hall, and you fall into the void (floor 19: like a deep ocean, full of 1s and 0s). First you stand still and watch: Grumpy Shuriken and Goofy Sparkle
+// are trapped in cages of green code, and the arriving admins circle around them... then fly off. Then it's your turn: punch the cages to break them
+// open. Once they're both free, you all come back to the shopkeepers' home, and the two of them aren't gone anymore
+const VOID_MIN = 20, VOID_FLOOR = 19, VOID_WATCH = 9, VOID_CAGES = [620, 1060], VOID_HITS = 4;
+const voidLeft = () => { const f0 = fellLeft(); return f0 === Infinity ? Infinity : f0 + VOID_MIN*60000; };
+const voidOn = () => storyOk && storyStage() >= 10;
+const saved = () => !!lsGet('fff-saved');
+const voidTaskNow = () => voidOn() && !saved(); // (Fighty is home, asking you to save them)
+const VOID_ASK_LINES = [[['keeper', 'Hey! Over here! I need your help... come talk to me! Press punch!']], [['keeper', 'My wife... everyone... they all fell into the void! *shaking*']]];
+const SAVED_LINES = [[['keeper', 'You did it! You saved them from the void!'], ['keeper2', '*hugs Goofy and Shuriken* N-never scare us like that again!']], [['keeper', 'Best. Helper. EVER.'], ['keeper2', 'Thank you... really. *happy tears*']]];
+KTASKS.void = { name:'Save Grumpy and Goofy', ask:'The rope broke... and she fell in! EVERYONE fell into the void! YOU have to go get them! Jump into the code pit in the dorm hall, and save them!', hint:'Jump into the code pit in the dorm hall (out the door, then left).', floor:11, x:965 };
+function voidText() { // for the up coming page
+  const l = voidLeft(), f0 = fellLeft();
+  return l === Infinity || f0 > 0 ? 'something is waiting in the void... Coming soon...'
+    : l > 0 ? `The void opens in ${mmss(l)}...` : saved() ? 'You went into the void and saved Grumpy Shuriken and Goofy Sparkle! 🎉'
+    : 'The void is open! Go to the shopkeepers\' home (the dorm button) and talk to the Fighty Shopkeeper. He has a task for you.';
+}
+const VOID_SCENE = [[0, 'sparkle', 'H-help! Is anybody out there?!'], [2.5, 'shuriken', 'Stay back, admins! Don\'t you touch him!'], [5, 'sparkle', 'They are flying away... Shuriken, I\'m scared...'], [7, 'shuriken', '...Wait. Somebody is here. HEY! Over here!']];
+function goVoid() { // you jumped into the pit with your task: down into the void you go
+  Object.assign(SHOP, { floor:VOID_FLOOR, x:200, y:0, vy:0, facing:1, voidT0:performance.now(), voidHits:[0, 0], voidDone:0 });
+  SHOP.youSay = 'Whoa... where am I? It is so dark...'; SHOP.youSayT = 3; if (sfx.zap) sfx.zap(); musicUpdate(); renderShopCard(true);
+}
+const voidWatching = () => SHOP.floor === VOID_FLOOR && (performance.now() - (SHOP.voidT0 || 0))/1000 < VOID_WATCH; // (you stand still and watch)
+function voidStep() {
+  SHOP.nearVoidCage = -1;
+  if (SHOP.floor !== VOID_FLOOR || voidWatching()) return;
+  if (SHOP.voidDone) { if (performance.now() - SHOP.voidDone > 4000) voidHome(); return; }
+  VOID_CAGES.forEach((x, i) => { if (SHOP.voidHits[i] < VOID_HITS && Math.abs(SHOP.x - x) < 110) SHOP.nearVoidCage = i; });
+}
+function voidHit() { // punching a cage
+  const i = SHOP.nearVoidCage; if (i < 0) return;
+  SHOP.voidHits[i]++; if (sfx.bonk) sfx.bonk();
+  if (SHOP.voidHits[i] >= VOID_HITS) { SHOP.youSay = i ? 'You are free, Goofy!' : 'Got you, Shuriken!'; SHOP.youSayT = 2.5; if (sfx.win) sfx.win(); }
+  if (SHOP.voidHits.every(h => h >= VOID_HITS)) { SHOP.voidDone = performance.now(); SHOP.youSay = 'You are both free! Let\'s get out of here!'; SHOP.youSayT = 4; }
+  renderShopCard(true);
+}
+function voidHome() { // back to the shopkeepers' home, with them saved
+  lsSet('fff-saved', String(Date.now())); goKeeperRoom(null); SHOP.ktask = null;
+  SHOP.youSay = 'We made it back! Grumpy Shuriken and Goofy Sparkle are safe!'; SHOP.youSayT = 4; storyCache.t = 0; applyTheme(); if (sfx.win) sfx.win(); renderShopCard(true);
+}
+function drawVoid(t) {
+  const now = performance.now(), s = (now - (SHOP.voidT0 || now))/1000;
+  // the void is like a deep green ocean of code: green water getting darker, waves up at the top, light rays, bubbles, and 1s and 0s
+  const sea = g.createLinearGradient(0, 0, 0, H); sea.addColorStop(0, '#1f8f4a'); sea.addColorStop(0.5, '#0a4d27'); sea.addColorStop(1, '#021a0c'); g.fillStyle = sea; g.fillRect(-3000, -3000, W + 6000, H + 6000);
+  g.fillStyle = 'rgba(190,255,190,.08)'; for (let i=0;i<5;i++) { const x = 200 + i*320 + Math.sin(t*0.4 + i)*40; g.beginPath(); g.moveTo(x - 30, 0); g.lineTo(x + 30, 0); g.lineTo(x + 160, SHOP_FLOOR); g.lineTo(x + 40, SHOP_FLOOR); g.closePath(); g.fill(); } // light rays from above
+  g.fillStyle = 'rgba(150,255,150,.35)'; g.beginPath(); g.moveTo(0, 0); for (let x = 0; x <= W; x += 20) g.lineTo(x, 34 + Math.sin(x/90 + t*1.5)*10); g.lineTo(W, 0); g.closePath(); g.fill(); // waves at the surface, far above
+  for (let i=0;i<18;i++) { const k = ((t*0.12 + i/18) % 1), x = (i*97) % W + Math.sin(t*2 + i)*12, y = SHOP_FLOOR - k*(SHOP_FLOOR - 40); g.strokeStyle = 'rgba(210,255,210,.6)'; g.lineWidth = 2; g.beginPath(); g.arc(x, y, 4 + (i % 4)*3, 0, TAU); g.stroke(); } // bubbles floating up
+g.font = 'bold 28px monospace'; g.textAlign = 'center'; g.textBaseline = 'middle'; for (let i=0;i<46;i++) { const k = ((t*(0.04 + (i % 5)*0.01) + i/46) % 1), x = (i*137) % W + Math.sin(t + i)*20, y = 60 + ((i*71) % (SHOP_FLOOR - 100)) + Math.sin(t*0.8 + i)*16; g.fillStyle = `rgba(${i % 3 ? '57,255,20' : '230,255,230'},${0.35 + Math.sin(k*Math.PI)*0.5})`; g.fillText((i + Math.floor(t*1.5 + i*0.5)) % 2 ? '1' : '0', x, y); } // 1s and 0s drifting all through the water
+  g.fillStyle = '#c9b27a'; g.fillRect(0, SHOP_FLOOR, W, H - SHOP_FLOOR); g.fillStyle = '#a8925e'; for (let x = 20; x < W; x += 70) { g.beginPath(); g.ellipse(x, SHOP_FLOOR + 14, 16, 5, 0, 0, TAU); g.fill(); } // the sandy sea floor you stand on
+  const others = [CHAR.keeper2, ...PLAYABLE().filter(c => !c.keeper && !['admin', 'shuriken', 'sparkle'].includes(c.id))].filter(c => c.id !== CHARS[SHOP.who].id); // the Shy Shopkeeper and everyone else fell in too: they float in bubbles, scared (until you save Grumpy and Goofy, then they cheer)
+  others.forEach((ch, i) => {
+    const x = 120 + i*(1360/Math.max(1, others.length - 1)), y = 170 + (i % 3)*110 + Math.sin(t*1.3 + i)*18, r = ch.keeper ? 34 : 26, cheer = !!SHOP.voidDone;
+    g.save(); g.translate(x, y - (cheer ? Math.abs(Math.sin(t*6 + i))*14 : 0)); drawCharacter(g, ch, ch.keeper ? dormR(ch)*0.42 : r, { facing:x < W/2 ? 1 : -1, ...looks(ch), happy:cheer, pose:ch.keeper ? (cheer ? 'cheer' : 'worried') : null }); g.restore();
+    g.strokeStyle = 'rgba(210,255,210,.7)'; g.lineWidth = 3; g.fillStyle = 'rgba(180,255,180,.12)'; g.beginPath(); g.arc(x, y, (ch.keeper ? 34 : 26)*2.1, 0, TAU); g.fill(); g.stroke(); // a bubble around them
+    g.strokeStyle = 'rgba(255,255,255,.6)'; g.beginPath(); g.arc(x - 18, y - 22, 12, 3.4, 4.6); g.stroke();
+  });
+  ['shuriken', 'sparkle'].forEach((id, i) => { // the two of them, in their cages (until you break them out)
+    const x = VOID_CAGES[i], hits = (SHOP.voidHits || [0, 0])[i], free = hits >= VOID_HITS, ch = CHAR[id], r = dormR(ch), bob = Math.sin(t*2 + i)*8;
+    g.save(); g.translate(x + (free ? 0 : Math.sin(t*20)*2), SHOP_FLOOR - r - (free ? Math.abs(Math.sin(t*6))*20 : 40 + bob)); drawCharacter(g, ch, r, { facing:i ? -1 : 1, ...looks(ch), happy:free }); g.restore();
+    if (!free) { const cy = SHOP_FLOOR - r - 40 + bob; g.strokeStyle = `rgba(57,255,20,${0.9 - hits*0.18})`; g.lineWidth = 5; for (let k=-2;k<=2;k++) { g.beginPath(); g.moveTo(x + k*28, cy - r - 30); g.lineTo(x + k*28 + (hits ? Math.sin(k*3)*hits*4 : 0), cy + r + 30); g.stroke(); } g.strokeRect(x - 75, cy - r - 30, 150, 2*r + 60); } // a cage of green code bars (cracking as you punch it)
+  });
+  if (s < VOID_WATCH) { // watching: the arriving admins circle the cages, then fly off
+    ARRIVERS.forEach((a, i) => { const ang = t*1.2 + i*TAU/ARRIVERS.length, k = Math.max(0, s - 5)/3, x = 840 + Math.cos(ang)*(330 + k*900), y = 380 + Math.sin(ang)*120 - k*500; g.save(); g.translate(x, y); drawCharacter(g, CHAR.admin, a.r, { facing:Math.cos(ang) > 0 ? -1 : 1, skin:a.skin, ...a.o }); g.restore(); });
+    const line = [...VOID_SCENE].reverse().find(([from]) => s >= from), x = VOID_CAGES[line[1] === 'shuriken' ? 0 : 1]; drawBubble(line[2], Math.min(W - 20, x + 230), SHOP_FLOOR - 260, x);
+    g.fillStyle = 'rgba(0,0,0,.55)'; g.fillRect(0, 0, W, 70); g.fillRect(0, H - 70, W, 70); // (like a movie: you just watch)
+  } else if (!SHOP.voidDone) {
+    g.fillStyle = C.white; g.font = `30px ${FONT}`; g.textAlign = 'center'; g.fillText('Save them! Walk up to a cage and press punch to break it.', W/2, 120);
+    if (SHOP.nearVoidCage >= 0) drawPointer(VOID_CAGES[SHOP.nearVoidCage] + 80, SHOP_FLOOR - 300, t);
+  } else drawBubble('THANK YOU!! You saved us!', VOID_CAGES[1] + 230, SHOP_FLOOR - 220, VOID_CAGES[1]);
+}
+// "uoy teg lliw ti" ("it will get you", backwards) (chapter 3): 20 minutes after the void opens, something starts watching you.
+// On the menu and everywhere in the shop, a pair of glowing eyes looks at you out of the dark. They blink, and they follow you as you walk...
+// get too close and they vanish, and turn up somewhere else. Everyone feels it, and talks about it in player breaks and the dorms
+const EYES_MIN = 20;
+const eyesLeft = () => { const v = voidLeft(); return v === Infinity ? Infinity : v + EYES_MIN*60000; };
+const watchOn = () => storyOk && storyStage() >= 11;
+const rev = s => [...s].reverse().join(''); // (everything about it is written backwards)
+function eyesText() { // for the up coming page
+  const l = eyesLeft(), v = voidLeft();
+  return l === Infinity || v > 0 ? rev('Something is coming... Coming soon...') : l > 0 ? `${mmss(l)} ni uoy teg lliw ti...` : rev('It is here. It is looking at you. Don\'t look behind you...') + ' 👁️';
+}
+const EYE_CHATS = [
+  [['star', '...does anyone else feel like we are being watched?'], ['heart', '*whispers* I saw eyes. In the dark. Looking at me.']],
+  [['hex', 'Beep... my sensors say something is looking at us...'], ['arrow', 'I-it was looking at ME...']],
+  [['sparkle', 'Who is that in the corner?'], ['shuriken', '...Nobody. Stay behind me.']],
+  [['circle', 'WHAT WAS THAT?! Those EYES!'], ['square', '*whispering for once* ...it blinked.']],
+  [['diamond', 'Did you hear that? Someone said "uoy teg lliw ti".'], ['tri', 'That is not even words... right?']],
+];
+const WATCH_SPOTS = [[180, 200], [1420, 180], [800, 120], [300, 520], [1300, 540], [1540, 380], [70, 360], [1000, 300]];
+const MENU_WATCH_SPOTS = [[420, 90], [1000, 70], [1270, 560], [620, 800], [740, 110]]; // (on the menu: places the menu's boxes don't cover)
+function drawWatcher(t) { // the eyes, looking at you (on the menu they look right out of the screen at you)
+  const n = Math.floor(t/7), k = t/7 - n, shop = G.state === 'shop';
+  const SPOTS = G.state === 'shop' ? WATCH_SPOTS : MENU_WATCH_SPOTS;
+  let i = Math.floor(glitchRnd(n*13)*SPOTS.length); const px = shop ? SHOP.x - (keeperRoom() ? SHOP.cam || 0 : 0) : W/2, py = shop ? SHOP_FLOOR - 80 + (SHOP.y || 0) : H/2;
+  if (shop && Math.hypot(SPOTS[i][0] - px, SPOTS[i][1] - py) < 260) i = (i + 3) % SPOTS.length; // (get too close and they're somewhere else)
+  const [x, y] = SPOTS[i], a = Math.min(1, k*4, (1 - k)*4), blink = (t % 3.1) < 0.15 ? 0.1 : 1;
+  g.save(); g.globalAlpha = a;
+  const sh = g.createRadialGradient(x, y, 10, x, y, 120); sh.addColorStop(0, 'rgba(0,0,0,.85)'); sh.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = sh; g.beginPath(); g.ellipse(x, y, 130, 90, 0, 0, TAU); g.fill(); // a patch of darkness
+  const look = Math.atan2(py - y, px - x), lx = shop ? Math.cos(look)*7 : Math.sin(t*0.7)*3, ly = shop ? Math.sin(look)*5 : 0;
+  for (const s of [-1, 1]) { g.fillStyle = '#e8ffe0'; g.shadowColor = '#39ff14'; g.shadowBlur = 18; g.beginPath(); g.ellipse(x + s*30, y, 18, 11*blink, 0, 0, TAU); g.fill(); g.shadowBlur = 0; if (blink > 0.5) { g.fillStyle = '#000'; g.beginPath(); g.arc(x + s*30 + lx, y + ly, 6, 0, TAU); g.fill(); } } // two glowing eyes, with pupils that follow you
+  g.restore();
+}
+// it's only them (chapter 3): 20 minutes after "uoy teg lliw ti", it's just the two shopkeepers, alone in the break room, cuddled up on the couch
+// in the broken room, staring at a paper on the wall where their memories from chapter 1 move all by themselves (the confession, their first date, Café Fun, the big day), and they're scared.
+// You don't walk in: you just watch them (you're invisible, and the eyes leave them alone). Press back to leave
+const ONLY_MIN = 20;
+const onlyLeft = () => { const e = eyesLeft(); return e === Infinity ? Infinity : e + ONLY_MIN*60000; };
+const onlyOn = () => storyOk && storyStage() >= 12;
+const onlyThemHere = () => SHOP.floor === 6 && onlyOn();
+function onlyText() { // for the up coming page
+  const l = onlyLeft(), e = eyesLeft();
+  return l === Infinity || e > 0 ? 'just the two of them... Coming soon...' : l > 0 ? `It will only be them in ${mmss(l)}...` : 'It\'s only them now. 📺 The shopkeepers are alone in the broken break room, and their memories are moving on a paper on the wall... Press the break room button to watch them.';
+}
+const MEMORIES = [ // what's on the paper: [caption, colour, what they say about it]
+  ['💌 The confession', '#ffd6ea', ['keeper2', 'W-why is that paper moving...? It is showing our confession...'], ['keeper', '*holds her close* It is okay. I am right here.']],
+  ['🌳 Our first date', '#bfe8a8', ['keeper', 'Our first date in the park... but WHO drew this?!'], ['keeper2', '*shaking* I-it keeps changing all by itself...']],
+  ['🍝 Café Fun', '#ffb3b3', ['keeper2', 'Café Fun... I miss when everything was happy...'], ['keeper', 'The room is falling apart... stay close to me.']],
+  ['💍 The big day', '#eaf6ff', ['keeper', 'Our wedding... something is showing us our memories.'], ['keeper2', '*hides her face* ...I am scared, Fighty.']],
+];
+function drawBrokenBreak(t) { // the break room, really broken: holes in the walls and floor (with green code inside), a fallen beam, the clock knocked off the wall, piles of rubble
+  g.save(); g.translate(W, 0); g.scale(-1, 1); drawCracks(SHOP_FLOOR); g.restore(); // (even more cracks)
+  const hole = (cx, cy, rx, ry, n) => { g.fillStyle = '#000'; g.strokeStyle = '#6b4a2a'; g.lineWidth = 6; g.beginPath(); for (let i=0;i<n;i++) { const a = i*TAU/n, k = 0.7 + glitchRnd(cx + i)*0.5; g[i ? 'lineTo' : 'moveTo'](cx + Math.cos(a)*rx*k, cy + Math.sin(a)*ry*k); } g.closePath(); g.fill(); g.stroke();
+    g.save(); g.clip(); g.font = '18px monospace'; g.textAlign = 'center'; g.textBaseline = 'middle'; for (let i=0;i<10;i++) { g.fillStyle = `rgba(57,255,20,${0.4 + (i % 3)*0.2})`; g.fillText((i + Math.floor(t*3)) % 2 ? '1' : '0', cx - rx + (i*37) % (rx*2), cy - ry + ((t*60 + i*29) % (ry*2))); } g.restore(); }; // a jagged hole, with 1s and 0s falling inside
+  hole(300, 215, 110, 95, 14); hole(1500, 150, 90, 70, 12); hole(560, 330, 60, 50, 10); // holes in the wall (the clock fell out of the first one)
+  g.save(); g.translate(230, SHOP_FLOOR - 24); g.rotate(0.6); g.fillStyle = C.white; g.strokeStyle = C.ink; g.lineWidth = 5; g.beginPath(); g.arc(0, 0, 40, 0, TAU); g.fill(); g.stroke(); g.lineWidth = 3; g.beginPath(); g.moveTo(-10, -38); g.lineTo(4, -6); g.lineTo(-14, 10); g.lineTo(6, 38); g.stroke(); g.lineWidth = 4; g.beginPath(); g.moveTo(0, 0); g.lineTo(0, -24); g.moveTo(0, 0); g.lineTo(16, 6); g.stroke(); g.restore(); // the clock, on the floor, cracked and stopped
+  g.save(); g.translate(120, 96); g.rotate(0.95); g.fillStyle = '#6b4a2a'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(0, -16, 330, 32); g.strokeRect(0, -16, 330, 32); g.restore(); // a ceiling beam, fallen down at one end
+  for (const [a, b] of [[500, 640], [1140, 1270]]) { g.fillStyle = '#000'; g.beginPath(); g.moveTo(a, SHOP_FLOOR); for (let i=0;i<=6;i++) g.lineTo(a + (b - a)*i/6, SHOP_FLOOR + (i % 2 ? 26 : 8)); g.lineTo(b, H); g.lineTo(a, H); g.closePath(); g.fill(); g.fillStyle = 'rgba(57,255,20,.25)'; g.fillRect(a + 10, SHOP_FLOOR + 30, b - a - 20, H - SHOP_FLOOR - 30); } // holes in the floor
+  for (const [x, w] of [[430, 120], [1330, 150]]) { g.fillStyle = '#8a7f74'; g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.moveTo(x - w/2, SHOP_FLOOR); for (let i=0;i<=8;i++) g.lineTo(x - w/2 + w*i/8, SHOP_FLOOR - 18 - Math.sin(i/8*Math.PI)*36 - (i % 2)*10); g.lineTo(x + w/2, SHOP_FLOOR); g.closePath(); g.fill(); g.stroke(); } // piles of rubble
+}
+function drawOnlyThem(t) { // the broken break room: a paper on the wall with their memories moving on it, and the two of them on the couch, scared
+  drawCracks(SHOP_FLOOR); drawBrokenBreak(t); // (the room is broken, really broken)
+  const m = Math.floor(t/8) % MEMORIES.length, k = (t/8) % 1, [cap, bg] = MEMORIES[m], tx = 1030, ty = 365, tw = 380, th = 250;
+  g.save(); g.translate(tx, ty - th/2 - 30); g.rotate(-0.03 + Math.sin(t*0.9)*0.025); g.translate(-tx, -(ty - th/2 - 30)); // the paper, pinned at the top, swaying a little
+  g.fillStyle = '#f6efdc'; g.strokeStyle = '#8a7a5a'; g.lineWidth = 2; g.beginPath(); g.moveTo(tx - tw/2 - 20, ty - th/2 - 30); g.lineTo(tx + tw/2 + 20, ty - th/2 - 30); g.lineTo(tx + tw/2 + 20, ty + th/2 + 50);
+  for (let i=0;i<=16;i++) g.lineTo(tx + tw/2 + 20 - i*(tw + 40)/16, ty + th/2 + 50 + (i % 2 ? 10 : 0)); g.closePath(); g.fill(); g.stroke(); // (with a torn bottom edge)
+  g.save(); g.beginPath(); g.rect(tx - tw/2, ty - th/2, tw, th); g.clip(); g.globalAlpha = 0.4; g.fillStyle = bg; g.fillRect(tx - tw/2, ty - th/2, tw, th); g.globalAlpha = 0.9;
+  const fy = ty + th/2 - 30, at = (id, x, o = {}) => { const ch = CHAR[id], r = dormR(ch)*0.32; g.save(); g.translate(x, fy - r); drawCharacter(g, ch, r, { ...looks(ch), ...o, still:true }); g.restore(); };
+  if (m === 0) { at('keeper', tx - 60, { facing:1 }); at('keeper2', tx + 60, { facing:-1 }); for (let i=0;i<4;i++) drawLittleHeart(tx + Math.sin(t*2 + i)*80, ty - 60 - ((t*30 + i*30) % 60), 8); } // the confession, in their room
+  else if (m === 1) { g.fillStyle = C.yellow; g.beginPath(); g.arc(tx + 150, ty - 80, 24, 0, TAU); g.fill(); g.fillStyle = '#5cb04f'; g.fillRect(tx - tw/2, fy, tw, 40); g.fillStyle = '#2e9e4f'; g.beginPath(); g.arc(tx - 140, ty - 30, 40, 0, TAU); g.fill(); g.fillStyle = '#7a4a2a'; g.fillRect(tx - 148, ty, 16, fy - ty); const wx = Math.sin(t*0.8)*40; at('keeper', tx - 30 + wx, { facing:1, walk:t*8 }); at('keeper2', tx + 40 + wx, { facing:1, walk:t*8 }); } // walking in the park
+  else if (m === 2) { g.fillStyle = '#ff5fa2'; g.font = `24px ${FONT}`; g.textAlign = 'center'; g.fillText('Café Fun', tx, ty - 80); at('keeper', tx - 70, { facing:1 }); at('keeper2', tx + 70, { facing:-1 }); g.fillStyle = C.white; g.fillRect(tx - 80, fy - 30, 160, 30); g.fillStyle = '#f2c14e'; g.beginPath(); g.ellipse(tx, fy - 32, 30, 8, 0, 0, TAU); g.fill(); } // spaghetti at Café Fun
+  else { g.strokeStyle = '#2e9e4f'; g.lineWidth = 8; g.beginPath(); g.arc(tx, fy, 110, Math.PI, 0); g.stroke(); for (let i=0;i<=8;i++) { const a = Math.PI + i*Math.PI/8; g.fillStyle = i % 2 ? C.white : '#ff8fc1'; g.beginPath(); g.arc(tx + Math.cos(a)*110, fy + Math.sin(a)*110, 7, 0, TAU); g.fill(); } at('keeper', tx - 40, { facing:1 }); at('keeper2', tx + 40, { facing:-1, bride:true, pose:'cheer' }); } // the wedding, under the flower arch
+  g.restore(); g.globalAlpha = 1;
+  g.fillStyle = '#5a4a3a'; g.font = `26px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(cap, tx, ty + th/2 + 24); // written underneath, by hand
+  g.fillStyle = C.red; g.strokeStyle = C.ink; g.lineWidth = 2; g.beginPath(); g.arc(tx, ty - th/2 - 14, 9, 0, TAU); g.fill(); g.stroke(); // a pin
+  g.restore();
+  // the two of them on the couch, holding on to each other, scared (they shake, with their hands up by their cheeks)
+  const gx = BREAK_GREY; [['keeper', gx - 70], ['keeper2', gx + 70]].forEach(([id, x]) => { const ch = CHAR[id], r = dormR(ch)*0.62; g.save(); g.translate(x, 640 - r*0.5); drawCharacter(g, ch, r, { facing:id === 'keeper' ? 1 : -1, ...looks(ch), pose:'worried' }); g.restore(); });
+  for (const x of [gx - 40, gx + 100]) { const d = (t*1.5 + x) % 1; g.fillStyle = `rgba(143,216,255,${1 - d})`; g.beginPath(); g.ellipse(x, 470 + d*30, 6, 9, 0, 0, TAU); g.fill(); } // sweat drops
+  const say = MEMORIES[m][k < 0.5 ? 2 : 3], wx = say[0] === 'keeper' ? gx - 70 : gx + 70; drawBubble(say[1], 790, 440, wx);
+  drawRubble(t, 0);
+  if ((t % 4.7) < 0.25 || ((t % 4.7) > 0.4 && (t % 4.7) < 0.5)) { g.fillStyle = 'rgba(0,0,0,.45)'; g.fillRect(0, 0, W, H); } // the lights flicker
+}
+const STORY_NOTES = ['', '💕 The shopkeepers are in love! 💕', '🌳 The shopkeepers are dating! 🌳', '🍝 Date night at Café Fun! 🍝', '💍 Just married! 💍', '🛡️ The Admin is watching... 🛡️', '💥 Everything is falling apart! 💥', '🕳️ The code is gone... the 1st floor is gone! 🕳️', '🏠 There is no shop now... 🏠', '💔 They are gone...', '🌀 The void...', '👁️ ...uoy teg lliw ti 👁️', '📺 It\'s only them...'];
 let storyCache = { t:0, s:0 };
-const STORY_LOOKS = [['love','💕 In love'], ['park','🌳 Park'], ['cafe','🍝 Café'], ['wedding','💍 Wedding'], ['admin','🛡️ Admin'], ['crumble','💥 Falling apart'], ['gone','🕳️ Code gone'], ['life','🏠 Once in a life time'], ['fell','💔 They are gone']]; // (the looks, in story order, for the settings and the admin panel)
-const STORY_PICKS = { love:1, park:2, cafe:3, wedding:4, admin:5, crumble:6, gone:7, life:8, fell:9 }; // (or pick one in settings: any look you've reached)
-function storyReached() { const w = weddingLeft(), a = attackLeft(), d = DATING_MIN*60000 - (Date.now() - (+lsGet('fff-confessed') || 0)); return fellLeft() <= 0 ? 9 : lifeLeft() <= 0 ? 8 : goneLeft() <= 0 ? 7 : arriveLeft() <= 0 ? 6 : w <= -WEDDING_LONG*60000 && a <= 0 ? 5 : w <= 0 ? 4 : date2Left() <= 0 ? 3 : confessSeen() && d <= 0 ? 2 : confessSeen() ? 1 : 0; } // (in love, dating, the 2nd date, married, the Admin's attack)
+const STORY_LOOKS = [['love','💕 In love'], ['park','🌳 Park'], ['cafe','🍝 Café'], ['wedding','💍 Wedding'], ['admin','🛡️ Admin'], ['crumble','💥 Falling apart'], ['gone','🕳️ Code gone'], ['life','🏠 Once in a life time'], ['fell','💔 They are gone'], ['void','🌀 The void'], ['eyes','👁️ uoy teg lliw ti'], ['only','📺 It\'s only them']]; // (the looks, in story order, for the settings and the admin panel)
+const STORY_PICKS = { love:1, park:2, cafe:3, wedding:4, admin:5, crumble:6, gone:7, life:8, fell:9, void:10, eyes:11, only:12 }; // (or pick one in settings: any look you've reached)
+function storyReached() { const w = weddingLeft(), a = attackLeft(), d = DATING_MIN*60000 - (Date.now() - (+lsGet('fff-confessed') || 0)); return onlyLeft() <= 0 ? 12 : eyesLeft() <= 0 ? 11 : voidLeft() <= 0 ? 10 : fellLeft() <= 0 ? 9 : lifeLeft() <= 0 ? 8 : goneLeft() <= 0 ? 7 : arriveLeft() <= 0 ? 6 : w <= -WEDDING_LONG*60000 && a <= 0 ? 5 : w <= 0 ? 4 : date2Left() <= 0 ? 3 : confessSeen() && d <= 0 ? 2 : confessSeen() ? 1 : 0; } // (in love, dating, the 2nd date, married, the Admin's attack)
 function storyStage() {
   if (!storyOk || setup.storyLook === 'off') return 0;
   const now = Date.now(); if (now - storyCache.t < 1000) return storyCache.s; // (it only has to check once a second)
@@ -6380,7 +6550,7 @@ function storyStage() {
 function storyClasses() {
   storyCache.t = 0; const s = storyStage(), el = document.documentElement;
   el.classList.toggle('love', s === 1); el.classList.toggle('parklook', s === 2); el.classList.toggle('cafe', s === 3); el.classList.toggle('wedding', s >= 4); el.classList.toggle('adminlook', s >= 5); el.classList.toggle('crumble', s >= 6); el.classList.toggle('gone', s >= 7); el.classList.toggle('scared', s >= 8);
-  $('storyNote').textContent = STORY_NOTES[s]; $('storyNote').hidden = !s;
+  $('storyNote').textContent = s === 10 && saved() ? '🎉 Grumpy and Goofy are saved! 🎉' : STORY_NOTES[s]; $('storyNote').hidden = !s;
   const row = TITLE_ROW().map(c => c.id).join(); if (titleChars.dataset.ids !== row) { titleChars.dataset.ids = row; titleChars.innerHTML = ''; TITLE_ROW().forEach(c => titleChars.appendChild(charCanvas(c, 78))); } // (they are gone: Grumpy Shuriken and Goofy Sparkle aren't on the menu)
 }
 function drawStoryFx(t) { // floating up and falling down over the sky
@@ -6395,7 +6565,7 @@ function drawShopStory(t) { // the story look in the shop: the same hearts, butt
   const s = storyStage(); if (!s) return;
   if (s >= 6) { drawCracks(SHOP_FLOOR); drawRubble(t, 0); } if (s >= 7 && SHOP.floor === 2) drawCodeHole(t); // (the shop is falling apart: cracks in the walls, and bits of the ceiling falling down)
   g.save(); g.globalAlpha = 0.55; drawStoryFx(t); g.restore(); // (a bit see-through, so they don't get in the way)
-  const cols = [null, ['#ff8fc1', '#e75a9b'], ['#2e9e4f', '#8fd16a'], ['#7a1f2b', '#ffd65a'], ['#ffd23f', C.white], ['#39ff14', '#0b2a14'], ['#8a7f74', '#39ff14'], ['#000', '#39ff14'], ['#000', '#39ff14'], ['#000', '#39ff14']][s];
+  const cols = [null, ['#ff8fc1', '#e75a9b'], ['#2e9e4f', '#8fd16a'], ['#7a1f2b', '#ffd65a'], ['#ffd23f', C.white], ['#39ff14', '#0b2a14'], ['#8a7f74', '#39ff14'], ['#000', '#39ff14'], ['#000', '#39ff14'], ['#000', '#39ff14'], ['#000', '#39ff14'], ['#000', '#e8ffe0'], ['#ff8fc1', '#ffd23f']][s];
   g.strokeStyle = cols[0]; g.lineWidth = 3; g.beginPath(); for (let x = 0; x <= W; x += 10) { const y = 160 + Math.abs(Math.sin(x/200*Math.PI))*-30 + 30; x ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke();
   for (let x = 40; x < W; x += 80) { const y = 160 + Math.abs(Math.sin(x/200*Math.PI))*-30 + 30, i = x/80 | 0; g.fillStyle = cols[i % 2]; g.strokeStyle = C.ink; g.lineWidth = 2; // little flags (hearts on the love look)
     if (s === 1) drawLittleHeart(x, y + 16, 12); else { g.beginPath(); g.moveTo(x - 16, y); g.lineTo(x + 16, y); g.lineTo(x, y + 30); g.closePath(); g.fill(); g.stroke(); } }
@@ -6466,7 +6636,7 @@ $('apUnlock').onclick = () => { // Missing Arrow, every item (but the attic's go
 $('apStory').onclick = () => { // every chapter at once: the whole story already happened (you saw it all), so every background is yours, plus Flower Girl and everything in the shop
   const now = Date.now(), M = 60000;
   lsSet('fff-confess', String(now - 400*M)); lsSet('fff-confessed', String(now - 350*M)); // (dating 290 minutes ago, the 2nd date 280...)
-  lsSet('fff-wedding', String(now - 250*M)); lsSet('fff-attack', String(now - 200*M)); lsSet('fff-attackwon', '1'); lsSet('fff-fell', String(now)); // (...the wedding 250, the Admin's attack 200, and the rest of chapter 2 and 3 after it)
+  lsSet('fff-wedding', String(now - 250*M)); lsSet('fff-attack', String(now - 200*M)); lsSet('fff-attackwon', '1'); lsSet('fff-fell', String(now)); lsSet('fff-saved', String(now)); // (...the wedding 250, the Admin's attack 200, and the rest of chapter 2 and 3 after it)
   shop.unlocked = { ...(shop.unlocked || {}), flower:true };
   $('apUnlock').onclick(); // (and everything in the shop)
   setup.storyLook = 'on'; saveSetup(); applyTheme(); renderSeg('apStorySeg', [['on','Newest'], ...STORY_LOOKS, ['off','Off']], 'storyLook', applyTheme);
@@ -7185,6 +7355,8 @@ function fillShopCard(card, ch, it) {
       : SHOP.nearPal && SHOP.nearPal.id === 'keeper2' && shySleeping() ? '<h3>Shy Shopkeeper</h3><p>She is fast asleep... Press punch to wake her up!</p>'
       : SHOP.nearPaper ?
  '<h3>A paper on the wall</h3><p>Someone wrote a secret code on it: <b style="font-size:1.6em">50028</b></p><p class="note">Maybe try it on the codes page, on the main menu...</p>'
+      : SHOP.floor === 6 && onlyOn() ? '<h3>It\'s only them</h3><p>Just the two shopkeepers, alone in the broken break room. Their memories are moving on a paper on the wall all by themselves: the confession, their first date, Café Fun and the big day... and they are scared. Shh... just watch. Press back to leave.</p>'
+      : SHOP.floor === VOID_FLOOR ? (voidWatching() ? '<h3>The void</h3><p>Shh... just watch.</p>' : SHOP.voidDone ? '<h3>The void</h3><p>You saved them! Going home...</p>' : '<h3>The void</h3><p>Grumpy Shuriken and Goofy Sparkle are trapped in cages of green code! Walk up to a cage and press punch to break it open.</p>')
       : SHOP.floor === 15 && attackOn() ? (SHOP.atk && SHOP.atk.won ? '<h3>Admins attack</h3><p>You did all the Admin\'s tasks! He has to let you stay.</p>' : '<h3>Admins attack!</h3><p>The Admin took over the admin room! Do every task he gives you before the timer runs out... or he KICKS YOU OUT!</p>')
       : SHOP.floor === 15 ? '<h3>The admin room</h3><p>The secret admin room! Only admins can get in here. The door on the left goes back to the 3rd floor.</p>'
       : SHOP.floor === 14 ? '<h3>The 3rd floor</h3><p>A cozy little attic at the very top of the shopkeepers\' home. There is a paper pinned to the wall... walk up to it!</p>'
