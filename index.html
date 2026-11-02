@@ -438,8 +438,8 @@ html.thanks .fff span{border-color:#8a4b14;color:#d2691e}
       <p class="soon">🚧 More updates coming soon! 🚧</p>
       <p>New stuff is on the way for Fight for Fun. Here's what's coming next:</p>
       <ul class="upds-list"><li><b>💌 Confession</b>: <span id="confessWhen"></span></li><li><b>💑 First things first</b>: <span id="datingWhen"></span></li><li><b>🍝 One more thing</b>: <span id="dateWhen"></span></li><li><b>💍 The big day</b>: <span id="weddingWhen"></span></li></ul>
-      <div class="page-foot"><button id="dinnerBtn" class="btn">🍝 dinner place</button><button id="weddingBtn" class="btn">💒 wedding</button></div>
-      <div class="page-foot" id="againRow" hidden><button id="againBtn" class="btn">🔁 do it again</button><span id="againPick" hidden><button id="againConfess" class="btn">💌 confession</button><button id="againDate" class="btn">🍝 2nd date</button><button id="againWedding" class="btn">💍 wedding</button></span></div>
+      <div class="page-foot"><button id="dormBtn" class="btn">💌 dorm</button><button id="parkBtn" class="btn">🌳 park</button><button id="dinnerBtn" class="btn">🍝 dinner place</button><button id="weddingBtn" class="btn">💒 wedding</button></div>
+      <div class="page-foot" id="againRow" hidden><button id="againBtn" class="btn">🔁 do it again</button><span id="againPick" hidden><button id="againConfess" class="btn">💌 confession</button><button id="againPark" class="btn">🌳 1st date</button><button id="againDate" class="btn">🍝 2nd date</button><button id="againWedding" class="btn">💍 wedding</button></span></div>
     </div>
   </div>
 </div>
@@ -3904,7 +3904,7 @@ function shopStep(dt) {
   SHOP.nearToys = f === 13 && isKid() && !SHOP.nearStairs && Math.abs(SHOP.x - TOY_X) < 80; // (only Goofy Sparkle plays with the toys)
   if (f === 12 || f === 13) dormStep();
   if (f === DINNER_FLOOR || f === WEDDING_FLOOR) placeStep();
-  SHOP.nearWed = wedSpot(); if (f === WEDDING_FLOOR) bouquetStep(); // (things to do at the wedding)
+  SHOP.nearWed = wedSpot(); SHOP.nearPark = parkSpot(); if (f === WEDDING_FLOOR) bouquetStep(); // (things to do at the wedding)
   if (f === 10) pbStep();
   SHOP.nearKeeper = !SHOP.near && !SHOP.nearStairs && !!KEEPERS[f] && Math.abs(KEEPERS[f] - SHOP.x) < (f === 6 ? 300 : 220) && (f !== 4 || (SHOP.revealed && !SHOP.chase));
   if (f === 4 && !SHOP.revealed && !SHOP.chase && !isAdmin()) { // walk close and the chair spins around (but the manager can't see the Admin, so it never does)
@@ -3924,7 +3924,7 @@ function shopStep(dt) {
   if (SHOP.nearSmi) SHOP.nearKeeper = false;
   crowdStep(); // (the fighters talking to the shopkeepers about the wedding, until it happens)
   SHOP.smiSayT = Math.max(0, (SHOP.smiSayT || 0) - dt);
-  if (h.punch && !pr.punch) { if (SHOP.nearCage) cageHit(); else if (SHOP.near) shopAct(SHOP.near.item); else if (SHOP.nearSkins) nextSkin(); else if (SHOP.nearSwitch) dormLight(); else if (SHOP.nearPaper) readPaper(); else if (SHOP.nearWed) wedAct(); else if (SHOP.nearTask) doKTask(); else if (SHOP.nearToys) playToys(); else if (SHOP.nearStairs) shopStairs(); else if (SHOP.nearPal) palTalk(); else if (SHOP.nearSmi) smiTalk(); else if (SHOP.nearKeeper) shopTalk(); }
+  if (h.punch && !pr.punch) { if (SHOP.nearCage) cageHit(); else if (SHOP.near) shopAct(SHOP.near.item); else if (SHOP.nearSkins) nextSkin(); else if (SHOP.nearSwitch) dormLight(); else if (SHOP.nearPaper) readPaper(); else if (SHOP.nearWed) wedAct(); else if (SHOP.nearPark) parkAct(); else if (SHOP.nearTask) doKTask(); else if (SHOP.nearToys) playToys(); else if (SHOP.nearStairs) shopStairs(); else if (SHOP.nearPal) palTalk(); else if (SHOP.nearSmi) smiTalk(); else if (SHOP.nearKeeper) shopTalk(); }
   if (h.grab && !pr.grab && SHOP.nearKeeper) shopLaugh();
   if (isHex()) { // Hexstar says "beep boop baap!" now and then (or when you press special), and the shopkeepers act like he never said it
     SHOP.beepCD = (SHOP.beepCD ?? 3) - dt; SHOP.beepT = Math.max(0, (SHOP.beepT || 0) - dt);
@@ -3947,13 +3947,20 @@ function shopStep(dt) {
   if (v) {
     v.t += dt;
     if (v.phase === 'talk' && isAdmin()) {} // she can't see the Admin, so she never notices him: she stays and keeps chatting
-    else if (v.phase === 'talk' && v.t > 2.2) Object.assign(v, { phase:'notice', t:0 });
+    else if (v.phase === 'come') { v.x = Math.min(860, v.x + 300*dt); if (v.x >= 860) Object.assign(v, { phase:'talk', t:0 }); } // (coming back down to chat)
+    else if (v.phase === 'talk' && v.t > 5) Object.assign(v, { phase:'notice', t:0 });
     else if (v.phase === 'notice' && v.t > 1.8) Object.assign(v, { phase:'run', t:0 });
     else if (v.phase === 'run') { v.x -= 560*dt; if (v.x <= STAIRS_X[1] + 90) Object.assign(v, { phase:'climb', t:0 }); }
     else if (v.phase === 'climb') { v.x -= 120*dt; if (v.t > 1) SHOP.visit = null; }
   }
+  if (!SHOP.visit && SHOP.floor === 1 && !isAdmin() && !shopCleared()) { // every so often, the shy shopkeeper comes back downstairs to chat with the fighty one
+    SHOP.visitT = (SHOP.visitT || 0) + dt; if (SHOP.visitT > 22) { SHOP.visitT = 0; SHOP.visit = { x:STAIRS_X[1] + 90, phase:'come', t:0, k:1 + Math.floor(Math.random()*(VISIT_CHATS.length - 1)) }; }
+  }
   renderShopCard();
 }
+// what the two shopkeepers chat about when she comes downstairs: [what she says, what the fighty shopkeeper says back]
+const VISIT_CHATS = [['...and then the circle rolled right off the island! Hehe...', 'Haha! That is so funny!'], ['d-do you want to have lunch together later?', 'Yes! I would love that!'],
+  ['I saw a cute hat upstairs... it would look nice on you.', 'Aww, thanks! You always know what I like!'], ['the 2nd floor is so quiet today...', 'Come down and visit me any time!'], ['hehe... I missed you.', 'I missed you too! It has been, like, five minutes! Haha!']];
 const BEAM = '#4f3427', PINK = '#ffaec9', PINK_DARK = '#e2799f';
 function drawWoodRoom(wall = C.white, beam = BEAM, floor = C.brown) { // walls, a beam along the ceiling and a plank floor (the 2nd floor is the same, but pink)
   g.fillStyle = wall; g.fillRect(0, 0, W, H);
@@ -4059,15 +4066,15 @@ function drawFightyFloor(t) { // downstairs: the fighty shop
   const v = SHOP.visit;
   if (v) {
     const kid = isKid(), hex = isHex(), friend = isFriend() || kid || hex, chatting = v.phase === 'talk';
-    drawShyKeeper(v.x, t, { friend:chatting || friend, close:chatting || friend ? 0 : 1, lookX:chatting ? 3 : -3, walking:v.phase === 'run' || v.phase === 'climb',
+    drawShyKeeper(v.x, t, { friend:chatting || friend, close:chatting || friend ? 0 : 1, lookX:chatting ? 3 : -3, walking:v.phase === 'run' || v.phase === 'climb' || v.phase === 'come',
       alpha:v.phase === 'climb' ? Math.max(0, 1 - v.t) : 1, lift:v.phase === 'climb' ? v.t*330 : 0 });
-    const vs = { talk:'...and then the circle rolled right off the island! Hehe...',
+    const vs = { come:'*comes downstairs* h-hi again...', talk:VISIT_CHATS[v.k || 0][0],
       notice:kid ? 'Oh! Hi little one! I have to go back upstairs. Bye bye, sweetie!' : hex ? 'Oh! Hexstar! *trips over nothing* H-hi! I like you! Bye!' : CHARS[SHOP.who].id === 'shuriken' ? 'Um... I think he went... that way? *points everywhere* B-bye!' : friend ? `Oh! Hi ${CHARS[SHOP.who].name}! Come visit me upstairs!` : 'Oh! S-someone is here! Um... b-bye!',
       run:kid ? 'Bye bye!' : friend ? 'See you up there!' : 'Eep!' }[v.phase];
     const shyLine = isAdmin() ? (SHOP.msgWho === 2 && SHOP.msgT > 0 ? SHOP.msg : '') : vs; // chatting with the other shopkeeper, taking turns
     if (shyLine) drawBubble(shyLine, v.x - 40, 520, v.x - 6);
   }
-  const say = v && isAdmin() && SHOP.msgWho === 2 ? '' : SHOP.msgT > 0 ? SHOP.msg : v && v.phase === 'talk' ? 'Haha! That is so funny!' : v && v.phase !== 'climb' ? (isKid() ? 'She loves little kids! She works upstairs.' : isHex() ? 'Haha... we get a bit weird around Hexstar. We like him!' : isFriend() ? 'Aww, she likes you! She works upstairs.' : 'Aww, she is so shy. She works upstairs!')
+  const say = v && isAdmin() && SHOP.msgWho === 2 ? '' : SHOP.msgT > 0 ? SHOP.msg : v && v.phase === 'talk' ? VISIT_CHATS[v.k || 0][1] : v && v.phase !== 'climb' ? (isKid() ? 'She loves little kids! She works upstairs.' : isHex() ? 'Haha... we get a bit weird around Hexstar. We like him!' : isFriend() ? 'Aww, she likes you! She works upstairs.' : 'Aww, she is so shy. She works upstairs!')
     : isNew() && SHOP.msgT <= 0 ? (SHOP.near ? 'Hmm... have I seen you before? No... I don\'t think so.' : SHOP.nearKeeper ? 'Um... who are you? Want to talk? Press punch, I guess.' : SHOP.nearStairs ? 'Wait, who ARE you?' : 'Huh? I\'ve never seen you before... are you new?')
     : isHex() && SHOP.msgT <= 0 ? (SHOP.near ? 'Ooh! That would look... so weird and great on you!' : SHOP.nearKeeper ? 'Hexstar! Talk to me! Or don\'t! Either is fine! Hehe!' : SHOP.nearStairs ? 'Bye Hexstar! I mean, see you! I mean... have fun!' : 'Hexstar! *waves both arms* Hi hi hi!')
     : isKid() && SHOP.msgT <= 0 ? (SHOP.near ? 'Ooh, that might be a bit big for you! Hehe.' : SHOP.nearKeeper ? 'Hi there, little buddy! Want to chat? Press punch!' : SHOP.nearStairs ? 'Careful on the stairs, little one!' : spooky() ? 'Don\'t be scared, little one! The pumpkins are just pretend!' : xmas() ? 'Ho ho ho! Somebody REALLY loves Christmas!' : 'Oh! A little one! Hello there, sweetie!')
@@ -4204,10 +4211,10 @@ function pbStep() { // the next thing someone says (by the clock, so it keeps go
   const here = new Set(pbPals().map(c => c.id)); if (!here.size) return;
   if (!pb.chat || pb.line >= pb.chat.length) { // start a new conversation (or someone says something on their own)
     const ok = (gossipOn() ? CONFESS_GOSSIP.concat(CONFESS_GOSSIP, PB_CHATS) : PB_CHATS).filter(c => c.every(([id]) => here.has(id)) && c !== pb.last);
-    pb.chat = ok.length && Math.random() < 0.75 ? ok[Math.floor(Math.random()*ok.length)] : null; pb.line = 0; pb.last = pb.chat;
-    if (!pb.chat) { const ids = [...here], id = ids[Math.floor(Math.random()*ids.length)], lines = PB_SOLO[id] || ['...']; pbSay(id, lines[Math.floor(Math.random()*lines.length)]); pb.next = now + 3800; return; }
+    pb.chat = ok.length && Math.random() < 0.9 ? ok[Math.floor(Math.random()*ok.length)] : null; pb.line = 0; pb.last = pb.chat;
+    if (!pb.chat) { const ids = [...here], id = ids[Math.floor(Math.random()*ids.length)], lines = PB_SOLO[id] || ['...']; pbSay(id, lines[Math.floor(Math.random()*lines.length)]); pb.next = now + 3000; return; }
   }
-  const [id, text] = pb.chat[pb.line++]; pbSay(id, text); pb.next = now + (pb.line >= pb.chat.length ? 5200 : 3600);
+  const [id, text] = pb.chat[pb.line++]; pbSay(id, text); pb.next = now + (pb.line >= pb.chat.length ? 4000 : 3000);
 }
 function palTalk() { // you walked up to someone and pressed punch
   const p = SHOP.nearPal; if (!p) return;
@@ -4270,7 +4277,9 @@ const DORM_DAY = [ // what each pair of roommates says in the daytime (same orde
   [[['square', 'GOOD MORNING, TRIANGLE!'], ['tri', 'Grr... I was SO asleep.'], ['square', 'BREAKFAST TIME!'], ['tri', '...OK, breakfast is good.']]],
   [[['hex', 'Beep boop! The sun is up!'], ['circle', 'WHAT?! Already?!'], ['hex', '*happy beeping* Good morning, Circle!']]],
   [[['diamond', 'Good morning, Missing Arrow. Did you sleep well?'], ['arrow', 'I d-dreamed about you... *glitches*'], ['diamond', '*blushes* Hehe...']]],
-  [[['keeper', 'Rise and shine! Time to open the shop!'], ['keeper2', '...five more minutes...'], ['keeper', 'Coins wait for no one!'], ['keeper2', '*sleepy wave* ok...']]],
+  [[['keeper', 'Rise and shine! Time to open the shop!'], ['keeper2', '...five more minutes...'], ['keeper', 'Coins wait for no one!'], ['keeper2', '*sleepy wave* ok...']],
+    [['keeper2', 'd-do you want to play a board game?'], ['keeper', 'YES! I am going to win!'], ['keeper2', 'hehe... we will see...']], [['keeper', 'What should we make for lunch?'], ['keeper2', 'm-maybe pancakes?'], ['keeper', 'Pancakes it is!']],
+    [['keeper2', 'I like hanging out with you...'], ['keeper', 'Me too! You are my favourite!'], ['keeper2', '*blushes*']]],
 ];
 const DORM_SWITCH_X = 255;
 function dormLight() { // flip the light switch: day to night, or night to day
@@ -4285,6 +4294,7 @@ const dormR = ch => KEEPER_SHOP_R[ch.id] || 46*Math.min(ch.size || 1, 1.8);
 const dormTall = ch => dormR(ch)*(ch.keeper ? 3 : 2); // (how tall they stand, for speech bubbles)
 // when you wake her up at night, the Shy Shopkeeper gets out of bed and walks down the stairs for dinner
 const shyDown = () => dormNight() && SHOP.shyAwake;
+const keepersTogether = () => !dormNight() && Math.floor(Date.now()/45000) % 3 !== 0; // in the daytime, she spends most of her time downstairs with Fighty, chatting
 const eatingDinner = () => shyDown() && kDone().has('dinner'); // she's up and dinner is made: they eat together
 const KEEPER_EAT = [[['keeper', 'Mmm! This soup is the BEST!'], ['keeper2', '*nom nom* ...so yummy...'], ['keeper', 'Thanks for making dinner, helper!']],
   [['keeper2', 'c-can I have some more?'], ['keeper', 'Of course! There is plenty!'], ['keeper2', '*happy slurp*']], [['keeper', '*slurrrp* Ahh!'], ['keeper2', 'hehe... you have soup on your face...']]];
@@ -4293,9 +4303,9 @@ const KEEPER_DINNER = [[['keeper', 'There you are, sleepyhead! Dinner is almost 
 function keeperSpots() { // where the two shopkeepers are in their home
   if (confessPending() || SHOP.confessVisit || SHOP.replay === 'confess') return (SHOP.floor === 12 ? [{ ch:CHAR.keeper, x:1000 }, { ch:CHAR.keeper2, x:1240 }] : []).filter(s => s.ch.id !== CHARS[SHOP.who].id); // (it's time for the confession: they're both downstairs, together)
   const e = performance.now() - (SHOP.shyWokeT || 0), down = shyDown(), walking = down && e > 1200 && e < 3600; // (she says something first, then walks to the stairs)
-  const spots = SHOP.floor === 13 ? (down ? (e < 3600 ? [{ ch:CHAR.keeper2, x:1750 + Math.max(0, Math.min(1, (e - 1200)/2400))*(KEEPER_UP_X - 1750), walking }] : []) : [{ ch:CHAR.keeper2, x:shySleeping() ? 1750 : 840 }])
+  const spots = SHOP.floor === 13 ? (down ? (e < 3600 ? [{ ch:CHAR.keeper2, x:1750 + Math.max(0, Math.min(1, (e - 1200)/2400))*(KEEPER_UP_X - 1750), walking }] : []) : keepersTogether() ? [] : [{ ch:CHAR.keeper2, x:shySleeping() ? 1750 : 840 }])
     : eatingDinner() ? [{ ch:CHAR.keeper, x:1350, eating:true }, { ch:CHAR.keeper2, x:1650, eating:true }] // (at the dinner table, eating together)
-    : [{ ch:CHAR.keeper, x:1000 }].concat(down ? [{ ch:CHAR.keeper2, x:1560 }] : []); // (downstairs, by the dinner table)
+    : [{ ch:CHAR.keeper, x:1000 }].concat(down ? [{ ch:CHAR.keeper2, x:1560 }] : keepersTogether() ? [{ ch:CHAR.keeper2, x:1250 }] : []); // (downstairs, by the dinner table, or hanging out together)
   return spots.filter(s => s.ch.id !== CHARS[SHOP.who].id);
 }
 function dormSpots() { // the roommates in their room (not you, if it's your room)
@@ -4485,9 +4495,9 @@ function dormStep() { // the roommates take turns talking (by the clock)
   const here = new Set(dormSpots().map(s => s.ch.id)); if (!here.size) return;
   const keepersDown = DORMS[SHOP.dorm || 0].keepers && SHOP.floor === 12;
   const chats = (keepersDown && (confessPending() || SHOP.replay === 'confess') ? [CONFESS_LINES] : keepersDown && SHOP.confessVisit ? KEEPER_LOVE : keepersDown && eatingDinner() ? KEEPER_EAT : keepersDown && shyDown() ? KEEPER_DINNER : (gossipOn() && !DORMS[SHOP.dorm || 0].keepers ? CONFESS_GOSSIP : []).concat(dormNight() ? DORMS[SHOP.dorm || 0].chats : DORM_DAY[SHOP.dorm || 0])).filter(c => c.every(([id]) => here.has(id))); // (night talk or morning talk)
-  if (!chats.length) { const id = [...here][0], lines = (DORMS[SHOP.dorm || 0].crush && { diamond:['Hi, Missing Arrow... *blushes*', 'I saved you some snacks, hehe.', 'You look cute when you glitch.'], arrow:['H-hi, Sly Diamond... *happy glitch*', 'Y-your eyelashes are really pretty...', '*blushes and glitches*'] }[id]) || (id === 'keeper2' && shySleeping() && ['Zzz...', '*snores softly*', 'zzz... one pink bow, please... zzz']) || PB_SOLO[id] || ['...']; pbSay(id, lines[Math.floor(Math.random()*lines.length)]); pb.next = now + 4200; return; } // (alone in the room) // (alone with you in their room, they say sweet things to the one they like)
+  if (!chats.length) { const id = [...here][0], lines = (DORMS[SHOP.dorm || 0].crush && { diamond:['Hi, Missing Arrow... *blushes*', 'I saved you some snacks, hehe.', 'You look cute when you glitch.'], arrow:['H-hi, Sly Diamond... *happy glitch*', 'Y-your eyelashes are really pretty...', '*blushes and glitches*'] }[id]) || (id === 'keeper2' && shySleeping() && ['Zzz...', '*snores softly*', 'zzz... one pink bow, please... zzz']) || PB_SOLO[id] || ['...']; pbSay(id, lines[Math.floor(Math.random()*lines.length)]); pb.next = now + 3200; return; } // (alone in the room) // (alone with you in their room, they say sweet things to the one they like)
   if (!pb.chat || pb.line >= pb.chat.length) { pb.chat = chats[(pb.ci = ((pb.ci ?? -1) + 1) % chats.length)]; pb.line = 0; }
-  const [id, text] = pb.chat[pb.line++]; pbSay(id, text); pb.next = now + (pb.line >= pb.chat.length ? 5200 : 3600);
+  const [id, text] = pb.chat[pb.line++]; pbSay(id, text); pb.next = now + (pb.line >= pb.chat.length ? 4000 : 3000);
   if (pb.chat === CONFESS_LINES && pb.line >= pb.chat.length) confessDone(); // (you saw the whole confession)
 }
 function drawNameDoor(x, names, color = '#b97a57') { // a brown dorm door, with the roommates' names on a little plate
@@ -5360,7 +5370,7 @@ function drawManager(g, t) { // %#@% sitting in his chair (drawn in the chair's 
 function drawShop(t) {
   const hall = SHOP.floor === 5, wide = keeperRoom(); // the chase hallway (and the shopkeepers' big room) scrolls with you
   if (hall) { g.save(); g.translate(-(SHOP.cam || 0), 0); drawChaseFloor(t); }
-  else if (SHOP.floor === DINNER_FLOOR) drawDinnerPlace(t); else if (SHOP.floor === WEDDING_FLOOR) drawWeddingHall(t); else if (SHOP.floor === 15) drawAdminRoom(t); else if (SHOP.floor === 14) drawKeeperAttic(t); else if (SHOP.floor === 12 || SHOP.floor === 13) { if (wide) { g.save(); g.translate(-(SHOP.cam || 0), 0); } if (SHOP.floor === 13) drawKeeperUpstairs(t); else drawDormRoom(t); } else if (SHOP.floor === 11) drawDormHall(t); else if (SHOP.floor === 10) drawPlayerBreak(t); else if (SHOP.floor === 9) drawGlitchShop(t); else if (SHOP.floor === 8) drawCageFloor(t); else if (SHOP.floor === 7) drawTopFloor(t); else if (SHOP.floor === 6) drawBreakFloor(t); else if (SHOP.floor === 4) drawOfficeFloor(t); else if (SHOP.floor === 3) drawAtticFloor(t); else if (SHOP.floor === 2) drawFunnyFloor(t); else drawFightyFloor(t);
+  else if (SHOP.floor === PARK_FLOOR) drawParkPlace(t); else if (SHOP.floor === DINNER_FLOOR) drawDinnerPlace(t); else if (SHOP.floor === WEDDING_FLOOR) drawWeddingHall(t); else if (SHOP.floor === 15) drawAdminRoom(t); else if (SHOP.floor === 14) drawKeeperAttic(t); else if (SHOP.floor === 12 || SHOP.floor === 13) { if (wide) { g.save(); g.translate(-(SHOP.cam || 0), 0); } if (SHOP.floor === 13) drawKeeperUpstairs(t); else drawDormRoom(t); } else if (SHOP.floor === 11) drawDormHall(t); else if (SHOP.floor === 10) drawPlayerBreak(t); else if (SHOP.floor === 9) drawGlitchShop(t); else if (SHOP.floor === 8) drawCageFloor(t); else if (SHOP.floor === 7) drawTopFloor(t); else if (SHOP.floor === 6) drawBreakFloor(t); else if (SHOP.floor === 4) drawOfficeFloor(t); else if (SHOP.floor === 3) drawAtticFloor(t); else if (SHOP.floor === 2) drawFunnyFloor(t); else drawFightyFloor(t);
   // an empty pink stand upstairs, waiting for the next thing to sell (a real item takes its place once there is one)
   if (SHOP.floor === 2 && !shopCleared()) {
     const spot = STAND_SPOTS[2].find(x => !STANDS.some(s => s.floor === 2 && s.x === x));
@@ -5685,10 +5695,10 @@ function updsTick() { // the countdown on the page
   if (G.state !== 'upds') return; setTimeout(updsTick, 500);
   const left = CONFESS_MIN*60000 - (Date.now() - confessStart());
   const text = confessSeen() ? 'It happened! They like each other 💕' : left > 0 ? `The Shy Shopkeeper has something to tell the Fighty Shopkeeper... Go to the dorm in ${Math.floor(left/60000)}:${String(Math.floor(left/1000) % 60).padStart(2, '0')}!`
-    : 'Go to the dorm NOW! Find the shopkeepers\' room (the gold door at the end of the hall).';
+    : 'Go to the dorm NOW! Press the dorm button to teleport to the shopkeepers\' room!';
   if ($('confessWhen').textContent !== text) $('confessWhen').textContent = text;
   const dleft = DATING_MIN*60000 - (Date.now() - (+lsGet('fff-confessed') || 0)), dtext = !confessSeen() ? 'after the confession, the shopkeepers start dating! Coming soon...'
-    : dleft > 0 ? `The shopkeepers start dating in ${Math.floor(dleft/3600000)}:${String(Math.floor(dleft/60000) % 60).padStart(2, '0')}:${String(Math.floor(dleft/1000) % 60).padStart(2, '0')}!` : 'The shopkeepers are dating now! 💕';
+    : dleft > 0 ? `The shopkeepers start dating in ${Math.floor(dleft/3600000)}:${String(Math.floor(dleft/60000) % 60).padStart(2, '0')}:${String(Math.floor(dleft/1000) % 60).padStart(2, '0')}!` : 'The shopkeepers are dating now! 💕 Their first date is a walk in the park: press the park button!';
   if ($('datingWhen').textContent !== dtext) $('datingWhen').textContent = dtext;
   const d2left = dleft + DATE2_MIN*60000, d2text = !confessSeen() || dleft > 0 ? 'the shopkeepers go on their 2nd date, at a place to eat! If you are there, you get an item. Coming soon...'
     : d2left > 0 ? `Their 2nd date, at a place to eat, is in ${Math.floor(d2left/60000)}:${String(Math.floor(d2left/1000) % 60).padStart(2, '0')}! If you are there, you get an item.` : 'Their 2nd date is happening now! 🍝 Press the dinner place button to go!';
@@ -5701,12 +5711,12 @@ function updsTick() { // the countdown on the page
 }
 $('updsBtn').onclick = () => { $('againPick').hidden = true; audioOn(); if (!confessStart()) lsSet('fff-confess', String(Date.now())); openPage('upds'); updsTick(); };
 // do it again: once you've been through part of the story, you can do it again right away, any time (no waiting, and the countdowns don't start over)
-const againOk = { confess:() => confessSeen() || !!shop.owned.chefhat || unlocked(CHAR.flower), date:() => !!shop.owned.chefhat, wedding:() => unlocked(CHAR.flower) };
-function againShow() { const any = Object.values(againOk).some(f => f()); $('againRow').hidden = !any; $('againConfess').hidden = !againOk.confess(); $('againDate').hidden = !againOk.date(); $('againWedding').hidden = !againOk.wedding(); }
-$('againConfess').onclick = () => { // straight to the shopkeepers' room in the dorms, where she tells Fighty
-  audioOn(); openShop(); Object.assign(SHOP, { floor:12, dorm:DORMS.findIndex(d => d.keepers), x:200, cam:0, facing:1, visit:null, enterT:0, smi7y:false, smiSayT:0, ktask:null, kdone:new Set(), shyAwake:false, confessVisit:false, replay:'confess', pb:{ next:performance.now() + 800, chat:null, line:0 } });
-  SHOP.youSay = 'Shh... I think she is about to tell Fighty something!'; SHOP.youSayT = 3; renderShopCard(true);
-};
+const againOk = { park:() => againOk.confess(), confess:() => confessSeen() || !!shop.owned.chefhat || unlocked(CHAR.flower), date:() => !!shop.owned.chefhat, wedding:() => unlocked(CHAR.flower) };
+function againShow() { const any = Object.values(againOk).some(f => f()); $('againRow').hidden = !any; $('againConfess').hidden = !againOk.confess(); $('againPark').hidden = !againOk.park(); $('againDate').hidden = !againOk.date(); $('againWedding').hidden = !againOk.wedding(); }
+$('againConfess').onclick = () => goKeeperRoom('confess');
+$('againPark').onclick = () => goPlace(PARK_FLOOR, 'park');
+$('dormBtn').onclick = () => goKeeperRoom(null); // teleport to the shopkeepers' room in the dorms (where the confession happens)
+$('parkBtn').onclick = () => goPlace(PARK_FLOOR);
 $('againBtn').onclick = () => { $('againPick').hidden = !$('againPick').hidden; }; // (one button: press it to pick what to do again)
 $('againDate').onclick = () => goPlace(DINNER_FLOOR, 'date');
 $('againWedding').onclick = () => goPlace(WEDDING_FLOOR, 'wedding');
@@ -5727,6 +5737,7 @@ function weddingLeft() { // how long until the wedding starts (below zero once i
 }
 const mmss = ms => `${Math.floor(ms/60000)}:${String(Math.floor(ms/1000) % 60).padStart(2, '0')}`;
 function placeMsg() { // what the card says in the dinner place or the wedding hall
+  if (SHOP.floor === PARK_FLOOR) return datingOn() ? 'The shopkeepers are on their first date: a walk in the park! 🌳 Push the swing, get an ice cream, pick a flower and feed the ducks.' : 'The park is quiet... the shopkeepers are not dating yet. You can still play here!';
   if (SHOP.floor === DINNER_FLOOR) { const left = date2Left();
     return left <= 0 || SHOP.replay === 'date' ? 'The shopkeepers are on their 2nd date! 🍝 The chef gave you a chef hat for coming. Put it on in the shop!'
       : left === Infinity ? 'The dinner place is empty... the shopkeepers have not even confessed yet.' : `The shopkeepers have a table booked... their 2nd date is in ${mmss(left)}. Come back then!`; }
@@ -5745,7 +5756,7 @@ function placeStep() { // getting your present, if you're there at the right tim
   }
 }
 function drawPlaceKeepers(t, lines, at, on) { // the two shopkeepers, taking turns talking
-  const say = on ? lines[Math.floor(t/2.8) % lines.length] : null;
+  const say = on ? lines[Math.floor(t/2.4) % lines.length] : null;
   for (const id of ['keeper', 'keeper2']) { const ch = CHAR[id], r = dormR(ch), talking = say && say[0] === id; g.save(); g.translate(at[id], SHOP_FLOOR - r - (talking ? Math.abs(Math.sin(t*12))*6 : 0)); drawCharacter(g, ch, r, { facing:id === 'keeper' ? 1 : -1, ...looks(ch), bride:id === 'keeper2' && lines === WEDDING_LINES }); g.restore(); }
   return say;
 }
@@ -5834,9 +5845,63 @@ function drawWedFun(t) {
     g.save(); g.translate(x, y); g.rotate(t*6); g.fillStyle = '#2e9e4f'; g.fillRect(-4, 0, 8, 26); for (let i=0;i<6;i++) { const a = i*TAU/6; g.fillStyle = i % 2 ? C.white : '#ff8fc1'; g.beginPath(); g.arc(Math.cos(a)*12, Math.sin(a)*12 - 4, 9, 0, TAU); g.fill(); } g.fillStyle = '#ffd23f'; g.beginPath(); g.arc(0, -4, 7, 0, TAU); g.fill(); g.restore(); }
   for (const [k, x] of Object.entries(WED_SPOTS)) if (SHOP.nearWed === k) drawPointer(x + 40, SHOP_FLOOR - (k === 'cake' ? 300 : 200), t);
 }
+// the park (floor 18, "first things first"): once the shopkeepers start dating, their first date is a walk in the park.
+// You can walk around too: push the swing, get an ice cream, pick a flower and feed the ducks
+const PARK_FLOOR = 18;
+const DATE1_LINES = [['keeper', 'What a nice day for a walk!'], ['keeper2', '*holds your hand* ...yeah... hehe.'], ['keeper', 'Look, ducks! Hello, ducks!'], ['keeper2', 'th-they are so cute...'], ['keeper', 'Want to share an ice cream?'], ['keeper2', 'y-yes please!']];
+const PARK_SPOTS = { swing:230, icecream:560, flowers:930, ducks:1340 };
+const PARK_CARDS = { swing:['The swing', 'Have a swing! Press punch.'], icecream:['Ice cream cart', 'Free ice cream today! Press punch to get one.'], flowers:['Flowers', 'Pretty flowers. Press punch to pick one.'], ducks:['The pond', 'Ducks! Press punch to feed them some bread.'] };
+const datingOn = () => SHOP.replay === 'park' || (confessSeen() && DATING_MIN*60000 - (Date.now() - (+lsGet('fff-confessed') || 0)) <= 0); // (they're on their walk once they've started dating)
+function parkSpot() { if (SHOP.floor !== PARK_FLOOR) return null; for (const [k, x] of Object.entries(PARK_SPOTS)) if (Math.abs(SHOP.x - x) < 70) return k; return null; }
+function parkAct() {
+  const k = SHOP.nearPark, now = performance.now(); SHOP.parkT = SHOP.parkT || {}; SHOP.parkT[k] = now;
+  SHOP.youSay = { swing:'Wheee! Higher! Higher!', icecream:['Yum! Strawberry!', 'Mmm, chocolate!', 'Vanilla with sprinkles!'][Math.floor(Math.random()*3)], flowers:'A flower for me! So pretty.', ducks:'Here, ducks! Bread for you!' }[k];
+  SHOP.youSayT = 2.4; if (k === 'ducks' && sfx.ding) sfx.ding(); else if (sfx.grab) sfx.grab(); renderShopCard(true);
+}
+function drawParkPlace(t) {
+  const now = performance.now(), pt = SHOP.parkT || {}, since = k => pt[k] ? (now - pt[k])/1000 : 99;
+  g.fillStyle = '#9ed8ff'; g.fillRect(0, 0, W, H); g.fillStyle = C.yellow; g.beginPath(); g.arc(1420, 150, 50, 0, TAU); g.fill(); // a sunny sky
+  for (const [cx, cy] of [[300, 150], [760, 110]]) { g.fillStyle = C.white; for (const [dx, r] of [[-40, 30], [0, 40], [40, 30]]) { g.beginPath(); g.arc(cx + dx + Math.sin(t*0.3)*20, cy, r, 0, TAU); g.fill(); } }
+  g.fillStyle = '#7cc96a'; g.fillRect(0, 520, W, H); g.fillStyle = '#5cb04f'; g.fillRect(0, SHOP_FLOOR, W, H - SHOP_FLOOR); // grass
+  g.fillStyle = '#e6c88f'; g.fillRect(0, SHOP_FLOOR - 16, W, 22); // a path
+  for (const x of [80, 420, 1120]) { g.fillStyle = '#7a4a2a'; g.fillRect(x - 16, 400, 32, 160); g.fillStyle = '#2e9e4f'; for (const [dx, dy, r] of [[0, -20, 80], [-60, 30, 60], [60, 30, 60]]) { g.beginPath(); g.arc(x + dx, 400 + dy, r, 0, TAU); g.fill(); } } // trees
+  // the swing set
+  const sx = PARK_SPOTS.swing, sw = Math.sin(t*4)*Math.max(0, 1 - since('swing')/3)*0.7;
+  g.strokeStyle = '#c0392b'; g.lineWidth = 10; g.beginPath(); g.moveTo(sx - 90, SHOP_FLOOR); g.lineTo(sx - 60, SHOP_FLOOR - 300); g.lineTo(sx + 60, SHOP_FLOOR - 300); g.lineTo(sx + 90, SHOP_FLOOR); g.stroke();
+  g.save(); g.translate(sx, SHOP_FLOOR - 300); g.rotate(sw); g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.moveTo(-25, 0); g.lineTo(-25, 220); g.moveTo(25, 0); g.lineTo(25, 220); g.stroke(); g.fillStyle = '#8a5a2b'; g.fillRect(-34, 216, 68, 12); g.restore();
+  // the ice cream cart
+  const ix = PARK_SPOTS.icecream; g.fillStyle = C.white; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(ix - 70, SHOP_FLOOR - 120, 140, 90); g.strokeRect(ix - 70, SHOP_FLOOR - 120, 140, 90);
+  for (const k of [-1, 1]) { g.fillStyle = C.ink; g.beginPath(); g.arc(ix + k*45, SHOP_FLOOR - 26, 16, 0, TAU); g.fill(); }
+  for (let i=0;i<5;i++) { g.fillStyle = i % 2 ? '#ff8fc1' : C.white; g.beginPath(); g.moveTo(ix - 80 + i*32, SHOP_FLOOR - 190); g.lineTo(ix - 48 + i*32, SHOP_FLOOR - 190); g.lineTo(ix - 64 + i*32, SHOP_FLOOR - 160); g.closePath(); g.fill(); g.stroke(); } // a stripy roof
+  g.strokeStyle = C.ink; g.lineWidth = 4; g.beginPath(); g.moveTo(ix - 60, SHOP_FLOOR - 160); g.lineTo(ix - 60, SHOP_FLOOR - 120); g.moveTo(ix + 60, SHOP_FLOOR - 160); g.lineTo(ix + 60, SHOP_FLOOR - 120); g.stroke();
+  g.fillStyle = C.ink; g.font = `22px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('ICE CREAM', ix, SHOP_FLOOR - 90);
+  for (const [k, col] of [[-30, '#ff8fc1'], [0, '#6b3d1a'], [30, '#fff6e0']]) { g.fillStyle = '#e6a95b'; g.beginPath(); g.moveTo(ix + k - 9, SHOP_FLOOR - 58); g.lineTo(ix + k + 9, SHOP_FLOOR - 58); g.lineTo(ix + k, SHOP_FLOOR - 36); g.fill(); g.fillStyle = col; g.beginPath(); g.arc(ix + k, SHOP_FLOOR - 62, 10, 0, TAU); g.fill(); }
+  // a patch of flowers
+  for (let i=0;i<9;i++) { const fx = PARK_SPOTS.flowers - 90 + i*22, fy = SHOP_FLOOR - 30 - (i % 3)*10 + Math.sin(t*2 + i)*2; g.strokeStyle = '#2e7d32'; g.lineWidth = 3; g.beginPath(); g.moveTo(fx, SHOP_FLOOR - 10); g.lineTo(fx, fy); g.stroke(); g.fillStyle = [C.red, C.yellow, '#ff8fc1', C.white, '#8a4fbf'][i % 5]; for (let p=0;p<5;p++) { const a = p*TAU/5; g.beginPath(); g.arc(fx + Math.cos(a)*6, fy + Math.sin(a)*6, 5, 0, TAU); g.fill(); } }
+  // the pond, with ducks (they swim over when you feed them)
+  const dx0 = PARK_SPOTS.ducks; g.fillStyle = '#3f9be0'; g.beginPath(); g.ellipse(dx0 + 80, SHOP_FLOOR + 30, 200, 40, 0, 0, TAU); g.fill();
+  const fed = Math.max(0, 1 - since('ducks')/4);
+  for (let i=0;i<3;i++) { const x = dx0 + 140 + i*40 - fed*90 + Math.sin(t + i*2)*16, y = SHOP_FLOOR + 20 + i*6; g.fillStyle = C.white; g.strokeStyle = C.ink; g.lineWidth = 2; g.beginPath(); g.ellipse(x, y, 20, 12, 0, 0, TAU); g.fill(); g.stroke(); g.beginPath(); g.arc(x - 16, y - 12, 9, 0, TAU); g.fill(); g.stroke(); g.fillStyle = C.orange; g.beginPath(); g.moveTo(x - 25, y - 13); g.lineTo(x - 34, y - 10); g.lineTo(x - 25, y - 8); g.fill(); }
+  if (fed > 0) for (let i=0;i<6;i++) { g.fillStyle = '#e6c88f'; g.beginPath(); g.arc(dx0 + 40 + i*18, SHOP_FLOOR + 10 + (i % 2)*8, 4, 0, TAU); g.fill(); } // bread crumbs
+  // the shopkeepers on their walk, holding hands
+  let say = null;
+  if (datingOn()) {
+    const walk = Math.sin(t*0.25), cx = 820 + walk*260, dir = Math.cos(t*0.25) >= 0 ? 1 : -1; say = DATE1_LINES[Math.floor(t/2.4) % DATE1_LINES.length];
+    const at = { keeper:cx - 90, keeper2:cx + 90 };
+    g.strokeStyle = C.ink; g.lineWidth = 10; g.lineCap = 'round'; g.beginPath(); g.moveTo(at.keeper + 45, SHOP_FLOOR - 150); g.lineTo(at.keeper2 - 45, SHOP_FLOOR - 150); g.stroke(); // holding hands
+    for (const id of ['keeper', 'keeper2']) { const ch = CHAR[id], r = dormR(ch), talking = say[0] === id; g.save(); g.translate(at[id], SHOP_FLOOR - r - Math.abs(Math.sin(t*6))*4 - (talking ? Math.abs(Math.sin(t*12))*4 : 0)); drawCharacter(g, ch, r, { facing:dir, ...looks(ch), walk:t*6 }); g.restore(); }
+    drawBubble(say[1], at[say[0]] + 200, SHOP_FLOOR - dormTall(CHAR[say[0]]) - 20, at[say[0]]);
+    for (let i=0;i<4;i++) { const k = (t*0.4 + i/4) % 1; g.save(); g.globalAlpha = 1 - k; drawLittleHeart(cx + Math.sin(t*2 + i*2)*80, SHOP_FLOOR - 300 - k*200, 10 + i % 2*4); g.restore(); }
+  } else drawSign(820, 300, 360, 'the park (coming soon!)', C.white, '#2e7d32', 30);
+  if (SHOP.nearPark) drawPointer(PARK_SPOTS[SHOP.nearPark] + 40, SHOP_FLOOR - 250, t);
+}
+function goKeeperRoom(replay) { // straight to the shopkeepers' room in the dorms (for the confession)
+  audioOn(); openShop(); Object.assign(SHOP, { floor:12, dorm:DORMS.findIndex(d => d.keepers), x:200, cam:0, facing:1, visit:null, enterT:0, smi7y:false, smiSayT:0, ktask:null, kdone:new Set(), shyAwake:false, confessVisit:false, replay, pb:{ next:performance.now() + 800, chat:null, line:0 } });
+  SHOP.youSay = replay || confessPending() ? 'Shh... I think she is about to tell Fighty something!' : 'Whoosh! Teleported to the dorms!'; SHOP.youSayT = 3; renderShopCard(true);
+}
 function goPlace(floor, replay = null) { // the buttons on the up coming page take you straight there, walking as your fighter (the back button goes home)
   audioOn(); openShop(); Object.assign(SHOP, { floor, x:200, facing:1, visit:null, enterT:0, smi7y:false, smiSayT:0, pb:null, replay });
-  SHOP.youSay = floor === DINNER_FLOOR ? 'Mmm, it smells like spaghetti!' : 'Ooh, a wedding hall!'; SHOP.youSayT = 2.5; renderShopCard(true);
+  SHOP.youSay = floor === PARK_FLOOR ? 'What a nice day in the park!' : floor === DINNER_FLOOR ? 'Mmm, it smells like spaghetti!' : 'Ooh, a wedding hall!'; SHOP.youSayT = 2.5; renderShopCard(true);
 }
 $('dinnerBtn').onclick = () => goPlace(DINNER_FLOOR);
 $('weddingBtn').onclick = () => goPlace(WEDDING_FLOOR);
@@ -6487,7 +6552,7 @@ function drawSkinBooth(t) { // a big gold mirror on a stand: it shows you in eac
 }
 function renderShopCard(force) {
   const ch = CHARS[SHOP.who], st = SHOP.near, it = st && ITEMS.find(i => i.id === st.item);
-  const key = [shop.coins, ch.id, SHOP.floor >= DINNER_FLOOR ? placeMsg() : '', SHOP.nearWed, SHOP.nearPaper, SHOP.ktask, SHOP.nearTask, SHOP.nearToys, it && it.id, it && shop.owned[it.id], ITEMS.map(i => wears(i.id, ch)).join(), SHOP.nearKeeper, SHOP.nearStairs, SHOP.stairTo, SHOP.floor, jokeOpen(), !!SHOP.revealed, SHOP.nearSmi, SHOP.nearSkins, skinOf(ch), skinRec(ch).have.join(), SHOP.nearCage, SHOP.cage && SHOP.cage.lock.left, SHOP.cage && SHOP.cage.hp, SHOP.cage && SHOP.cage.freed, SHOP.nearPal && SHOP.nearPal.id, SHOP.stairRoom, SHOP.dorm, SHOP.nearSwitch, setup.dormTime].join('|');
+  const key = [shop.coins, ch.id, SHOP.floor >= DINNER_FLOOR ? placeMsg() : '', SHOP.nearWed, SHOP.nearPark, SHOP.nearPaper, SHOP.ktask, SHOP.nearTask, SHOP.nearToys, it && it.id, it && shop.owned[it.id], ITEMS.map(i => wears(i.id, ch)).join(), SHOP.nearKeeper, SHOP.nearStairs, SHOP.stairTo, SHOP.floor, jokeOpen(), !!SHOP.revealed, SHOP.nearSmi, SHOP.nearSkins, skinOf(ch), skinRec(ch).have.join(), SHOP.nearCage, SHOP.cage && SHOP.cage.lock.left, SHOP.cage && SHOP.cage.hp, SHOP.cage && SHOP.cage.freed, SHOP.nearPal && SHOP.nearPal.id, SHOP.stairRoom, SHOP.dorm, SHOP.nearSwitch, setup.dormTime].join('|');
   if (!force && key === SHOP.key) return;
   SHOP.key = key; $('coinCount').textContent = shop.coins; $('shopWho').textContent = ch.name;
   const card = $('shopCard'); fillShopCard(card, ch, it);
@@ -6576,8 +6641,9 @@ function fillShopCard(card, ch, it) {
     card.querySelector('.row').append(ask);
     return;
   }
+  if (!it && SHOP.nearPark) { card.innerHTML = `<h3>${PARK_CARDS[SHOP.nearPark][0]}</h3><p>${PARK_CARDS[SHOP.nearPark][1]}</p>`; return; }
   if (!it && SHOP.nearWed) { card.innerHTML = `<h3>${WED_CARDS[SHOP.nearWed][0]}</h3><p>${WED_CARDS[SHOP.nearWed][1]}</p>`; return; }
-  if (!it && (SHOP.floor === DINNER_FLOOR || SHOP.floor === WEDDING_FLOOR)) { card.innerHTML = `<h3>${SHOP.floor === DINNER_FLOOR ? 'Café Fun (the dinner place)' : 'The big day (the wedding hall)'}</h3><p>${placeMsg()}</p><p class="note">Press back (top right) to go home.</p>`; return; }
+  if (!it && (SHOP.floor === DINNER_FLOOR || SHOP.floor === WEDDING_FLOOR || SHOP.floor === PARK_FLOOR)) { card.innerHTML = `<h3>${SHOP.floor === PARK_FLOOR ? 'The park (their first date)' : SHOP.floor === DINNER_FLOOR ? 'Café Fun (the dinner place)' : 'The big day (the wedding hall)'}</h3><p>${placeMsg()}</p><p class="note">Press back (top right) to go home.</p>`; return; }
   if (!it && SHOP.floor >= 11 && SHOP.floor <= 15) {
     const d = DORMS[SHOP.dorm || 0];
     card.innerHTML = SHOP.nearTask ? `<h3>${KTASKS[SHOP.nearTask].name}</h3><p>${KTASKS[SHOP.nearTask].hint} Press punch to do it!</p>`
