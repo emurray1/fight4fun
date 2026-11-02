@@ -4566,15 +4566,79 @@ function drawAdminRoom(t) {
   for (const x of [1350, 1470]) { g.fillStyle = '#1a1a1a'; g.fillRect(x - 45, SHOP_FLOOR - 360, 90, 360); for (let l=0;l<10;l++) { g.fillStyle = (Math.floor(t*6) + l + x) % 3 ? '#39ff14' : '#ff3b3b'; g.fillRect(x - 30, SHOP_FLOOR - 340 + l*32, 10, 6); } } // server racks with blinking lights
   drawStaffDoor(ADMIN_EXIT_X, '← 3rd floor', '#1f3d1f', 'ADMINS ONLY');
 }
+function drawTherapistSign(x) { // Sly Diamond is a therapist, so her door has a little sign for it
+  g.fillStyle = '#e3ffe6'; g.strokeStyle = C.ink; g.lineWidth = 2; g.fillRect(x - 50, SHOP_FLOOR - 300, 100, 30); g.strokeRect(x - 50, SHOP_FLOOR - 300, 100, 30);
+  g.fillStyle = '#2e7d32'; g.font = `16px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('THERAPIST', x, SHOP_FLOOR - 284, 92);
+}
 function drawDormHall(t) {
   drawWoodRoom('#efe6ff', '#5a3a6e', '#8a6a9e');
   g.fillStyle = '#c0392b'; g.fillRect(0, SHOP_FLOOR + 8, W, 26); // a long carpet down the hallway
   g.fillStyle = '#5a3a6e'; g.font = `56px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('dorms', W/2, 170);
   drawStaffDoor(DORM_EXIT_X, '← player breaks', '#c9f0ff', 'FIGHTERS ONLY');
-  DORMS.forEach((d, i) => { if (d.keepers) drawKeeperDoor(DORM_ROOM_X[i], t); else drawNameDoor(DORM_ROOM_X[i], [dormName(d.ids[0]) + ' &', dormName(d.ids[1])]); if (d.crush) drawLittleHeart(DORM_ROOM_X[i], SHOP_FLOOR - 280, 14); if (!dormOpen(i)) drawPadlock(DORM_ROOM_X[i] + 30, SHOP_FLOOR - 105, 0.22); });
+  DORMS.forEach((d, i) => { if (d.keepers) drawKeeperDoor(DORM_ROOM_X[i], t); else drawNameDoor(DORM_ROOM_X[i], [dormName(d.ids[0]) + ' &', dormName(d.ids[1])]); if (d.crush) { drawLittleHeart(DORM_ROOM_X[i], SHOP_FLOOR - 322, 14); drawTherapistSign(DORM_ROOM_X[i]); } if (!dormOpen(i)) drawPadlock(DORM_ROOM_X[i] + 30, SHOP_FLOOR - 105, 0.22); });
   if (dormNight()) { g.fillStyle = 'rgba(15,10,50,.3)'; g.fillRect(0, 0, W, H); } // the hallway is dim at night
   const near = SHOP.nearStairs && SHOP.stairTo === 12 ? DORM_ROOM_X[SHOP.stairRoom] : null;
   if (near != null) drawPointer(near, SHOP_FLOOR - 330, t);
+}
+function drawRoomBeds(cols, marks) { // the two beds, in the roommates' colours, with something of theirs on each headboard
+  [[500, cols[0], marks[0]], [1200, cols[1], marks[1]]].forEach(([x, col, mark]) => {
+    g.fillStyle = '#6b3d1a'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(x - 130, SHOP_FLOOR - 130, 20, 130); g.fillRect(x + 110, SHOP_FLOOR - 80, 20, 80);
+    g.fillStyle = col; roundRect(x - 115, SHOP_FLOOR - 80, 230, 50, 10); g.fill(); g.stroke();
+    g.fillStyle = C.white; roundRect(x - 108, SHOP_FLOOR - 100, 60, 26, 10); g.fill(); g.stroke();
+    if (mark) { g.save(); g.translate(x - 120, SHOP_FLOOR - 150); mark(); g.restore(); }
+  });
+}
+const starPath = (r, n = 5) => { g.beginPath(); for (let i=0;i<n*2;i++) { const a = -Math.PI/2 + i*Math.PI/n, rr = i % 2 ? r*0.45 : r; g.lineTo(Math.cos(a)*rr, Math.sin(a)*rr); } g.closePath(); };
+function drawSign(x, y, w, text, bg, fg, size = 28) { g.fillStyle = bg; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(x - w/2, y - 30, w, 60); g.strokeRect(x - w/2, y - 30, w, 60); g.fillStyle = fg; g.font = `${size}px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, x, y + 2, w - 12); }
+function drawThemedRoom(i, t) { // each pair of roommates has a room that fits them
+  if (i === 0) { // Lovely Heart & Cool Star: hearts and cool stuff
+    for (let k=0;k<9;k++) { const x = 230 + k*150, on = Math.sin(t*3 + k) > 0; g.fillStyle = on ? '#ffd23f' : '#fff6c9'; g.save(); g.translate(x, 135 + (k % 2)*16); starPath(12); g.fill(); g.restore(); } // twinkly star lights
+    g.fillStyle = '#ff8fc1'; g.strokeStyle = C.ink; g.lineWidth = 5; g.save(); g.translate(430, 250); g.beginPath(); g.moveTo(0, 60); g.bezierCurveTo(-95, -10, -40, -80, 0, -30); g.bezierCurveTo(40, -80, 95, -10, 0, 60); g.fill(); g.stroke(); g.fillStyle = '#e8f6ff'; g.scale(0.7, 0.7); g.beginPath(); g.moveTo(0, 60); g.bezierCurveTo(-95, -10, -40, -80, 0, -30); g.bezierCurveTo(40, -80, 95, -10, 0, 60); g.fill(); g.restore(); // a heart mirror
+    drawSign(1230, 260, 220, 'STAY COOL', C.ink, C.yellow); g.save(); g.translate(1230, 214); g.scale(90, 90); drawGlasses(g, [[-0.2, 0], [0.2, 0]]); g.restore(); // a cool poster with shades
+    g.fillStyle = '#8a4fbf'; g.strokeStyle = C.ink; g.lineWidth = 4; roundRect(1440, SHOP_FLOOR - 170, 60, 150, 26); g.fill(); g.stroke(); g.fillStyle = '#ff5fa2'; for (let k=0;k<3;k++) { g.beginPath(); g.arc(1470, SHOP_FLOOR - 50 - ((t*30 + k*45) % 110), 10, 0, TAU); g.fill(); } // a lava lamp
+    drawRoomBeds(['#ff8fc1', '#9b6bd6'], [() => drawLittleHeart(0, 0, 16), () => { g.fillStyle = C.yellow; g.strokeStyle = C.ink; g.lineWidth = 3; starPath(18); g.fill(); g.stroke(); }]);
+  } else if (i === 1) { // Goofy Sparkle & Grumpy Shuriken: crayon drawings and toys, and a tidy ninja corner
+    for (const [x, col] of [[300, C.blue], [420, C.red], [540, '#2e9e4f']]) { g.fillStyle = C.white; g.strokeStyle = C.ink; g.lineWidth = 3; g.fillRect(x - 50, 210, 100, 80); g.strokeRect(x - 50, 210, 100, 80); g.strokeStyle = col; g.lineWidth = 4; g.beginPath(); for (let k=0;k<6;k++) g.lineTo(x - 36 + k*14, 250 + Math.sin(k*2 + x)*22); g.stroke(); } // Goofy's crayon drawings
+    g.fillStyle = '#f3e2c7'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(1160, 190, 140, 190); g.strokeRect(1160, 190, 140, 190); g.fillStyle = '#4a2c14'; g.fillRect(1150, 180, 160, 14); g.fillRect(1150, 376, 160, 14); // a ninja scroll
+    g.fillStyle = C.ink; g.font = `30px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('NINJA', 1230, 230); g.fillText('RULES', 1230, 262); g.font = `16px ${BODYFONT}`; g.fillText('1. be quiet', 1230, 300); g.fillText('2. go to bed', 1230, 322); g.fillText('3. NO pillow fights', 1230, 344, 128);
+    drawSign(420, 360, 330, 'Do NOT jump on the beds!', C.white, C.red, 24);
+    for (let k=0;k<4;k++) { g.fillStyle = ['#ffe066', '#ff8fc1', '#8fd3ff', C.white][k]; g.strokeStyle = C.ink; g.lineWidth = 3; roundRect(1390 + (k % 2)*30, SHOP_FLOOR - 40 - k*34, 120, 34, 12); g.fill(); g.stroke(); } // a pillow fort
+    drawRoomBeds(['#ffe066', '#b97a57'], [() => { g.fillStyle = '#ffd83a'; g.strokeStyle = C.ink; g.lineWidth = 3; starPath(18, 4); g.fill(); g.stroke(); }, () => { g.fillStyle = '#888'; g.strokeStyle = C.ink; g.lineWidth = 3; g.rotate(t); starPath(18, 4); g.fill(); g.stroke(); }]);
+  } else if (i === 2) { // Angry Triangle & Yelling Square: a punching bag, and a megaphone... and a "quiet" sign nobody listens to
+    drawSign(420, 250, 300, 'QUIET PLEASE!!!', C.white, C.red, 34);
+    g.fillStyle = '#f2994a'; g.strokeStyle = C.ink; g.lineWidth = 5; g.save(); g.translate(1220, 260); g.rotate(-0.2); g.beginPath(); g.moveTo(-70, -22); g.lineTo(40, -60); g.lineTo(40, 60); g.lineTo(-70, 22); g.closePath(); g.fill(); g.stroke(); g.fillRect(-100, -18, 32, 36); g.strokeRect(-100, -18, 32, 36); g.restore(); // a megaphone poster
+    g.strokeStyle = '#f2994a'; g.lineWidth = 4; for (let k=1;k<=3;k++) { g.beginPath(); g.arc(1290, 245, 20 + k*16 + Math.sin(t*8)*3, -0.6, 0.6); g.stroke(); }
+    const sw = Math.sin(t*3)*0.12; g.save(); g.translate(1470, 130); g.rotate(sw); g.strokeStyle = C.ink; g.lineWidth = 4; g.beginPath(); g.moveTo(0, 0); g.lineTo(0, 120); g.stroke(); g.fillStyle = C.red; roundRect(-40, 120, 80, 220, 30); g.fill(); g.stroke(); g.fillStyle = C.ink; g.font = `22px ${FONT}`; g.textAlign = 'center'; g.fillText('GRR', 0, 230); g.restore(); // a punching bag
+    drawRoomBeds([C.red, C.orange], [() => { g.fillStyle = C.red; g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.moveTo(0, -18); g.lineTo(18, 14); g.lineTo(-18, 14); g.closePath(); g.fill(); g.stroke(); }, () => { g.fillStyle = C.orange; g.strokeStyle = C.ink; g.lineWidth = 3; g.fillRect(-15, -15, 30, 30); g.strokeRect(-15, -15, 30, 30); }]);
+  } else if (i === 3) { // Shocked Circle & Nervous Hexstar: night lights everywhere (they're scared of the dark) and a robot charging spot
+    drawSign(420, 250, 280, 'WHAT?!', '#8fd3ff', C.ink, 48);
+    g.fillStyle = '#1f5fa8'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(1120, 190, 220, 160); g.strokeRect(1120, 190, 220, 160); g.strokeStyle = C.white; g.lineWidth = 2; // a robot blueprint
+    g.strokeRect(1200, 210, 60, 50); g.strokeRect(1190, 262, 80, 70); g.beginPath(); g.moveTo(1230, 210); g.lineTo(1230, 196); g.stroke(); g.beginPath(); g.arc(1215, 235, 6, 0, TAU); g.arc(1245, 235, 6, 0, TAU); g.stroke();
+    for (const x of [300, 700, 1000, 1400]) { const glow = 0.6 + Math.sin(t*2 + x)*0.2; g.fillStyle = `rgba(255,230,120,${glow*0.35})`; g.beginPath(); g.arc(x, SHOP_FLOOR - 140, 40, 0, TAU); g.fill(); g.fillStyle = '#ffe066'; g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.arc(x, SHOP_FLOOR - 140, 12, 0, TAU); g.fill(); g.stroke(); } // little night lights
+    g.fillStyle = '#93a3bd'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(1420, SHOP_FLOOR - 120, 110, 120); g.strokeRect(1420, SHOP_FLOOR - 120, 110, 120); g.fillStyle = Math.sin(t*4) > 0 ? '#7dff8a' : '#2e9e4f'; g.beginPath(); g.moveTo(1480, SHOP_FLOOR - 105); g.lineTo(1458, SHOP_FLOOR - 60); g.lineTo(1478, SHOP_FLOOR - 60); g.lineTo(1468, SHOP_FLOOR - 20); g.lineTo(1500, SHOP_FLOOR - 72); g.lineTo(1480, SHOP_FLOOR - 72); g.closePath(); g.fill(); g.stroke(); // a robot charging station
+    drawRoomBeds([C.blue, '#93a3bd'], [() => { g.fillStyle = C.blue; g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.arc(0, 0, 16, 0, TAU); g.fill(); g.stroke(); }, () => { g.fillStyle = '#93a3bd'; g.strokeStyle = C.ink; g.lineWidth = 3; starPath(18, 6); g.fill(); g.stroke(); }]);
+  }
+}
+function drawTherapyRoom(t) { // Sly Diamond is a therapist, so their room is her office: a comfy armchair for her, a couch to lie on, diplomas, books and a plant
+  g.strokeStyle = C.ink; g.lineWidth = 4;
+  for (const [x, y] of [[300, 220], [420, 220]]) { g.fillStyle = '#d4a017'; g.fillRect(x - 46, y - 34, 92, 68); g.fillStyle = '#fff6c9'; g.fillRect(x - 36, y - 24, 72, 48); g.strokeRect(x - 46, y - 34, 92, 68); // two diplomas on the wall
+    g.strokeStyle = '#8a6a9e'; g.lineWidth = 2; for (const ly of [-8, 4, 14]) { g.beginPath(); g.moveTo(x - 24, y + ly); g.lineTo(x + 24, y + ly); g.stroke(); } g.fillStyle = C.red; g.beginPath(); g.arc(x + 20, y + 14, 6, 0, TAU); g.fill(); g.strokeStyle = C.ink; g.lineWidth = 4; }
+  g.fillStyle = '#6b3d1a'; g.fillRect(1260, SHOP_FLOOR - 360, 200, 360); g.strokeRect(1260, SHOP_FLOOR - 360, 200, 360); // a bookshelf full of books
+  for (let s=0;s<4;s++) { const y = SHOP_FLOOR - 350 + s*88; g.fillStyle = '#4a2c14'; g.fillRect(1268, y + 76, 184, 8); for (let b=0;b<7;b++) { g.fillStyle = ['#c0392b', '#2e7d32', '#1f5fa8', '#d4a017', '#8a4fbf', '#e67e22', '#16a085'][(b + s*3) % 7]; g.fillRect(1274 + b*25, y + 18 + (b % 3)*6, 20, 58 - (b % 3)*6); } }
+  g.fillStyle = C.white; g.beginPath(); g.arc(1100, 280, 40, 0, TAU); g.fill(); g.stroke(); // a clock
+  g.lineWidth = 3; g.beginPath(); g.moveTo(1100, 280); g.lineTo(1100 + Math.cos(t*0.5 - Math.PI/2)*26, 280 + Math.sin(t*0.5 - Math.PI/2)*26); g.moveTo(1100, 280); g.lineTo(1100 + Math.cos(t*0.05)*18, 280 + Math.sin(t*0.05)*18); g.stroke();
+  g.fillStyle = 'rgba(46,125,50,.35)'; g.beginPath(); g.ellipse(850, SHOP_FLOOR + 30, 300, 28, 0, 0, TAU); g.fill(); // a green rug
+  // her big comfy armchair (she sits here with her notebook)
+  g.fillStyle = '#2e7d32'; g.strokeStyle = C.ink; g.lineWidth = 4; roundRect(540, SHOP_FLOOR - 230, 200, 150, 30); g.fill(); g.stroke(); roundRect(510, SHOP_FLOOR - 140, 60, 120, 20); g.fill(); g.stroke(); roundRect(710, SHOP_FLOOR - 140, 60, 120, 20); g.fill(); g.stroke();
+  roundRect(560, SHOP_FLOOR - 110, 160, 70, 16); g.fill(); g.stroke(); g.fillStyle = '#4a2c14'; for (const lx of [530, 740]) g.fillRect(lx, SHOP_FLOOR - 22, 14, 22);
+  // the therapy couch (you lie down on it and talk about your feelings)
+  g.fillStyle = '#c77dd1'; roundRect(900, SHOP_FLOOR - 120, 330, 70, 18); g.fill(); g.stroke(); roundRect(1170, SHOP_FLOOR - 200, 70, 150, 26); g.fill(); g.stroke();
+  g.fillStyle = C.white; roundRect(915, SHOP_FLOOR - 140, 80, 30, 12); g.fill(); g.stroke(); g.fillStyle = '#4a2c14'; for (const lx of [915, 1210]) g.fillRect(lx, SHOP_FLOOR - 50, 14, 50);
+  // a little table with a box of tissues, and a plant
+  g.fillStyle = '#8a5a2b'; g.fillRect(810, SHOP_FLOOR - 90, 70, 12); g.fillRect(838, SHOP_FLOOR - 78, 14, 78); g.fillStyle = '#8fd3ff'; g.fillRect(820, SHOP_FLOOR - 116, 50, 26); g.strokeRect(820, SHOP_FLOOR - 116, 50, 26);
+  g.fillStyle = C.white; g.beginPath(); g.moveTo(838, SHOP_FLOOR - 116); g.quadraticCurveTo(845, SHOP_FLOOR - 140, 856, SHOP_FLOOR - 118); g.fill();
+  drawHomePlant(1530, t);
+  g.fillStyle = '#5a3a6e'; g.font = `24px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('"How does that make you feel?"', 360, 320);
 }
 function drawDormRoom(t) {
   const d = DORMS[SHOP.dorm || 0];
@@ -4585,11 +4649,7 @@ function drawDormRoom(t) {
   if (night) { g.fillStyle = '#fff6c9'; g.beginPath(); g.arc(880, 245, 24, 0, TAU); g.fill(); g.fillStyle = C.white; for (const [sx, sy] of [[790, 230], [820, 300], [905, 310], [800, 270]]) g.fillRect(sx, sy, 4, 4); }
   else { g.fillStyle = C.yellow; g.beginPath(); g.arc(800, 240, 26, 0, TAU); g.fill(); g.fillStyle = C.white; for (const [cx, cy, cr] of [[885, 300, 18], [905, 292, 22], [925, 302, 16]]) { g.beginPath(); g.arc(cx, cy, cr, 0, TAU); g.fill(); } }
   g.strokeStyle = C.ink; g.lineWidth = 4; g.beginPath(); g.moveTo(850, 200); g.lineTo(850, 340); g.moveTo(760, 270); g.lineTo(940, 270); g.stroke();
-  for (const [x, col] of [[500, '#ff8fc1'], [1200, '#7fb7ff']]) { // two beds
-    g.fillStyle = '#6b3d1a'; g.fillRect(x - 130, SHOP_FLOOR - 130, 20, 130); g.fillRect(x + 110, SHOP_FLOOR - 80, 20, 80);
-    g.fillStyle = col; g.strokeStyle = C.ink; g.lineWidth = 4; roundRect(x - 115, SHOP_FLOOR - 80, 230, 50, 10); g.fill(); g.stroke();
-    g.fillStyle = C.white; roundRect(x - 108, SHOP_FLOOR - 100, 60, 26, 10); g.fill(); g.stroke();
-  }
+  if (d.crush) drawTherapyRoom(t); else drawThemedRoom(SHOP.dorm || 0, t); // (each room fits the two who live there)
   g.fillStyle = 'rgba(255,255,255,.5)'; g.beginPath(); g.ellipse(850, SHOP_FLOOR + 30, 220, 26, 0, 0, TAU); g.fill(); // a rug
   }
   g.fillStyle = '#5a3a6e'; g.font = `44px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(`${dormName(d.ids[0])} & ${dormName(d.ids[1])}'s room`, W/2, 160, 1000);
