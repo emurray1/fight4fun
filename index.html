@@ -639,7 +639,7 @@ const CHARS = [
   { id:'diamond', name:'Sly Diamond',    color:C.green,  shape:'diamond', trait:'Jumps the highest',          speed:1.05, power:0.95, weight:0.95, jump:1.2 },
   { id:'square',  name:'Yelling Square', color:C.orange, shape:'square',  trait:'Heavy. Special: jumps and slams down', speed:0.85, power:1.15, weight:1.45, jump:0.92 },
   { id:'sparkle', name:'Goofy Sparkle',  color:'#ffd83a', shape:'star4',   trait:'Light and zippy. Special: sugar rush',            speed:1.15, power:0.9,  weight:0.8,  jump:1.12 },
-  { id:'hex',      name:'Nervous Hexstar', color:'#93a3bd', shape:'star6',    trait:'Six points, extra sturdy',  speed:0.9,  power:1.05, weight:1.25, jump:0.95 },
+  { id:'hex',      name:'Nervous Hexstar', color:'#93a3bd', shape:'star6',    trait:'Six points, extra sturdy. Special: laser (punch to charge it up)',  speed:0.9,  power:1.05, weight:1.25, jump:0.95 },
   { id:'heart',    name:'Lovely Heart',    color:'#ff8fc1', shape:'heart',    trait:'Bouncy, jumps really high. Lifesteal: 25% of punches heal 30', speed:1.05, power:0.9,  weight:0.9,  jump:1.22 },
   { id:'shuriken', name:'Grumpy Shuriken', color:'#b97a57', shape:'shuriken', trait:'Fast and sharp. Special: dashes forward',            speed:1.2,  power:1.1,  weight:0.85, jump:1.0 },
   // the missing guy from the "HAVE YOU SEEN HIM?" poster: locked in a cage past the 5th floor until you break him out
@@ -1163,7 +1163,7 @@ function drawKeeperFighter(ctx, ch, r, o) {
       drawGreyKeeper(0, t); // (with their waving arm)
     } else {
       const s = 2.1*r/255; g.scale(s, s); g.translate(0, -650);
-      drawShyKeeper(0, t, { friend:o.walk == null && !o.mask, close:0, lookX:0, walking:o.walk != null, mask:o.mask }); // (asleep in her mask, she doesn't wave)
+      drawShyKeeper(0, t, { friend:o.walk == null && !o.mask, close:0, lookX:0, walking:o.walk != null, mask:o.mask, bride:o.bride }); // (asleep in her mask, she doesn't wave)
     }
     g.restore();
     if (o.flash > 0) { g.globalAlpha = Math.min(0.6, o.flash*5); g.fillStyle = C.white; g.beginPath(); g.arc(0, 0, r*1.05, 0, TAU); g.fill(); g.globalAlpha = 1; }
@@ -1760,6 +1760,7 @@ function hitFighter(p, q) {
     q.dizzy += 26*pw;
     if (q.dizzy >= MAX_HP) { q.dizzy = MAX_HP; q.ko = 3; ev('pop', q.body.position.x, q.body.position.y - 70, 'DIZZY!', C.purple); ev('sfx','dizzy'); }
   }
+  if (p.ch.id === 'hex') p.energy = Math.min(LASER_MAX, (p.energy || 0) + LASER_GAIN); // Nervous Hexstar charges up his laser
   if (p.ch.id === 'heart' && Math.random() < LIFESTEAL_CHANCE && p.dizzy > 0) { p.dizzy = Math.max(0, p.dizzy - LIFESTEAL_HEAL); ev('pop', p.body.position.x, p.body.position.y - 60, `+${LIFESTEAL_HEAL}`, C.green); ev('burst', p.body.position.x, p.body.position.y, '#ff8fc1', 8); } // Lovely Heart's lifesteal (from Mason's drawing): some punches heal them
   if (q.grabbing) release(q);
   const hx = q.body.position.x - p.facing*q.r*0.6, hy = q.body.position.y;
@@ -2030,7 +2031,7 @@ function updateHazards() {
 }
 
 // ---------- special moves (from Mason's drawings) ----------
-const SPECIALS = { star:'shine', circle:'roll', square:'slam', tri:'quake', sparkle:'rush', shuriken:'dash', arrow:'glitch', admin:'ban', keeper:'popup', keeper2:'popup' }; // (the shopkeepers' special: a pop-up ad that covers the screen)
+const SPECIALS = { star:'shine', hex:'laser', circle:'roll', square:'slam', tri:'quake', sparkle:'rush', shuriken:'dash', arrow:'glitch', admin:'ban', keeper:'popup', keeper2:'popup' }; // (the shopkeepers' special: a pop-up ad that covers the screen)
 // the Admin's ban (from Mason's drawing): a tall "Banned" sign zooms across the whole map and back. It does 100000000 damage, so anyone it touches is out
 const BAN_SPEED = 1100, BAN_W = 90, BAN_TOP = 130, BAN_BOTTOM = 800;
 // Missing Arrow's glitch fest: he glitches out, and a big pile of glitch blocks falls from the sky where he's pointing (50 to everyone it lands on)
@@ -2039,6 +2040,8 @@ const GLITCH_DIST = 230, GLITCH_RX = 190, GLITCH_RY = 140, GLITCH_WARN = 0.7, GL
 const DASH_SPEED = 26, DASH_TIME = 0.32;
 // Cool Star's star shot (from Mason's drawing): a yellow star zooms straight forward and hits the first fighter it touches (40)
 const SHOT_SPEED = 950, SHOT_R = 30, SHOT_DMG = 40;
+// Nervous Hexstar's laser (from Mason's drawing): every punch that lands puts 10 energy in his tank (up to 100). The laser uses it all up, and does 1 damage for each bit of energy
+const LASER_MAX = 100, LASER_GAIN = 10, LASER_CD = 5, LASER_T = 0.35;
 // Goofy Sparkle's sugar rush: he zooms all around the closest fighter in a wild yellow scribble, hitting them 4 times (10 each)
 const RUSH_HITS = 4, RUSH_GAP = 0.28, RUSH_RANGE = 450;
 function startSpecial(p, grounded) {
@@ -2064,6 +2067,18 @@ function startSpecial(p, grounded) {
   if (kind === 'glitch') {
     p.special = { kind, t:0, hit:[], x:Math.max(80, Math.min(W - 80, b.position.x + p.facing*GLITCH_DIST)), y:b.position.y, boom:false }; p.specCD = 6;
     ev('pop', b.position.x, b.position.y - 70, 'GLITCH FEST!', C.red); ev('sfx','buzz');
+    return;
+  }
+  if (kind === 'laser') { // a laser beam straight forward: it hits everyone in its way, using up all the energy in the tank
+    const e = Math.round(p.energy || 0); if (e <= 0) { ev('pop', b.position.x, b.position.y - 70, 'No energy! Punch to charge!', '#93a3bd'); p.specCD = 0.6; return; }
+    p.energy = 0; p.specCD = LASER_CD; const y = b.position.y, x0 = b.position.x + p.facing*p.r, half = 6 + e*0.11;
+    (G.lasers = G.lasers || []).push({ x:x0, y, dir:p.facing, w:half*2, t:LASER_T });
+    for (const q of G.fighters) {
+      if (q === p || !q.alive || allies(p, q)) continue;
+      const pos = q.body.position; if ((pos.x - x0)*p.facing < -q.r || Math.abs(pos.y - y) > q.r + half) continue;
+      specialHit(p, q, e, p.facing*(6 + e*0.12), -6, 'ZAP!'); ev('pop', pos.x, pos.y - 20, `-${e}`, C.red);
+    }
+    ev('pop', b.position.x, b.position.y - 70, e >= LASER_MAX ? 'FULL POWER LASER!' : 'LASER!', '#2ad1ff'); ev('sfx','zap'); ev('shake', 4 + e*0.06);
     return;
   }
   if (kind === 'shine') { // the star flies out on its own, so Cool Star can keep fighting
@@ -2220,6 +2235,7 @@ function updateBans() {
   G.bans = G.bans.filter(bn => !(bn.turned && (bn.dir > 0 ? bn.x > W + 80 : bn.x < -80)));
 }
 function updateShots() { // Cool Star's star shots fly until they hit someone or leave the map
+  if (G.lasers && G.lasers.length) { for (const l of G.lasers) l.t -= DT; G.lasers = G.lasers.filter(l => l.t > 0); } // (Nervous Hexstar's laser beams fade away)
   if (!G.shots || !G.shots.length) return;
   for (const s of G.shots) {
     s.x += s.dir*SHOT_SPEED*DT;
@@ -2233,6 +2249,11 @@ function updateShots() { // Cool Star's star shots fly until they hit someone or
   G.shots = G.shots.filter(s => !s.dead);
 }
 function drawShots(t) { // a spinning yellow star with speed lines behind it, like Mason's drawing
+  for (const l of G.lasers || []) { // Nervous Hexstar's laser: a bright blue beam all the way across
+    const k = Math.max(0, l.t/LASER_T), end = l.dir > 0 ? W + 40 : -40;
+    g.globalAlpha = k*0.45; g.fillStyle = '#2ad1ff'; g.fillRect(Math.min(l.x, end), l.y - l.w, Math.abs(end - l.x), l.w*2);
+    g.globalAlpha = k; g.fillStyle = '#2ad1ff'; g.fillRect(Math.min(l.x, end), l.y - l.w/2, Math.abs(end - l.x), l.w); g.fillStyle = C.white; g.fillRect(Math.min(l.x, end), l.y - l.w/6, Math.abs(end - l.x), l.w/3); g.globalAlpha = 1;
+  }
   for (const s of G.shots || []) {
     g.strokeStyle = C.yellow; g.lineWidth = 5; g.lineCap = 'round';
     for (const dy of [-14, 0, 14]) { g.beginPath(); g.moveTo(s.x - s.dir*(SHOT_R + 10), s.y + dy); g.lineTo(s.x - s.dir*(SHOT_R + 40 + Math.abs(dy)), s.y + dy); g.stroke(); }
@@ -3768,6 +3789,7 @@ function drawFighter(p, t) {
   if (p.punchAnim > 0) { const e = Math.sin((1 - p.punchAnim/0.18)*Math.PI); fist(x + p.facing*(p.r + 4 + e*44), y + 4); }
   if (p.grabbing) { const q = p.grabbing.body.position; fist((x + q.x)/2 - 12, (y + q.y)/2); fist((x + q.x)/2 + 12, (y + q.y)/2 + 6); }
   const top = y - TOPS[p.ch.shape]*p.r - 14;
+  if (p.ch.id === 'hex' && p.alive) { const e = Math.min(1, (p.energy || 0)/LASER_MAX), tx = x - p.facing*(p.r + 22), th = Math.max(40, p.r*1.2); g.fillStyle = C.ink; g.fillRect(tx - 8, y - th/2, 16, th); g.fillStyle = '#2ad1ff'; g.fillRect(tx - 5, y + th/2 - 3 - (th - 6)*e, 10, (th - 6)*e); if (e >= 1 && Math.sin(t*12) > 0) { g.strokeStyle = C.white; g.lineWidth = 2; g.strokeRect(tx - 8, y - th/2, 16, th); } } // his energy tank (it blinks when it's full)
   if (p.ko > 0) for (let i=0;i<3;i++) { const a = t*5 + i*TAU/3; drawStar(x + Math.cos(a)*30, top - 8 + Math.sin(a)*8, 9, C.yellow, C.ink); }
   else if (p.dizzy > 0) { const hp = Math.max(0, 1 - p.dizzy/MAX_HP); g.fillStyle = C.red; roundRect(x - 30, top - 5, 60, 9, 4); g.fill(); g.fillStyle = hp > 0.5 ? C.green : hp > 0.25 ? C.orange : C.yellow; roundRect(x - 30, top - 5, 60*hp, 9, 4); g.fill(); g.strokeStyle = C.ink; g.lineWidth = 2; roundRect(x - 30, top - 5, 60, 9, 4); g.stroke(); }
   if (!setup.tags) return;
@@ -4797,14 +4819,15 @@ function drawLittleHeart(x, y, s) {
   g.fillStyle = '#ff6fa5'; g.beginPath(); g.moveTo(x, y + s);
   g.bezierCurveTo(x - s*1.6, y - s*0.2, x - s*0.6, y - s*1.3, x, y - s*0.4); g.bezierCurveTo(x + s*0.6, y - s*1.3, x + s*1.6, y - s*0.2, x, y + s); g.fill();
 }
-function drawShyKeeper(kx, t, { friend, close, lookX, walking = false, alpha = 1, lift = 0, wiggle = 0, mask = false }) {
+function drawShyKeeper(kx, t, { friend, close, lookX, walking = false, alpha = 1, lift = 0, wiggle = 0, mask = false, bride = false }) {
   g.save(); g.globalAlpha = alpha; g.translate(wiggle, -lift - (walking ? Math.abs(Math.sin(t*14))*7 : 0));
   // little shoes, then a purple dress that flares out at the bottom, with a white collar
   g.fillStyle = C.ink; for (const sx of [-22, 22]) { g.beginPath(); g.ellipse(kx + sx, SHOP_FLOOR - 6, 16, 8, 0, 0, TAU); g.fill(); }
-  g.fillStyle = C.purple; g.strokeStyle = C.ink; g.lineWidth = 6; g.lineJoin = 'round';
+  g.fillStyle = bride ? C.white : C.purple; g.strokeStyle = C.ink; // (a white wedding dress on the big day) g.lineWidth = 6; g.lineJoin = 'round';
   g.beginPath(); g.moveTo(kx - 34, 600); g.lineTo(kx + 34, 600); g.lineTo(kx + 40, 688);
   g.quadraticCurveTo(kx + 68, 735, kx + 64, SHOP_FLOOR - 14); g.quadraticCurveTo(kx, SHOP_FLOOR + 2, kx - 64, SHOP_FLOOR - 14); g.quadraticCurveTo(kx - 68, 735, kx - 40, 688);
   g.closePath(); g.fill(); g.stroke();
+  if (bride) { g.fillStyle = '#ffd6ea'; for (let i=0;i<7;i++) { g.beginPath(); g.arc(kx - 54 + i*18, SHOP_FLOOR - 22, 7, 0, TAU); g.fill(); } for (const [dx, dy] of [[-16, 700], [14, 716], [-4, 740], [24, 690]]) { g.beginPath(); g.arc(kx + dx, dy, 5, 0, TAU); g.fill(); } } // pink lace on the wedding dress
   g.fillStyle = C.white; g.lineWidth = 3; for (const s of [-1, 1]) { g.beginPath(); g.moveTo(kx, 602); g.quadraticCurveTo(kx + s*26, 600, kx + s*24, 620); g.quadraticCurveTo(kx + s*10, 622, kx, 602); g.fill(); g.stroke(); }
   // soft black arms with round hands (one waves when she's happy)
   const wave = mask ? 0 : Math.sin(t*3)*4, arm = (x1, y1, x2, y2) => { g.strokeStyle = C.ink; g.lineWidth = 20; g.lineCap = 'round'; g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke(); };
@@ -4826,11 +4849,13 @@ function drawShyKeeper(kx, t, { friend, close, lookX, walking = false, alpha = 1
     g.fillStyle = HAIR; g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.ellipse(s*40, 8 + Math.sin(t*2 + s)*2, 13, 17, s*0.4, 0, TAU); g.fill(); g.stroke();
     g.fillStyle = '#ff7aa8'; g.beginPath(); g.arc(s*31, -2, 5, 0, TAU); g.fill();
   }
+  if (bride) { g.fillStyle = 'rgba(255,255,255,.75)'; g.strokeStyle = 'rgba(0,0,0,.25)'; g.lineWidth = 2; g.beginPath(); g.moveTo(-30, -30); g.quadraticCurveTo(-70, 40, -60, 120); g.lineTo(60, 120); g.quadraticCurveTo(70, 40, 30, -30); g.closePath(); g.fill(); g.stroke(); } // her wedding veil, behind her head
   g.fillStyle = C.grey; g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.arc(0, 0, 36, 0, TAU); g.fill(); g.stroke();
   // bangs that hang over her forehead (shy people hide behind their hair)
   g.fillStyle = HAIR; g.beginPath(); g.arc(0, 0, 37, Math.PI*1.02, Math.PI*1.98);
   for (let i=0;i<=6;i++) g.lineTo(34 - i*11.3, i % 2 ? -13 : -19);
   g.closePath(); g.fill(); g.stroke();
+  if (bride) for (let i=0;i<5;i++) { const fx = -24 + i*12, fy = -34 + Math.abs(i - 2)*3; g.fillStyle = i % 2 ? '#ffd6ea' : C.white; g.beginPath(); g.arc(fx, fy, 6, 0, TAU); g.fill(); g.lineWidth = 1.5; g.strokeStyle = C.ink; g.stroke(); } // little flowers on top of the veil
   const look = friend ? { x:lookX, y:0 } : peek ? { x:-3, y:0 } : { x:3 + close*2, y:3 };
   g.fillStyle = C.white; for (const ex of [-12, 10]) { g.beginPath(); g.arc(ex, -8, 7, 0, TAU); g.fill(); }
   g.fillStyle = C.ink; for (const ex of [-12, 10]) { g.beginPath(); g.arc(ex + look.x, -8 + look.y, 3.5, 0, TAU); g.fill(); }
@@ -5685,7 +5710,7 @@ function placeStep() { // getting your present, if you're there at the right tim
 }
 function drawPlaceKeepers(t, lines, at, on) { // the two shopkeepers, taking turns talking
   const say = on ? lines[Math.floor(t/2.8) % lines.length] : null;
-  for (const id of ['keeper', 'keeper2']) { const ch = CHAR[id], r = dormR(ch), talking = say && say[0] === id; g.save(); g.translate(at[id], SHOP_FLOOR - r - (talking ? Math.abs(Math.sin(t*12))*6 : 0)); drawCharacter(g, ch, r, { facing:id === 'keeper' ? 1 : -1, ...looks(ch) }); g.restore(); }
+  for (const id of ['keeper', 'keeper2']) { const ch = CHAR[id], r = dormR(ch), talking = say && say[0] === id; g.save(); g.translate(at[id], SHOP_FLOOR - r - (talking ? Math.abs(Math.sin(t*12))*6 : 0)); drawCharacter(g, ch, r, { facing:id === 'keeper' ? 1 : -1, ...looks(ch), bride:id === 'keeper2' && lines === WEDDING_LINES }); g.restore(); }
   return say;
 }
 function drawDinnerPlace(t) {
@@ -6643,8 +6668,8 @@ function horrorSnapshot() {
     m:[r1(m.x), r1(m.y), r2(m.a), MSTATES.indexOf(m.state), r1(m.waitT), r1(m.walk), monsterStunned(m) ? 1 : 0], left:r1(Hh.left), fl:r2(Hh.flash), e:NETEV.splice(0) };
 }
 function snapshot() {
-  const f = G.fighters.map(p => { const b = p.body; return [r1(b.position.x), r1(b.position.y), r2(b.angle), p.alive ? 1 : 0, p.ko > 0 ? r1(p.ko) : 0, Math.round(p.dizzy), p.facing, r2(p.punchAnim), p.flash > 0 ? r2(p.flash) : 0, p.grabbing ? p.grabbing.idx : -1, r2(p.squash), p.special && p.special.kind === 'glitch' ? [r1(p.special.x), r1(p.special.y), r2(p.special.t), p.special.boom ? 1 : 0] : 0, p.walking ? r1(p.walk) : -1, Math.round(p.r)]; }); // (the last three: Missing Arrow's glitch fest, how far along his steps the Admin is, and how big they are)
-  return { t:'s', ph:G.phase, tm:r2(G.timer), go:r2(G.goT), bn:G.banner, w:G.wins, f, c:G.clouds.map(c => r1(c.position.x)), hz:(G.hazards || []).map(h => [HZ_CODES.indexOf(h.type), r1(h.x), r1(h.y), r2(Math.max(0, h.warn)), h.type === 'car' ? h.dir*10 + (h.dir > 0 ? h.c : -h.c) : h.type === 'bird' ? h.dir : h.type === 'zap' ? h.wire : h.type === 'geyser' ? Math.round(h.live*100) : 0]), wv:(G.waves || []).map(w => [r1(w.x), r1(w.y), w.dir, Math.round(w.dist), w.owner]), ban:(G.bans || []).map(b => [r1(b.x), b.dir]), shot:(G.shots || []).map(s => [r1(s.x), r1(s.y), s.dir]), th:(G.things || []).map(o => [o.kind, r1(o.body ? o.body.position.x : o.x), r1(o.body ? o.body.position.y : o.y), r2(o.body ? o.body.angle : 0)]), fz:G.freeze ? [G.freeze.by, r1(G.freeze.until - G.time)] : 0, e:NETEV.splice(0) };
+  const f = G.fighters.map(p => { const b = p.body; return [r1(b.position.x), r1(b.position.y), r2(b.angle), p.alive ? 1 : 0, p.ko > 0 ? r1(p.ko) : 0, Math.round(p.dizzy), p.facing, r2(p.punchAnim), p.flash > 0 ? r2(p.flash) : 0, p.grabbing ? p.grabbing.idx : -1, r2(p.squash), p.special && p.special.kind === 'glitch' ? [r1(p.special.x), r1(p.special.y), r2(p.special.t), p.special.boom ? 1 : 0] : 0, p.walking ? r1(p.walk) : -1, Math.round(p.r), Math.round(p.energy || 0)]; }); // (the last three: Missing Arrow's glitch fest, how far along his steps the Admin is, and how big they are)
+  return { t:'s', ph:G.phase, tm:r2(G.timer), go:r2(G.goT), bn:G.banner, w:G.wins, f, c:G.clouds.map(c => r1(c.position.x)), hz:(G.hazards || []).map(h => [HZ_CODES.indexOf(h.type), r1(h.x), r1(h.y), r2(Math.max(0, h.warn)), h.type === 'car' ? h.dir*10 + (h.dir > 0 ? h.c : -h.c) : h.type === 'bird' ? h.dir : h.type === 'zap' ? h.wire : h.type === 'geyser' ? Math.round(h.live*100) : 0]), wv:(G.waves || []).map(w => [r1(w.x), r1(w.y), w.dir, Math.round(w.dist), w.owner]), ban:(G.bans || []).map(b => [r1(b.x), b.dir]), shot:(G.shots || []).map(s => [r1(s.x), r1(s.y), s.dir]), las:(G.lasers || []).map(l => [r1(l.x), r1(l.y), l.dir, r1(l.w), r2(l.t)]), th:(G.things || []).map(o => [o.kind, r1(o.body ? o.body.position.x : o.x), r1(o.body ? o.body.position.y : o.y), r2(o.body ? o.body.angle : 0)]), fz:G.freeze ? [G.freeze.by, r1(G.freeze.until - G.time)] : 0, e:NETEV.splice(0) };
 }
 
 // A stand-in for PeerJS that talks between browser tabs, used for testing with ?mock=1
@@ -6901,12 +6926,13 @@ function applySnap(s) {
     p.tgt = { x:a[0], y:a[1], a:a[2] };
     if (!p.seen || (!p.alive && a[3]) || far) { pos.x = a[0]; pos.y = a[1]; p.body.angle = a[2]; p.seen = true; }
     p.alive = !!a[3]; p.ko = a[4]; p.dizzy = a[5]; p.facing = a[6]; p.punchAnim = a[7]; p.flash = a[8]; p.grabbing = a[9] >= 0 ? G.fighters[a[9]] : null; p.squash = a[10];
-    p.special = a[11] ? { kind:'glitch', x:a[11][0], y:a[11][1], t:a[11][2], boom:!!a[11][3] } : null; p.walking = a[12] >= 0; if (p.walking) p.walk = a[12]; if (a[13]) p.r = a[13];
+    p.special = a[11] ? { kind:'glitch', x:a[11][0], y:a[11][1], t:a[11][2], boom:!!a[11][3] } : null; p.walking = a[12] >= 0; if (p.walking) p.walk = a[12]; if (a[13]) p.r = a[13]; p.energy = a[14] || 0;
   });
   if (s.c) s.c.forEach((x, i) => { if (G.clouds[i]) G.clouds[i].tx = x; });
   G.waves = (s.wv || []).map(a => ({ x:a[0], y:a[1], dir:a[2], dist:a[3], owner:a[4] }));
   G.bans = (s.ban || []).map(a => ({ x:a[0], dir:a[1] }));
   G.shots = (s.shot || []).map(a => ({ x:a[0], y:a[1], dir:a[2] }));
+  G.lasers = (s.las || []).map(a => ({ x:a[0], y:a[1], dir:a[2], w:a[3], t:a[4] }));
   G.things = (s.th || []).map(a => ({ kind:a[0], x:a[1], y:a[2], a:a[3] })); G.freezeC = s.fz ? { by:s.fz[0], left:s.fz[1] } : null;
   G.hazards = (s.hz || []).map(a => { const type = HZ_CODES[a[0]] || 'ice'; return { type, x:a[1], y:a[2], warn:a[3], r: type === 'snow' ? 36 : 24, dir: type === 'car' ? Math.sign(a[4]) : a[4], c: Math.abs(a[4]) % 10, wire:a[4], live: type === 'geyser' ? a[4]/100 : a[2], ph:a[3] ? 0 : (a[1]|0) % 7 }; });
   for (const e of s.e || []) runEv(...e);
