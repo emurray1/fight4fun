@@ -439,6 +439,7 @@ html.thanks .fff span{border-color:#8a4b14;color:#d2691e}
       <p>New stuff is on the way for Fight for Fun. Here's what's coming next:</p>
       <ul class="upds-list"><li><b>💌 Confession</b>: <span id="confessWhen"></span></li><li><b>💑 First things first</b>: <span id="datingWhen"></span></li><li><b>🍝 One more thing</b>: <span id="dateWhen"></span></li><li><b>💍 The big day</b>: <span id="weddingWhen"></span></li></ul>
       <div class="page-foot"><button id="dinnerBtn" class="btn">🍝 dinner place</button><button id="weddingBtn" class="btn">💒 wedding</button></div>
+      <div class="page-foot" id="againRow" hidden><span>do it again:</span><button id="againConfess" class="btn">💌 confession</button><button id="againDate" class="btn">🍝 2nd date</button><button id="againWedding" class="btn">💍 wedding</button></div>
     </div>
   </div>
 </div>
@@ -3882,6 +3883,7 @@ function shopStep(dt) {
   SHOP.nearToys = f === 13 && isKid() && !SHOP.nearStairs && Math.abs(SHOP.x - TOY_X) < 80; // (only Goofy Sparkle plays with the toys)
   if (f === 12 || f === 13) dormStep();
   if (f === DINNER_FLOOR || f === WEDDING_FLOOR) placeStep();
+  SHOP.nearWed = wedSpot(); if (f === WEDDING_FLOOR) bouquetStep(); // (things to do at the wedding)
   if (f === 10) pbStep();
   SHOP.nearKeeper = !SHOP.near && !SHOP.nearStairs && !!KEEPERS[f] && Math.abs(KEEPERS[f] - SHOP.x) < (f === 6 ? 300 : 220) && (f !== 4 || (SHOP.revealed && !SHOP.chase));
   if (f === 4 && !SHOP.revealed && !SHOP.chase && !isAdmin()) { // walk close and the chair spins around (but the manager can't see the Admin, so it never does)
@@ -3901,7 +3903,7 @@ function shopStep(dt) {
   if (SHOP.nearSmi) SHOP.nearKeeper = false;
   crowdStep(); // (the fighters talking to the shopkeepers about the wedding, until it happens)
   SHOP.smiSayT = Math.max(0, (SHOP.smiSayT || 0) - dt);
-  if (h.punch && !pr.punch) { if (SHOP.nearCage) cageHit(); else if (SHOP.near) shopAct(SHOP.near.item); else if (SHOP.nearSkins) nextSkin(); else if (SHOP.nearSwitch) dormLight(); else if (SHOP.nearPaper) readPaper(); else if (SHOP.nearTask) doKTask(); else if (SHOP.nearToys) playToys(); else if (SHOP.nearStairs) shopStairs(); else if (SHOP.nearPal) palTalk(); else if (SHOP.nearSmi) smiTalk(); else if (SHOP.nearKeeper) shopTalk(); }
+  if (h.punch && !pr.punch) { if (SHOP.nearCage) cageHit(); else if (SHOP.near) shopAct(SHOP.near.item); else if (SHOP.nearSkins) nextSkin(); else if (SHOP.nearSwitch) dormLight(); else if (SHOP.nearPaper) readPaper(); else if (SHOP.nearWed) wedAct(); else if (SHOP.nearTask) doKTask(); else if (SHOP.nearToys) playToys(); else if (SHOP.nearStairs) shopStairs(); else if (SHOP.nearPal) palTalk(); else if (SHOP.nearSmi) smiTalk(); else if (SHOP.nearKeeper) shopTalk(); }
   if (h.grab && !pr.grab && SHOP.nearKeeper) shopLaugh();
   if (isHex()) { // Hexstar says "beep boop baap!" now and then (or when you press special), and the shopkeepers act like he never said it
     SHOP.beepCD = (SHOP.beepCD ?? 3) - dt; SHOP.beepT = Math.max(0, (SHOP.beepT || 0) - dt);
@@ -4268,7 +4270,7 @@ const KEEPER_EAT = [[['keeper', 'Mmm! This soup is the BEST!'], ['keeper2', '*no
 const KEEPER_DINNER = [[['keeper', 'There you are, sleepyhead! Dinner is almost ready!'], ['keeper2', '*yawns* ...mmm, is it soup?'], ['keeper', 'Your favourite!'], ['keeper2', '*happy* hehe...']],
   [['keeper2', 'th-thank you for making dinner...'], ['keeper', 'Anything for my best shop buddy!']]];
 function keeperSpots() { // where the two shopkeepers are in their home
-  if (confessPending() || SHOP.confessVisit) return (SHOP.floor === 12 ? [{ ch:CHAR.keeper, x:1000 }, { ch:CHAR.keeper2, x:1240 }] : []).filter(s => s.ch.id !== CHARS[SHOP.who].id); // (it's time for the confession: they're both downstairs, together)
+  if (confessPending() || SHOP.confessVisit || SHOP.replay === 'confess') return (SHOP.floor === 12 ? [{ ch:CHAR.keeper, x:1000 }, { ch:CHAR.keeper2, x:1240 }] : []).filter(s => s.ch.id !== CHARS[SHOP.who].id); // (it's time for the confession: they're both downstairs, together)
   const e = performance.now() - (SHOP.shyWokeT || 0), down = shyDown(), walking = down && e > 1200 && e < 3600; // (she says something first, then walks to the stairs)
   const spots = SHOP.floor === 13 ? (down ? (e < 3600 ? [{ ch:CHAR.keeper2, x:1750 + Math.max(0, Math.min(1, (e - 1200)/2400))*(KEEPER_UP_X - 1750), walking }] : []) : [{ ch:CHAR.keeper2, x:shySleeping() ? 1750 : 840 }])
     : eatingDinner() ? [{ ch:CHAR.keeper, x:1350, eating:true }, { ch:CHAR.keeper2, x:1650, eating:true }] // (at the dinner table, eating together)
@@ -4461,7 +4463,7 @@ function dormStep() { // the roommates take turns talking (by the clock)
   const pb = SHOP.pb, now = performance.now(); if (!pb || now < pb.next) return;
   const here = new Set(dormSpots().map(s => s.ch.id)); if (!here.size) return;
   const keepersDown = DORMS[SHOP.dorm || 0].keepers && SHOP.floor === 12;
-  const chats = (keepersDown && confessPending() ? [CONFESS_LINES] : keepersDown && SHOP.confessVisit ? KEEPER_LOVE : keepersDown && eatingDinner() ? KEEPER_EAT : keepersDown && shyDown() ? KEEPER_DINNER : (gossipOn() && !DORMS[SHOP.dorm || 0].keepers ? CONFESS_GOSSIP : []).concat(dormNight() ? DORMS[SHOP.dorm || 0].chats : DORM_DAY[SHOP.dorm || 0])).filter(c => c.every(([id]) => here.has(id))); // (night talk or morning talk)
+  const chats = (keepersDown && (confessPending() || SHOP.replay === 'confess') ? [CONFESS_LINES] : keepersDown && SHOP.confessVisit ? KEEPER_LOVE : keepersDown && eatingDinner() ? KEEPER_EAT : keepersDown && shyDown() ? KEEPER_DINNER : (gossipOn() && !DORMS[SHOP.dorm || 0].keepers ? CONFESS_GOSSIP : []).concat(dormNight() ? DORMS[SHOP.dorm || 0].chats : DORM_DAY[SHOP.dorm || 0])).filter(c => c.every(([id]) => here.has(id))); // (night talk or morning talk)
   if (!chats.length) { const id = [...here][0], lines = (DORMS[SHOP.dorm || 0].crush && { diamond:['Hi, Missing Arrow... *blushes*', 'I saved you some snacks, hehe.', 'You look cute when you glitch.'], arrow:['H-hi, Sly Diamond... *happy glitch*', 'Y-your eyelashes are really pretty...', '*blushes and glitches*'] }[id]) || (id === 'keeper2' && shySleeping() && ['Zzz...', '*snores softly*', 'zzz... one pink bow, please... zzz']) || PB_SOLO[id] || ['...']; pbSay(id, lines[Math.floor(Math.random()*lines.length)]); pb.next = now + 4200; return; } // (alone in the room) // (alone with you in their room, they say sweet things to the one they like)
   if (!pb.chat || pb.line >= pb.chat.length) { pb.chat = chats[(pb.ci = ((pb.ci ?? -1) + 1) % chats.length)]; pb.line = 0; }
   const [id, text] = pb.chat[pb.line++]; pbSay(id, text); pb.next = now + (pb.line >= pb.chat.length ? 5200 : 3600);
@@ -4525,7 +4527,7 @@ const KTASKS = { // each chore, and where you do it
   plant:{ name:'Water the plant', ask:'Our plant looks thirsty. Can you water it? It is next to the fridge.', hint:'The plant is next to the fridge.', floor:12, x:1690, done:'*splish splash* The plant looks happy!' },
 };
 const TASK_PAY = 20, TOY_X = 1150;
-const shySleeping = () => SHOP.floor === 13 && dormNight() && !SHOP.shyAwake && !confessPending() && !SHOP.confessVisit; // at night, the Shy Shopkeeper is asleep in her bed (until you wake her up for dinner)
+const shySleeping = () => SHOP.floor === 13 && dormNight() && !SHOP.shyAwake && !confessPending() && !SHOP.confessVisit && SHOP.replay !== 'confess'; // at night, the Shy Shopkeeper is asleep in her bed (until you wake her up for dinner)
 const kDone = () => SHOP.kdone || (SHOP.kdone = new Set());
 function nextKTask() { return (dormNight() ? ['wake'] : []).concat(['dinner', 'fire', 'plant']).find(id => !kDone().has(id)) || null; } // (she can only be woken up at night)
 function fightyTalk() { // you walked up to the Fighty Shopkeeper at home and pressed punch
@@ -5642,7 +5644,8 @@ const DATING_MIN = 60; // an hour after the confession, the shopkeepers start da
 const DATE2_MIN = 10; // and 10 minutes after they start dating, they go on their 2nd date
 const WEDDING_MIN = 30, WEDDING_LONG = 3; // and 30 minutes after that, the big day: they get married! The wedding only lasts 3 minutes
 const confessPending = () => { const s = confessStart(); return !!s && !confessSeen() && Date.now() - s >= CONFESS_MIN*60000; }; // (time's up, and you haven't watched it yet)
-function confessDone() { lsSet('fff-confessed', String(Date.now())); SHOP.confessVisit = true; if (sfx.win) sfx.win(); } // (she stays downstairs with Fighty for the rest of your visit)
+function confessDone() { if (!confessSeen()) lsSet('fff-confessed', String(Date.now())); SHOP.confessVisit = true; SHOP.replay = null; // (watching it again doesn't start the countdowns over)
+  if (sfx.win) sfx.win(); } // (she stays downstairs with Fighty for the rest of your visit)
 // until the confession happens, the fighters gossip about it (in player breaks and in their dorm rooms)
 const gossipOn = () => !!confessStart() && !confessSeen();
 const CONFESS_GOSSIP = [
@@ -5672,8 +5675,18 @@ function updsTick() { // the countdown on the page
     : wleft > 0 ? `The wedding is in ${mmss(wleft)}! It only lasts ${WEDDING_LONG} minutes, so don't miss it. Press the wedding button when it starts!` : wleft > -WEDDING_LONG*60000 ? `The wedding is happening NOW! Press the wedding button! (${mmss(wleft + WEDDING_LONG*60000)} left)`
     : unlocked(CHAR.flower) ? 'They got married! 💍' : 'They got married! 💍 (You missed the wedding...)';
   if ($('weddingWhen').textContent !== wtext) $('weddingWhen').textContent = wtext;
+  againShow();
 }
 $('updsBtn').onclick = () => { audioOn(); if (!confessStart()) lsSet('fff-confess', String(Date.now())); openPage('upds'); updsTick(); };
+// do it again: once you've been through part of the story, you can do it again right away, any time (no waiting, and the countdowns don't start over)
+const againOk = { confess:() => confessSeen() || !!shop.owned.chefhat || unlocked(CHAR.flower), date:() => !!shop.owned.chefhat, wedding:() => unlocked(CHAR.flower) };
+function againShow() { const any = Object.values(againOk).some(f => f()); $('againRow').hidden = !any; $('againConfess').hidden = !againOk.confess(); $('againDate').hidden = !againOk.date(); $('againWedding').hidden = !againOk.wedding(); }
+$('againConfess').onclick = () => { // straight to the shopkeepers' room in the dorms, where she tells Fighty
+  audioOn(); openShop(); Object.assign(SHOP, { floor:12, dorm:DORMS.findIndex(d => d.keepers), x:200, cam:0, facing:1, visit:null, enterT:0, smi7y:false, smiSayT:0, ktask:null, kdone:new Set(), shyAwake:false, confessVisit:false, replay:'confess', pb:{ next:performance.now() + 800, chat:null, line:0 } });
+  SHOP.youSay = 'Shh... I think she is about to tell Fighty something!'; SHOP.youSayT = 3; renderShopCard(true);
+};
+$('againDate').onclick = () => goPlace(DINNER_FLOOR, 'date');
+$('againWedding').onclick = () => goPlace(WEDDING_FLOOR, 'wedding');
 // two places you walk around in (like the shop), from buttons on the up coming page:
 // the dinner place (floor 16): during the shopkeepers' 2nd date they're here eating spaghetti, and if you come, the chef gives you a chef hat
 // the wedding hall (floor 17, "the big day"): 30 minutes after their 2nd date they get married. It only lasts 3 minutes,
@@ -5692,9 +5705,9 @@ function weddingLeft() { // how long until the wedding starts (below zero once i
 const mmss = ms => `${Math.floor(ms/60000)}:${String(Math.floor(ms/1000) % 60).padStart(2, '0')}`;
 function placeMsg() { // what the card says in the dinner place or the wedding hall
   if (SHOP.floor === DINNER_FLOOR) { const left = date2Left();
-    return left <= 0 ? 'The shopkeepers are on their 2nd date! 🍝 The chef gave you a chef hat for coming. Put it on in the shop!'
+    return left <= 0 || SHOP.replay === 'date' ? 'The shopkeepers are on their 2nd date! 🍝 The chef gave you a chef hat for coming. Put it on in the shop!'
       : left === Infinity ? 'The dinner place is empty... the shopkeepers have not even confessed yet.' : `The shopkeepers have a table booked... their 2nd date is in ${mmss(left)}. Come back then!`; }
-  const left = weddingLeft(), now = left <= 0 && left > -WEDDING_LONG*60000;
+  const left = weddingLeft(), now = (left <= 0 && left > -WEDDING_LONG*60000) || SHOP.replay === 'wedding';
   return now ? 'The shopkeepers are getting married! 💍 You were there, so you got Flower Girl (a new fighter) and a flower crown!'
     : left <= 0 ? (unlocked(CHAR.flower) ? 'They got married! 💍 Thanks for coming to the wedding.' : 'The wedding is over... you missed it. They got married! 💍')
     : left === Infinity ? 'The wedding hall is empty... the shopkeepers are not even dating yet.' : `The wedding is in ${mmss(left)}. It only lasts ${WEDDING_LONG} minutes, so come back right on time!`;
@@ -5714,7 +5727,7 @@ function drawPlaceKeepers(t, lines, at, on) { // the two shopkeepers, taking tur
   return say;
 }
 function drawDinnerPlace(t) {
-  const date = date2Left() <= 0;
+  const date = date2Left() <= 0 || SHOP.replay === 'date'; // (or doing the date again)
   g.fillStyle = '#7a1f2b'; g.fillRect(0, 0, W, H); // dark red walls
   for (let x = 0; x < W; x += 80) for (let y = SHOP_FLOOR; y < H; y += 40) { g.fillStyle = ((x/80 + (y - SHOP_FLOOR)/40) % 2) ? '#f5f0e6' : '#222'; g.fillRect(x, y, 80, 40); } // a checkered floor
   g.fillStyle = '#1b2a4a'; g.strokeStyle = '#d4a017'; g.lineWidth = 10; g.fillRect(1200, 180, 280, 220); g.strokeRect(1200, 180, 280, 220); // a window with the night outside
@@ -5732,10 +5745,11 @@ function drawDinnerPlace(t) {
   if (date) for (let i=0;i<7;i++) { const k = (t*0.35 + i/7) % 1; g.save(); g.globalAlpha = 1 - k; drawLittleHeart(800 + Math.sin(t*2 + i*1.7)*220, 600 - k*420, 12 + i % 3*5); g.restore(); }
 }
 function drawWeddingHall(t) {
-  const left = weddingLeft(), now = left <= 0 && left > -WEDDING_LONG*60000, over = left <= -WEDDING_LONG*60000;
+  const left = weddingLeft(), now = (left <= 0 && left > -WEDDING_LONG*60000) || SHOP.replay === 'wedding', over = !now && left <= -WEDDING_LONG*60000; // (or doing the wedding again)
   g.fillStyle = '#eaf6ff'; g.fillRect(0, 0, W, H); // a light blue wedding hall
   g.fillStyle = '#d9c8a9'; g.fillRect(0, SHOP_FLOOR, W, H - SHOP_FLOOR); g.fillStyle = '#c0392b'; g.fillRect(620, SHOP_FLOOR, 360, H - SHOP_FLOOR); // the floor, and a red carpet
-  for (const x of [140, 1460]) { g.fillStyle = '#ffd23f'; g.strokeStyle = C.ink; g.lineWidth = 4; g.beginPath(); g.moveTo(x - 40, 230); g.quadraticCurveTo(x, 130, x + 40, 230); g.closePath(); g.fill(); g.stroke(); g.beginPath(); g.arc(x, 236, 10, 0, TAU); g.fill(); g.stroke(); } // wedding bells
+  const ring = SHOP.bellT && performance.now() - SHOP.bellT < 1500 ? Math.sin(t*16)*0.45*(1 - (performance.now() - SHOP.bellT)/1500) : 0; // (they swing when you ring them)
+  for (const x of [140, 1460]) { g.save(); g.translate(x, 150); g.rotate(ring); g.translate(-x, -150); g.fillStyle = '#ffd23f'; g.strokeStyle = C.ink; g.lineWidth = 4; g.beginPath(); g.moveTo(x - 40, 230); g.quadraticCurveTo(x, 130, x + 40, 230); g.closePath(); g.fill(); g.stroke(); g.beginPath(); g.arc(x, 236, 10, 0, TAU); g.fill(); g.stroke(); g.restore(); } // wedding bells
   for (const x of [260, 1340]) { g.fillStyle = '#8a5a2b'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(x - 150, SHOP_FLOOR - 90, 300, 20); g.strokeRect(x - 150, SHOP_FLOOR - 90, 300, 20); g.fillRect(x - 150, SHOP_FLOOR - 160, 300, 14); g.fillRect(x - 140, SHOP_FLOOR - 70, 16, 70); g.fillRect(x + 124, SHOP_FLOOR - 70, 16, 70); } // benches
   g.strokeStyle = '#2e9e4f'; g.lineWidth = 18; g.beginPath(); g.arc(800, 560, 330, Math.PI, 0); g.stroke(); // the flower arch
   g.beginPath(); g.moveTo(470, 560); g.lineTo(470, SHOP_FLOOR); g.moveTo(1130, 560); g.lineTo(1130, SHOP_FLOOR); g.stroke();
@@ -5752,12 +5766,53 @@ function drawWeddingHall(t) {
     for (let i=0;i<14;i++) { const k = (t*0.4 + i/14) % 1; g.fillStyle = i % 2 ? '#ff9fcf' : C.white; g.beginPath(); g.ellipse(200 + i*90 + Math.sin(t*2 + i)*30, -20 + k*(SHOP_FLOOR + 20), 8, 5, t + i, 0, TAU); g.fill(); }
     for (let i=0;i<7;i++) { const k = (t*0.35 + i/7) % 1; g.save(); g.globalAlpha = 1 - k; drawLittleHeart(800 + Math.sin(t*2 + i*1.7)*200, 480 - k*360, 12 + i % 3*5); g.restore(); }
   }
+  drawWedFun(t); // the bells, the cake, confetti and the bouquet
   const sign = over ? 'Just married!' : now ? null : 'coming soon...';
   if (sign) { g.fillStyle = C.white; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(640, 140, 320, 70); g.strokeRect(640, 140, 320, 70); g.fillStyle = '#c0392b'; g.font = `40px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(sign, 800, 176); }
   if (say) drawBubble(say[1], at[say[0]] + 200, SHOP_FLOOR - dormTall(CHAR[say[0]]) - 20, at[say[0]]);
 }
-function goPlace(floor) { // the buttons on the up coming page take you straight there, walking as your fighter (the back button goes home)
-  audioOn(); openShop(); Object.assign(SHOP, { floor, x:200, facing:1, visit:null, enterT:0, smi7y:false, smiSayT:0, pb:null });
+// things to do in the wedding hall: ring the wedding bells, throw confetti at the arch, eat wedding cake, and try to catch the bouquet when the Shy Shopkeeper throws it
+const WED_SPOTS = { bell:90, confetti:800, cake:1530 };
+const WED_CARDS = { bell:['Wedding bells', 'Pull the rope to ring the wedding bells! Press punch.'], confetti:['Confetti', 'Throw confetti for the happy couple! Press punch.'], cake:['Wedding cake', 'A big three-layer wedding cake. Have a slice! Press punch.'] };
+function wedSpot() { if (SHOP.floor !== WEDDING_FLOOR || SHOP.nearStairs) return null; for (const [k, x] of Object.entries(WED_SPOTS)) if (Math.abs(SHOP.x - x) < 70) return k; return null; }
+function wedAct() {
+  const k = SHOP.nearWed, now = performance.now();
+  if (k === 'bell') { SHOP.bellT = now; SHOP.youSay = 'Ding dong! Ding dong!'; if (sfx.ding) sfx.ding(); }
+  else if (k === 'confetti') { SHOP.confettiT = now; SHOP.youSay = ['Yay! Congratulations!', 'Woohoo! Confetti!', 'Hooray for the happy couple!'][Math.floor(Math.random()*3)]; if (sfx.win) sfx.win(); }
+  else if (k === 'cake') { SHOP.cakeBites = ((SHOP.cakeBites || 0) + 1) % 4; SHOP.youSay = ['Yum! Wedding cake!', 'Mmm... one more slice!', 'So much frosting!', '...the cake is all gone! Here comes another one!'][(SHOP.cakeBites + 3) % 4]; if (sfx.grab) sfx.grab(); }
+  SHOP.youSayT = 2.4; renderShopCard(true);
+}
+function bouquetStep() { // during the wedding, she throws the bouquet now and then: stand where it lands to catch it!
+  const left = weddingLeft(), now = performance.now();
+  if (!(left <= 0 && left > -WEDDING_LONG*60000) && SHOP.replay !== 'wedding') { SHOP.bouq = null; return; }
+  const b = SHOP.bouq;
+  if (!b) { SHOP.bouq = { next:now + 6000 }; return; }
+  if (b.t0 == null) { if (now >= b.next) Object.assign(b, { t0:now, x1:250 + Math.random()*1100 }); else return; }
+  if (now - b.t0 >= 1800) {
+    const caught = Math.abs(SHOP.x - b.x1) < 90;
+    if (caught) { SHOP.youSay = 'I CAUGHT THE BOUQUET!!'; SHOP.youSayT = 3; if (sfx.win) sfx.win(); SHOP.bouqCaught = (SHOP.bouqCaught || 0) + 1; }
+    SHOP.bouq = { next:now + 9000 }; renderShopCard(true);
+  }
+}
+function drawWedFun(t) {
+  const now = performance.now();
+  g.strokeStyle = '#c0392b'; g.lineWidth = 6; g.beginPath(); g.moveTo(140, 246); g.quadraticCurveTo(110, 450, WED_SPOTS.bell, SHOP_FLOOR - 70); g.stroke(); // the bell rope
+  g.fillStyle = '#d4a017'; g.strokeStyle = C.ink; g.lineWidth = 3; roundRect(WED_SPOTS.bell - 10, SHOP_FLOOR - 72, 20, 40, 8); g.fill(); g.stroke();
+  // the wedding cake table
+  const cx = WED_SPOTS.cake + 15; g.fillStyle = C.white; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(cx - 60, SHOP_FLOOR - 110, 120, 110); g.strokeRect(cx - 60, SHOP_FLOOR - 110, 120, 110);
+  const bites = SHOP.cakeBites || 0;
+  [[56, 40], [42, 36], [28, 32]].forEach(([hw, h], i) => { const y = SHOP_FLOOR - 110 - 40*i - h + (i ? 0 : 0); g.fillStyle = '#fff6f9'; g.fillRect(cx - hw, SHOP_FLOOR - 110 - [0, 40, 76][i] - h, hw*2 - (i === 0 ? bites*18 : 0), h); g.strokeRect(cx - hw, SHOP_FLOOR - 110 - [0, 40, 76][i] - h, hw*2 - (i === 0 ? bites*18 : 0), h); g.fillStyle = '#ff8fc1'; for (let d=0; d<hw*2 - (i === 0 ? bites*18 : 0) - 6; d+=14) { g.beginPath(); g.arc(cx - hw + 7 + d, SHOP_FLOOR - 110 - [0, 40, 76][i] - h + 4, 4, 0, TAU); g.fill(); } }); // three layers (with slices missing as you eat)
+  drawLittleHeart(cx, SHOP_FLOOR - 110 - 76 - 32 - 14, 10); // a heart on top
+  // confetti, after you throw it
+  if (SHOP.confettiT && now - SHOP.confettiT < 2500) { const k = (now - SHOP.confettiT)/2500; for (let i=0;i<40;i++) { g.fillStyle = [C.red, C.yellow, C.blue, '#ff8fc1', '#2e9e4f'][i % 5]; g.globalAlpha = 1 - k; g.save(); g.translate(800 + Math.sin(i*2.4)*300*k + Math.sin(t*3 + i)*10, 260 + k*480*(0.5 + (i % 7)/10)); g.rotate(t*5 + i); g.fillRect(-5, -3, 10, 6); g.restore(); } g.globalAlpha = 1; }
+  // the bouquet flying through the air (and a circle on the floor where it will land)
+  const b = SHOP.bouq; if (b && b.t0 != null) { const k = Math.min(1, (now - b.t0)/1800), x = 920 + (b.x1 - 920)*k, y = 500 - Math.sin(k*Math.PI)*380 + (SHOP_FLOOR - 40 - 500)*k;
+    g.strokeStyle = 'rgba(192,57,43,.6)'; g.lineWidth = 3; g.setLineDash([8, 6]); g.beginPath(); g.ellipse(b.x1, SHOP_FLOOR - 4, 70, 12, 0, 0, TAU); g.stroke(); g.setLineDash([]);
+    g.save(); g.translate(x, y); g.rotate(t*6); g.fillStyle = '#2e9e4f'; g.fillRect(-4, 0, 8, 26); for (let i=0;i<6;i++) { const a = i*TAU/6; g.fillStyle = i % 2 ? C.white : '#ff8fc1'; g.beginPath(); g.arc(Math.cos(a)*12, Math.sin(a)*12 - 4, 9, 0, TAU); g.fill(); } g.fillStyle = '#ffd23f'; g.beginPath(); g.arc(0, -4, 7, 0, TAU); g.fill(); g.restore(); }
+  for (const [k, x] of Object.entries(WED_SPOTS)) if (SHOP.nearWed === k) drawPointer(x + 40, SHOP_FLOOR - (k === 'cake' ? 300 : 200), t);
+}
+function goPlace(floor, replay = null) { // the buttons on the up coming page take you straight there, walking as your fighter (the back button goes home)
+  audioOn(); openShop(); Object.assign(SHOP, { floor, x:200, facing:1, visit:null, enterT:0, smi7y:false, smiSayT:0, pb:null, replay });
   SHOP.youSay = floor === DINNER_FLOOR ? 'Mmm, it smells like spaghetti!' : 'Ooh, a wedding hall!'; SHOP.youSayT = 2.5; renderShopCard(true);
 }
 $('dinnerBtn').onclick = () => goPlace(DINNER_FLOOR);
@@ -6157,6 +6212,7 @@ $('shopCardOpen').onclick = () => { SHOP.cardClosed = false; renderShopCard(true
 $('shopPrev').onclick = () => { do SHOP.who = (SHOP.who + CHARS.length - 1) % CHARS.length; while (!unlocked(CHARS[SHOP.who]) || CHARS[SHOP.who].keeper); renderShopCard(true); };
 $('shopNext').onclick = () => { do SHOP.who = (SHOP.who + 1) % CHARS.length; while (!unlocked(CHARS[SHOP.who]) || CHARS[SHOP.who].keeper); renderShopCard(true); };
 function openShop() {
+  SHOP.replay = null; // (doing something again only lasts until you leave)
   const mine = CHARS.findIndex(ch => (CTRL[setup.slots[ch.id]] || CTRL.off).kind === 'human');
   Object.assign(SHOP, { floor:1, x:280, y:0, vy:0, facing:1, near:null, nearKeeper:false, nearStairs:false, prev:readHeld('local'), msg:'', msgT:0, echoT:0, carry:false, pushT:0, pushing:false, youSayT:0, chase:null, bossT:-1, cam:0 });
   SHOP.visit = { x:860, phase:'talk', t:0 }; // the shy shopkeeper is downstairs chatting when you come in, then hurries back up
@@ -6408,7 +6464,7 @@ function drawSkinBooth(t) { // a big gold mirror on a stand: it shows you in eac
 }
 function renderShopCard(force) {
   const ch = CHARS[SHOP.who], st = SHOP.near, it = st && ITEMS.find(i => i.id === st.item);
-  const key = [shop.coins, ch.id, SHOP.floor >= DINNER_FLOOR ? placeMsg() : '', SHOP.nearPaper, SHOP.ktask, SHOP.nearTask, SHOP.nearToys, it && it.id, it && shop.owned[it.id], ITEMS.map(i => wears(i.id, ch)).join(), SHOP.nearKeeper, SHOP.nearStairs, SHOP.stairTo, SHOP.floor, jokeOpen(), !!SHOP.revealed, SHOP.nearSmi, SHOP.nearSkins, skinOf(ch), skinRec(ch).have.join(), SHOP.nearCage, SHOP.cage && SHOP.cage.lock.left, SHOP.cage && SHOP.cage.hp, SHOP.cage && SHOP.cage.freed, SHOP.nearPal && SHOP.nearPal.id, SHOP.stairRoom, SHOP.dorm, SHOP.nearSwitch, setup.dormTime].join('|');
+  const key = [shop.coins, ch.id, SHOP.floor >= DINNER_FLOOR ? placeMsg() : '', SHOP.nearWed, SHOP.nearPaper, SHOP.ktask, SHOP.nearTask, SHOP.nearToys, it && it.id, it && shop.owned[it.id], ITEMS.map(i => wears(i.id, ch)).join(), SHOP.nearKeeper, SHOP.nearStairs, SHOP.stairTo, SHOP.floor, jokeOpen(), !!SHOP.revealed, SHOP.nearSmi, SHOP.nearSkins, skinOf(ch), skinRec(ch).have.join(), SHOP.nearCage, SHOP.cage && SHOP.cage.lock.left, SHOP.cage && SHOP.cage.hp, SHOP.cage && SHOP.cage.freed, SHOP.nearPal && SHOP.nearPal.id, SHOP.stairRoom, SHOP.dorm, SHOP.nearSwitch, setup.dormTime].join('|');
   if (!force && key === SHOP.key) return;
   SHOP.key = key; $('coinCount').textContent = shop.coins; $('shopWho').textContent = ch.name;
   const card = $('shopCard'); fillShopCard(card, ch, it);
@@ -6497,6 +6553,7 @@ function fillShopCard(card, ch, it) {
     card.querySelector('.row').append(ask);
     return;
   }
+  if (!it && SHOP.nearWed) { card.innerHTML = `<h3>${WED_CARDS[SHOP.nearWed][0]}</h3><p>${WED_CARDS[SHOP.nearWed][1]}</p>`; return; }
   if (!it && (SHOP.floor === DINNER_FLOOR || SHOP.floor === WEDDING_FLOOR)) { card.innerHTML = `<h3>${SHOP.floor === DINNER_FLOOR ? 'Café Fun (the dinner place)' : 'The big day (the wedding hall)'}</h3><p>${placeMsg()}</p><p class="note">Press back (top right) to go home.</p>`; return; }
   if (!it && SHOP.floor >= 11 && SHOP.floor <= 15) {
     const d = DORMS[SHOP.dorm || 0];
