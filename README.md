@@ -22,6 +22,8 @@ Open `index.html` in a web browser, or play the GitHub Pages version.
 
 Every fighter has 200 hp. When it runs out, they get dizzy and can be thrown.
 
+**Bigger maps for more fighters:** with 5 or more fighters, the map gets bigger: the islands, bridges and ledges stretch out sideways (and the gaps between them too), and the camera zooms out so you can still see it all. 4 fighters or less is normal size, and 10 fighters is about 1.45 times as wide. It works on every map, and online too.
+
 The computer fighters are **aggressive**: they pick who to chase quickly, punch more often, hop around and never stand still for long, jump up after you, and use their specials a lot (even more on Hard). Cool Star fires star shots from far away, and Nervous Hexstar fires his laser once his tank has some energy.
 
 ## Game modes

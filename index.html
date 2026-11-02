@@ -1631,6 +1631,24 @@ const G = { state:'title', paused:false, time:0, fighters:[], particles:[], wins
 const wrap = a => ((a + Math.PI) % TAU + TAU) % TAU - Math.PI;
 const rand = (a, b) => a + Math.random()*(b-a);
 
+// with lots of fighters, the map gets bigger: the islands, bridges and ledges stretch out sideways (gaps too), and the camera zooms out to fit it all
+const stretchFor = n => Math.min(1.45, 1 + Math.max(0, n - 4)*0.075); // (4 fighters or less: normal size. 10 fighters: about 1.45 times as wide)
+function stretchMap(base, n) {
+  const s = stretchFor(n); G.stretch = s; if (s === 1) return base;
+  const sx = x => 800 + (x - 800)*s;
+  return { ...base, orig:base, ground:base.ground.map(gp => ({ ...gp, x1:sx(gp.x1), x2:sx(gp.x2) })), planks:base.planks.map(k => ({ ...k, x1:sx(k.x1), x2:sx(k.x2) })),
+    ledges:base.ledges.map(l => ({ ...l, x:sx(l.x), w:l.w*s, amp:(l.amp || 0)*s })), sides:base.sides.map(r => r.map(sx)), geysers:base.geysers && base.geysers.map(sx) };
+}
+const wideL = () => -800*((G.stretch || 1) - 1), wideR = () => W + 800*((G.stretch || 1) - 1); // the left and right edges of the (stretched) world
+function zoomOut() { const z = G.stretch || 1; if (z === 1) return false; g.save(); g.translate(800, H); g.scale(1/z, 1/z); g.translate(-800, -H); return true; } // (the bottom of the screen stays put: the extra room is sky)
+function drawArenaWide(t) { // the map's picture is drawn stretched to match, with its ledges and hazards moved back to where the picture expects them
+  const z = G.stretch || 1; if (z === 1 || !MAP.orig) return drawArena(t);
+  const live = MAP, hz = G.hazards, back = x => 800 + (x - 800)/z;
+  g.save(); g.translate(800, 0); g.scale(z, 1); g.translate(-800, 0);
+  MAP = MAP.orig; G.hazards = (hz || []).map(h => Object.assign(Object.create(h), { x:back(h.x) }));
+  try { drawArena(t, G.clouds.map(c => Object.assign(Object.create(c), { position:{ x:back(c.position.x), y:c.position.y }, w:c.w/z }))); }
+  finally { MAP = live; G.hazards = hz; g.restore(); }
+}
 function buildWorld() {
   const engine = Engine.create(); engine.gravity.y = 1.7; engine.positionIterations = 8; engine.velocityIterations = 6;
   const gh = MAP.groundH || (MAP.ice ? 260 : 50);
@@ -1668,11 +1686,11 @@ function makeFighter(ch, control, x, idx) {
 
 function startMatch() {
   G.boss = false; G.fx = {}; G.cpuMode = null; // (silly effects from the admin panel start off in a new fight)
-  G.wins = {}; G.round = 0; G.rounds = setup.rounds; G.online = null; MAP = MAPS[setup.map] || MAPS.cloud; G.mode = setup.mode; G.lineup = CHARS.filter(c => setup.slots[c.id] !== 'off' && unlocked(c)).map(c => ({ ch:c, control:setup.slots[c.id], team:setup.teams[c.id] || 0 }));
-  G.state = 'fight'; G.paused = false; showScreen(null); cv.focus(); if (G.mode === 'race') startRace(); else if (G.mode === 'horror') startHorror(); else startRound();
+  G.wins = {}; G.round = 0; G.rounds = setup.rounds; G.online = null; G.stretch = 1; MAP = MAPS[setup.map] || MAPS.cloud; G.mode = setup.mode; G.lineup = CHARS.filter(c => setup.slots[c.id] !== 'off' && unlocked(c)).map(c => ({ ch:c, control:setup.slots[c.id], team:setup.teams[c.id] || 0 }));
+  G.state = 'fight'; G.paused = false; showScreen(null); cv.focus(); if (G.mode === 'race') startRace(); else if (G.mode === 'horror') startHorror(); else { MAP = stretchMap(MAP, G.lineup.length); startRound(); } // (more fighters, bigger map)
 }
 function startBossFight() { // you (shopping as your fighter) against %#@%, one round on Cloud Island
-  G.boss = true; G.fx = {}; G.cpuMode = null; G.wins = {}; G.round = 0; G.rounds = 1; G.online = null; MAP = MAPS.cloud; G.mode = 'ffa';
+  G.boss = true; G.fx = {}; G.cpuMode = null; G.wins = {}; G.round = 0; G.rounds = 1; G.online = null; G.stretch = 1; MAP = MAPS.cloud; G.mode = 'ffa';
   G.lineup = [{ ch:CHARS[SHOP.who], control:'local', team:0, tag:'YOU' }, { ch:BOSS, control:'cpu', team:1, tag:'BOSS' }];
   G.state = 'fight'; G.paused = false; showScreen(null); musicUpdate(); cv.focus(); startRound();
 }
@@ -1772,7 +1790,7 @@ function eliminate(p) {
   p.alive = false;
   if (p.grabbing) release(p); if (p.grabbedBy) release(p.grabbedBy);
   Composite.remove(G.engine.world, p.body);
-  const x = Math.max(20, Math.min(W-20, p.body.position.x));
+  const x = Math.max(wideL() + 20, Math.min(wideR() - 20, p.body.position.x));
   ev('splash', x); ev('pop', x, WATER - 80, 'OUT!', p.ch.color);
   ev('sfx','splash'); ev('shake', 8);
 }
@@ -1986,13 +2004,13 @@ function updateRoad() {
   if (G.phase === 'fight') {
     if ((G.hzCar -= DT) <= 0) {
       const dir = Math.random() < 0.5 ? 1 : -1;
-      G.hazards.push({ type:'car', x: dir > 0 ? -260 : W + 260, y:roadTop - 36, dir, warn:1.8, c:(Math.random()*CAR_COLORS.length)|0, hit:[] });
-      ev('sfx','honk'); ev('pop', dir > 0 ? 170 : W - 170, roadTop - 110, 'HONK!', C.yellow); G.hzCar = rand(6, 9);
+      G.hazards.push({ type:'car', x: dir > 0 ? wideL() - 260 : wideR() + 260, y:roadTop - 36, dir, warn:1.8, c:(Math.random()*CAR_COLORS.length)|0, hit:[] });
+      ev('sfx','honk'); ev('pop', dir > 0 ? wideL() + 170 : wideR() - 170, roadTop - 110, 'HONK!', C.yellow); G.hzCar = rand(6, 9);
     }
     if ((G.hzBird -= DT) <= 0) {
       const dir = Math.random() < 0.5 ? 1 : -1, base = walk.y - 17 - 42;
-      for (let k=0;k<3;k++) G.hazards.push({ type:'bird', x:(dir > 0 ? -60 : W + 60) - dir*k*80, y:base + [0, -28, 14][k], base:base + [0, -28, 14][k], dir, warn:1.4, ph:k, hit:[] });
-      ev('sfx','tweet'); ev('pop', dir > 0 ? 150 : W - 150, base - 40, 'tweet tweet!', C.white); G.hzBird = rand(5, 8);
+      for (let k=0;k<3;k++) G.hazards.push({ type:'bird', x:(dir > 0 ? wideL() - 60 : wideR() + 60) - dir*k*80, y:base + [0, -28, 14][k], base:base + [0, -28, 14][k], dir, warn:1.4, ph:k, hit:[] });
+      ev('sfx','tweet'); ev('pop', dir > 0 ? wideL() + 150 : wideR() - 150, base - 40, 'tweet tweet!', C.white); G.hzBird = rand(5, 8);
     }
     if ((G.hzZap -= DT) <= 0) {
       const wires = MAP.ledges.map((l, i) => l.kind === 'wire' ? i : -1).filter(i => i >= 0), wi = wires[(Math.random()*wires.length)|0];
@@ -2005,11 +2023,11 @@ function updateRoad() {
     if (h.type === 'car') {
       h.x += h.dir*20;
       for (const p of G.fighters) { const pb = p.body.position; if (p.alive && !h.hit.includes(p.idx) && Math.abs(pb.x - h.x) < 105 + p.r*0.6 && pb.y > h.y - 35 - p.r && pb.y < h.y + 35 + p.r) { h.hit.push(p.idx); roadHit(p, 'car', h.dir); } }
-      if (h.x < -320 || h.x > W + 320) h.dead = true;
+      if (h.x < wideL() - 320 || h.x > wideR() + 320) h.dead = true;
     } else if (h.type === 'bird') {
       h.x += h.dir*8; h.ph += DT; h.y = h.base + Math.sin(h.ph*6)*12;
       for (const p of G.fighters) { const pb = p.body.position; if (p.alive && !h.hit.includes(p.idx) && Math.hypot(pb.x - h.x, pb.y - h.y) < p.r + 18) { h.hit.push(p.idx); roadHit(p, 'bird', h.dir); } }
-      if (h.x < -400 || h.x > W + 400) h.dead = true;
+      if (h.x < wideL() - 400 || h.x > wideR() + 400) h.dead = true;
     } else if (h.type === 'zap') {
       h.live -= DT; h.y = h.live; const wl = MAP.ledges[h.wire];
       for (const p of G.fighters) { const b = p.body; if (p.alive && !h.hit.includes(p.idx) && Math.abs(b.position.x - wl.x) < wl.w/2 + 6 && b.bounds.max.y > wl.y - 32 && b.bounds.max.y < wl.y + 14) { h.hit.push(p.idx); roadHit(p, 'zap', 0); } }
@@ -2069,7 +2087,7 @@ function startSpecial(p, grounded) {
     return;
   }
   if (kind === 'glitch') {
-    p.special = { kind, t:0, hit:[], x:Math.max(80, Math.min(W - 80, b.position.x + p.facing*GLITCH_DIST)), y:b.position.y, boom:false }; p.specCD = 6;
+    p.special = { kind, t:0, hit:[], x:Math.max(wideL() + 80, Math.min(wideR() - 80, b.position.x + p.facing*GLITCH_DIST)), y:b.position.y, boom:false }; p.specCD = 6;
     ev('pop', b.position.x, b.position.y - 70, 'GLITCH FEST!', C.red); ev('sfx','buzz');
     return;
   }
@@ -2228,7 +2246,7 @@ function updateBans() {
   if (!G.bans || !G.bans.length) return;
   for (const bn of G.bans) {
     bn.x += bn.dir*BAN_SPEED*DT;
-    if (!bn.turned && (bn.dir > 0 ? bn.x > W + 60 : bn.x < -60)) { bn.turned = true; bn.dir = -bn.dir; } // off the edge: come back the other way
+    if (!bn.turned && (bn.dir > 0 ? bn.x > wideR() + 60 : bn.x < wideL() - 60)) { bn.turned = true; bn.dir = -bn.dir; } // off the edge: come back the other way
     for (const q of G.fighters) {
       if (q === bn.owner || !q.alive || allies(bn.owner, q) || q.ch.id === 'admin') continue;
       const pos = q.body.position; if (Math.abs(pos.x - bn.x) > BAN_W/2 + q.r || pos.y < BAN_TOP - q.r || pos.y > BAN_BOTTOM + q.r) continue;
@@ -2236,7 +2254,7 @@ function updateBans() {
       eliminate(q);
     }
   }
-  G.bans = G.bans.filter(bn => !(bn.turned && (bn.dir > 0 ? bn.x > W + 80 : bn.x < -80)));
+  G.bans = G.bans.filter(bn => !(bn.turned && (bn.dir > 0 ? bn.x > wideR() + 80 : bn.x < wideL() - 80)));
 }
 function updateShots() { // Cool Star's star shots fly until they hit someone or leave the map
   if (G.lasers && G.lasers.length) { for (const l of G.lasers) l.t -= DT; G.lasers = G.lasers.filter(l => l.t > 0); } // (Nervous Hexstar's laser beams fade away)
@@ -2248,13 +2266,13 @@ function updateShots() { // Cool Star's star shots fly until they hit someone or
       const pos = q.body.position; if (Math.hypot(pos.x - s.x, pos.y - s.y) > q.r + SHOT_R) continue;
       specialHit(s.owner, q, SHOT_DMG, s.dir*14, -9, 'STAR SHOT!'); ev('pop', pos.x, pos.y - 20, `-${SHOT_DMG}`, C.red); s.dead = true;
     }
-    if (s.x < -60 || s.x > W + 60) s.dead = true;
+    if (s.x < wideL() - 60 || s.x > wideR() + 60) s.dead = true;
   }
   G.shots = G.shots.filter(s => !s.dead);
 }
 function drawShots(t) { // a spinning yellow star with speed lines behind it, like Mason's drawing
   for (const l of G.lasers || []) { // Nervous Hexstar's laser: a bright blue beam all the way across
-    const k = Math.max(0, l.t/LASER_T), end = l.dir > 0 ? W + 40 : -40;
+    const k = Math.max(0, l.t/LASER_T), end = l.dir > 0 ? wideR() + 40 : wideL() - 40;
     g.globalAlpha = k*0.45; g.fillStyle = '#2ad1ff'; g.fillRect(Math.min(l.x, end), l.y - l.w, Math.abs(end - l.x), l.w*2);
     g.globalAlpha = k; g.fillStyle = '#2ad1ff'; g.fillRect(Math.min(l.x, end), l.y - l.w/2, Math.abs(end - l.x), l.w); g.fillStyle = C.white; g.fillRect(Math.min(l.x, end), l.y - l.w/6, Math.abs(end - l.x), l.w/3); g.globalAlpha = 1;
   }
@@ -2539,7 +2557,7 @@ function step() {
     if (!p.alive) continue;
     p.grounded -= DT;
     const pos = p.body.position;
-    if (pos.y > WATER + 30 || pos.x < -260 || pos.x > W + 260) {
+    if (pos.y > WATER + 30 || pos.x < wideL() - 260 || pos.x > wideR() + 260) {
       if (p.ch.id !== 'admin') eliminate(p);
       else { // the Admin can't be knocked out: he pops right back down from the sky
         if (p.grabbing) release(p); if (p.grabbedBy) release(p.grabbedBy);
@@ -5421,13 +5439,14 @@ function frame(now) {
   else if (G.state === 'fight') {
     const flip = G.fx && G.fx.flip; if (flip) { g.save(); g.translate(W/2, H/2); g.rotate(Math.PI); g.translate(-W/2, -H/2); } // upside-down (an admin's silly effect)
     drawSky(t, MAP); if (G.boss) drawBossSky(t);
-    drawArena(t); if (isNight() && MAP.id !== 'cloud') drawNightTint(t);
+    const zoomed = zoomOut(); // (zoomed out when the map is bigger)
+    drawArenaWide(t); if (isNight() && MAP.id !== 'cloud') drawNightTint(t);
     drawHazards(t);
     drawWaves();
     drawBans(t); drawShots(t); drawThings(t);
     for (const p of G.fighters) if (p.alive && !p.grabbing) drawFighter(p, t);
     for (const p of G.fighters) if (p.alive && p.grabbing) drawFighter(p, t);
-    drawParticles(G.paused ? 0 : dt); if (G.boss) drawGlitches(t); drawDisco(t); if (flip) g.restore();
+    drawParticles(G.paused ? 0 : dt); if (zoomed) g.restore(); if (G.boss) drawGlitches(t); drawDisco(t); if (flip) g.restore();
     drawWatchers(t); drawHUD(); drawCoinRain(t); drawPopups(t); drawOverlayText();
   } else { drawSky(t, null); drawMenuGround(t); }
   requestAnimationFrame(frame);
@@ -5914,7 +5933,7 @@ function adminPower(p, act, arg, byMon) { // on this computer, or on the host fo
   if (act === 'rain') return ev('coinrain');
   if (act === 'map') { // the fight jumps to another map (this round starts over there)
     if (!MAPS[arg] || !powerFight() || G.online === 'client') return;
-    setup.map = arg; MAP = MAPS[arg]; G.round = Math.max(0, G.round - 1); startRound();
+    setup.map = arg; MAP = stretchMap(MAPS[arg], G.lineup.length); G.round = Math.max(0, G.round - 1); startRound();
     if (G.online === 'host') netBroadcast({ t:'map', map:arg });
     return;
   }
@@ -6886,7 +6905,7 @@ function hostStartMatch() {
   }
   if (lineup.length < (L.mode === 'horror' ? 1 : 2)) { const m = $('lobbyMsg'); if (m) m.textContent = L.mode === 'horror' ? 'Pick a fighter first.' : 'You need at least 2 fighters. Wait for a friend, or add a computer fighter.'; return; }
   if (L.mode === 'teams' && !(lineup.some(l => l.team === 0) && lineup.some(l => l.team === 1))) { const m = $('lobbyMsg'); if (m) m.textContent = 'Each team needs at least one fighter.'; return; }
-  MAP = MAPS[L.map] || MAPS.cloud; G.mode = L.mode; G.online = 'host'; G.lineup = lineup; G.wins = {}; G.round = 0; G.rounds = setup.rounds; G.paused = false; NETEV.length = 0;
+  G.mode = L.mode; G.stretch = 1; MAP = L.mode === 'race' || L.mode === 'horror' ? MAPS[L.map] || MAPS.cloud : stretchMap(MAPS[L.map] || MAPS.cloud, lineup.length); G.online = 'host'; G.lineup = lineup; G.wins = {}; G.round = 0; G.rounds = setup.rounds; G.paused = false; NETEV.length = 0;
   for (const f of lineup) if (f.control.startsWith('net:')) { const r = Net.inputs.get(f.control.slice(4)); if (r) r.seen = null; }
   setup.track = L.track || setup.track; setup.hmap = L.hmap || setup.hmap; setup.hmonster = L.hmonster || 'cpu';
   netBroadcast({ t:'start', rounds:G.rounds, mode:G.mode, map:MAP.id, track:setup.track, hmap:setup.hmap, hmonster:setup.hmonster, daytime:setup.daytime, lineup:lineup.map(l => ({ ch:l.ch.id, control: l.control === 'local' ? 'host' : l.control, tag:l.tag, team:l.team })) });
@@ -6950,7 +6969,7 @@ function clientOnData(d) {
     case 'daytime': G.hostDaytime = d.d; break; // the host switched day or night
     case 'hmap': if (HMAPS[d.hmap] && G.horror) { HOUSE = HMAPS[d.hmap]; G.horror.spots = HOUSE.spots.map(s => ({ ...s, who:null })); } break; // the host moved Horror to the other map
     case 'resize': { const p = G.fighters.find(f => f.idx === d.idx); if (p) p.r = +d.r || p.r; break; } // someone went giant or tiny
-    case 'map': if (MAPS[d.map]) { MAP = MAPS[d.map]; G.clouds = ledgeObjs(MAP); } break; // the host moved the fight to another map
+    case 'map': if (MAPS[d.map]) { MAP = stretchMap(MAPS[d.map], G.fighters.length); G.clouds = ledgeObjs(MAP); } break; // the host moved the fight to another map
     case 'pmove': if (!(popDrag && popDrag.p.id === d.id)) movePopup(d.id, d.x, d.y); break; // (not while you're still dragging it yourself)
     case 'swap': { const p = G.fighters.find(f => f.idx === d.idx), ch = CHAR[d.ch]; if (p && ch) { p.ch = ch; if (p.body) p.r = 38*(ch.size || 1); } break; } // someone (maybe you) changed fighter
     case 'kicked': endNet('The host removed you from the team.'); break;
@@ -6975,7 +6994,7 @@ function clientStart(d) {
       ch:monL ? CHAR[monL.ch] : null, control:monL && monL.control !== 'cpu' ? monL.control : null, tag:monL ? monL.tag : '', me:!!monL && monL.control === me } };
   } else G.fighters = d.lineup.map((l, i) => ({ ch:CHAR[l.ch], control:l.control, tag:l.tag, team:l.team || 0, idx:i, r:38*(CHAR[l.ch].size || 1), me:l.control === me, body:{ position:{ x:800, y:560 }, angle:0 }, tgt:null, seen:false,
     alive:true, ko:0, dizzy:0, facing:1, punchAnim:0, flash:0, grabbing:null, squash:0 }));
-  MAP = MAPS[d.map] || MAPS.cloud; G.clouds = ledgeObjs(MAP); G.hazards = []; G.waves = [];
+  G.stretch = 1; MAP = G.mode === 'race' || G.mode === 'horror' ? MAPS[d.map] || MAPS.cloud : stretchMap(MAPS[d.map] || MAPS.cloud, d.lineup.length); G.clouds = ledgeObjs(MAP); G.hazards = []; G.waves = []; // (the same bigger map as the host)
   G.state = 'fight'; showScreen(null); cv.focus();
 }
 function applySnap(s) {
