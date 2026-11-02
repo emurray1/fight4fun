@@ -439,7 +439,7 @@ html.thanks .fff span{border-color:#8a4b14;color:#d2691e}
       <p>New stuff is on the way for Fight for Fun. Here's what's coming next:</p>
       <ul class="upds-list"><li><b>💌 Confession</b>: <span id="confessWhen"></span></li><li><b>💑 First things first</b>: <span id="datingWhen"></span></li><li><b>🍝 One more thing</b>: <span id="dateWhen"></span></li><li><b>💍 The big day</b>: <span id="weddingWhen"></span></li></ul>
       <div class="page-foot"><button id="dinnerBtn" class="btn">🍝 dinner place</button><button id="weddingBtn" class="btn">💒 wedding</button></div>
-      <div class="page-foot" id="againRow" hidden><span>do it again:</span><button id="againConfess" class="btn">💌 confession</button><button id="againDate" class="btn">🍝 2nd date</button><button id="againWedding" class="btn">💍 wedding</button></div>
+      <div class="page-foot" id="againRow" hidden><button id="againBtn" class="btn">🔁 do it again</button><span id="againPick" hidden><button id="againConfess" class="btn">💌 confession</button><button id="againDate" class="btn">🍝 2nd date</button><button id="againWedding" class="btn">💍 wedding</button></span></div>
     </div>
   </div>
 </div>
@@ -5699,7 +5699,7 @@ function updsTick() { // the countdown on the page
   if ($('weddingWhen').textContent !== wtext) $('weddingWhen').textContent = wtext;
   againShow();
 }
-$('updsBtn').onclick = () => { audioOn(); if (!confessStart()) lsSet('fff-confess', String(Date.now())); openPage('upds'); updsTick(); };
+$('updsBtn').onclick = () => { $('againPick').hidden = true; audioOn(); if (!confessStart()) lsSet('fff-confess', String(Date.now())); openPage('upds'); updsTick(); };
 // do it again: once you've been through part of the story, you can do it again right away, any time (no waiting, and the countdowns don't start over)
 const againOk = { confess:() => confessSeen() || !!shop.owned.chefhat || unlocked(CHAR.flower), date:() => !!shop.owned.chefhat, wedding:() => unlocked(CHAR.flower) };
 function againShow() { const any = Object.values(againOk).some(f => f()); $('againRow').hidden = !any; $('againConfess').hidden = !againOk.confess(); $('againDate').hidden = !againOk.date(); $('againWedding').hidden = !againOk.wedding(); }
@@ -5707,6 +5707,7 @@ $('againConfess').onclick = () => { // straight to the shopkeepers' room in the 
   audioOn(); openShop(); Object.assign(SHOP, { floor:12, dorm:DORMS.findIndex(d => d.keepers), x:200, cam:0, facing:1, visit:null, enterT:0, smi7y:false, smiSayT:0, ktask:null, kdone:new Set(), shyAwake:false, confessVisit:false, replay:'confess', pb:{ next:performance.now() + 800, chat:null, line:0 } });
   SHOP.youSay = 'Shh... I think she is about to tell Fighty something!'; SHOP.youSayT = 3; renderShopCard(true);
 };
+$('againBtn').onclick = () => { $('againPick').hidden = !$('againPick').hidden; }; // (one button: press it to pick what to do again)
 $('againDate').onclick = () => goPlace(DINNER_FLOOR, 'date');
 $('againWedding').onclick = () => goPlace(WEDDING_FLOOR, 'wedding');
 // two places you walk around in (like the shop), from buttons on the up coming page:
