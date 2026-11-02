@@ -78,6 +78,7 @@ button:focus-visible,.ctl:focus-visible{outline:4px solid var(--yellow);outline-
 .msg{margin:0;min-height:1.3em;color:var(--maroon);font-size:18px}
 .soon{font-size:30px;text-align:center;margin:10px 0}
 .upds-list{font-size:20px;line-height:1.5}
+#dinnerCv{display:block;width:100%;max-width:800px;margin:10px auto;border:3px solid currentColor;border-radius:8px}
 .howto{border-top:4px dashed var(--ink);margin:0 24px;padding:14px 0 22px;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px 24px;font-size:17px;line-height:1.35}
 .howto b{font-family:var(--display);font-weight:400;font-size:22px;display:block}
 kbd{font-family:var(--body);border:2px solid var(--ink);border-bottom-width:4px;padding:0 5px;background:var(--soft);font-size:15px}
@@ -438,6 +439,17 @@ html.thanks .fff span{border-color:#8a4b14;color:#d2691e}
       <p class="soon">🚧 More updates coming soon! 🚧</p>
       <p>New stuff is on the way for Fight for Fun. Here's what's coming next:</p>
       <ul class="upds-list"><li><b>💌 Confession</b>: <span id="confessWhen"></span></li><li><b>💑 First things first</b>: <span id="datingWhen"></span></li><li><b>🍝 One more thing</b>: <span id="dateWhen"></span></li></ul>
+      <div class="page-foot"><button id="dinnerBtn" class="btn">🍝 dinner place</button></div>
+    </div>
+  </div>
+</div>
+
+<div id="dinner" class="screen" hidden>
+  <div class="panel page">
+    <header class="whois"><h2>dinner place</h2><button class="btn back" data-back>back</button></header>
+    <div class="page-body">
+      <p id="dinnerMsg" class="msg" role="status"></p>
+      <canvas id="dinnerCv" width="800" height="450"></canvas>
     </div>
   </div>
 </div>
@@ -701,6 +713,8 @@ const ITEMS = [
   { id:'bow', name:'Pink bow', price:0, desc:'A pink bow, tied by the funny fun shopkeeper on her break.', gift:true },
   { id:'badge', name:'Staff badge', price:0, desc:'A gold star badge from the fighty shopkeeper. You\'re one of the team now!', gift:true },
   { id:'crown', name:'Admin crown', price:0, desc:'A gold crown with a blue gem. You get it for playing a game with the Admin!', gift:true },
+  // from the dinner place, if you're there on the shopkeepers' 2nd date
+  { id:'chefhat', name:'Chef hat', price:0, desc:'A tall white chef hat from the dinner place. You got it for being there on the shopkeepers\' 2nd date!', gift:true },
   // the glitch shop (floor 9), behind the glitch blocks on the 5th floor: only Missing Arrow can get in
   { id:'cubes', name:'Glitch cubes', price:40, desc:'Little red and blue glitch cubes that float around you, and blink to a new spot now and then.', floor:9 },
   { id:'glasses3d', name:'3D glasses', price:30, desc:'Red and blue glasses. Everything looks glitchy through them!', floor:9, not:['star'] },
@@ -733,7 +747,7 @@ const skinOf = ch => (shop.skins[ch.id] && shop.skins[ch.id].on) || 'classic';
 const skinColor = id => id === 'rainbow' ? `hsl(${(performance.now()/1000*90) % 360},85%,60%)` : (SKIN[id] && SKIN[id].color) || null;
 const mySkin = ch => G.online ? 'classic' : skinOf(ch); // like the other shop things, skins show up on this computer (not in online games yet)
 const myColor = ch => skinColor(mySkin(ch)) || ch.color;
-const looks = ch => ({ skin:skinOf(ch), hat:wears('coolhat', ch), glasses:wears('shades', ch) && ch.id !== 'star', cape:wears('cape', ch), wings:wears('batwings', ch), headphones:wears('headphones', ch), bow:wears('bow', ch), badge:wears('badge', ch), cubes:wears('cubes', ch), glasses3d:wears('glasses3d', ch) && ch.id !== 'star', adminCrown:wears('crown', ch), turkeyhat:wears('turkeyhat', ch) });
+const looks = ch => ({ skin:skinOf(ch), hat:wears('coolhat', ch), glasses:wears('shades', ch) && ch.id !== 'star', cape:wears('cape', ch), wings:wears('batwings', ch), headphones:wears('headphones', ch), bow:wears('bow', ch), badge:wears('badge', ch), cubes:wears('cubes', ch), glasses3d:wears('glasses3d', ch) && ch.id !== 'star', adminCrown:wears('crown', ch), turkeyhat:wears('turkeyhat', ch), chefhat:wears('chefhat', ch) });
 // the shop room: you walk a fighter up to a stand to buy what's on it
 const SHOP = { who:null, floor:1, x:280, y:0, vy:0, facing:1, near:null, nearKeeper:false, nearStairs:false, talk:{ 1:-1, 2:-1, 4:-1, 6:-1 }, prev:{}, msg:'', msgT:0, key:'' };
 // two floors: the fighty shop downstairs, and the funny fun shop upstairs for things that don't fit downstairs
@@ -1173,7 +1187,7 @@ function drawCharacter(g, ch, r, o = {}) {
     g.save(); if (o.walk != null) g.translate(0, -Math.abs(Math.cos(o.walk))*14*r/180); // his hat bobs along with him
     onAdminHead(g, r, () => {
       if (o.headphones) drawHeadphones(g, r, -r, !!o.hat);
-      if (o.hat) drawHat(g, r, -r, o.facing || 1); else if (o.adminCrown) drawCrown(g, r, -r, C.blue); else if (o.turkeyhat) drawTurkeyHat(g, r, -r);
+      if (o.hat) drawHat(g, r, -r, o.facing || 1); else if (o.adminCrown) drawCrown(g, r, -r, C.blue); else if (o.turkeyhat) drawTurkeyHat(g, r, -r); else if (o.chefhat) drawChefHat(g, r, -r);
       if (o.bow) drawBow(g, r, -r - (o.hat ? r*0.5 : 0));
     }, o.walk != null);
     g.restore();
@@ -1228,7 +1242,7 @@ function drawCharacter(g, ch, r, o = {}) {
     for (let i=0;i<2;i++) { const a = tt*1.5 + i*Math.PI, s = (0.12 + Math.abs(Math.sin(tt*4 + i))*0.1)*r;
       g.fillStyle = i ? '#fffbe0' : '#ffe96b'; g.strokeStyle = C.ink; g.lineWidth = Math.max(1, r*0.03);
       g.beginPath(); twinklePath(g, Math.cos(a)*r*1.45, Math.sin(a)*r*1.1, s, s*0.22); g.fill(); g.stroke(); }
-    if (!o.hat && !o.adminCrown && !o.turkeyhat && o.beanie !== false) drawBeanie(g, r, tt); // he's a kid, so he wears a propeller beanie (unless he has the cool hat on)
+    if (!o.hat && !o.adminCrown && !o.turkeyhat && !o.chefhat && o.beanie !== false) drawBeanie(g, r, tt); // he's a kid, so he wears a propeller beanie (unless he has the cool hat on)
   }
   if (ch.id === 'diamond') { // Sly Diamond the therapist: her hair in a bun with a pencil through it, and her notebook
     if (!o.hat) {
@@ -1254,6 +1268,7 @@ function drawCharacter(g, ch, r, o = {}) {
   if (o.hat) drawHat(g, r, -TOPS[ch.shape]*r, o.facing || 1);
   else if (o.adminCrown) drawCrown(g, r, -TOPS[ch.shape]*r, C.blue);
   else if (o.turkeyhat) drawTurkeyHat(g, r, -TOPS[ch.shape]*r);
+  else if (o.chefhat) drawChefHat(g, r, -TOPS[ch.shape]*r);
   if (o.bow) drawBow(g, r, -TOPS[ch.shape]*r - (o.hat ? r*0.5 : 0));
   if (burst) { // strips of him slide sideways, with scan lines and static, like a broken TV
     g.save(); shapePath(g, ch.shape, r*1.02); g.clip();
@@ -1350,6 +1365,11 @@ function drawHat(g, r, topY, facing) { // the cool hat from the shop
   g.restore();
 }
 function drawTurkeyHat(g, r, topY) { const tt = performance.now()/1000; withG(g, () => drawTurkey(0, topY + r*0.08, r*0.95, tt)); } // the Thanksgiving turkey hat: a little turkey standing on your head
+function drawChefHat(g, r, topY) { // the chef hat from the dinner place: a white band with a tall puffy top
+  topY += r*0.14; g.save(); g.fillStyle = C.white; g.strokeStyle = C.ink; g.lineWidth = Math.max(2, r*0.05); const w = r*0.8, bh = r*0.26; // (it sits down on your head a little)
+  for (const [dx, dy, rr] of [[-0.28, 0.5, 0.3], [0.28, 0.5, 0.3], [0, 0.66, 0.36]]) { g.beginPath(); g.arc(dx*r, topY - bh - dy*r, rr*r, 0, TAU); g.fill(); g.stroke(); }
+  g.fillRect(-w/2, topY - bh - r*0.45, w, r*0.45); g.fillRect(-w/2, topY - bh, w, bh); g.strokeRect(-w/2, topY - bh, w, bh); g.restore();
+}
 function drawCrown(g, r, topY, gem = C.red) { // the winner's crown (and the Admin crown, with a blue gem)
   const w = r*0.9, h = r*0.6, y = topY - 4;
   g.beginPath(); g.moveTo(-w/2, y); g.lineTo(-w/2, y-h); g.lineTo(-w/4, y-h*0.55); g.lineTo(0, y-h*1.1); g.lineTo(w/4, y-h*0.55); g.lineTo(w/2, y-h); g.lineTo(w/2, y); g.closePath();
@@ -1362,7 +1382,7 @@ function charCanvas(ch, px, o = {}) {
   const g = c.getContext('2d'); g.scale(d, d);
   const tall = o.crown || o.hat || o.adminCrown, r = px*(tall ? 0.27 : 0.33);
   g.translate(px/2, px*(tall ? 0.62 : 0.53));
-  drawCharacter(g, ch, r, { facing:1, ko:o.ko, hat:o.hat && !o.crown, glasses:o.glasses, cape:o.cape, wings:o.wings, skin:o.skin, headphones:o.headphones, bow:o.bow && !o.crown, badge:o.badge, cubes:o.cubes, glasses3d:o.glasses3d, adminCrown:o.adminCrown && !o.crown, turkeyhat:o.turkeyhat && !o.crown, beanie:!o.crown && !o.adminCrown && !o.turkeyhat });
+  drawCharacter(g, ch, r, { facing:1, ko:o.ko, hat:o.hat && !o.crown, glasses:o.glasses, cape:o.cape, wings:o.wings, skin:o.skin, headphones:o.headphones, bow:o.bow && !o.crown, badge:o.badge, cubes:o.cubes, glasses3d:o.glasses3d, adminCrown:o.adminCrown && !o.crown, turkeyhat:o.turkeyhat && !o.crown, chefhat:o.chefhat && !o.crown, beanie:!o.crown && !o.adminCrown && !o.turkeyhat && !o.chefhat });
   if (o.crown) { if (ch.id === 'admin') onAdminHead(g, r, () => drawCrown(g, r, -r)); else drawCrown(g, r, -TOPS[ch.shape]*r); }
   return c;
 }
@@ -1427,7 +1447,7 @@ const sfx = {
 
 // ---------- menu music: an original bouncy polka loop, made with Web Audio ----------
 const Music = { timer:null, next:0, step:0, gain:null };
-const MENU_STATES = new Set(['title','setup','howto','settings','online','lobby','shop','upds']);
+const MENU_STATES = new Set(['title','setup','howto','settings','online','lobby','shop','upds','dinner']);
 function hz(n) { const m = /([A-G])(#?)(\d)/.exec(n); const i = { C:0, D:2, E:4, F:5, G:7, A:9, B:11 }[m[1]] + (m[2] ? 1 : 0); return 440*Math.pow(2, (i + 12*(+m[3] + 1) - 69)/12); }
 const TUNE = [ // [note, length in eighth notes], 16 bars of 2/4
   ['G4',1],['C5',1],['E5',1],['C5',1], ['G4',1],['C5',1],['E5',2], ['D5',1],['B4',1],['G4',1],['B4',1], ['D5',1],['F5',1],['D5',2],
@@ -5321,7 +5341,7 @@ function applyTheme() {
   document.documentElement.classList.toggle('thanks', thanks()); $('thanksNote').hidden = !thanks();
 }
 applyTheme();
-const screens = ['title','setup','pause','results','howto','settings','quitAsk','online','lobby','keys','shop','codes','adminPanel','upds'];
+const screens = ['title','setup','pause','results','howto','settings','quitAsk','online','lobby','keys','shop','codes','adminPanel','upds','dinner'];
 function showScreen(id) { for (const s of screens) $(s).hidden = s !== id; $('glitchShopBtn').hidden = !unlocked(CHAR.arrow); $('adminBtn').hidden = !unlocked(CHAR.admin); $('gameQuit').hidden = !(id === null && G.state === 'fight'); $('gameAdmin').hidden = !(id === null && G.state === 'fight' && unlocked(CHAR.admin)); musicUpdate(); }
 function openQuit() {
   if (G.state !== 'fight') return;
@@ -5554,6 +5574,38 @@ function updsTick() { // the countdown on the page
   if ($('dateWhen').textContent !== d2text) $('dateWhen').textContent = d2text;
 }
 $('updsBtn').onclick = () => { audioOn(); if (!confessStart()) lsSet('fff-confess', String(Date.now())); openPage('upds'); updsTick(); };
+// the dinner place (a button on the up coming page): during the shopkeepers' 2nd date they're here eating spaghetti, and if you come, the chef gives you a chef hat
+const DATE_LINES = [['keeper', 'This spaghetti is AMAZING!'], ['keeper2', '*twirls noodles* hehe...'], ['keeper', 'Happy 2nd date!'], ['keeper2', 'h-happy 2nd date... *blushes*']];
+const date2Left = () => confessSeen() ? (DATING_MIN + DATE2_MIN)*60000 - (Date.now() - (+lsGet('fff-confessed') || 0)) : Infinity; // (how long until the 2nd date)
+function drawDinner() {
+  if (G.state !== 'dinner') return; requestAnimationFrame(drawDinner);
+  const cv2 = $('dinnerCv'), t = performance.now()/1000, left = date2Left(), date = left <= 0;
+  if (date && !shop.owned.chefhat) { shop.owned.chefhat = true; saveShop(); if (sfx.win) sfx.win(); } // you're here for their date!
+  const msg = date ? 'The shopkeepers are on their 2nd date! 🍝 The chef gave you a chef hat for coming. Put it on in the shop!'
+    : left === Infinity ? 'The dinner place is empty... the shopkeepers have not even confessed yet.' : `The shopkeepers have a table booked... their 2nd date is in ${Math.floor(left/60000)}:${String(Math.floor(left/1000) % 60).padStart(2, '0')}. Come back then!`;
+  if ($('dinnerMsg').textContent !== msg) $('dinnerMsg').textContent = msg;
+  withG(cv2.getContext('2d'), () => {
+    g.save(); g.setTransform(cv2.width/W, 0, 0, cv2.height/H, 0, 0);
+    g.fillStyle = '#7a1f2b'; g.fillRect(0, 0, W, H); // dark red walls
+    for (let x = 0; x < W; x += 80) for (let y = SHOP_FLOOR; y < H; y += 40) { g.fillStyle = ((x/80 + (y - SHOP_FLOOR)/40) % 2) ? '#f5f0e6' : '#222'; g.fillRect(x, y, 80, 40); } // a checkered floor
+    g.fillStyle = '#1b2a4a'; g.strokeStyle = '#d4a017'; g.lineWidth = 10; g.fillRect(1200, 180, 280, 220); g.strokeRect(1200, 180, 280, 220); // a window with the night outside
+    g.fillStyle = '#fff6c9'; g.beginPath(); g.arc(1420, 230, 26, 0, TAU); g.fill(); for (const [bx, bh] of [[1220, 90], [1280, 140], [1350, 70], [1410, 120]]) { g.fillStyle = '#0d1426'; g.fillRect(bx, 400 - bh, 50, bh); }
+    g.fillStyle = '#ff5fa2'; g.font = `64px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.globalAlpha = 0.75 + Math.sin(t*4)*0.25; g.fillText('Café Fun', 420, 200); g.globalAlpha = 1; // a glowing sign
+    g.strokeStyle = '#3a2410'; g.lineWidth = 3; g.beginPath(); g.moveTo(800, 0); g.lineTo(800, 320); g.stroke(); g.fillStyle = '#d4a017'; g.beginPath(); g.moveTo(760, 360); g.lineTo(840, 360); g.lineTo(815, 320); g.lineTo(785, 320); g.closePath(); g.fill(); // a hanging lamp
+    const say = date ? DATE_LINES[Math.floor(t/2.8) % DATE_LINES.length] : null, at = { keeper:600, keeper2:1000 };
+    if (date) for (const id of ['keeper', 'keeper2']) { const ch = CHAR[id], r = dormR(ch), talking = say[0] === id; g.save(); g.translate(at[id], SHOP_FLOOR - r - (talking ? Math.abs(Math.sin(t*12))*6 : 0)); drawCharacter(g, ch, r, { facing:id === 'keeper' ? 1 : -1, ...looks(ch) }); g.restore(); }
+    g.fillStyle = C.white; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(540, 680, 520, 90); g.strokeRect(540, 680, 520, 90); // the table, with a red and white checked tablecloth
+    g.fillStyle = '#d63a3a'; for (let x = 540; x < 1060; x += 40) for (let y = 680; y < 770; y += 30) if (((x - 540)/40 + (y - 680)/30) % 2 === 0) g.fillRect(x, y, 40, Math.min(30, 770 - y));
+    g.strokeRect(540, 680, 520, 90);
+    for (const px of [700, 900]) { g.fillStyle = C.white; g.beginPath(); g.ellipse(px, 680, 60, 14, 0, 0, TAU); g.fill(); g.stroke(); if (date) { g.fillStyle = '#f2c14e'; g.beginPath(); g.ellipse(px, 672, 36, 12, 0, 0, TAU); g.fill(); g.fillStyle = '#c0392b'; g.beginPath(); g.arc(px + 6, 668, 9, 0, TAU); g.fill(); } } // plates (of spaghetti, on their date)
+    g.fillStyle = C.white; g.fillRect(793, 628, 14, 46); g.fillStyle = C.orange; g.beginPath(); g.ellipse(800, 618, 6, 11 + Math.sin(t*9)*2, 0, 0, TAU); g.fill(); // a candle
+    if (!date) { g.fillStyle = C.white; g.strokeStyle = C.ink; g.lineWidth = 3; g.fillRect(740, 636, 120, 34); g.strokeRect(740, 636, 120, 34); g.fillStyle = '#7a1f2b'; g.font = `20px ${FONT}`; g.fillText('RESERVED', 800, 654); }
+    if (say) drawBubble(say[1], at[say[0]] + 200, SHOP_FLOOR - dormTall(CHAR[say[0]]) - 20, at[say[0]]);
+    if (date) for (let i=0;i<7;i++) { const k = (t*0.35 + i/7) % 1; g.save(); g.globalAlpha = 1 - k; drawLittleHeart(800 + Math.sin(t*2 + i*1.7)*220, 600 - k*420, 12 + i % 3*5); g.restore(); }
+    g.restore();
+  });
+}
+$('dinnerBtn').onclick = () => { audioOn(); openPage('dinner'); drawDinner(); };
 // ---------- the admin panel: you get it with the admin code ----------
 const ONOFF_CHEAT = [[true, 'On'], [false, 'Off']];
 // `from`: 'menu', 'pause' (the pause menu: the fight waits behind it) or 'game' (the admin button during a fight: an online fight keeps going behind it)
