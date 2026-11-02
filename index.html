@@ -281,6 +281,27 @@ html.cafe .fff span{border-color:#7a1f2b;color:#ff5fa2}
 html.wedding .title-card .band{background:#d4a017}
 html.wedding .fff span{border-color:#d4a017;color:#e75a9b}
 html.adminlook .title-card .band{background:#0b2a14;color:#39ff14}
+/* the game falling apart (arriving admins): the menus crack, tilt and shake */
+html.crumble .title-card,html.crumble #setup .page{position:relative;animation:crumbleq 7s infinite}
+html.crumble .title-card{transform:rotate(-1.2deg)}
+html.crumble #setup .page{transform:rotate(.6deg)}
+html.crumble .title-card .btn:nth-of-type(3n){transform:rotate(3deg) translateY(4px)}
+html.crumble .title-card .btn:nth-of-type(3n+1){transform:rotate(-2deg)}
+html.crumble .title-card::after,html.crumble #setup .page::after{content:'';position:absolute;inset:0;pointer-events:none;opacity:.75;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0 12 L8 15 L13 11 L22 18 L26 16 M70 0 L67 9 L73 14 L69 24 L75 30 M100 60 L91 63 L94 70 L86 74 L88 79 M30 100 L33 92 L28 86 L35 80' stroke='%23222' stroke-width='.5' fill='none'/%3E%3C/svg%3E") no-repeat;background-size:100% 100%}
+@keyframes crumbleq{0%,90%,100%{translate:0 0}92%{translate:-6px 3px}94%{translate:5px -2px}96%{translate:-3px 2px}98%{translate:2px 0}}
+html.crumble .title-card *,html.crumble #setup .page h2{text-shadow:2px 0 #39ff14,-2px 0 #000}
+html.crumble .title-card::before,html.crumble #setup .page::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:2;background:repeating-linear-gradient(0deg,rgba(57,255,20,.08) 0 2px,transparent 2px 6px);animation:glitchbars 1.7s steps(1) infinite}
+@keyframes glitchbars{0%,78%{box-shadow:none;transform:none}80%{transform:translateX(-8px);box-shadow:inset 0 40px 0 rgba(0,0,0,.85),inset 0 -70px 0 rgba(57,255,20,.45)}84%{transform:translateX(7px);box-shadow:inset 0 140px 0 rgba(57,255,20,.35),inset 0 -20px 0 #000}88%{transform:none;box-shadow:inset 0 -50px 0 #000}92%{box-shadow:none}}
+/* the code is gone: the main menu, from Mason's drawing (lime green with scribbles, the Admin in the middle, the buttons in a white box on the left,
+   the shopkeepers together in a frame, and the fighters in a grey box in the corner) */
+html.gone #title .fff,html.gone #title .title-card .band,html.gone #title .hint{display:none}
+html.gone #title .title-card{position:fixed;left:3vw;top:18vh;width:min(320px,40vw);max-height:64vh;overflow:auto;transform:none;animation:none;translate:none;background:#fff;border:5px solid #7f7f7f;box-shadow:none;padding:10px 8px 14px;gap:8px}
+html.gone #title .title-card h1{font-size:44px}
+html.gone #title .title-card .btn{font-size:20px;padding:4px 12px;transform:none}
+html.gone #title .title-card .menu{gap:6px}
+html.gone #title .story-note,html.gone #title .thanks-note,html.gone #title .xmas-note,html.gone #title .spooky-note{font-size:18px}
+html.gone #title .title-chars{position:fixed;right:0;bottom:0;width:min(560px,46vw);height:27vh;background:#7f7f7f;overflow:auto;align-content:flex-start;padding:10px;z-index:1}
+html.scared .title-chars canvas{animation:shiver .12s linear infinite}@keyframes shiver{0%,100%{translate:0 0}25%{translate:-2px 1px}50%{translate:2px 0}75%{translate:-1px -1px}}
 .story-note{margin:0;font-family:var(--display);font-size:30px;color:#e75a9b}
 html.adminlook .story-note{color:#1f8a0f}
 
@@ -400,6 +421,12 @@ html.adminlook .story-note{color:#1f8a0f}
       <h3>🔓 Unlock everything</h3>
       <p>Free Missing Arrow, and get every shop item and every skin for every fighter.</p>
       <div class="ap-row"><button id="apUnlock" class="btn ap-big"><i>🔓</i>unlock everything</button></div>
+      <h3>📖 Story</h3>
+      <p>Get all the chapters at once: everything on the up coming page has already happened (no waiting), with all the backgrounds, Flower Girl, and everything in the shop.</p>
+      <div class="ap-row"><button id="apStory" class="btn ap-big"><i>📖</i>get all the chapters</button></div>
+      <h3>🖼️ Backgrounds</h3>
+      <p class="note">Pick any story look for the menu, the shop and the sky in fights (admins don't have to get there first).</p>
+      <div class="seg" id="apStorySeg"></div>
       <h3>🔄 Change fighter</h3>
       <p class="note" id="apSwapNote"></p>
       <div class="ap-row" id="apSwap"></div>
@@ -458,10 +485,13 @@ html.adminlook .story-note{color:#1f8a0f}
       <ul class="upds-list"><li><b>💌 Confession</b>: <span id="confessWhen"></span></li><li><b>💑 First things first</b>: <span id="datingWhen"></span></li><li><b>🍝 One more thing</b>: <span id="dateWhen"></span></li><li><b>💍 The big day</b>: <span id="weddingWhen"></span></li></ul>
       <h3 class="chapter" id="ch2Head">📖 Chapter 2: Admins attack <span id="ch2Done"></span></h3>
       <p id="ch2Lock" class="chapter-lock">🔒 Finish chapter 1 first! (It's done once the shopkeepers get married.)</p>
-      <ul class="upds-list" id="ch2List"><li><b>🛡️ Admins attack</b>: <span id="attackWhen"></span></li></ul>
+      <ul class="upds-list" id="ch2List"><li><b>🛡️ Admins attack</b>: <span id="attackWhen"></span></li><li><b>🛸 Arriving admins</b>: <span id="arriveWhen"></span></li><li><b>🕳️ The code is gone</b>: <span id="goneWhen"></span></li><li><b>🏠 Once in a life time</b>: <span id="lifeWhen"></span></li></ul>
+      <h3 class="chapter" id="ch3Head">📖 Chapter 3: They are gone... <span id="ch3Done"></span></h3>
+      <p id="ch3Lock" class="chapter-lock">🔒 Finish chapter 2 first!</p>
+      <ul class="upds-list" id="ch3List"><li><b>💔 They are gone...</b>: <span id="fellWhen"></span></li></ul>
       <p id="kickMsg" hidden style="color:#c0392b;font-size:22px"><b>🥾 The Admin KICKED YOU OUT!</b> You ran out of time on a task. Press the admin room button to try again!</p>
-      <div class="page-foot"><button id="dormBtn" class="btn">💌 dorm</button><button id="parkBtn" class="btn">🌳 park</button><button id="dinnerBtn" class="btn">🍝 dinner place</button><button id="weddingBtn" class="btn">💒 wedding</button><button id="attackBtn" class="btn" hidden>🛡️ admin room</button></div>
-      <div class="page-foot" id="againRow" hidden><button id="againBtn" class="btn">🔁 do it again</button><span id="againPick" hidden><button id="againConfess" class="btn">💌 confession</button><button id="againPark" class="btn">🌳 1st date</button><button id="againDate" class="btn">🍝 2nd date</button><button id="againWedding" class="btn">💍 wedding</button><button id="againAttack" class="btn">🛡️ admins attack</button></span></div>
+      <div class="page-foot"><button id="dormBtn" class="btn">💌 dorm</button><button id="parkBtn" class="btn">🌳 park</button><button id="dinnerBtn" class="btn">🍝 dinner place</button><button id="weddingBtn" class="btn">💒 wedding</button><button id="attackBtn" class="btn" hidden>🛡️ admin room</button><button id="fellBtn" class="btn" hidden>💔 dorm hall</button></div>
+      <div class="page-foot" id="againRow" hidden><button id="againBtn" class="btn">🔁 do it again</button><span id="againPick" hidden><button id="againConfess" class="btn">💌 confession</button><button id="againPark" class="btn">🌳 1st date</button><button id="againDate" class="btn">🍝 2nd date</button><button id="againWedding" class="btn">💍 wedding</button><button id="againAttack" class="btn">🛡️ admins attack</button><button id="againFell" class="btn">💔 they are gone</button></span></div>
     </div>
   </div>
 </div>
@@ -679,7 +709,7 @@ const CHARS = [
 const CHAR = Object.fromEntries(CHARS.map(c => [c.id, c]));
 const unlocked = ch => ch.keeper ? !!(setup.keepersPlay && shop.unlocked && shop.unlocked.admin) : !ch.secret || !!(shop.unlocked && shop.unlocked[ch.id]); // secret fighters stay locked until you earn them (and the shopkeepers are for admins who switch them on)
 const PLAYABLE = () => CHARS.filter(unlocked);
-const TITLE_ROW = () => PLAYABLE().filter(c => c.id !== 'admin'); // the fighters on the main menu (the Admin keeps himself hidden there)
+const TITLE_ROW = () => PLAYABLE().filter(c => c.id !== 'admin' && !(storyOk && (c.id === 'shuriken' || c.id === 'sparkle') && theyGone())); // the fighters on the main menu (the Admin keeps himself hidden there)
 const CONTROLS = [
   { id:'off', label:'Off', kind:'off' }, { id:'cpu', label:'Computer', kind:'cpu' },
   { id:'p1', label:'Keys: WASD', kind:'human', tag:'P1' }, { id:'p2', label:'Keys: Arrows', kind:'human', tag:'P2' },
@@ -1189,23 +1219,29 @@ function onAdminHead(g, r, draw, up) { const h = up ? ADMIN_HEAD_UP : ADMIN_HEAD
 function withG(ctx, fn) { const old = g; g = ctx; try { fn(); } finally { g = old; } } // run one of the shop's drawings on another canvas
 // the shopkeepers as fighters: their shop pictures, shrunk to fit. The fighty one is drawn from behind the counter, so they get legs here
 function drawKeeperFighter(ctx, ch, r, o) {
-  const t = performance.now()/1000, step = o.walk != null ? Math.sin(o.walk) : 0;
+  const t = performance.now()/1000, pose = o.pose, dir = o.facing || 1, step = o.walk != null ? Math.sin(o.walk) : pose === 'run' ? Math.sin(t*12) : 0;
   withG(ctx, () => {
     g.save();
+    // the shopkeepers' own animations (o.pose): 'pull' (leaning back, tugging a rope), 'run' (leaning forward, arms pumping), 'cheer' (hopping, arms up), 'worried' (hands by their cheeks, rocking)
+    if (pose === 'pull') { g.translate(0, r); g.rotate(-dir*(0.14 + Math.sin(t*5)*0.08)); g.translate(0, -r); }
+    else if (pose === 'run') { g.translate(0, -Math.abs(Math.sin(t*12))*r*0.12 + r); g.rotate(dir*0.14); g.translate(0, -r); }
+    else if (pose === 'cheer') g.translate(0, -Math.abs(Math.sin(t*6))*r*0.35);
+    else if (pose === 'worried') { g.translate(0, r); g.rotate(Math.sin(t*3)*0.05); g.translate(0, -r); }
     if (ch.id === 'keeper') {
       const s = 2.1*r/350; g.scale(s, s); g.translate(0, -505);
-      g.strokeStyle = C.ink; g.lineWidth = 34; g.lineCap = 'round'; // legs, stepping when they walk
-      for (const k of [-1, 1]) { g.beginPath(); g.moveTo(k*34, 600); g.lineTo(k*34 + k*step*22, 668); g.stroke(); }
-      drawGreyKeeper(0, t); // (with their waving arm)
+      g.strokeStyle = C.ink; g.lineWidth = 34; g.lineCap = 'round'; // legs, stepping when they walk (and braced apart when they pull)
+      for (const k of [-1, 1]) { g.beginPath(); g.moveTo(k*34, 600); g.lineTo(k*34 + k*step*22 + (pose === 'pull' ? k*20 : 0), 668); g.stroke(); }
+      drawGreyKeeper(0, t, null, pose, dir); // (with their waving arm, or their pose)
     } else {
       const s = 2.1*r/255; g.scale(s, s); g.translate(0, -650);
-      drawShyKeeper(0, t, { friend:o.walk == null && !o.mask, close:0, lookX:0, walking:o.walk != null, mask:o.mask, bride:o.bride }); // (asleep in her mask, she doesn't wave)
+      drawShyKeeper(0, t, { friend:!pose && o.walk == null && !o.mask, close:0, lookX:0, walking:o.walk != null || pose === 'run', mask:o.mask, bride:o.bride, pose, dir }); // (asleep in her mask, she doesn't wave)
     }
     g.restore();
     if (o.flash > 0) { g.globalAlpha = Math.min(0.6, o.flash*5); g.fillStyle = C.white; g.beginPath(); g.arc(0, 0, r*1.05, 0, TAU); g.fill(); g.globalAlpha = 1; }
   });
 }
 function drawCharacter(g, ch, r, o = {}) {
+  if (G.state === 'shop' && !o.still && scaredAll()) { g.save(); g.translate(Math.sin(performance.now()/22 + r*7)*2.5, 0); drawCharacter(g, ch, r, { ...o, still:true }); g.restore(); return; } // (everyone is scared: they shake)
   if (ch.keeper) return drawKeeperFighter(g, ch, r, o);
   if (ch.id === 'admin') { // he isn't a shape like the others, so he's drawn his own way (with his things on his little head)
     const tt = performance.now()/1000;
@@ -3932,18 +3968,20 @@ function shopStep(dt) {
   const frozen = hall && SHOP.chase && (SHOP.chase.t < 2.6 || SHOP.chase.done); // you freeze while the eyes open (and once you're safe)
   let nx = Math.max(SHOP.floor === 4 && !SHOP.chase ? 0 : 70, Math.min(hall ? CHASE_LEN - 60 : dormRoomW() - 70, SHOP.x + (frozen ? 0 : h.x)*430*ch.speed*dt));
   if (hall) nx = chaseBlock(SHOP.x, nx);
+  if (pkOn()) nx = pkBlock(SHOP.x, nx); // (the broken dorm hall: bits of floor to jump between)
   SHOP.x = nx; if (h.x) SHOP.facing = h.x;
   if (keeperRoom()) SHOP.cam = Math.max(0, Math.min(KEEPER_ROOM_W - W, SHOP.x - 700)); // (the shopkeepers' big room scrolls with you)
   if (SHOP.floor === 4 && !SHOP.chase) { // walk off the far left edge of the office to get to the secret 5th floor
     if (SHOP.x <= 15) { SHOP.stairTo = 7; shopStairs(); return; }
   }
-  const groundY = hall && onCrate(SHOP.x) ? -CRATE_H : 0;
+  pkStep();
+  const groundY = hall && onCrate(SHOP.x) ? -CRATE_H : pkOn() ? pkGround() : 0;
   SHOP.vy += 2600*dt; SHOP.y = Math.min(groundY, SHOP.y + SHOP.vy*dt); if (SHOP.y === groundY) SHOP.vy = 0;
   if (h.jump && !pr.jump && SHOP.y === groundY) { SHOP.vy = -1000*ch.jump; sfx.jump(); }
   const f = SHOP.floor;
   SHOP.near = shopCleared() ? null : STANDS.find(s => s.floor === f && Math.abs(s.x - SHOP.x) < 110) || null; // (no stands while the shop is cleared for the wedding)
   SHOP.nearSkins = f === 2 && !SHOP.near && !shopCleared() && Math.abs(SKIN_X - SHOP.x) < 100;
-  const stair = !SHOP.near && STAIRS.find(s => s.floor === f && Math.abs(s.x - SHOP.x) < 100 && (!s.keepers || keeperRoom()) && (!s.admin || unlocked(CHAR.admin) || attackOn()) && (f !== 8 || (SHOP.cage && SHOP.cage.freed))); // the cage room portal only opens once he is free
+  const stair = !SHOP.near && STAIRS.find(s => s.floor === f && Math.abs(s.x - SHOP.x) < 100 && (!s.keepers || keeperRoom()) && (!s.admin || unlocked(CHAR.admin) || attackOn()) && !(s.to === 1 && f === 2 && codeGone()) && !(s.to <= 2 && noShop()) && (f !== 8 || (SHOP.cage && SHOP.cage.freed))); // the cage room portal only opens once he is free
   SHOP.nearCage = f === 8 && !!SHOP.cage && !SHOP.cage.freed && Math.abs(SHOP.x - CAGE_X) < 170;
   SHOP.nearStairs = !!stair; SHOP.stairTo = stair ? stair.to : 0; SHOP.stairRoom = stair && stair.room != null ? stair.room : SHOP.stairRoom; // (which dorm door)
   SHOP.nearPal = (f === 10 || f === 12 || f === 13) && !SHOP.nearStairs ? ((f === 10 ? pbSpots() : dormSpots()).find(s => Math.abs(s.x - SHOP.x) < 70) || {}).ch || null : null; // walking up to a fighter in player breaks or a dorm room
@@ -3956,7 +3994,7 @@ function shopStep(dt) {
   SHOP.nearWed = wedSpot(); SHOP.nearPark = parkSpot(); if (f === WEDDING_FLOOR) bouquetStep(); // (things to do at the wedding)
   if (f === 10) pbStep();
   attackStep(dt); if (SHOP.floor !== f) return; // (the Admin's tasks, in the admin room: he might kick you out)
-  SHOP.nearKeeper = !SHOP.near && !SHOP.nearStairs && !!KEEPERS[f] && Math.abs(KEEPERS[f] - SHOP.x) < (f === 6 ? 300 : 220) && (f !== 4 || (SHOP.revealed && !SHOP.chase));
+  SHOP.nearKeeper = !SHOP.near && !SHOP.nearStairs && !!KEEPERS[f] && !(f === 6 && codeGone()) && Math.abs(KEEPERS[f] - SHOP.x) < (f === 6 ? 300 : 220) && (f !== 4 || (SHOP.revealed && !SHOP.chase));
   if (f === 4 && !SHOP.revealed && !SHOP.chase && !isAdmin()) { // walk close and the chair spins around (but the manager can't see the Admin, so it never does)
     if (SHOP.spinT > 0 || Math.abs(KEEPERS[4] - SHOP.x) < 380) SHOP.spinT = (SHOP.spinT || 0) + dt;
     if (SHOP.spinT >= 0.9) { SHOP.revealed = true; SHOP.talk[4] = 0; SHOP.bossT = 0; shopSay(MANAGER_LINES[0](), 'go', 3); }
@@ -3972,6 +4010,7 @@ function shopStep(dt) {
   if (f === 8) { cageStep(dt); if (SHOP.floor !== 8) return; }
   SHOP.nearSmi = f === 1 && SHOP.smi7y && !SHOP.near && !SHOP.nearStairs && Math.abs(SMI7Y_X - SHOP.x) < 70;
   if (SHOP.nearSmi) SHOP.nearKeeper = false;
+  crumbleKeeperStep(f); // (the shopkeepers noticing the game falling apart)
   crowdStep(); // (the fighters talking to the shopkeepers about the wedding, until it happens)
   SHOP.smiSayT = Math.max(0, (SHOP.smiSayT || 0) - dt);
   if (h.punch && !pr.punch) { if (SHOP.nearCage) cageHit(); else if (SHOP.near) shopAct(SHOP.near.item); else if (SHOP.nearSkins) nextSkin(); else if (SHOP.nearSwitch) dormLight(); else if (SHOP.nearAtk) atkAct(); else if (SHOP.nearPaper) readPaper(); else if (SHOP.nearWed) wedAct(); else if (SHOP.nearPark) parkAct(); else if (SHOP.nearTask) doKTask(); else if (SHOP.nearToys) playToys(); else if (SHOP.nearStairs) shopStairs(); else if (SHOP.nearPal) palTalk(); else if (SHOP.nearSmi) smiTalk(); else if (SHOP.nearKeeper) shopTalk(); }
@@ -4021,7 +4060,7 @@ function drawWoodRoom(wall = C.white, beam = BEAM, floor = C.brown) { // walls, 
   g.lineWidth = 5; for (let i=0;i<12;i++) { const x = (i*157 + (i%2)*70) % W, y = SHOP_FLOOR + (i%2 ? 50 : 4); g.beginPath(); g.moveTo(x, y); g.lineTo(x, y + 46); g.stroke(); }
 }
 // the fighty shopkeeper, from the head down to the waist. Their right arm waves, or (with a mug) holds a cup of coffee and takes a sip now and then
-function drawGreyKeeper(kx, t, mug) {
+function drawGreyKeeper(kx, t, mug, pose = null, dir = 1) {
   // body: rounded shoulders in black clothes, a white collar and a red tie, and a name tag
   g.fillStyle = C.ink; g.beginPath(); g.moveTo(kx - 78, 610); g.lineTo(kx - 74, 492); g.quadraticCurveTo(kx - 70, 448, kx - 30, 446); g.lineTo(kx + 30, 446);
   g.quadraticCurveTo(kx + 70, 448, kx + 74, 492); g.lineTo(kx + 78, 610); g.closePath(); g.fill();
@@ -4034,7 +4073,13 @@ function drawGreyKeeper(kx, t, mug) {
   g.strokeStyle = 'rgba(255,255,255,.15)'; g.lineWidth = 6; for (const s of [-1, 1]) { g.beginPath(); g.moveTo(kx + s*66, 478); g.quadraticCurveTo(kx + s*62, 456, kx + s*40, 452); g.stroke(); } // a shine on each shoulder
   g.fillStyle = '#f3e2c7'; g.strokeStyle = '#5a3a1e'; g.lineWidth = 3; g.fillRect(kx + 20, 500, 40, 18); g.strokeRect(kx + 20, 500, 40, 18);
   g.fillStyle = C.ink; g.font = `14px ${BODYFONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('fighty', kx + 40, 510, 36);
-  if (!mug) { // the waving arm, with a hand
+  if (pose) for (const s of [-1, 1]) { // his own animations (see KEEPER_POSE): two arms, each with a hand
+    const sw = Math.sin(t*12)*s, [hx, hy] = pose === 'pull' ? [kx + dir*125, 545 + s*10 + Math.sin(t*5)*8] : pose === 'run' ? [kx + s*70 + sw*50, 590 - Math.abs(sw)*40]
+      : pose === 'cheer' ? [kx + s*115, 330 + Math.sin(t*10 + s)*14] : [kx + s*70, 440 + Math.sin(t*6)*4]; // (worried: hands up by his cheeks)
+    g.strokeStyle = C.ink; g.lineWidth = 40; g.lineCap = 'round'; g.beginPath(); g.moveTo(kx + s*58, 480); g.lineTo(hx, hy); g.stroke();
+    g.fillStyle = C.grey; g.strokeStyle = C.ink; g.lineWidth = 4; g.beginPath(); g.arc(hx, hy, 21, 0, TAU); g.fill(); g.stroke();
+  }
+  if (!mug && !pose) { // the waving arm, with a hand
     g.save(); g.translate(kx + 66, 470); g.rotate(-0.5 + Math.sin(t*5)*0.35);
     g.fillStyle = C.ink; g.beginPath(); g.roundRect ? g.roundRect(-22, -118, 44, 128, 20) : g.rect(-22, -118, 44, 128); g.fill();
     g.fillStyle = C.grey; g.strokeStyle = C.ink; g.lineWidth = 4; g.beginPath(); g.arc(0, -126, 21, 0, TAU); g.fill(); g.stroke(); g.restore();
@@ -4194,6 +4239,7 @@ function drawFunnyFloor(t) { // upstairs: the funny fun shop, built like the fig
   }
   const kx = KEEPERS[2], kid = isKid(), hex = isHex(), friend = isFriend() || kid || hex;
   const scared3 = SHOP.keeperScaredT > 0; // asked about the 3rd floor: she shakes and hides her face
+  if (codeGone()) drawFightyUp(t); // (the 1st floor is gone, so he works up here now)
   const wed = married(); // (after the wedding she only turns away a little when you come close)
   drawShyKeeper(kx, t, { friend:friend && !scared3, close:scared3 ? 1 : friend ? 0 : Math.max(0, 1 - Math.abs(SHOP.x - kx)/500)*(wed ? 0.3 : 1), lookX:Math.sign(SHOP.x - kx)*3, lift:SHOP.keeperLaughT > 0 ? Math.abs(Math.sin(t*18))*8 : 0,
     wiggle:scared3 ? Math.sin(t*60)*4 : hex ? Math.sin(t*5)*8 : 0 });
@@ -4218,6 +4264,7 @@ function drawFunnyFloor(t) { // upstairs: the funny fun shop, built like the fig
     : friend ? (SHOP.near ? 'Ooh, that would look so cute on you!' : SHOP.nearKeeper ? `${CHARS[SHOP.who].name}! Want to chat? Press punch!` : SHOP.nearStairs ? 'Aww, leaving already? Come back soon!' : `Hi ${CHARS[SHOP.who].name}! Come say hi!`)
     : wed ? (SHOP.near ? 'Ooh, good choice! That one is cute.' : SHOP.nearKeeper ? 'Hi! Want to talk? Press punch! ...hehe.' : SHOP.nearStairs ? 'Bye! Come back soon!' : xmas() ? 'Merry Christmas! *blushes a little*' : empty ? 'Hi! Nothing up here yet... sorry!' : 'Hi! Welcome to the funny fun shop!')
     : SHOP.near ? 'Ooh... good choice...' : SHOP.nearKeeper ? 'Oh! Um... you want to talk to me? Press punch...' : SHOP.nearStairs ? 'Those stairs go back down...' : xmas() ? 'M-merry Christmas... *blushes*' : empty ? 'H-hi... nothing up here yet...' : 'Um... welcome...';
+  if (codeGone()) drawFightyUpSay(t);
   if (!(SHOP.sparkleHere && SHOP.foundT < 5.4 && SHOP.msgT <= 0)) drawBubble(say, kx - 40, 520, kx - 6); // quiet while Shuriken and Goofy Sparkle say hi
   if (SHOP.nearKeeper) drawPointer(kx + 70, 566, t);
 }
@@ -4260,14 +4307,14 @@ const PB_HI = { // what they say when you walk up and press punch ({you} is your
   square:'HI {you}! WELCOME TO THE BREAK ROOM!', sparkle:'{you}! Wanna play?!', hex:'Beep boop! Hi {you}! *nervous wave*', heart:'Aww, hi {you}! Want a hug?',
   shuriken:'Hmph. Hi, {you}. Have you seen Goofy Sparkle?', arrow:'O-oh! Hi {you}... please don\'t scare me.', admin:'Hello, {you}. Enjoy your break.',
 };
-const pbPals = () => PLAYABLE().filter(c => !c.keeper && c.id !== 'admin' && c.id !== CHARS[SHOP.who].id); // everyone but the shopkeepers, the Admin and you
+const pbPals = () => PLAYABLE().filter(c => !c.keeper && c.id !== 'admin' && c.id !== CHARS[SHOP.who].id && !(c.id === 'sparkle' && noShop()) && !(c.id === 'shuriken' && theyGone())); // everyone but the shopkeepers, the Admin and you
 function pbSpots() { const pals = pbPals(), step = 1180/Math.max(1, pals.length); return pals.map((ch, i) => ({ ch, x:260 + step*(i + 0.5) })); }
 function pbSay(id, text, secs = 3.4) { SHOP.pb.say = { id, text, until:performance.now() + secs*1000 }; }
 function pbStep() { // the next thing someone says (by the clock, so it keeps going even when the game runs slowly)
   const pb = SHOP.pb, now = performance.now(); if (!pb || now < pb.next) return;
   const here = new Set(pbPals().map(c => c.id)); if (!here.size) return;
   if (!pb.chat || pb.line >= pb.chat.length) { // start a new conversation (or someone says something on their own)
-    const ok = (gossipOn() ? CONFESS_GOSSIP.concat(CONFESS_GOSSIP, PB_CHATS) : PB_CHATS).filter(c => c.every(([id]) => here.has(id)) && c !== pb.last);
+    const ok = (crumbling() ? (theyGone() ? SAD_CHATS : scaredAll() ? SCARED_CHATS : codeGone() ? GOOFY_COMFORT.concat(GOOFY_COMFORT, CRUMBLE_CHATS) : CRUMBLE_CHATS.concat(CRUMBLE_CHATS, PB_CHATS)) : gossipOn() ? CONFESS_GOSSIP.concat(CONFESS_GOSSIP, PB_CHATS) : PB_CHATS).filter(c => c.every(([id]) => here.has(id)) && c !== pb.last);
     pb.chat = ok.length && Math.random() < 0.9 ? ok[Math.floor(Math.random()*ok.length)] : null; pb.line = 0; pb.last = pb.chat;
     if (!pb.chat) { const ids = [...here], id = ids[Math.floor(Math.random()*ids.length)], lines = PB_SOLO[id] || ['...']; pbSay(id, lines[Math.floor(Math.random()*lines.length)]); pb.next = now + 3000; return; }
   }
@@ -4358,6 +4405,7 @@ const KEEPER_EAT = [[['keeper', 'Mmm! This soup is the BEST!'], ['keeper2', '*no
 const KEEPER_DINNER = [[['keeper', 'There you are, sleepyhead! Dinner is almost ready!'], ['keeper2', '*yawns* ...mmm, is it soup?'], ['keeper', 'Your favourite!'], ['keeper2', '*happy* hehe...']],
   [['keeper2', 'th-thank you for making dinner...'], ['keeper', 'Anything for my best shop buddy!']]];
 function keeperSpots() { // where the two shopkeepers are in their home
+  if (noShop()) return (SHOP.floor === 12 && !theyGone() ? [{ ch:CHAR.keeper, x:1000 }, { ch:CHAR.keeper2, x:1240 }] : []).filter(s => s.ch.id !== CHARS[SHOP.who].id); // (no shop: they're both home, downstairs, keeping Goofy safe)
   if (confessPending() || SHOP.confessVisit || SHOP.replay === 'confess') return (SHOP.floor === 12 ? [{ ch:CHAR.keeper, x:1000 }, { ch:CHAR.keeper2, x:1240 }] : []).filter(s => s.ch.id !== CHARS[SHOP.who].id); // (it's time for the confession: they're both downstairs, together)
   const e = performance.now() - (SHOP.shyWokeT || 0), down = shyDown(), walking = down && e > 1200 && e < 3600; // (she says something first, then walks to the stairs)
   const spots = SHOP.floor === 13 ? (down ? (e < 3600 ? [{ ch:CHAR.keeper2, x:1750 + Math.max(0, Math.min(1, (e - 1200)/2400))*(KEEPER_UP_X - 1750), walking }] : []) : keepersTogether() ? [] : [{ ch:CHAR.keeper2, x:shySleeping() ? 1750 : 840 }])
@@ -4368,7 +4416,7 @@ function keeperSpots() { // where the two shopkeepers are in their home
 function dormSpots() { // the roommates in their room (not you, if it's your room)
   const d = DORMS[SHOP.dorm || 0];
   if (d.keepers) return keeperSpots(); // (the Shy Shopkeeper is upstairs, the Fighty one downstairs)
-  return d.ids.map(id => CHAR[id]).filter(ch => unlocked(ch) && ch.id !== CHARS[SHOP.who].id).map((ch, i) => ({ ch, x:[640, 1060][i] }));
+  return d.ids.map(id => CHAR[id]).filter(ch => unlocked(ch) && ch.id !== CHARS[SHOP.who].id && !(ch.id === 'sparkle' && noShop()) && !(ch.id === 'shuriken' && theyGone())).map((ch, i) => ({ ch, x:[640, 1060][i] }));
 }
 // the shopkeepers' room is extra big (wider than the screen, so it scrolls with you) and fancier than the fighters' rooms
 const KEEPER_ROOM_W = 2400;
@@ -4551,7 +4599,7 @@ function dormStep() { // the roommates take turns talking (by the clock)
   const pb = SHOP.pb, now = performance.now(); if (!pb || now < pb.next) return;
   const here = new Set(dormSpots().map(s => s.ch.id)); if (!here.size) return;
   const keepersDown = DORMS[SHOP.dorm || 0].keepers && SHOP.floor === 12;
-  const chats = (keepersDown && (confessPending() || SHOP.replay === 'confess') ? [CONFESS_LINES] : keepersDown && SHOP.confessVisit ? KEEPER_LOVE : keepersDown && eatingDinner() ? KEEPER_EAT : keepersDown && shyDown() ? KEEPER_DINNER : (gossipOn() && !DORMS[SHOP.dorm || 0].keepers ? CONFESS_GOSSIP : []).concat(dormNight() ? DORMS[SHOP.dorm || 0].chats : DORM_DAY[SHOP.dorm || 0])).filter(c => c.every(([id]) => here.has(id))); // (night talk or morning talk)
+  const chats = (keepersDown && noShop() ? HIDE_GOOFY_LINES : keepersDown && (confessPending() || SHOP.replay === 'confess') ? [CONFESS_LINES] : keepersDown && SHOP.confessVisit ? KEEPER_LOVE : keepersDown && eatingDinner() ? KEEPER_EAT : keepersDown && shyDown() ? KEEPER_DINNER : (crumbling() && !DORMS[SHOP.dorm || 0].keepers ? (theyGone() ? SAD_CHATS : scaredAll() ? SCARED_CHATS : codeGone() ? GOOFY_COMFORT.concat(GOOFY_COMFORT, CRUMBLE_CHATS) : CRUMBLE_CHATS) : gossipOn() && !DORMS[SHOP.dorm || 0].keepers ? CONFESS_GOSSIP : []).concat(dormNight() ? DORMS[SHOP.dorm || 0].chats : DORM_DAY[SHOP.dorm || 0])).filter(c => c.every(([id]) => here.has(id))); // (night talk or morning talk)
   if (!chats.length) { const id = [...here][0], lines = (DORMS[SHOP.dorm || 0].crush && { diamond:['Hi, Missing Arrow... *blushes*', 'I saved you some snacks, hehe.', 'You look cute when you glitch.'], arrow:['H-hi, Sly Diamond... *happy glitch*', 'Y-your eyelashes are really pretty...', '*blushes and glitches*'] }[id]) || (id === 'keeper2' && shySleeping() && ['Zzz...', '*snores softly*', 'zzz... one pink bow, please... zzz']) || PB_SOLO[id] || ['...']; pbSay(id, lines[Math.floor(Math.random()*lines.length)]); pb.next = now + 3200; return; } // (alone in the room) // (alone with you in their room, they say sweet things to the one they like)
   if (!pb.chat || pb.line >= pb.chat.length) { pb.chat = chats[(pb.ci = ((pb.ci ?? -1) + 1) % chats.length)]; pb.line = 0; }
   const [id, text] = pb.chat[pb.line++]; pbSay(id, text); pb.next = now + (pb.line >= pb.chat.length ? 4000 : 3000);
@@ -4615,7 +4663,7 @@ const KTASKS = { // each chore, and where you do it
   plant:{ name:'Water the plant', ask:'Our plant looks thirsty. Can you water it? It is next to the fridge.', hint:'The plant is next to the fridge.', floor:12, x:1690, done:'*splish splash* The plant looks happy!' },
 };
 const TASK_PAY = 20, TOY_X = 1150;
-const shySleeping = () => SHOP.floor === 13 && dormNight() && !SHOP.shyAwake && !confessPending() && !SHOP.confessVisit && SHOP.replay !== 'confess'; // at night, the Shy Shopkeeper is asleep in her bed (until you wake her up for dinner)
+const shySleeping = () => SHOP.floor === 13 && !noShop() && dormNight() && !SHOP.shyAwake && !confessPending() && !SHOP.confessVisit && SHOP.replay !== 'confess'; // at night, the Shy Shopkeeper is asleep in her bed (until you wake her up for dinner)
 const kDone = () => SHOP.kdone || (SHOP.kdone = new Set());
 function nextKTask() { return (dormNight() ? ['wake'] : []).concat(['dinner', 'fire', 'plant']).find(id => !kDone().has(id)) || null; } // (she can only be woken up at night)
 function fightyTalk() { // you walked up to the Fighty Shopkeeper at home and pressed punch
@@ -4786,7 +4834,7 @@ function drawDormPals(t) { // the roommates in a dorm room (or the Shy Shopkeepe
     if (ch.id === 'keeper2' && shySleeping()) continue; // (asleep in bed: drawn with the bed)
     const r = dormR(ch), bottom = ch.shape === 'circle' ? r : Math.max(...shapeVerts(ch.shape, r, true).map(v => v.y));
     const talking = say && say.id === ch.id, bob = Math.abs(Math.sin(t*2 + x))*4 + (talking ? Math.abs(Math.sin(t*12))*6 : 0);
-    g.save(); g.translate(x, SHOP_FLOOR - bottom - bob); drawCharacter(g, ch, r, { facing:walking ? 1 : x < SHOP.x ? 1 : -1, walk:walking ? t*10 : null, ...looks(ch), happy:talking }); g.restore();
+    g.save(); g.translate(x, SHOP_FLOOR - bottom - bob); drawCharacter(g, ch, r, { facing:walking ? 1 : x < SHOP.x ? 1 : -1, walk:walking ? t*10 : null, ...looks(ch), happy:talking, pose:ch.keeper && noShop() && !walking ? 'worried' : null }); g.restore();
     if (SHOP.nearPal === ch) drawPointer(x, SHOP_FLOOR - dormTall(ch) - 70, t);
   }
   if (say) { const s = dormSpots().find(s => s.ch.id === say.id); if (s) drawBubble(say.text, Math.min(dormRoomW() - 20, s.x + 160), Math.min(SHOP_FLOOR - 190, SHOP_FLOOR - dormTall(s.ch) - 20), s.x); }
@@ -4865,9 +4913,9 @@ function drawBreakFloor(t) {
   g.fillStyle = '#3f7fbf'; g.strokeStyle = C.ink; g.lineWidth = 5;
   g.beginPath(); g.roundRect ? g.roundRect(gx - 175, 530, 350, 140, 30) : g.rect(gx - 175, 530, 350, 140); g.fill(); g.stroke(); // the back
   g.save(); g.translate(SHOP.keeperScaredT > 0 ? Math.sin(t*60)*4 : 0, 59 - (SHOP.keeperLaughT > 0 ? Math.abs(Math.sin(t*18))*10 : 0)); // sitting down, so a bit lower
-  drawGreyKeeper(gx, t, '#ff7a3d'); g.restore();
+  if (!codeGone()) drawGreyKeeper(gx, t, '#ff7a3d'); g.restore(); // (once the code is gone, the break room is empty: they work on the 2nd floor now)
   g.fillStyle = '#5a9ad6'; g.beginPath(); g.roundRect ? g.roundRect(gx - 190, 650, 380, 58, 20) : g.rect(gx - 190, 650, 380, 58); g.fill(); g.stroke(); // the seat cushion
-  g.fillStyle = C.ink; for (const s of [-1, 1]) { g.fillRect(gx + s*34 - 16, 700, 32, SHOP_FLOOR - 714); g.beginPath(); g.ellipse(gx + s*34 + 8, SHOP_FLOOR - 10, 26, 11, 0, 0, TAU); g.fill(); } // legs and shoes
+  g.fillStyle = C.ink; if (!codeGone()) for (const s of [-1, 1]) { g.fillRect(gx + s*34 - 16, 700, 32, SHOP_FLOOR - 714); g.beginPath(); g.ellipse(gx + s*34 + 8, SHOP_FLOOR - 10, 26, 11, 0, 0, TAU); g.fill(); } // legs and shoes
   g.fillStyle = '#3f7fbf'; for (const s of [-1, 1]) { g.beginPath(); g.roundRect ? g.roundRect(gx + s*195 - 30, 590, 60, 120, 24) : g.rect(gx + s*195 - 30, 590, 60, 120); g.fill(); g.stroke(); } // arms
   g.fillStyle = '#5a3a24'; for (const s of [-1, 1]) g.fillRect(gx + s*170 - 8, 708, 16, SHOP_FLOOR - 708); // couch legs
   // a little table with a plate of cookies and a cup of tea
@@ -4882,6 +4930,7 @@ function drawBreakFloor(t) {
   g.fillStyle = '#2c2f36'; g.fillRect(1440, 530, 90, 106); g.fillStyle = '#555'; g.fillRect(1462, 590, 46, 10);
   g.fillStyle = Math.sin(t*4) > 0 ? '#7dff8a' : '#2e6b35'; g.beginPath(); g.arc(1515, 548, 6, 0, TAU); g.fill();
   g.fillStyle = C.white; g.fillRect(1470, 606, 30, 30);
+  if (codeGone()) { drawCracks(SHOP_FLOOR); drawRubble(t, 0); return; } // (and broken)
   // the shy shopkeeper, having her tea break
   const kid = isKid(), hex = isHex(), friend = isFriend() || kid || hex, scared3 = SHOP.keeperScaredT > 0;
   drawShyKeeper(BREAK_SHY, t, { friend:friend && !scared3, close:scared3 ? 1 : friend ? 0 : Math.max(0, 1 - Math.abs(SHOP.x - BREAK_SHY)/500)*(married() ? 0.25 : 0.7), lookX:Math.sign(SHOP.x - BREAK_SHY)*3,
@@ -4909,7 +4958,7 @@ function drawLittleHeart(x, y, s) {
   g.fillStyle = '#ff6fa5'; g.beginPath(); g.moveTo(x, y + s);
   g.bezierCurveTo(x - s*1.6, y - s*0.2, x - s*0.6, y - s*1.3, x, y - s*0.4); g.bezierCurveTo(x + s*0.6, y - s*1.3, x + s*1.6, y - s*0.2, x, y + s); g.fill();
 }
-function drawShyKeeper(kx, t, { friend, close, lookX, walking = false, alpha = 1, lift = 0, wiggle = 0, mask = false, bride = false }) {
+function drawShyKeeper(kx, t, { friend, close, lookX, walking = false, alpha = 1, lift = 0, wiggle = 0, mask = false, bride = false, pose = null, dir = 1 }) {
   g.save(); g.globalAlpha = alpha; g.translate(wiggle, -lift - (walking ? Math.abs(Math.sin(t*14))*7 : 0));
   // little shoes, then a purple dress that flares out at the bottom, with a white collar
   g.fillStyle = C.ink; for (const sx of [-22, 22]) { g.beginPath(); g.ellipse(kx + sx, SHOP_FLOOR - 6, 16, 8, 0, 0, TAU); g.fill(); }
@@ -4926,9 +4975,18 @@ function drawShyKeeper(kx, t, { friend, close, lookX, walking = false, alpha = 1
   g.fillStyle = C.white; g.lineWidth = 3; for (const s of [-1, 1]) { g.beginPath(); g.moveTo(kx, 602); g.quadraticCurveTo(kx + s*26, 600, kx + s*24, 620); g.quadraticCurveTo(kx + s*10, 622, kx, 602); g.fill(); g.stroke(); }
   // soft black arms with round hands (one waves when she's happy)
   const wave = mask ? 0 : Math.sin(t*3)*4, arm = (x1, y1, x2, y2) => { g.strokeStyle = C.ink; g.lineWidth = 20; g.lineCap = 'round'; g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke(); };
+  if (pose) for (const s of [-1, 1]) { // her own animations (see KEEPER_POSE)
+    const sw = Math.sin(t*12)*s;
+    if (pose === 'pull') arm(kx + s*32, 628, kx + dir*92, 662 + s*6 + Math.sin(t*5)*6); // both hands on the rope
+    else if (pose === 'run') arm(kx + s*32, 628, kx + s*40 + sw*34, 690 - Math.abs(sw)*20); // pumping her arms
+    else if (pose === 'cheer') arm(kx + s*32, 628, kx + s*70, 548 + Math.sin(t*10 + s)*12); // arms up, hooray!
+    else if (pose === 'worried') arm(kx + s*32, 628, kx + s*50, 592 + Math.sin(t*6)*3); // hands up by her cheeks
+  }
+  else {
   arm(kx - 32, 628, kx - 84, 690 + wave);
   if (friend) { const a = -1.1 + Math.sin(t*8)*0.35; arm(kx + 32, 628, kx + 32 + Math.cos(a)*72, 628 + Math.sin(a)*72); } // waving hi
   else arm(kx + 32, 628, kx + 84, 690 - wave);
+  }
   g.fillStyle = bride ? C.white : '#b46fc0'; g.strokeStyle = C.ink; g.lineWidth = 3; for (const s of [-1, 1]) { g.beginPath(); g.ellipse(kx + s*34, 618, 15, 13, 0, 0, TAU); g.fill(); g.stroke(); } // puffy sleeves
   // her bow: two loops, a knot and two little tails
   g.fillStyle = C.ink;
@@ -5349,7 +5407,7 @@ function lockMiss() { // the lock starts over, and you lose a heart
   renderShopCard(true);
 }
 function cageCaught() { // three misses: the cage zaps you, and you get thrown out, all the way down to the 1st floor
-  Object.assign(SHOP, { floor:1, x:280, y:0, vy:0, facing:1, cage:null, near:null, nearCage:false, nearStairs:false, stairTo:0 });
+  Object.assign(SHOP, { floor:codeGone() ? 2 : 1, x:codeGone() ? 640 : 280, y:0, vy:0, facing:1, cage:null, near:null, nearCage:false, nearStairs:false, stairTo:0 });
   musicUpdate(); if (sfx.throw) sfx.throw();
   shopSay('Whoa! You fell out of the ceiling! Where were you?!', 'bonk', 4.5);
   SHOP.youSay = 'The lock zapped me out... he\'s still up there!'; SHOP.youSayT = 3.5; renderShopCard(true);
@@ -5436,6 +5494,9 @@ function drawShop(t) {
   if (hall) { g.save(); g.translate(-(SHOP.cam || 0), 0); drawChaseFloor(t); }
   else if (SHOP.floor === PARK_FLOOR) drawParkPlace(t); else if (SHOP.floor === DINNER_FLOOR) drawDinnerPlace(t); else if (SHOP.floor === WEDDING_FLOOR) drawWeddingHall(t); else if (SHOP.floor === 15) { drawAdminRoom(t); drawAttack(t); } else if (SHOP.floor === 14) drawKeeperAttic(t); else if (SHOP.floor === 12 || SHOP.floor === 13) { if (wide) { g.save(); g.translate(-(SHOP.cam || 0), 0); } if (SHOP.floor === 13) drawKeeperUpstairs(t); else drawDormRoom(t); } else if (SHOP.floor === 11) drawDormHall(t); else if (SHOP.floor === 10) drawPlayerBreak(t); else if (SHOP.floor === 9) drawGlitchShop(t); else if (SHOP.floor === 8) drawCageFloor(t); else if (SHOP.floor === 7) drawTopFloor(t); else if (SHOP.floor === 6) drawBreakFloor(t); else if (SHOP.floor === 4) drawOfficeFloor(t); else if (SHOP.floor === 3) drawAtticFloor(t); else if (SHOP.floor === 2) drawFunnyFloor(t); else drawFightyFloor(t);
   if (SHOP.floor <= 2) drawShopStory(t); // (the shop changes with the story too)
+  if (codeGone() && SHOP.floor >= 11 && SHOP.floor <= 13) drawBrokenDorm(t); // (the dorms are broken too, once the code is gone)
+  if (SHOP.floor === 11) drawFell(t); // (they are gone: the scene, then the shopkeepers trying to save them)
+  if (noShop() && SHOP.floor === 14) drawHiddenGoofy(t); // (Goofy Sparkle, hiding in the shopkeepers' attic)
   // an empty pink stand upstairs, waiting for the next thing to sell (a real item takes its place once there is one)
   if (SHOP.floor === 2 && !shopCleared()) {
     const spot = STAND_SPOTS[2].find(x => !STANDS.some(s => s.floor === 2 && s.x === x));
@@ -5503,6 +5564,7 @@ function frame(now) {
   if (G.online === 'client' && G.state === 'fight') { clientSmooth(dt); clientSendInput(now); }
   else if (G.state === 'fight' && !G.paused) { acc += dt*1000*((G.fx && G.fx.speed) || 1); let n = 0; while (acc >= STEP && n < 6) { if (G.mode === 'race') raceStep(); else if (G.mode === 'horror') horrorStep(); else step(); acc -= STEP; n++; } if (n === 6) acc = 0; }
   else if (G.state === 'shop') shopStep(dt);
+  if (G.state !== 'fight' && storyOk && storyStage() >= 6 && quakeOn(now/1000)) G.shake = Math.max(G.shake, 10); // (the game is falling apart: the menus and the shop shake now and then)
   G.shake *= 0.85; if (!setup.shake) G.shake = 0;
   const sx = (Math.random() - 0.5)*G.shake*scale, sy = (Math.random() - 0.5)*G.shake*scale;
   g.setTransform(1,0,0,1,0,0); g.fillStyle = isNight() ? '#1a0e2e' : C.blue; g.fillRect(0, 0, cv.width, cv.height);
@@ -5524,6 +5586,7 @@ function frame(now) {
     drawParticles(G.paused ? 0 : dt); if (zoomed) g.restore(); if (G.boss) drawGlitches(t); drawDisco(t); if (flip) g.restore();
     drawWatchers(t); drawHUD(); drawCoinRain(t); drawPopups(t); drawOverlayText();
   } else { drawSky(t, null); drawMenuGround(t); }
+  if (G.state !== 'fight' && storyOk && storyStage() >= 6) drawGlitch(t); // (glitchy, in green and black)
   requestAnimationFrame(frame);
 }
 
@@ -5708,7 +5771,7 @@ function renderSettings() {
   renderSeg('spookySeg', [['auto','In October'],['on','Always'],['off','Off']], 'halloween', applyTheme);
   renderSeg('xmasSeg', [['auto','In December'],['on','Always'],['off','Off']], 'christmas', applyTheme);
   renderSeg('thanksSeg', [['auto','In November'],['on','Always'],['off','Off']], 'thanksgiving', applyTheme);
-  renderSeg('storySeg', [['on','Newest'], ...[['love','💕 In love'], ['park','🌳 Park'], ['cafe','🍝 Café'], ['wedding','💍 Wedding'], ['admin','🛡️ Admin']].slice(0, storyOk ? storyReached() : 0), ['off','Off']], 'storyLook', applyTheme); // (only the looks you've reached)
+  renderSeg('storySeg', [['on','Newest'], ...STORY_LOOKS.slice(0, storyOk ? storyReached() : 0), ['off','Off']], 'storyLook', applyTheme); // (only the looks you've reached)
 }
 let backTo = 'title';
 function openPage(id) { backTo = G.state; G.state = id; waitingKey = null; if (id === 'settings') renderSettings(); if (id === 'keys') { renderKeys(); $('keysMsg').textContent = ''; } fillKeyLabels(); showScreen(id); $(id).scrollTop = 0; $(id).querySelector('[data-back]').focus(); }
@@ -5776,17 +5839,26 @@ function updsTick() { // the countdown on the page
     : unlocked(CHAR.flower) ? 'They got married! 💍' : 'They got married! 💍 (You missed the wedding...)';
   if ($('weddingWhen').textContent !== wtext) $('weddingWhen').textContent = wtext;
   const ch1 = wleft !== Infinity && wleft <= -WEDDING_LONG*60000, al = attackLeft(); // chapter 1 is done once the wedding is over: then chapter 2 opens
-  $('ch1Done').textContent = ch1 ? '✅' : ''; $('ch2Done').textContent = ch1 && al <= -ATTACK_LONG*60000 ? '✅' : '';
+  $('ch1Done').textContent = ch1 ? '✅' : ''; $('ch2Done').textContent = ch1 && lifeLeft() <= 0 ? '✅' : '';
   $('ch2Lock').hidden = ch1; $('ch2List').hidden = !ch1; $('ch2Head').style.opacity = ch1 ? 1 : 0.5;
   const atext = attackText(); if ($('attackWhen').textContent !== atext) $('attackWhen').textContent = atext;
+  const rtext = arriveText(); if ($('arriveWhen').textContent !== rtext) $('arriveWhen').textContent = rtext;
+  const gtext = goneText(); if ($('goneWhen').textContent !== gtext) $('goneWhen').textContent = gtext;
+  const ltext = lifeText(); if ($('lifeWhen').textContent !== ltext) $('lifeWhen').textContent = ltext;
+  const ch2 = ch1 && lifeLeft() <= 0; // chapter 3 opens once chapter 2 is done
+  $('ch3Lock').hidden = ch2; $('ch3List').hidden = !ch2; $('ch3Head').style.opacity = ch2 ? 1 : 0.5; $('ch3Done').textContent = lsGet('fff-fell') ? '✅' : '';
+  const ftext = fellText(); if ($('fellWhen').textContent !== ftext) $('fellWhen').textContent = ftext;
+  $('fellBtn').hidden = !(fellLeft() <= 0);
   $('attackBtn').hidden = !(attackLeft() <= 0 && attackLeft() > -ATTACK_LONG*60000);
   againShow();
 }
 $('updsBtn').onclick = () => { $('againPick').hidden = true; $('kickMsg').hidden = true; audioOn(); if (!confessStart()) lsSet('fff-confess', String(Date.now())); openPage('upds'); updsTick(); };
 // do it again: once you've been through part of the story, you can do it again right away, any time (no waiting, and the countdowns don't start over)
-const againOk = { park:() => againOk.confess(), confess:() => confessSeen() || !!shop.owned.chefhat || unlocked(CHAR.flower), date:() => !!shop.owned.chefhat, wedding:() => unlocked(CHAR.flower), attack:() => attackLeft() <= 0 };
-function againShow() { const any = Object.values(againOk).some(f => f()); $('againRow').hidden = !any; $('againConfess').hidden = !againOk.confess(); $('againPark').hidden = !againOk.park(); $('againDate').hidden = !againOk.date(); $('againWedding').hidden = !againOk.wedding(); $('againAttack').hidden = !againOk.attack(); }
+const againOk = { park:() => againOk.confess(), confess:() => confessSeen() || !!shop.owned.chefhat || unlocked(CHAR.flower), date:() => !!shop.owned.chefhat, wedding:() => unlocked(CHAR.flower), attack:() => attackLeft() <= 0, fell:() => !!lsGet('fff-fell') };
+function againShow() { const any = Object.values(againOk).some(f => f()); $('againRow').hidden = !any; $('againConfess').hidden = !againOk.confess(); $('againPark').hidden = !againOk.park(); $('againDate').hidden = !againOk.date(); $('againWedding').hidden = !againOk.wedding(); $('againAttack').hidden = !againOk.attack(); $('againFell').hidden = !againOk.fell(); }
 $('againAttack').onclick = () => goPlace(15, 'attack');
+$('againFell').onclick = () => goPlace(11, 'fell');
+$('fellBtn').onclick = () => goPlace(11);
 $('attackBtn').onclick = () => goPlace(15);
 $('againConfess').onclick = () => goKeeperRoom('confess');
 $('againPark').onclick = () => goPlace(PARK_FLOOR, 'park');
@@ -5832,7 +5904,7 @@ function placeStep() { // getting your present, if you're there at the right tim
 }
 function drawPlaceKeepers(t, lines, at, on) { // the two shopkeepers, taking turns talking
   const say = on ? lines[Math.floor(t/2.4) % lines.length] : null;
-  for (const id of ['keeper', 'keeper2']) { const ch = CHAR[id], r = dormR(ch), talking = say && say[0] === id; g.save(); g.translate(at[id], SHOP_FLOOR - r - (talking ? Math.abs(Math.sin(t*12))*6 : 0)); drawCharacter(g, ch, r, { facing:id === 'keeper' ? 1 : -1, ...looks(ch), bride:id === 'keeper2' && lines === WEDDING_LINES }); g.restore(); }
+  for (const id of ['keeper', 'keeper2']) { const ch = CHAR[id], r = dormR(ch), talking = say && say[0] === id; g.save(); g.translate(at[id], SHOP_FLOOR - r - (talking ? Math.abs(Math.sin(t*12))*6 : 0)); drawCharacter(g, ch, r, { facing:id === 'keeper' ? 1 : -1, ...looks(ch), bride:id === 'keeper2' && lines === WEDDING_LINES, pose:lines === WEDDING_LINES && on && !talking ? 'cheer' : null }); g.restore(); }
   return say;
 }
 function drawDinnerPlace(t) {
@@ -5976,7 +6048,7 @@ function goKeeperRoom(replay) { // straight to the shopkeepers' room in the dorm
 }
 function goPlace(floor, replay = null) { // the buttons on the up coming page take you straight there, walking as your fighter (the back button goes home)
   audioOn(); openShop(); Object.assign(SHOP, { floor, x:floor === 15 ? 420 : 200, facing:1, visit:null, enterT:0, smi7y:false, smiSayT:0, pb:null, replay, atk:null });
-  SHOP.youSay = floor === PARK_FLOOR ? 'What a nice day in the park!' : floor === DINNER_FLOOR ? 'Mmm, it smells like spaghetti!' : floor === 15 ? 'Uh oh... the Admin is here!' : 'Ooh, a wedding hall!'; SHOP.youSayT = 2.5; renderShopCard(true);
+  SHOP.youSay = floor === PARK_FLOOR ? 'What a nice day in the park!' : floor === DINNER_FLOOR ? 'Mmm, it smells like spaghetti!' : floor === 15 ? 'Uh oh... the Admin is here!' : floor === 11 ? 'The dorm hall... where is Grumpy Shuriken going?' : 'Ooh, a wedding hall!'; SHOP.youSayT = 2.5; renderShopCard(true);
 }
 $('dinnerBtn').onclick = () => goPlace(DINNER_FLOOR);
 $('weddingBtn').onclick = () => goPlace(WEDDING_FLOOR);
@@ -6061,21 +6133,255 @@ function attackText() { // for the up coming page
 // the more of the story you've seen, the more the whole game changes (the menu and the sky in fights):
 // 1 = the shopkeepers confessed (pink, with hearts floating up), 2 = the big day (a wedding look: gold, falling petals, a flower arch and wedding bells),
 // 3 = the Admin has attacked (and on top of that, his green code raining down the sky). It can be turned off in settings
-const STORY_NOTES = ['', '💕 The shopkeepers are in love! 💕', '🌳 The shopkeepers are dating! 🌳', '🍝 Date night at Café Fun! 🍝', '💍 Just married! 💍', '🛡️ The Admin is watching... 🛡️'];
+// arriving admins (chapter 2): 20 minutes after the Admin's attack is over, more admins arrive... and the game starts falling apart.
+// The menus crack and tilt and shake, and in the shop the walls crack and bits of the ceiling fall down. It's the newest story look (💥 Falling apart),
+// so you can pick an older look in settings if you want it to stop
+const ARRIVE_MIN = 20;
+const arriveLeft = () => { const a = attackLeft(); return a === Infinity ? Infinity : a + (ATTACK_LONG + ARRIVE_MIN)*60000; }; // (how long until they arrive)
+function arriveText() { // for the up coming page
+  const l = arriveLeft(), a = attackLeft();
+  return l === Infinity || a > -ATTACK_LONG*60000 ? 'after the Admin\'s attack, more admins are coming... and something bad will happen to the game. Coming soon...'
+    : l > 0 ? `More admins arrive in ${mmss(l)}! Something bad is going to happen to the game...` : 'The admins have arrived... and the game is falling apart! 💥';
+}
+const CRACKS = [[[0.08, 0], [0.12, 0.18], [0.07, 0.3], [0.14, 0.46]], [[0.9, 0], [0.86, 0.12], [0.93, 0.22], [0.88, 0.4], [0.95, 0.52]], [[0.35, 0], [0.38, 0.1], [0.33, 0.17]], [[0.62, 0], [0.6, 0.08], [0.66, 0.15], [0.63, 0.24]]]; // zigzag cracks (as parts of the width and height)
+function drawCracks(h) { g.save(); g.shadowColor = '#39ff14'; g.shadowBlur = 12; g.strokeStyle = '#000'; g.lineWidth = 5; g.lineJoin = 'round'; for (const c of CRACKS) { g.beginPath(); c.forEach(([x, y], i) => i ? g.lineTo(x*W, y*h) : g.moveTo(x*W, y*h)); g.stroke(); const [lx, ly] = c[c.length - 1], [px, py] = c[c.length - 2]; g.lineWidth = 2; g.beginPath(); g.moveTo(px*W, py*h); g.lineTo(lx*W + 30, ly*h - 10); g.stroke(); g.lineWidth = 5; } g.restore(); } // (black cracks, glowing green)
+function drawRubble(t, top) { // chunks of wall and ceiling falling down (and dust where they land)
+  for (let i=0;i<12;i++) { const sp = 260 + (i % 4)*90, k = ((t*sp + i*311) % (SHOP_FLOOR - top + 200)), x = (i*137 + 60) % W, y = top + k - 100, s = 10 + (i % 3)*8;
+    if (y > SHOP_FLOOR - s) { g.fillStyle = `rgba(57,255,20,${0.4 - (y - SHOP_FLOOR + s)/500})`; g.beginPath(); g.ellipse(x, SHOP_FLOOR - 4, 30, 8, 0, 0, TAU); g.fill(); continue; } // (a puff of dust)
+    g.save(); g.translate(x, y); g.rotate(t*3 + i); g.fillStyle = i % 2 ? '#000' : '#0b2a14'; g.strokeStyle = '#39ff14'; g.lineWidth = 2; g.beginPath(); g.moveTo(-s, -s*0.6); g.lineTo(s*0.4, -s); g.lineTo(s, s*0.2); g.lineTo(-s*0.2, s); g.closePath(); g.fill(); g.stroke(); g.restore(); }
+}
+const quakeOn = t => (t % 7) < 0.6; // a little earthquake every few seconds
+// the arriving admins: lots of them, and no two look the same (each has its own skin, something to wear, size and timing). None of them is the original black Admin or the hacker one with the Admin crown: those are Mason's
+const ARRIVERS = [
+  { x:190, d:1.4, r:42, skin:'gold', o:{ hat:true } }, { x:320, d:3.1, r:26, skin:'ice', o:{ headphones:true } },
+  { x:1240, d:0.7, r:36, skin:'shadow', o:{ cape:true } }, { x:1350, d:2.4, r:28, skin:'rainbow', o:{ wings:true } },
+  { x:1480, d:5.5, r:32, skin:'pumpkin', o:{ chefhat:true } }, { x:120, d:6.6, r:24, skin:'harvest', o:{ bow:true } },
+];
+function drawArriving(t) { // on the menu: admins coming down from the sky in green beams, on both sides
+  for (const a of ARRIVERS) {
+    const k = Math.min(1, ((t + a.d) % 9)/4), y = 100 + k*(260 + (a.r - 30)*3); g.fillStyle = 'rgba(57,255,20,.16)'; g.beginPath(); g.moveTo(a.x - 24, 0); g.lineTo(a.x + 24, 0); g.lineTo(a.x + a.r*2, y + a.r*1.6); g.lineTo(a.x - a.r*2, y + a.r*1.6); g.closePath(); g.fill();
+    g.save(); g.translate(a.x, y + Math.sin(t*3 + a.d)*6); drawCharacter(g, CHAR.admin, a.r, { facing:a.x < 800 ? 1 : -1, skin:a.skin, ...a.o }); g.restore();
+  }
+}
+// everyone notices the game falling apart: the shopkeepers say something about it every few seconds, and the fighters talk about it in player breaks and the dorms
+const crumbling = () => storyOk && storyStage() >= 6;
+const CRUMBLE_KEEPER = { 1:['WHOA! Did the floor just MOVE?!', 'Hey! Who is breaking my shop?! ...More admins?!', 'Watch out for the falling ceiling! ...Keep shopping, though!', 'The walls are cracking! Somebody call a fixer!', 'Green lights in the sky... and now my shop is falling apart. This is BAD.', '*catches a falling brick* ...Nobody saw that.'],
+  2:['Eek! The ceiling is falling! *hides behind the counter*', 'F-Fighty! Fighty! The shop is breaking!', 'Is it the admins? I saw them coming down from the sky...', 'Careful! Don\'t stand under the cracks!', 'I was getting brave... but THIS is scary! *shaking*', 'My bow almost got hit by a rock! ...It\'s okay. I\'m okay.'] };
+function crumbleKeeperStep(f) { // the shopkeepers notice
+  if ((f !== 1 && f !== 2) || !crumbling() || SHOP.msgT > 0 || performance.now() < (SHOP.crumbleAt || 0)) return;
+  SHOP.crumbleAt = performance.now() + 6500; const L = CRUMBLE_KEEPER[f]; shopSay(L[Math.floor(Math.random()*L.length)], null, 3.5);
+}
+const CRUMBLE_CHATS = [
+  [['star', 'Did the floor just shake?'], ['tri', 'The WHOLE GAME is shaking!'], ['star', '...Okay. That is not cool.']],
+  [['sparkle', 'Whee! Earthquake! Hehe!'], ['shuriken', 'That is NOT a fun ride! Hold on to something!']],
+  [['circle', 'WHAT?! There are MORE admins?!'], ['square', 'THEY ARE BREAKING EVERYTHING!']],
+  [['hex', 'Beep boop... warning... game is falling apart...'], ['heart', 'Do not say that! ...Wait, is it true?']],
+  [['diamond', 'Missing Arrow, stay close to me. The ceiling is cracking.'], ['arrow', 'I-I am not scared... *glitches a lot*']],
+  [['arrow', 'Big brother is an admin... are the new admins his friends?'], ['diamond', 'I hope they are nice ones...']],
+  [['tri', 'Who let all these admins in?!'], ['heart', 'I saw them coming down from the sky in green lights!']],
+  [['square', 'A ROCK JUST FELL ON MY HEAD!'], ['circle', 'WHAT?! Are you okay?!'], ['square', '...YES. IT WAS A SMALL ROCK.']],
+  [['shuriken', 'First a wedding, now this. ...Hmph.'], ['sparkle', 'Do not worry! The shopkeepers will fix it!']],
+];
+// the falling apart look is glitchy, in green and black: faint green scanlines all the time, and every second or so a glitch burst
+// (strips of the screen jump sideways, some turn green, and black and green blocks flash). Not in fights
+const glitchRnd = i => { const x = Math.sin(i*12.9898)*43758.5453; return x - Math.floor(x); };
+function drawGlitch(t) {
+  g.save(); g.setTransform(1, 0, 0, 1, 0, 0); const cw = cv.width, ch = cv.height;
+  g.fillStyle = 'rgba(57,255,20,.06)'; for (let y = 0; y < ch; y += 6) g.fillRect(0, y, cw, 2); // scanlines
+  const n = Math.floor(t/1.3), k = t/1.3 - n; // (which burst, and how far into it)
+  if (k < 0.2) {
+    for (let i=0;i<6;i++) { const r = glitchRnd(n*31 + i), y = r*ch, h = 8 + glitchRnd(n*17 + i)*ch*0.08, dx = (glitchRnd(n*7 + i) - 0.5)*cw*0.08;
+      g.drawImage(cv, 0, y, cw, h, dx, y, cw, h); // a strip jumps sideways
+      if (i % 2) { g.fillStyle = 'rgba(57,255,20,.35)'; g.fillRect(0, y, cw, h); } }
+    for (let i=0;i<14;i++) { g.fillStyle = i % 3 ? '#000' : '#39ff14'; g.fillRect(glitchRnd(n*13 + i)*cw, glitchRnd(n*19 + i)*ch, 20 + glitchRnd(n*23 + i)*cw*0.12, 6 + glitchRnd(n*29 + i)*24); } // black and green blocks
+  }
+  g.restore();
+}
+// the code is gone (the end of chapter 2): 20 minutes after the admins arrive, they delete the code for the 1st floor of the shop.
+// The shop splits apart: the 1st floor is gone (the stairs down are just a hole full of green code), so the shop starts on the 2nd floor,
+// and the Fighty Shopkeeper works up there now, next to the Shy Shopkeeper. It's the newest story look (🕳️ Code gone): pick an older look to get the 1st floor back
+const GONE_MIN = 20;
+const goneLeft = () => { const a = arriveLeft(); return a === Infinity ? Infinity : a + GONE_MIN*60000; };
+const codeGone = () => storyOk && storyStage() >= 7;
+function goneText() { // for the up coming page
+  const l = goneLeft(), a = arriveLeft();
+  return l === Infinity || a > 0 ? 'after the admins arrive, they delete something important... Coming soon...'
+    : l > 0 ? `The admins are deleting the code in ${mmss(l)}! The shop is going to split apart...` : 'The code is gone! The 1st floor of the shop is gone, and the Fighty Shopkeeper works on the 2nd floor now. 🕳️';
+}
+const FIGHTY_UP_X = 1340; // where the Fighty Shopkeeper stands on the 2nd floor, next to the Shy Shopkeeper
+const FIGHTY_GONE_LINES = ['My floor... my whole floor... GONE!', 'Hi! I work up here now! Welcome to the... fighty funny fun shop?', 'Don\'t go near the hole! It\'s all green code down there.', 'At least I get to work next to my wife now! Hehe.', 'Those admins deleted my counter. I LOVED that counter!', 'All my stuff fell into the code... sorry!'];
+const FIGHTY_UP_K = 0.65; // (up here he's shrunk to the Shy Shopkeeper's size)
+function drawFightyUp(t) { g.save(); g.translate(FIGHTY_UP_X, 650); g.scale(FIGHTY_UP_K, FIGHTY_UP_K); g.translate(-FIGHTY_UP_X, -600); drawGreyKeeper(FIGHTY_UP_X, t, null); g.restore(); } // (his own counter is at 600 and this one is at 650, so he stands behind it)
+function drawFightyUpSay(t) { const k = Math.floor(t/4); if (k % 2 || SHOP.msgT > 0) return; drawBubble(FIGHTY_GONE_LINES[(k/2) % FIGHTY_GONE_LINES.length], FIGHTY_UP_X + 210, 440, FIGHTY_UP_X + 10); } // (taking turns with her: he talks every other few seconds)
+function drawCodeHole(t) { // where the stairs down used to be: a jagged hole with green code falling into it, and a broken sign
+  const x = STAIRS_X[2];
+  g.fillStyle = '#000'; g.beginPath(); g.moveTo(x - 170, SHOP_FLOOR); for (let i=0;i<=10;i++) g.lineTo(x - 170 + i*34, SHOP_FLOOR - (i % 2 ? 26 : 6)); g.lineTo(x + 170, H); g.lineTo(x - 170, H); g.closePath(); g.fill();
+  g.fillRect(x - 170, SHOP_FLOOR, 340, H - SHOP_FLOOR);
+  g.save(); g.beginPath(); g.rect(x - 170, SHOP_FLOOR - 30, 340, H); g.clip(); g.font = '20px monospace'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  for (let i=0;i<16;i++) { const cx = x - 150 + (i*41) % 300, cy = SHOP_FLOOR - 20 + ((t*90 + i*53) % 160); g.fillStyle = `rgba(57,255,20,${0.4 + (i % 3)*0.2})`; g.fillText(String.fromCharCode(48 + (i*7 + Math.floor(t*4)) % 42), cx, cy); }
+  g.restore();
+  g.save(); g.translate(x + 120, SHOP_FLOOR - 30); g.rotate(0.25); g.fillStyle = '#6b4a2a'; g.fillRect(-5, -150, 10, 150); g.fillStyle = '#f3e2c7'; g.strokeStyle = C.ink; g.lineWidth = 3; g.fillRect(-80, -190, 160, 56); g.strokeRect(-80, -190, 160, 56);
+  g.fillStyle = C.ink; g.font = `22px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('1st floor ↓', 0, -172); g.fillStyle = C.red; g.fillText('GONE', 0, -148); g.restore();
+}
+// once the code is gone, the dorms are broken too: the dorm hall's floor fell into the code, so you have to jump across broken bits of floor
+// like parkour to get to the doors (fall in and you go back to the start). The dorm rooms crack and drop rubble, and the break room is broken and empty
+const DORM_PK = [[0, 250, 0], [300, 350, -40], [490, 580, 0], [640, 690, -110], [720, 790, -20], [930, 1000, 0], [1060, 1100, -120], [1140, 1220, -30], [1360, 1430, 0]]; // bits of floor: [left, right, height] (the doors are on them)
+const pkOn = () => SHOP.floor === 11 && codeGone();
+const pkAt = x => DORM_PK.find(([a, b]) => x >= a && x <= b);
+function pkGround() { const p = pkAt(SHOP.x); return p && p[2] >= SHOP.y - 4 ? p[2] : 9999; } // (nothing under you: you fall)
+function pkBlock(x0, x1) { const p = pkAt(x1); return p && p[2] < SHOP.y - 4 ? x0 : x1; } // (you can't walk into the side of a higher bit: jump up onto it)
+function pkStep() {
+  if (!pkOn()) { SHOP.pkIn = false; return; }
+  if (!SHOP.pkIn) { SHOP.pkIn = true; const p = pkAt(SHOP.x) || DORM_PK.reduce((a, b) => Math.abs((a[0] + a[1])/2 - SHOP.x) < Math.abs((b[0] + b[1])/2 - SHOP.x) ? a : b); if (!pkAt(SHOP.x)) SHOP.x = (p[0] + p[1])/2; SHOP.y = p[2]; SHOP.vy = 0; } // (walking in, you land on a bit of floor)
+  if (SHOP.y > 260) { Object.assign(SHOP, { x:160, y:0, vy:0, facing:1 }); SHOP.youSay = 'Whoa! I fell into the code! ...Back to the start.'; SHOP.youSayT = 2.5; if (sfx.bonk) sfx.bonk(); renderShopCard(true); }
+}
+// once there's no shop (once in a life time), everyone is scared: they shake (in the shop, the dorms, player breaks and on the menu) and talk about how scared they are.
+// Goofy Sparkle isn't in player breaks or his dorm: he's hiding in the shopkeepers' attic
+const scaredAll = () => noShop();
+const SCARED_CHATS = [
+  [['star', 'I am NOT scared. ...Okay, maybe a little. *shades rattling*'], ['tri', 'Your shades are SHAKING!']],
+  [['circle', 'WHAT WAS THAT NOISE?!'], ['heart', '*hides behind Shocked Circle* I don\'t know!!']],
+  [['hex', 'Beep... boop... my circuits are shaking...'], ['square', '*whispers* ...I AM TOO SCARED TO YELL.']],
+  [['arrow', '*glitches a LOT* ...the admins are everywhere...'], ['diamond', 'Stay close to me, Missing Arrow. *trembles*']],
+  [['shuriken', 'Where is Goofy?! Is he okay?!'], ['heart', 'The shopkeepers are hiding him. He is safe... I hope.']],
+  [['tri', 'The shop is GONE. The whole SHOP!'], ['circle', 'WHAT?! WHERE WILL WE BUY HATS?!']],
+  [['star', 'Everyone stay together. Nobody goes anywhere alone.'], ['hex', 'B-beep. Agreed. *holds on to Cool Star*']],
+  [['flower', 'I am so scared, my petals are falling off...'], ['heart', 'Aww, Flower Girl... come here. We are all scared together.']],
+  [['shuriken', '*grips his shuriken* If an admin comes in here...'], ['tri', 'You will WHAT?!'], ['shuriken', '...Hide. I will hide.']],
+  [['diamond', 'Deep breaths, everyone. In... and out...'], ['square', '*breathes very loudly* IN... AND OUT...']],
+];
+const GOOFY_COMFORT = [ // once the code is gone, Goofy Sparkle is scared (his dorm is broken), and everyone comforts him
+  [['sparkle', '*sniff* ...the dorms are broken. Where do we sleep now?'], ['shuriken', 'Hey. Hey. You can sleep next to me. I will keep you safe.'], ['sparkle', '...promise?'], ['shuriken', '*grumbles* ...Promise.']],
+  [['sparkle', 'The 1st floor is GONE... *cries*'], ['heart', 'Aww, come here, Goofy! Big hug!'], ['sparkle', '*hugs* ...thanks, Lovely Heart.']],
+  [['sparkle', 'Is the whole game going to break?'], ['star', 'Nah. We will fix it. We always do. *adjusts shades*'], ['sparkle', 'Really? ...Okay!']],
+  [['sparkle', 'I am scared of the green code...'], ['hex', 'Beep boop... I am scared too. Want to be scared together?'], ['sparkle', 'Yes please... hehe.']],
+  [['sparkle', 'My toys fell into the hole...'], ['square', 'I WILL GET YOU NEW TOYS! ...quietly. NEW TOYS.'], ['sparkle', 'Hehe! Thanks, Yelling Square!']],
+  [['sparkle', '*shaking* ...'], ['diamond', 'It is okay to be scared, Goofy. Take a deep breath with me.'], ['sparkle', '*breathes in... and out* ...better.']],
+  [['tri', 'Goofy, stop crying. ...Fine. You can hold my hand.'], ['sparkle', '*holds hand* Hehe... you are nice, Angry Triangle.'], ['tri', 'Do NOT tell anyone.']],
+  [['circle', 'WHAT?! Goofy is sad?!'], ['sparkle', '...a little.'], ['circle', 'Then I will roll around until you laugh! *rolls*'], ['sparkle', 'Hahaha!']],
+  [['arrow', 'I-I was scared all the time too, Goofy... in my cage.'], ['sparkle', 'What made it better?'], ['arrow', 'Friends. ...Like you.']],
+];
+function drawRippedDoors(t) { // the dorm doors are ripped off: each one hangs from one corner over a black, glitching doorway
+  DORMS.forEach((d, i) => {
+    const x = DORM_ROOM_X[i], top = SHOP_FLOOR - 250, f = Math.floor(t*8), jit = glitchRnd(f*7 + i) > 0.7 ? (glitchRnd(f*11 + i) - 0.5)*16 : 0;
+    g.fillStyle = '#000'; g.fillRect(x - 56, top, 112, 250); // the empty doorway
+    for (let k=0;k<4;k++) { g.fillStyle = 'rgba(57,255,20,.45)'; g.fillRect(x - 56, top + ((t*120 + k*70 + i*30) % 250), 112, 4); } // green glitch lines running through it
+    g.save(); g.translate(x - 56 + jit, top); g.rotate(0.32 + Math.sin(t*1.6 + i)*0.05); g.translate(-(x - 56), -top); // hanging off one hinge (and glitching)
+    if (d.keepers) drawKeeperDoor(x, t); else drawNameDoor(x, [dormName(d.ids[0]) + ' &', dormName(d.ids[1])]);
+    g.restore();
+    if (jit) { g.fillStyle = i % 2 ? '#39ff14' : '#000'; g.fillRect(x - 70 + jit*3, top + glitchRnd(f + i)*200, 140, 12); } // a glitch bar
+  });
+}
+function drawBrokenDorm(t) {
+  if (SHOP.floor === 11) { // the hall: a pit of green code, with bits of floor floating over it (and the doors ripped off)
+    drawRippedDoors(t);
+    g.fillStyle = '#000'; g.fillRect(0, SHOP_FLOOR - 4, W, H - SHOP_FLOOR + 4);
+    g.font = '20px monospace'; g.textAlign = 'center'; g.textBaseline = 'middle'; for (let i=0;i<40;i++) { g.fillStyle = `rgba(57,255,20,${0.3 + (i % 3)*0.2})`; g.fillText(String.fromCharCode(48 + (i*7 + Math.floor(t*4)) % 42), (i*41) % W, SHOP_FLOOR + ((t*70 + i*37) % (H - SHOP_FLOOR))); }
+    for (const [a, b, h] of DORM_PK) { const y = SHOP_FLOOR + h; g.fillStyle = '#8a6a9e'; g.strokeStyle = C.ink; g.lineWidth = 4; g.beginPath(); g.moveTo(a, y); g.lineTo(b, y); g.lineTo(b - 8, y + 40); g.lineTo((a + b)/2 + 10, y + 56); g.lineTo(a + 6, y + 36); g.closePath(); g.fill(); g.stroke(); g.fillStyle = '#c0392b'; g.fillRect(a, y, b - a, 8); } // broken chunks of carpeted floor
+  }
+  drawCracks(SHOP_FLOOR); drawRubble(t, 0);
+}
+// once in a life time (chapter 2): 20 minutes after the code is gone, there is no shop anymore. The shop button takes you to the shopkeepers' home instead,
+// where they're both downstairs, worried, and they're hiding Goofy Sparkle up in their attic (at the very top), where the admins can't find him
+const LIFE_MIN = 20;
+const lifeLeft = () => { const g0 = goneLeft(); return g0 === Infinity ? Infinity : g0 + LIFE_MIN*60000; };
+const noShop = () => storyOk && storyStage() >= 8;
+function lifeText() { // for the up coming page
+  const l = lifeLeft(), g0 = goneLeft();
+  return l === Infinity || g0 > 0 ? 'after the code is gone, something happens that only happens once in a life time... Coming soon...'
+    : l > 0 ? `Once in a life time... in ${mmss(l)}! The shopkeepers are getting ready for something.` : 'There is no shop now. 🏠 The shopkeepers are at home, hiding Goofy Sparkle in their attic. Press the shop button to visit them.';
+}
+const HIDE_GOOFY_LINES = [
+  [['keeper2', 'Shh... Goofy is hiding up in our attic. Please don\'t tell the admins!']], [['keeper2', 'I brought him all my old toys. He is playing up there right now... hehe.']], // (her alone, if you're playing as Fighty)
+  [['keeper', 'Shh! Goofy is hiding in our attic. Nobody finds him on MY watch!']], [['keeper', 'No shop anymore... but this is our home. And Goofy is safe here.']], // (him alone, if you're playing as her)
+  [['keeper', 'Shh! Goofy is hiding up in the attic. The admins will never find him there.'], ['keeper2', 'I brought him blankets and cookies... he is so scared.'], ['keeper', 'The shop is gone... but we still have our home. And each other.'], ['keeper2', 'And Goofy. We will keep him safe. *nods*']],
+  [['keeper2', 'D-do you think the admins will come here?'], ['keeper', 'Not if I can help it! *locks the door*'], ['keeper2', 'This is a once in a life time kind of scary...'], ['keeper', 'Yeah. But we will get through it. Together.']],
+  [['keeper', 'Go check on Goofy for us! Up the stairs, then up the ladder.'], ['keeper2', 'B-be quiet up there... he might be sleeping.']],
+];
+const GOOFY_HIDE_LINES = ['*plays with his toy car* Vroom vroom! ...shh, quietly.', 'The shopkeepers gave me all their toys! Hehe!', '*bounces his ball* ...is it safe yet?', 'Shh! Don\'t tell the admins I\'m here!', '*builds a block tower* Look how tall it is!'];
+const GOOFY_HIDE_X = 640;
+function drawHiddenGoofy(t) { // Goofy Sparkle, hiding in the attic and playing with the toys the shopkeepers gave him (unless you ARE Goofy Sparkle)
+  if (isKid()) return;
+  const x = GOOFY_HIDE_X, r = 34, f = SHOP_FLOOR;
+  g.fillStyle = '#c99a5b'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(x + 70, f - 110, 160, 110); g.strokeRect(x + 70, f - 110, 160, 110); // his hiding box
+  g.fillStyle = '#ff8fc1'; g.beginPath(); g.moveTo(x + 90, f - 110); g.quadraticCurveTo(x + 150, f - 140, x + 200, f - 110); g.lineTo(x + 200, f - 60); g.quadraticCurveTo(x + 150, f - 80, x + 90, f - 60); g.closePath(); g.fill(); g.stroke(); // a pink blanket over it
+  const gone = theyGone(); // (once they are gone, his toys are just left here, still)
+  if (!gone) { g.save(); g.translate(x, f - r - Math.abs(Math.sin(t*4))*10); drawCharacter(g, CHAR.sparkle, r, { facing:-1, ...looks(CHAR.sparkle), happy:true }); g.restore(); } // bouncing happily
+  if (gone) t = 0;
+  const by = f - 14 - Math.abs(Math.sin(t*3.2))*120; g.fillStyle = C.red; g.beginPath(); g.arc(x - 80, by, 14, 0, TAU); g.fill(); g.stroke(); g.strokeStyle = C.white; g.lineWidth = 3; g.beginPath(); g.arc(x - 80, by, 8, 0.4, 2.2); g.stroke(); // a bouncy ball
+  const cx = x - 230 + Math.sin(t*1.5)*60, dir = Math.cos(t*1.5) >= 0 ? 1 : -1; g.fillStyle = C.blue; g.strokeStyle = C.ink; g.lineWidth = 3; g.fillRect(cx - 26, f - 30, 52, 18); g.strokeRect(cx - 26, f - 30, 52, 18); g.fillRect(cx - 12 + dir*4, f - 42, 22, 12); g.strokeRect(cx - 12 + dir*4, f - 42, 22, 12); // a toy car driving back and forth
+  g.fillStyle = C.ink; for (const k of [-15, 15]) { g.beginPath(); g.arc(cx + k, f - 10, 7, 0, TAU); g.fill(); }
+  [[C.yellow, 0], [C.green, 1], ['#ff8fc1', 2]].forEach(([col, i]) => { g.fillStyle = col; g.strokeStyle = C.ink; g.lineWidth = 3; g.fillRect(x + 250 + (i % 2)*6, f - 28 - i*28, 28, 28); g.strokeRect(x + 250 + (i % 2)*6, f - 28 - i*28, 28, 28); }); // a block tower
+  if (!gone && Math.abs(SHOP.x - x) < 380) drawBubble(GOOFY_HIDE_LINES[Math.floor(t/3.5) % GOOFY_HIDE_LINES.length], x - 40, f - 190, x - 10);
+}
+// chapter 3, "they are gone...": 20 minutes after once in a life time, Grumpy Shuriken tries to fight the code in the broken dorm hall... and falls in.
+// Goofy Sparkle jumps in after him, and the shopkeepers come running to try to save them. The first time you go to the dorm hall after that
+// (or with "do it again"), you see it happen; after it, the two of them are gone (from the main menu, player breaks, the dorms and the attic),
+// and the shopkeepers stay at the edge of the pit with a rope, trying to pull them out
+const FELL_MIN = 20, FELL_SCENE = 15;
+const fellLeft = () => { const l = lifeLeft(); return l === Infinity ? Infinity : l + FELL_MIN*60000; };
+const theyGone = () => storyOk && storyStage() >= 9;
+function fellText() { // for the up coming page
+  const l = fellLeft(), l0 = lifeLeft();
+  return l === Infinity || l0 > 0 ? 'something bad happens to two of the fighters... Coming soon...'
+    : l > 0 ? `Grumpy Shuriken is getting ready to fight the code... in ${mmss(l)}. Go to the dorm hall then!`
+    : lsGet('fff-fell') ? 'Grumpy Shuriken fell into the code, and Goofy Sparkle jumped in after him... 💔 The shopkeepers are trying to save them in the dorm hall.' : 'It is happening NOW! Go to the dorm hall (press the dorm button, then walk out of the shopkeepers\' room)!';
+}
+const FELL_X = 965, FELL_LINES = [ // the scene, by the second: [from, who, what they say]
+  [0, 'shuriken', 'Take THAT, code! You can\'t scare US!'], [3.5, 'shuriken', '...uh oh. The floor is cracking...'], [5.5, 'shuriken', 'WHOAAAA!!'],
+  [7.5, 'sparkle', 'SHURIKEN!! I\'m coming!!'], [10, 'keeper', 'NO! Goofy! Shuriken!'], [12, 'keeper2', 'H-hold on!! We will get you out!'],
+];
+const SAVE_LINES = [['keeper', 'Grab the rope, Shuriken! Goofy! Can you hear us?!'], ['keeper2', 'P-please be okay... *pulls the rope*'], ['keeper', 'We are NOT giving up on you two!'], ['keeper2', 'I can hear Goofy giggling down there... I think he is okay!'], ['keeper', 'Pull! PULL!']];
+const SAD_CHATS = [
+  [['heart', 'Grumpy and Goofy are gone... *sniff*'], ['star', 'They are not gone. They are just... down there. The shopkeepers will get them.']],
+  [['tri', 'That grumpy guy actually tried to FIGHT the code.'], ['circle', 'WHAT?! That is so brave!'], ['tri', '...yeah. It was.']],
+  [['hex', 'Beep... I miss Goofy\'s giggling...'], ['square', '*quietly* ...me too.']],
+  [['arrow', 'I know what it is like to be stuck somewhere...'], ['diamond', 'And you got saved. They will too.']],
+  [['flower', 'I will save some petals for when they come back.'], ['heart', 'That is so sweet, Flower Girl...']],
+];
+function fellScene() { // how far into the falling scene we are (in seconds), or -1 if it's not playing
+  if (!(SHOP.floor === 11 && (theyGone() || SHOP.replay === 'fell'))) return -1;
+  if (SHOP.fellT0 == null) { if (lsGet('fff-fell') && SHOP.replay !== 'fell') return -1; SHOP.fellT0 = performance.now(); }
+  const s = (performance.now() - SHOP.fellT0)/1000; if (s >= FELL_SCENE) { if (!lsGet('fff-fell') && SHOP.replay !== 'fell') lsSet('fff-fell', String(Date.now())); SHOP.fellT0 = undefined; if (SHOP.replay === 'fell') SHOP.replay = null; return -1; }
+  return s;
+}
+function drawFell(t) { // in the dorm hall: the scene, or the shopkeepers trying to save them
+  if (SHOP.floor !== 11) { SHOP.fellT0 = undefined; return; }
+  const s = fellScene();
+  if (s < 0 && !theyGone()) return;
+  const at = (ch, x, y, o = {}) => { if (CHARS[SHOP.who].id === ch) return; const r = dormR(CHAR[ch]); g.save(); g.translate(x, y - r); drawCharacter(g, CHAR[ch], r, { ...looks(CHAR[ch]), ...o }); g.restore(); };
+  if (s >= 0) {
+    const fall = s < 5.5 ? 0 : (s - 5.5)*(s - 5.5)*260, sx = FELL_X, shake = s > 3.5 && s < 5.5 ? Math.sin(t*50)*4 : 0;
+    if (s < 5.5) { for (let i=0;i<3;i++) { const k = (t*1.4 + i/3) % 1; g.save(); g.translate(sx + 30 + k*220, SHOP_FLOOR - 60 - Math.sin(k*Math.PI)*60); g.rotate(t*12); g.fillStyle = '#9aa0a6'; g.strokeStyle = C.ink; g.lineWidth = 2; g.beginPath(); for (let p=0;p<8;p++) { const a = p*Math.PI/4, rr = p % 2 ? 5 : 13; g.lineTo(Math.cos(a)*rr, Math.sin(a)*rr); } g.closePath(); g.fill(); g.stroke(); g.restore(); } } // throwing shurikens at the code
+    if (fall < 400) at('shuriken', sx + shake, SHOP_FLOOR + fall, { facing:1 });
+    if (s >= 7.5) { const k = Math.min(1, (s - 7.5)/1.6), gx = 160 + k*(sx - 160), gy = s < 9.1 ? SHOP_FLOOR - Math.sin(k*Math.PI)*120 : SHOP_FLOOR + (s - 9.1)*(s - 9.1)*300; if (gy < SHOP_FLOOR + 400) at('sparkle', gx, gy, { facing:1 }); } // Goofy runs, jumps... and dives in after him
+    if (s >= 10) { const k = Math.min(1, (s - 10)/1.5); at('keeper', 160 + k*(800 - 160), SHOP_FLOOR - 20, { facing:1, pose:k < 1 ? 'run' : 'worried' }); at('keeper2', 100 + k*(1140 - 100), SHOP_FLOOR - 30, { facing:1, pose:k < 1 ? 'run' : 'worried' }); /* (running in, then worried) */ }
+    const line = [...FELL_LINES].reverse().find(([from]) => s >= from), who = line[1], wx = who === 'shuriken' ? FELL_X : who === 'sparkle' ? Math.min(FELL_X, 160 + Math.min(1, (s - 7.5)/1.6)*(FELL_X - 160)) : who === 'keeper' ? 160 + Math.min(1, (s - 10)/1.5)*(800 - 160) : 100 + Math.min(1, (s - 10)/1.5)*(1140 - 100); // (the bubble follows whoever is talking)
+    drawBubble(line[2], Math.min(W - 20, wx + 220), SHOP_FLOOR - 200, wx);
+    return;
+  }
+  // afterwards: the two shopkeepers on the edges of the pit, holding a rope down into the code
+  at('keeper', 760, SHOP_FLOOR - 20, { facing:1, pose:'pull' }); at('keeper2', 1180, SHOP_FLOOR - 30, { facing:-1, pose:'pull' }); // (leaning back, tugging the rope)
+  g.strokeStyle = '#c9a26b'; g.lineWidth = 6; g.beginPath(); g.moveTo(852, SHOP_FLOOR - 112); g.quadraticCurveTo(FELL_X, SHOP_FLOOR + 40 + Math.sin(t*5)*12, 1090, SHOP_FLOOR - 138); /* (from his hands to hers) */ g.moveTo(FELL_X, SHOP_FLOOR + 30); g.lineTo(FELL_X + Math.sin(t*1.5)*12, H); g.stroke(); // the rope
+  const say = SAVE_LINES[Math.floor(t/3.2) % SAVE_LINES.length], wx = say[0] === 'keeper' ? 760 : 1180; drawBubble(say[1], Math.min(W - 20, wx + 220), SHOP_FLOOR - 230, wx);
+}
+const STORY_NOTES = ['', '💕 The shopkeepers are in love! 💕', '🌳 The shopkeepers are dating! 🌳', '🍝 Date night at Café Fun! 🍝', '💍 Just married! 💍', '🛡️ The Admin is watching... 🛡️', '💥 Everything is falling apart! 💥', '🕳️ The code is gone... the 1st floor is gone! 🕳️', '🏠 There is no shop now... 🏠', '💔 They are gone...'];
 let storyCache = { t:0, s:0 };
-const STORY_PICKS = { love:1, park:2, cafe:3, wedding:4, admin:5 }; // (or pick one in settings: any look you've reached)
-function storyReached() { const w = weddingLeft(), a = attackLeft(), d = DATING_MIN*60000 - (Date.now() - (+lsGet('fff-confessed') || 0)); return w <= -WEDDING_LONG*60000 && a <= 0 ? 5 : w <= 0 ? 4 : date2Left() <= 0 ? 3 : confessSeen() && d <= 0 ? 2 : confessSeen() ? 1 : 0; } // (in love, dating, the 2nd date, married, the Admin's attack)
+const STORY_LOOKS = [['love','💕 In love'], ['park','🌳 Park'], ['cafe','🍝 Café'], ['wedding','💍 Wedding'], ['admin','🛡️ Admin'], ['crumble','💥 Falling apart'], ['gone','🕳️ Code gone'], ['life','🏠 Once in a life time'], ['fell','💔 They are gone']]; // (the looks, in story order, for the settings and the admin panel)
+const STORY_PICKS = { love:1, park:2, cafe:3, wedding:4, admin:5, crumble:6, gone:7, life:8, fell:9 }; // (or pick one in settings: any look you've reached)
+function storyReached() { const w = weddingLeft(), a = attackLeft(), d = DATING_MIN*60000 - (Date.now() - (+lsGet('fff-confessed') || 0)); return fellLeft() <= 0 ? 9 : lifeLeft() <= 0 ? 8 : goneLeft() <= 0 ? 7 : arriveLeft() <= 0 ? 6 : w <= -WEDDING_LONG*60000 && a <= 0 ? 5 : w <= 0 ? 4 : date2Left() <= 0 ? 3 : confessSeen() && d <= 0 ? 2 : confessSeen() ? 1 : 0; } // (in love, dating, the 2nd date, married, the Admin's attack)
 function storyStage() {
   if (!storyOk || setup.storyLook === 'off') return 0;
   const now = Date.now(); if (now - storyCache.t < 1000) return storyCache.s; // (it only has to check once a second)
-  const got = storyReached(), pick = STORY_PICKS[setup.storyLook], s = pick && pick <= got ? pick : got, was = storyCache.s; // (the one you picked in settings, if you've got that far)
+  const got = storyReached(), pick = STORY_PICKS[setup.storyLook], s = pick && (pick <= got || unlocked(CHAR.admin)) ? pick : got, was = storyCache.s; // (the one you picked in settings, if you've got that far)
   storyCache = { t:now, s }; if (s !== was) applyTheme();
   return s;
 }
 function storyClasses() {
   storyCache.t = 0; const s = storyStage(), el = document.documentElement;
-  el.classList.toggle('love', s === 1); el.classList.toggle('parklook', s === 2); el.classList.toggle('cafe', s === 3); el.classList.toggle('wedding', s >= 4); el.classList.toggle('adminlook', s === 5);
+  el.classList.toggle('love', s === 1); el.classList.toggle('parklook', s === 2); el.classList.toggle('cafe', s === 3); el.classList.toggle('wedding', s >= 4); el.classList.toggle('adminlook', s >= 5); el.classList.toggle('crumble', s >= 6); el.classList.toggle('gone', s >= 7); el.classList.toggle('scared', s >= 8);
   $('storyNote').textContent = STORY_NOTES[s]; $('storyNote').hidden = !s;
+  const row = TITLE_ROW().map(c => c.id).join(); if (titleChars.dataset.ids !== row) { titleChars.dataset.ids = row; titleChars.innerHTML = ''; TITLE_ROW().forEach(c => titleChars.appendChild(charCanvas(c, 78))); } // (they are gone: Grumpy Shuriken and Goofy Sparkle aren't on the menu)
 }
 function drawStoryFx(t) { // floating up and falling down over the sky
   const s = storyStage(); if (!s) return;
@@ -6087,14 +6393,31 @@ function drawStoryFx(t) { // floating up and falling down over the sky
 }
 function drawShopStory(t) { // the story look in the shop: the same hearts, butterflies, lights, petals or code, plus a garland across the top in the look's colors
   const s = storyStage(); if (!s) return;
+  if (s >= 6) { drawCracks(SHOP_FLOOR); drawRubble(t, 0); } if (s >= 7 && SHOP.floor === 2) drawCodeHole(t); // (the shop is falling apart: cracks in the walls, and bits of the ceiling falling down)
   g.save(); g.globalAlpha = 0.55; drawStoryFx(t); g.restore(); // (a bit see-through, so they don't get in the way)
-  const cols = [null, ['#ff8fc1', '#e75a9b'], ['#2e9e4f', '#8fd16a'], ['#7a1f2b', '#ffd65a'], ['#ffd23f', C.white], ['#39ff14', '#0b2a14']][s];
+  const cols = [null, ['#ff8fc1', '#e75a9b'], ['#2e9e4f', '#8fd16a'], ['#7a1f2b', '#ffd65a'], ['#ffd23f', C.white], ['#39ff14', '#0b2a14'], ['#8a7f74', '#39ff14'], ['#000', '#39ff14'], ['#000', '#39ff14'], ['#000', '#39ff14']][s];
   g.strokeStyle = cols[0]; g.lineWidth = 3; g.beginPath(); for (let x = 0; x <= W; x += 10) { const y = 160 + Math.abs(Math.sin(x/200*Math.PI))*-30 + 30; x ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke();
   for (let x = 40; x < W; x += 80) { const y = 160 + Math.abs(Math.sin(x/200*Math.PI))*-30 + 30, i = x/80 | 0; g.fillStyle = cols[i % 2]; g.strokeStyle = C.ink; g.lineWidth = 2; // little flags (hearts on the love look)
     if (s === 1) drawLittleHeart(x, y + 16, 12); else { g.beginPath(); g.moveTo(x - 16, y); g.lineTo(x + 16, y); g.lineTo(x, y + 30); g.closePath(); g.fill(); g.stroke(); } }
   if (s >= 4) for (const x of [60, W - 60]) { g.fillStyle = '#ffd23f'; g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.moveTo(x - 26, 210); g.quadraticCurveTo(x, 140, x + 26, 210); g.closePath(); g.fill(); g.stroke(); g.beginPath(); g.arc(x, 214, 7, 0, TAU); g.fill(); g.stroke(); g.strokeStyle = '#d4a017'; g.beginPath(); g.moveTo(x, 0); g.lineTo(x, 158); g.stroke(); } // wedding bells in the corners
 }
+// the main menu once the code is gone, from Mason's drawing: lime green with dark green scribbles all over, the Admin on a tilted green square
+// in the middle, and the two shopkeepers together in a tilted grey picture frame (the buttons and the fighters are in their own boxes, see html.gone)
+const SCRIBBLES = [[260, 60, 260], [960, 60, 200], [1380, 70, 240], [1700, 200, 220], [280, 560, 200], [1500, 400, 200], [1230, 720, 260], [640, 820, 240], [-60, 300, 160]];
+function drawGoneMenu(t) {
+  g.fillStyle = '#b5e61d'; g.fillRect(-3000, -3000, W + 6000, H + 6000);
+  g.strokeStyle = '#6b7f10'; g.lineWidth = 10; g.lineCap = 'round'; g.lineJoin = 'round';
+  SCRIBBLES.forEach(([cx, cy, w], n) => { g.beginPath(); for (let i=0;i<14;i++) { const a = glitchRnd(n*41 + i)*TAU, rx = w*(0.3 + glitchRnd(n*7 + i)*0.7), ry = w*0.35*(0.3 + glitchRnd(n*13 + i)*0.7), x = cx + Math.cos(a)*rx, y = cy + Math.sin(a)*ry; i ? g.quadraticCurveTo(cx + (glitchRnd(n*3 + i) - 0.5)*w*1.6, cy + (glitchRnd(n*5 + i) - 0.5)*w*0.8, x, y) : g.moveTo(x, y); } g.stroke(); }); // messy scribbles
+  g.save(); g.translate(720, 420); g.rotate(-0.55); g.fillStyle = '#22b14c'; g.fillRect(-230, -230, 460, 460); g.restore(); // the tilted green square
+  g.save(); g.translate(720, 470 + Math.sin(t*2)*6); drawCharacter(g, CHAR.admin, 150, { facing:1 }); g.restore(); // the Admin, on top of it
+  g.save(); g.translate(1200, 340); g.rotate(-0.27); g.fillStyle = '#7f7f7f'; g.fillRect(-180, -170, 360, 340); g.fillStyle = C.white; g.fillRect(-110, -100, 220, 200); // a grey frame with a white picture...
+  g.beginPath(); g.rect(-110, -100, 220, 200); g.clip();
+  for (const [id, x] of [['keeper', -52], ['keeper2', 52]]) { const ch = CHAR[id], r = 46; g.save(); g.translate(x, 96 - r); drawCharacter(g, ch, r, { facing:x < 0 ? 1 : -1, ...looks(ch) }); g.restore(); } // ...of the shopkeepers, together
+  drawLittleHeart(0, -60 - Math.abs(Math.sin(t*2))*6, 14); g.restore();
+}
 function drawStoryMenu(t) { // on the menu, from the big day on: a flower arch and wedding bells (off to the sides, where you can see them)
+  if (storyStage() >= 7) { drawGoneMenu(t); return; } // (a whole new main menu, from Mason's drawing)
+  if (storyStage() >= 6) { drawArriving(t); drawRubble(t, 0); } // (admins arriving, and the sky falling in)
   if (storyStage() < 4) return;
   const ax = 115, ay = 760, ar = 80; g.strokeStyle = '#2e9e4f'; g.lineWidth = 10; g.beginPath(); g.arc(ax, ay - 130, ar, Math.PI, 0); g.lineTo(ax + ar, ay); g.moveTo(ax - ar, ay); g.lineTo(ax - ar, ay - 130); g.stroke(); // the arch
   for (let i=0;i<=10;i++) { const a = Math.PI + i*Math.PI/10, x = ax + Math.cos(a)*ar, y = ay - 130 + Math.sin(a)*ar; g.fillStyle = i % 2 ? C.white : '#ff8fc1'; for (let p=0;p<5;p++) { const pa = p*TAU/5; g.beginPath(); g.arc(x + Math.cos(pa)*8, y + Math.sin(pa)*8, 7, 0, TAU); g.fill(); } g.fillStyle = '#ffd23f'; g.beginPath(); g.arc(x, y, 5, 0, TAU); g.fill(); }
@@ -6116,6 +6439,7 @@ function openAdminPanel(from) {
   renderSeg('apWhoSeg', [['me', 'Just me'], ['all', 'Everyone']], 'cheatWho');
   renderSeg('apKeepPlaySeg', ONOFF_CHEAT, 'keepersPlay', () => { titleChars.innerHTML = ''; TITLE_ROW().forEach(c => titleChars.appendChild(charCanvas(c, 78))); });
   renderSeg('apKeepWatchSeg', ONOFF_CHEAT, 'keepersWatch');
+  renderSeg('apStorySeg', [['on','Newest'], ...STORY_LOOKS, ['off','Off']], 'storyLook', applyTheme); // (every look, even ones you haven't reached)
   renderSwap(); renderPowers(); renderFx(); renderMore();
 }
 let apFrom = 'menu';
@@ -6138,6 +6462,15 @@ $('apUnlock').onclick = () => { // Missing Arrow, every item (but the attic's go
   saveShop();
   titleChars.innerHTML = ''; TITLE_ROW().forEach(c => titleChars.appendChild(charCanvas(c, 78))); $('glitchShopBtn').hidden = !unlocked(CHAR.arrow);
   $('apMsg').textContent = 'Everything is unlocked! Missing Arrow is free, and every fighter has every item and skin. Put them on in the shop.'; if (sfx.win) sfx.win();
+};
+$('apStory').onclick = () => { // every chapter at once: the whole story already happened (you saw it all), so every background is yours, plus Flower Girl and everything in the shop
+  const now = Date.now(), M = 60000;
+  lsSet('fff-confess', String(now - 400*M)); lsSet('fff-confessed', String(now - 350*M)); // (dating 290 minutes ago, the 2nd date 280...)
+  lsSet('fff-wedding', String(now - 250*M)); lsSet('fff-attack', String(now - 200*M)); lsSet('fff-attackwon', '1'); lsSet('fff-fell', String(now)); // (...the wedding 250, the Admin's attack 200, and the rest of chapter 2 and 3 after it)
+  shop.unlocked = { ...(shop.unlocked || {}), flower:true };
+  $('apUnlock').onclick(); // (and everything in the shop)
+  setup.storyLook = 'on'; saveSetup(); applyTheme(); renderSeg('apStorySeg', [['on','Newest'], ...STORY_LOOKS, ['off','Off']], 'storyLook', applyTheme);
+  $('apMsg').textContent = 'You got all the chapters! Everything on the up coming page has happened, every background is yours (pick one below), and you have Flower Girl and everything in the shop.';
 };
 // ----- change fighter: an admin can turn into a different fighter in the middle of a fight -----
 const myFighter = () => G.fighters.find(f => f.alive !== false && !f.caught && (G.online === 'client' ? f.me : f.control !== 'cpu' && !f.control.startsWith('net:')));
@@ -6501,7 +6834,7 @@ $('shopNext').onclick = () => { do SHOP.who = (SHOP.who + 1) % CHARS.length; whi
 function openShop() {
   SHOP.replay = null; // (doing something again only lasts until you leave)
   const mine = CHARS.findIndex(ch => (CTRL[setup.slots[ch.id]] || CTRL.off).kind === 'human');
-  Object.assign(SHOP, { floor:1, x:280, y:0, vy:0, facing:1, near:null, nearKeeper:false, nearStairs:false, prev:readHeld('local'), msg:'', msgT:0, echoT:0, carry:false, pushT:0, pushing:false, youSayT:0, chase:null, bossT:-1, cam:0 });
+  Object.assign(SHOP, { floor:codeGone() ? 2 : 1, x:codeGone() ? 640 : 280, y:0, vy:0, facing:1, near:null, nearKeeper:false, nearStairs:false, prev:readHeld('local'), msg:'', msgT:0, echoT:0, carry:false, pushT:0, pushing:false, youSayT:0, chase:null, bossT:-1, cam:0 });
   SHOP.visit = { x:860, phase:'talk', t:0 }; // the shy shopkeeper is downstairs chatting when you come in, then hurries back up
   SHOP.enterT = 3.5; // what you say as you walk in (Grumpy Shuriken is looking for Goofy Sparkle)
   if (SHOP.who == null) SHOP.who = Math.max(0, mine);
@@ -6509,6 +6842,7 @@ function openShop() {
   SHOP.smi7y = Math.random() < 0.1 || /[?&]smi7y\b/i.test(location.search); SHOP.nearSmi = false;
   SHOP.smiSay = SHOP.smi7y ? 'Yo! It\'s SMI7Y! Come say hi!' : ''; SHOP.smiSayT = SHOP.smi7y ? 4 : 0; SHOP.smiTalk = -1;
   SHOP.enterClock = 0; SHOP.replies = CHARS[SHOP.who].id === 'shuriken' ? SHURIKEN_REPLIES.map(r => ({ ...r })) : [];
+  if (noShop()) Object.assign(SHOP, { floor:12, dorm:DORMS.findIndex(d => d.keepers), x:300, cam:0, visit:null, enterT:0, smi7y:false, smiSayT:0, ktask:null, kdone:new Set(), shyAwake:false, pb:{ next:performance.now() + 800, chat:null, line:0 } }); // (there is no shop now: you go to the shopkeepers' home)
   openPage('shop'); renderShopCard(true); cv.focus();
 }
 // nobody in the shop can see the Admin: the shopkeepers act like the shop is empty and just keep talking
@@ -6652,7 +6986,7 @@ function shopLaugh() { // you laugh at the joke, and the shopkeeper is happy you
 function shopStairs() {
   if (SHOP.stairTo === 8) { enterCage(); return; } // the 5th floor portal goes to Missing Arrow's cage
   if (SHOP.stairTo === 12 && !dormOpen(SHOP.stairRoom || 0)) { SHOP.youSay = `It's locked! Only ${DORMS[SHOP.stairRoom].ids.map(dormName).join(' and ')} can go in.`; SHOP.youSayT = 3; if (sfx.bonk) sfx.bonk(); renderShopCard(true); return; } // a locked dorm door
-  const from = SHOP.floor, to = SHOP.stairTo || (from === 1 ? 2 : 1), back = STAIRS.find(s => s.floor === to && s.to === from);
+  const from = SHOP.floor, to0 = SHOP.stairTo || (from === 1 ? 2 : 1), to = to0 === 1 && codeGone() ? 2 : to0, back = STAIRS.find(s => s.floor === to && s.to === (to0 === to ? from : 1)); // (once the code is gone, the way down goes to the 2nd floor instead)
   if (to === 3 && isKid()) { // the shy shopkeeper thinks the attic is too scary for Goofy Sparkle, so she lifts him off the ladder
     Object.assign(SHOP, { carry:true, carryT:0, x:LADDER_X, facing:-1 });
     shopSay('Whoa! Not up there, sweetie! The 3rd floor is too scary for little ones.', 'jump', 4.5); renderShopCard(true); return;
