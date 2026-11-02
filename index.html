@@ -1211,6 +1211,7 @@ function drawCharacter(g, ch, r, o = {}) {
   if (ch.id === 'flower') drawPetals(g, r, tt); // Flower Girl's pink petals, behind her yellow middle
   g.fillStyle = skinColor(o.skin) || ch.color; g.strokeStyle = C.ink; g.lineWidth = Math.max(2, r*0.09); g.lineJoin = 'round';
   shapePath(g, ch.shape, r); g.fill(); g.stroke();
+  if (ch.id === 'flower') drawFlowerFace(g, r); // (her cheeks, seeds and bow)
   if (o.skin === 'pumpkin') { // pumpkin stripes
     g.save(); shapePath(g, ch.shape, r); g.clip(); g.strokeStyle = 'rgba(160,60,0,.45)'; g.lineWidth = Math.max(2, r*0.08);
     for (const k of [-0.5, 0, 0.5]) { g.beginPath(); g.ellipse(k*r, 0, r*0.28, r*1.3, 0, 0, TAU); g.stroke(); }
@@ -1362,9 +1363,20 @@ function drawHat(g, r, topY, facing) { // the cool hat from the shop
   g.restore();
 }
 function drawTurkeyHat(g, r, topY) { const tt = performance.now()/1000; withG(g, () => drawTurkey(0, topY + r*0.08, r*0.95, tt)); } // the Thanksgiving turkey hat: a little turkey standing on your head
-function drawPetals(g, r, tt) { // a ring of pink petals that sway a little
-  g.fillStyle = '#ff9fcf'; g.strokeStyle = C.ink; g.lineWidth = Math.max(1.5, r*0.05);
-  for (let i=0;i<8;i++) { const a = i*TAU/8 + Math.sin(tt*2)*0.06; g.save(); g.rotate(a); g.beginPath(); g.ellipse(0, -r*1.05, r*0.36, r*0.55, 0, 0, TAU); g.fill(); g.stroke(); g.restore(); }
+function drawPetals(g, r, tt) { // Flower Girl: two green leaves, a ring of big pink petals and a ring of small light pink ones, swaying a little
+  g.fillStyle = '#3fae5a'; g.strokeStyle = C.ink; g.lineWidth = Math.max(1.5, r*0.05);
+  for (const s of [-1, 1]) { g.save(); g.rotate(s*(2.2 + Math.sin(tt*2)*0.05)); g.beginPath(); g.ellipse(0, -r*1.25, r*0.28, r*0.6, 0, 0, TAU); g.fill(); g.stroke(); g.strokeStyle = '#2e7d32'; g.beginPath(); g.moveTo(0, -r*0.75); g.lineTo(0, -r*1.7); g.stroke(); g.strokeStyle = C.ink; g.restore(); }
+  for (const [n, len, wid, col, off] of [[8, 1.05, 0.38, '#ff8fc8', 0], [8, 0.8, 0.26, '#ffd1e6', Math.PI/8]]) {
+    g.fillStyle = col; for (let i=0;i<n;i++) { const a = i*TAU/n + off + Math.sin(tt*2)*0.06; g.save(); g.rotate(a); g.beginPath(); g.ellipse(0, -r*len, r*wid, r*0.55, 0, 0, TAU); g.fill(); g.stroke(); g.restore(); }
+  }
+}
+function drawFlowerFace(g, r) { // rosy cheeks, little seed dots and a pink bow on Flower Girl's yellow middle
+  g.fillStyle = C.ink; g.strokeStyle = C.ink; g.lineWidth = Math.max(1.5, r*0.05); for (const s of [-1, 1]) { g.beginPath(); g.ellipse(s*r*0.3, -r*0.1, r*0.1, r*0.14, 0, 0, TAU); g.fill(); g.fillStyle = C.white; g.beginPath(); g.arc(s*r*0.3 + r*0.03, -r*0.15, r*0.04, 0, TAU); g.fill(); g.fillStyle = C.ink; for (const k of [0, 1]) { g.beginPath(); g.moveTo(s*r*0.38, -r*(0.2 + k*0.05)); g.lineTo(s*r*0.5, -r*(0.27 + k*0.05)); g.stroke(); } } // big eyes with eyelashes
+  g.lineWidth = Math.max(2, r*0.06); g.beginPath(); g.arc(0, r*0.15, r*0.22, 0.2, Math.PI - 0.2); g.stroke(); // a happy smile
+  g.fillStyle = 'rgba(214,140,30,.35)'; for (const [x, y] of [[-0.5, -0.45], [0.5, -0.45], [-0.62, 0.1], [0.62, 0.1], [0, -0.7]]) { g.beginPath(); g.arc(x*r, y*r, r*0.06, 0, TAU); g.fill(); }
+  g.fillStyle = 'rgba(255,100,150,.45)'; for (const s of [-1, 1]) { g.beginPath(); g.ellipse(s*r*0.45, r*0.28, r*0.16, r*0.1, 0, 0, TAU); g.fill(); }
+  g.save(); g.translate(r*0.55, -r*0.72); g.fillStyle = '#ff5fa2'; g.strokeStyle = C.ink; g.lineWidth = Math.max(1, r*0.04);
+  for (const k of [-1, 1]) { g.beginPath(); g.moveTo(0, 0); g.lineTo(k*r*0.28, -r*0.16); g.lineTo(k*r*0.28, r*0.16); g.closePath(); g.fill(); g.stroke(); } g.beginPath(); g.arc(0, 0, r*0.08, 0, TAU); g.fill(); g.stroke(); g.restore();
 }
 function drawFlowerCrown(g, r, topY) { // a ring of little pink and white flowers on your head
   g.save(); g.strokeStyle = '#2e9e4f'; g.lineWidth = Math.max(2, r*0.07); g.beginPath(); g.ellipse(0, topY + r*0.12, r*0.62, r*0.16, 0, 0, TAU); g.stroke();
@@ -3978,6 +3990,10 @@ function drawGreyKeeper(kx, t, mug) {
   g.fillStyle = C.white; for (const s of [-1, 1]) { g.beginPath(); g.moveTo(kx + s*28, 448); g.lineTo(kx + s*3, 448); g.lineTo(kx + s*6, 480); g.closePath(); g.fill(); }
   g.fillStyle = C.red; g.fillRect(kx - 7, 452, 14, 12);
   g.beginPath(); g.moveTo(kx - 8, 463); g.lineTo(kx + 8, 463); g.lineTo(kx + 12, 528); g.lineTo(kx, 544); g.lineTo(kx - 12, 528); g.closePath(); g.fill();
+  g.fillStyle = '#3a3a3a'; for (const s of [-1, 1]) { g.beginPath(); g.moveTo(kx + s*30, 448); g.lineTo(kx + s*14, 500); g.lineTo(kx + s*30, 545); g.lineTo(kx + s*46, 470); g.closePath(); g.fill(); } // the lapels of his suit
+  g.fillStyle = '#d8d8d8'; for (const by of [562, 592]) { g.beginPath(); g.arc(kx, by, 5, 0, TAU); g.fill(); } // two buttons
+  g.fillStyle = C.red; g.beginPath(); g.moveTo(kx - 62, 502); g.lineTo(kx - 38, 502); g.lineTo(kx - 42, 486); g.lineTo(kx - 48, 494); g.lineTo(kx - 54, 484); g.lineTo(kx - 58, 494); g.closePath(); g.fill(); // a red pocket square
+  g.strokeStyle = 'rgba(255,255,255,.15)'; g.lineWidth = 6; for (const s of [-1, 1]) { g.beginPath(); g.moveTo(kx + s*66, 478); g.quadraticCurveTo(kx + s*62, 456, kx + s*40, 452); g.stroke(); } // a shine on each shoulder
   g.fillStyle = '#f3e2c7'; g.strokeStyle = '#5a3a1e'; g.lineWidth = 3; g.fillRect(kx + 20, 500, 40, 18); g.strokeRect(kx + 20, 500, 40, 18);
   g.fillStyle = C.ink; g.font = `14px ${BODYFONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('fighty', kx + 40, 510, 36);
   if (!mug) { // the waving arm, with a hand
@@ -3993,10 +4009,11 @@ function drawGreyKeeper(kx, t, mug) {
   g.beginPath(); g.moveTo(kx - 6, 382); g.lineTo(kx + 6, 382); g.moveTo(kx - 38, 382); g.lineTo(kx - 56, 376); g.moveTo(kx + 38, 382); g.lineTo(kx + 56, 376); g.stroke();
   g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineWidth = 3;
   for (const ex of [-21, 21]) { g.beginPath(); g.moveTo(kx + ex - 9, 394); g.lineTo(kx + ex + 1, 381); g.stroke(); }
-  g.strokeStyle = C.ink; g.lineWidth = 6; g.beginPath(); g.moveTo(kx - 30, 364); g.quadraticCurveTo(kx - 18, 354, kx - 6, 366); g.stroke();
+  g.strokeStyle = C.ink; g.lineWidth = 6; g.beginPath(); g.moveTo(kx - 30, 364); g.quadraticCurveTo(kx - 18, 354, kx - 6, 366); g.moveTo(kx + 6, 364); g.quadraticCurveTo(kx + 18, 350, kx + 30, 360); g.stroke(); // eyebrows (one cool and raised)
   // a big friendly grin with teeth
   g.fillStyle = C.ink; g.beginPath(); g.moveTo(kx - 28, 410); g.quadraticCurveTo(kx, 448, kx + 28, 410); g.closePath(); g.fill();
   g.fillStyle = C.white; g.beginPath(); g.moveTo(kx - 24, 411); g.lineTo(kx + 24, 411); g.lineTo(kx + 20, 419); g.lineTo(kx - 20, 419); g.closePath(); g.fill();
+  g.fillStyle = 'rgba(255,120,150,.35)'; for (const s of [-1, 1]) { g.beginPath(); g.ellipse(kx + s*38, 416, 11, 7, 0, 0, TAU); g.fill(); } // rosy cheeks
   // and the shop's own cool hat
   g.save(); g.translate(kx, 395); drawHat(g, 58, -58, 1); g.restore();
   if (mug) { // an arm holding a mug of coffee, lifted up for a sip every few seconds, with steam curling up
@@ -4861,12 +4878,18 @@ function drawShyKeeper(kx, t, { friend, close, lookX, walking = false, alpha = 1
   g.quadraticCurveTo(kx + 68, 735, kx + 64, SHOP_FLOOR - 14); g.quadraticCurveTo(kx, SHOP_FLOOR + 2, kx - 64, SHOP_FLOOR - 14); g.quadraticCurveTo(kx - 68, 735, kx - 40, 688);
   g.closePath(); g.fill(); g.stroke();
   if (bride) { g.fillStyle = '#ffd6ea'; for (let i=0;i<7;i++) { g.beginPath(); g.arc(kx - 54 + i*18, SHOP_FLOOR - 22, 7, 0, TAU); g.fill(); } for (const [dx, dy] of [[-16, 700], [14, 716], [-4, 740], [24, 690]]) { g.beginPath(); g.arc(kx + dx, dy, 5, 0, TAU); g.fill(); } } // pink lace on the wedding dress
+  if (!bride) { // a white apron with a heart on the pocket, and white lace along the hem of her dress
+    g.fillStyle = C.white; g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.moveTo(kx - 26, 640); g.lineTo(kx + 26, 640); g.lineTo(kx + 34, 712); for (let i=0;i<4;i++) g.quadraticCurveTo(kx + 26 - i*17, 726, kx + 34 - (i + 1)*17, 712); g.closePath(); g.fill(); g.stroke();
+    g.fillStyle = '#ff7aa8'; g.beginPath(); g.moveTo(kx, 702); g.bezierCurveTo(kx - 16, 690, kx - 8, 680, kx, 688); g.bezierCurveTo(kx + 8, 680, kx + 16, 690, kx, 702); g.fill();
+    g.fillStyle = C.white; for (let i=0;i<8;i++) { g.beginPath(); g.arc(kx - 56 + i*16, SHOP_FLOOR - 16, 6, Math.PI, 0); g.fill(); }
+  }
   g.fillStyle = C.white; g.lineWidth = 3; for (const s of [-1, 1]) { g.beginPath(); g.moveTo(kx, 602); g.quadraticCurveTo(kx + s*26, 600, kx + s*24, 620); g.quadraticCurveTo(kx + s*10, 622, kx, 602); g.fill(); g.stroke(); }
   // soft black arms with round hands (one waves when she's happy)
   const wave = mask ? 0 : Math.sin(t*3)*4, arm = (x1, y1, x2, y2) => { g.strokeStyle = C.ink; g.lineWidth = 20; g.lineCap = 'round'; g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke(); };
   arm(kx - 32, 628, kx - 84, 690 + wave);
   if (friend) { const a = -1.1 + Math.sin(t*8)*0.35; arm(kx + 32, 628, kx + 32 + Math.cos(a)*72, 628 + Math.sin(a)*72); } // waving hi
   else arm(kx + 32, 628, kx + 84, 690 - wave);
+  g.fillStyle = bride ? C.white : '#b46fc0'; g.strokeStyle = C.ink; g.lineWidth = 3; for (const s of [-1, 1]) { g.beginPath(); g.ellipse(kx + s*34, 618, 15, 13, 0, 0, TAU); g.fill(); g.stroke(); } // puffy sleeves
   // her bow: two loops, a knot and two little tails
   g.fillStyle = C.ink;
   for (const s of [-1, 1]) {
@@ -4880,7 +4903,7 @@ function drawShyKeeper(kx, t, { friend, close, lookX, walking = false, alpha = 1
   const HAIR = '#3b2a2a';
   for (const s of [-1, 1]) { // two little pigtails with pink bands, behind her head
     g.fillStyle = HAIR; g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.ellipse(s*40, 8 + Math.sin(t*2 + s)*2, 13, 17, s*0.4, 0, TAU); g.fill(); g.stroke();
-    g.fillStyle = '#ff7aa8'; g.beginPath(); g.arc(s*31, -2, 5, 0, TAU); g.fill();
+    g.fillStyle = '#ff7aa8'; g.strokeStyle = C.ink; g.lineWidth = 1.5; for (const k of [-1, 1]) { g.beginPath(); g.moveTo(s*31, -2); g.lineTo(s*31 + k*9, -9); g.lineTo(s*31 + k*9, 5); g.closePath(); g.fill(); g.stroke(); } g.beginPath(); g.arc(s*31, -2, 3.5, 0, TAU); g.fill(); // little pink bows on her pigtails
   }
   if (bride) { g.fillStyle = 'rgba(255,255,255,.75)'; g.strokeStyle = 'rgba(0,0,0,.25)'; g.lineWidth = 2; g.beginPath(); g.moveTo(-30, -30); g.quadraticCurveTo(-70, 40, -60, 120); g.lineTo(60, 120); g.quadraticCurveTo(70, 40, 30, -30); g.closePath(); g.fill(); g.stroke(); } // her wedding veil, behind her head
   g.fillStyle = C.grey; g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.arc(0, 0, 36, 0, TAU); g.fill(); g.stroke();
@@ -4892,6 +4915,7 @@ function drawShyKeeper(kx, t, { friend, close, lookX, walking = false, alpha = 1
   const look = friend ? { x:lookX, y:0 } : peek ? { x:-3, y:0 } : { x:3 + close*2, y:3 };
   g.fillStyle = C.white; for (const ex of [-12, 10]) { g.beginPath(); g.arc(ex, -8, 7, 0, TAU); g.fill(); }
   g.fillStyle = C.ink; for (const ex of [-12, 10]) { g.beginPath(); g.arc(ex + look.x, -8 + look.y, 3.5, 0, TAU); g.fill(); }
+  if (!mask) { g.strokeStyle = C.ink; g.lineWidth = 1.5; for (const [ex, s] of [[-12, -1], [10, 1]]) for (const k of [0, 1]) { g.beginPath(); g.moveTo(ex + s*5, -13 + k*3); g.lineTo(ex + s*10, -16 + k*3); g.stroke(); } } // eyelashes
   if (mask) { // her sleep mask (when she's asleep): purple, with sleepy closed eyes drawn on it
     g.strokeStyle = '#5a2a6e'; g.lineWidth = 6; g.beginPath(); g.moveTo(-37, -10); g.lineTo(37, -10); g.stroke(); // the strap
     g.fillStyle = '#a349a4'; g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.ellipse(-13, -8, 16, 12, 0, 0, TAU); g.ellipse(11, -8, 16, 12, 0, 0, TAU); g.fill(); g.stroke();
