@@ -3960,6 +3960,7 @@ function drawOverlayText() {
   }
 }
 function shopStep(dt) {
+  const wp = $('shop').querySelector('.who-pick'), nobody = onlyThemHere(); if (wp.hidden !== nobody) wp.hidden = nobody; // (when it's only them, you aren't a fighter: no picking who you shop as)
   const h = readHeld('local'), pr = SHOP.prev, ch = CHARS[SHOP.who]; SHOP.prev = h;
   SHOP.youSayT = Math.max(0, (SHOP.youSayT || 0) - dt);
   SHOP.toyT = Math.max(0, (SHOP.toyT || 0) - dt);
@@ -7013,6 +7014,7 @@ function openShop() {
   SHOP.smiSay = SHOP.smi7y ? 'Yo! It\'s SMI7Y! Come say hi!' : ''; SHOP.smiSayT = SHOP.smi7y ? 4 : 0; SHOP.smiTalk = -1;
   SHOP.enterClock = 0; SHOP.replies = CHARS[SHOP.who].id === 'shuriken' ? SHURIKEN_REPLIES.map(r => ({ ...r })) : [];
   if (noShop()) Object.assign(SHOP, { floor:12, dorm:DORMS.findIndex(d => d.keepers), x:300, cam:0, visit:null, enterT:0, smi7y:false, smiSayT:0, ktask:null, kdone:new Set(), shyAwake:false, pb:{ next:performance.now() + 800, chat:null, line:0 } }); // (there is no shop now: you go to the shopkeepers' home)
+  if (onlyOn()) Object.assign(SHOP, { floor:6, x:600, y:0, visit:null, enterT:0, youSayT:0, smi7y:false, smiSayT:0 }); // (it's only them: you show up in the break room, and you're not anybody, you just watch)
   openPage('shop'); renderShopCard(true); cv.focus();
 }
 // nobody in the shop can see the Admin: the shopkeepers act like the shop is empty and just keep talking
@@ -7255,17 +7257,17 @@ function drawSkinBooth(t) { // a big gold mirror on a stand: it shows you in eac
 }
 function renderShopCard(force) {
   const ch = CHARS[SHOP.who], st = SHOP.near, it = st && ITEMS.find(i => i.id === st.item);
-  const key = [shop.coins, ch.id, SHOP.floor >= DINNER_FLOOR ? placeMsg() : '', SHOP.floor === 15 && attackOn(), !!(SHOP.atk && SHOP.atk.won), SHOP.nearWed, SHOP.nearPark, SHOP.nearPaper, SHOP.ktask, SHOP.nearTask, SHOP.nearToys, it && it.id, it && shop.owned[it.id], ITEMS.map(i => wears(i.id, ch)).join(), SHOP.nearKeeper, SHOP.nearStairs, SHOP.stairTo, SHOP.floor, jokeOpen(), !!SHOP.revealed, SHOP.nearSmi, SHOP.nearSkins, skinOf(ch), skinRec(ch).have.join(), SHOP.nearCage, SHOP.cage && SHOP.cage.lock.left, SHOP.cage && SHOP.cage.hp, SHOP.cage && SHOP.cage.freed, SHOP.nearPal && SHOP.nearPal.id, SHOP.stairRoom, SHOP.dorm, SHOP.nearSwitch, setup.dormTime].join('|');
+  const key = [shop.coins, ch.id, onlyThemHere(), SHOP.floor >= DINNER_FLOOR ? placeMsg() : '', SHOP.floor === 15 && attackOn(), !!(SHOP.atk && SHOP.atk.won), SHOP.nearWed, SHOP.nearPark, SHOP.nearPaper, SHOP.ktask, SHOP.nearTask, SHOP.nearToys, it && it.id, it && shop.owned[it.id], ITEMS.map(i => wears(i.id, ch)).join(), SHOP.nearKeeper, SHOP.nearStairs, SHOP.stairTo, SHOP.floor, jokeOpen(), !!SHOP.revealed, SHOP.nearSmi, SHOP.nearSkins, skinOf(ch), skinRec(ch).have.join(), SHOP.nearCage, SHOP.cage && SHOP.cage.lock.left, SHOP.cage && SHOP.cage.hp, SHOP.cage && SHOP.cage.freed, SHOP.nearPal && SHOP.nearPal.id, SHOP.stairRoom, SHOP.dorm, SHOP.nearSwitch, setup.dormTime].join('|');
   if (!force && key === SHOP.key) return;
   SHOP.key = key; $('coinCount').textContent = shop.coins; $('shopWho').textContent = ch.name;
-  const card = $('shopCard'); fillShopCard(card, ch, it);
+  const card = $('shopCard'); if (onlyThemHere()) card.innerHTML = '<h3>It\'s only them</h3><p>Just the two shopkeepers, alone in the broken break room. Their memories are moving on a paper on the wall all by themselves: the confession, their first date, Café Fun and the big day... and they are scared.</p><p class="note">You are not anybody here. You just watch. Press back to leave.</p>'; else fillShopCard(card, ch, it); // (it's only them: no fighter, no things to wear)
   // a ✕ to close this pop-up (it stays closed until you click "show info"; punch still works without it)
   card.hidden = !!SHOP.cardClosed; $('shopCardOpen').hidden = !SHOP.cardClosed;
   const x = document.createElement('button'); x.className = 'card-x'; x.id = 'shopCardClose'; x.textContent = '✕'; x.title = 'Close'; x.setAttribute('aria-label', 'Close this pop-up');
   x.onclick = () => { SHOP.cardClosed = true; renderShopCard(true); cv.focus(); };
   card.prepend(x);
   // what this fighter has on, with a button to take each thing off from anywhere in the shop
-  if (!ITEMS.some(i => shop.owned[i.id])) return;
+  if (!ITEMS.some(i => shop.owned[i.id]) || onlyThemHere()) return; // (when it's only them, you aren't anybody, so you aren't wearing anything)
   const row = document.createElement('div'); row.className = 'wearing';
   const on = ITEMS.filter(i => wears(i.id, ch) && canWear(i, ch));
   if (!on.length) row.textContent = `${ch.name} isn't wearing anything from the shop.`;
