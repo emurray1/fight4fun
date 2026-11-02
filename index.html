@@ -3848,8 +3848,8 @@ function shopStep(dt) {
   SHOP.vy += 2600*dt; SHOP.y = Math.min(groundY, SHOP.y + SHOP.vy*dt); if (SHOP.y === groundY) SHOP.vy = 0;
   if (h.jump && !pr.jump && SHOP.y === groundY) { SHOP.vy = -1000*ch.jump; sfx.jump(); }
   const f = SHOP.floor;
-  SHOP.near = STANDS.find(s => s.floor === f && Math.abs(s.x - SHOP.x) < 110) || null;
-  SHOP.nearSkins = f === 2 && !SHOP.near && Math.abs(SKIN_X - SHOP.x) < 100;
+  SHOP.near = shopCleared() ? null : STANDS.find(s => s.floor === f && Math.abs(s.x - SHOP.x) < 110) || null; // (no stands while the shop is cleared for the wedding)
+  SHOP.nearSkins = f === 2 && !SHOP.near && !shopCleared() && Math.abs(SKIN_X - SHOP.x) < 100;
   const stair = !SHOP.near && STAIRS.find(s => s.floor === f && Math.abs(s.x - SHOP.x) < 100 && (!s.keepers || keeperRoom()) && (!s.admin || unlocked(CHAR.admin)) && (f !== 8 || (SHOP.cage && SHOP.cage.freed))); // the cage room portal only opens once he is free
   SHOP.nearCage = f === 8 && !!SHOP.cage && !SHOP.cage.freed && Math.abs(SHOP.x - CAGE_X) < 170;
   SHOP.nearStairs = !!stair; SHOP.stairTo = stair ? stair.to : 0; SHOP.stairRoom = stair && stair.room != null ? stair.room : SHOP.stairRoom; // (which dorm door)
@@ -3877,6 +3877,7 @@ function shopStep(dt) {
   if (f === 8) { cageStep(dt); if (SHOP.floor !== 8) return; }
   SHOP.nearSmi = f === 1 && SHOP.smi7y && !SHOP.near && !SHOP.nearStairs && Math.abs(SMI7Y_X - SHOP.x) < 70;
   if (SHOP.nearSmi) SHOP.nearKeeper = false;
+  crowdStep(); // (the fighters talking to the shopkeepers about the wedding, until it happens)
   SHOP.smiSayT = Math.max(0, (SHOP.smiSayT || 0) - dt);
   if (h.punch && !pr.punch) { if (SHOP.nearCage) cageHit(); else if (SHOP.near) shopAct(SHOP.near.item); else if (SHOP.nearSkins) nextSkin(); else if (SHOP.nearSwitch) dormLight(); else if (SHOP.nearPaper) readPaper(); else if (SHOP.nearTask) doKTask(); else if (SHOP.nearToys) playToys(); else if (SHOP.nearStairs) shopStairs(); else if (SHOP.nearPal) palTalk(); else if (SHOP.nearSmi) smiTalk(); else if (SHOP.nearKeeper) shopTalk(); }
   if (h.grab && !pr.grab && SHOP.nearKeeper) shopLaugh();
@@ -5313,7 +5314,7 @@ function drawShop(t) {
   if (hall) { g.save(); g.translate(-(SHOP.cam || 0), 0); drawChaseFloor(t); }
   else if (SHOP.floor === DINNER_FLOOR) drawDinnerPlace(t); else if (SHOP.floor === WEDDING_FLOOR) drawWeddingHall(t); else if (SHOP.floor === 15) drawAdminRoom(t); else if (SHOP.floor === 14) drawKeeperAttic(t); else if (SHOP.floor === 12 || SHOP.floor === 13) { if (wide) { g.save(); g.translate(-(SHOP.cam || 0), 0); } if (SHOP.floor === 13) drawKeeperUpstairs(t); else drawDormRoom(t); } else if (SHOP.floor === 11) drawDormHall(t); else if (SHOP.floor === 10) drawPlayerBreak(t); else if (SHOP.floor === 9) drawGlitchShop(t); else if (SHOP.floor === 8) drawCageFloor(t); else if (SHOP.floor === 7) drawTopFloor(t); else if (SHOP.floor === 6) drawBreakFloor(t); else if (SHOP.floor === 4) drawOfficeFloor(t); else if (SHOP.floor === 3) drawAtticFloor(t); else if (SHOP.floor === 2) drawFunnyFloor(t); else drawFightyFloor(t);
   // an empty pink stand upstairs, waiting for the next thing to sell (a real item takes its place once there is one)
-  if (SHOP.floor === 2) {
+  if (SHOP.floor === 2 && !shopCleared()) {
     const spot = STAND_SPOTS[2].find(x => !STANDS.some(s => s.floor === 2 && s.x === x));
     if (spot != null) {
       const top = SHOP_FLOOR - 170;
@@ -5324,9 +5325,9 @@ function drawShop(t) {
       g.fillStyle = C.ink; g.fillText(label, spot, top + 38);
     }
   }
-  if (SHOP.floor === 2) drawSkinBooth(t);
+  if (SHOP.floor === 2 && !shopCleared()) drawSkinBooth(t);
   // stands with things to buy on this floor
-  for (const st of STANDS) {
+  for (const st of shopCleared() ? [] : STANDS) {
     if (st.floor !== SHOP.floor) continue;
     const it = ITEMS.find(i => i.id === st.item), top = SHOP_FLOOR - 170;
     g.fillStyle = st.floor === 2 ? PINK_DARK : st.floor === 3 ? '#4a3626' : st.floor === 9 ? '#3a3a48' : BEAM; g.fillRect(st.x - 12, top, 24, 170); g.beginPath(); g.ellipse(st.x, SHOP_FLOOR, 60, 12, 0, 0, TAU); g.fill();
@@ -5347,6 +5348,7 @@ function drawShop(t) {
     g.fillStyle = C.ink; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(label, st.x, top + 39);
     if (SHOP.near === st) { const ay = top - 150 + Math.sin(t*6)*8; g.fillStyle = C.yellow; g.strokeStyle = C.ink; g.lineWidth = 4; g.beginPath(); g.moveTo(st.x - 22, ay); g.lineTo(st.x + 22, ay); g.lineTo(st.x, ay + 26); g.closePath(); g.fill(); g.stroke(); }
   }
+  drawCrowd(t); // (the fighters, while the shop is cleared for the wedding)
   if (SHOP.floor === 1 && SHOP.smi7y) drawSmi7y(t);
   // you
   const ch = CHARS[SHOP.who], r = 50*(ch.size || 1), moving = Math.abs(SHOP.prev.x || 0) > 0 && SHOP.y === 0;
@@ -6166,7 +6168,41 @@ function adminChatter() { // the next thing they say, to nobody
   const l = lines[SHOP.chat = (SHOP.chat + 1) % lines.length];
   Object.assign(SHOP, { msg:Array.isArray(l) ? l[1] : l, msgWho:Array.isArray(l) ? l[0] : 1, msgT:5.5, chatAt:performance.now() + ADMIN_TALK_EVERY*1000, joke:false });
 }
+// until the big day, when you walk up to a shopkeeper your fighter asks about the wedding, and the shopkeeper answers
+const WED_ASK = { heart:'Eeee! Are you SO excited for the wedding?!', star:'So... the big day, huh? Cool. Very cool.', tri:'Grr... I am NOT going to cry at your wedding. ...Maybe a little.',
+  square:'CONGRATULATIONS ON THE WEDDING!!!', circle:'WHAT?! You are getting MARRIED?!', hex:'Beep boop! Wedding detected! Congratulations!', sparkle:'Can I be the flower girl?! Pleeease?',
+  shuriken:'Hmph. ...Congratulations on the wedding.', diamond:'And how do you FEEL about the big day?', arrow:'I-I am so happy for you two... *happy glitch*', flower:'I am practicing tossing petals for the big day!' };
+const WED_REPLY = { 1:['Thanks! The big day is coming soon. You are invited!', 'I bought a brand new top hat for it! Hehe!', 'I am SO happy! ...Do not tell anyone I cried.'],
+  2:['th-thank you... I am a little nervous... hehe.', 'I hope my dress looks okay...', 'w-will you come? Please come!'] };
+// until the wedding, the shops are cleared out for the big day, and the fighters come in to ask the shopkeepers all about it
+const shopCleared = () => (SHOP.floor === 1 || SHOP.floor === 2) && confessSeen() && weddingLeft() > 0;
+const CROWD = { 1:['heart', 'star', 'square', 'hex', 'arrow'], 2:['sparkle', 'circle', 'tri', 'diamond', 'shuriken'] }, CROWD_X = { 1:[620, 730, 840, 950, 1060], 2:[760, 850, 940, 1030, 1110] };
+function crowdSpots() {
+  if (!shopCleared()) return [];
+  const f = SHOP.floor; return CROWD[f].map(id => CHAR[id]).filter(ch => unlocked(ch) && ch.id !== CHARS[SHOP.who].id && !(ch.id === 'sparkle' && SHOP.sparkleHere)).map((ch, i) => ({ ch, x:CROWD_X[f][i] }));
+}
+function crowdStep() { // a fighter asks, then the shopkeeper answers, then the next fighter asks...
+  const spots = crowdSpots(); SHOP.crowdOn = spots.length > 0; if (!spots.length) return;
+  SHOP.visit = null; // (the shy shopkeeper stays at her own shop to talk to everyone)
+  const now = performance.now(), f = SHOP.floor, c = SHOP.crowd = SHOP.crowd && SHOP.crowd.f === f ? SHOP.crowd : { f, i:0, next:now + 1200, ask:true, say:null };
+  if (now < c.next) return;
+  const id = spots[c.i % spots.length].ch.id;
+  if (c.ask) { c.say = { id, text:WED_ASK[id] || 'Are you excited for the big day?', until:now + 3000 }; c.next = now + 3200; c.ask = false; return; }
+  SHOP.crowdTalk = true; shopSay(id === 'sparkle' && f === 2 ? 'Hehe... we already have a flower girl, sweetie. But you can sit right in the front!' : WED_REPLY[f][c.i % WED_REPLY[f].length], null, 3.8); SHOP.crowdTalk = false;
+  c.i++; c.next = now + 4300; c.ask = true;
+}
+function drawCrowd(t) {
+  if (!shopCleared()) return;
+  drawSign(560, 300, 440, 'Closed for the big day! 💍', C.white, '#c0392b', 30); // (where the stands used to be)
+  const c = SHOP.crowd, say = c && c.say && performance.now() < c.say.until ? c.say : null;
+  for (const { ch, x } of crowdSpots()) {
+    const r = 46*Math.min(ch.size || 1, 1.6), bottom = ch.shape === 'circle' ? r : Math.max(...shapeVerts(ch.shape, r, true).map(v => v.y)), talking = say && say.id === ch.id;
+    g.save(); g.translate(x, SHOP_FLOOR - bottom - (talking ? Math.abs(Math.sin(t*12))*6 : Math.abs(Math.sin(t*2 + x))*3)); drawCharacter(g, ch, r, { facing:1, ...looks(ch), happy:true }); g.restore();
+    if (talking) drawBubble(say.text, Math.min(W - 20, x + 200), SHOP_FLOOR - bottom*2 - 40, x);
+  }
+}
 function shopSay(text, sound, secs = 3.5, who = 1) {
+  if (SHOP.crowdOn && !SHOP.crowdTalk) return; // (while the fighters are taking turns asking about the wedding, the shopkeeper only answers them)
   if (isAdmin() && ADMIN_TALK[SHOP.floor]) { if (SHOP.msgT <= 0) adminChatter(); return; } // they don't answer the Admin: they just keep going
   SHOP.msg = text; SHOP.msgT = secs; SHOP.msgWho = who; if (sound && sfx[sound]) sfx[sound](); } // `who`: which shopkeeper says it in the break room
 function shopTalk() {
