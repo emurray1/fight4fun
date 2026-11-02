@@ -639,7 +639,7 @@ const CHARS = [
   { id:'square',  name:'Yelling Square', color:C.orange, shape:'square',  trait:'Heavy. Special: jumps and slams down', speed:0.85, power:1.15, weight:1.45, jump:0.92 },
   { id:'sparkle', name:'Goofy Sparkle',  color:'#ffd83a', shape:'star4',   trait:'Light and zippy. Special: sugar rush',            speed:1.15, power:0.9,  weight:0.8,  jump:1.12 },
   { id:'hex',      name:'Nervous Hexstar', color:'#93a3bd', shape:'star6',    trait:'Six points, extra sturdy',  speed:0.9,  power:1.05, weight:1.25, jump:0.95 },
-  { id:'heart',    name:'Lovely Heart',    color:'#ff8fc1', shape:'heart',    trait:'Bouncy, jumps really high', speed:1.05, power:0.9,  weight:0.9,  jump:1.22 },
+  { id:'heart',    name:'Lovely Heart',    color:'#ff8fc1', shape:'heart',    trait:'Bouncy, jumps really high. Lifesteal: 25% of punches heal 30', speed:1.05, power:0.9,  weight:0.9,  jump:1.22 },
   { id:'shuriken', name:'Grumpy Shuriken', color:'#b97a57', shape:'shuriken', trait:'Fast and sharp. Special: dashes forward',            speed:1.2,  power:1.1,  weight:0.85, jump:1.0 },
   // the missing guy from the "HAVE YOU SEEN HIM?" poster: locked in a cage past the 5th floor until you break him out
   { id:'arrow',    name:'Missing Arrow',   color:'#ffb07c', shape:'arrow',    trait:'Scared and glitchy. Special: glitch fest', speed:1.1,  power:1.0,  weight:0.95, jump:1.08, secret:true, hint:'Have you seen him? Look past the 5th floor of the shop...' },
@@ -1723,6 +1723,7 @@ function tryPunch(p) {
   if (!hit) ev('sfx','swing');
 }
 const WORDS = ['BONK!','POW!','WHAM!','BOP!','THWACK!'];
+const LIFESTEAL_CHANCE = 0.25, LIFESTEAL_HEAL = 30; // Lovely Heart's passive: a 25% chance to heal 30 health with each punch that lands
 function hitFighter(p, q) {
   const pw = p.ch.power, kb = (q.ko > 0 ? 11 : 7.5) * pw / Math.sqrt(q.ch.weight);
   Body.setVelocity(q.body, { x:q.body.velocity.x*0.3 + p.facing*kb, y:Math.min(q.body.velocity.y, -4.5) });
@@ -1732,6 +1733,7 @@ function hitFighter(p, q) {
     q.dizzy += 26*pw;
     if (q.dizzy >= MAX_HP) { q.dizzy = MAX_HP; q.ko = 3; ev('pop', q.body.position.x, q.body.position.y - 70, 'DIZZY!', C.purple); ev('sfx','dizzy'); }
   }
+  if (p.ch.id === 'heart' && Math.random() < LIFESTEAL_CHANCE && p.dizzy > 0) { p.dizzy = Math.max(0, p.dizzy - LIFESTEAL_HEAL); ev('pop', p.body.position.x, p.body.position.y - 60, `+${LIFESTEAL_HEAL}`, C.green); ev('burst', p.body.position.x, p.body.position.y, '#ff8fc1', 8); } // Lovely Heart's lifesteal (from Mason's drawing): some punches heal them
   if (q.grabbing) release(q);
   const hx = q.body.position.x - p.facing*q.r*0.6, hy = q.body.position.y;
   ev('burst', hx, hy, C.yellow, 8); ev('pop', hx, hy - 30, WORDS[(Math.random()*WORDS.length)|0], C.white);
