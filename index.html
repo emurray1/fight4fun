@@ -752,12 +752,13 @@ const CAGE_X = 200, CAGE_PORTAL_X = 1263, LOCK_POPS = 12, LOCK_SPEED = 2.0, LOCK
 const PLAYER_DOOR_X = 680, PB_EXIT_X = 120;
 // and a door in player breaks goes to the dorms (floor 11): a hallway with a door for each pair of roommates, into their room (floor 12)
 const DORM_DOOR_X = 1500, DORM_EXIT_X = 110, DORM_ROOM_X = [320, 535, 750, 965, 1180, 1395]; // (the last door is the shopkeepers' room)
-const KEEPER_STAIRS_X = 2260, KEEPER_UP_X = 2260, KEEPER_LADDER_X = 2050, ATTIC_HOLE_X = 300, PAPER_X = 1000; // (and a ladder up to the 3rd floor, floor 14, where a paper with a code is pinned to the wall) // the stairs in the shopkeepers' room (downstairs, and upstairs on floor 13)
+const KEEPER_STAIRS_X = 2260, KEEPER_UP_X = 2260, KEEPER_LADDER_X = 2050, ATTIC_HOLE_X = 300, PAPER_X = 1000, ADMIN_DOOR_X = 1460, ADMIN_EXIT_X = 110; // (and a ladder up to the 3rd floor, floor 14, where a paper with a code is pinned to the wall) // the stairs in the shopkeepers' room (downstairs, and upstairs on floor 13)
 const STAIRS = [{ floor:1, x:STAIRS_X[1], to:2 }, { floor:2, x:STAIRS_X[2], to:1 }, { floor:2, x:LADDER_X, to:3 }, { floor:3, x:ATTIC_STAIRS_X, to:2 },
   { floor:3, x:ELEVATOR_X, to:4 }, { floor:4, x:ELEVATOR_X, to:3 }, { floor:2, x:BREAK_DOOR_X, to:6 }, { floor:6, x:BREAK_DOOR_X, to:2 },
   { floor:7, x:TOP_PORTAL_X, to:8 }, { floor:8, x:CAGE_PORTAL_X, to:1 }, { floor:2, x:PLAYER_DOOR_X, to:10 }, { floor:10, x:PB_EXIT_X, to:2 },
   { floor:10, x:DORM_DOOR_X, to:11 }, { floor:11, x:DORM_EXIT_X, to:10 }, ...DORM_ROOM_X.map((x, room) => ({ floor:11, x, to:12, room })), { floor:12, x:DORM_EXIT_X, to:11 },
-  { floor:12, x:KEEPER_STAIRS_X, to:13, keepers:true }, { floor:13, x:KEEPER_UP_X, to:12 }, { floor:13, x:KEEPER_LADDER_X, to:14 }, { floor:14, x:ATTIC_HOLE_X, to:13 }]; // (the shopkeepers' room has an upstairs)
+  { floor:12, x:KEEPER_STAIRS_X, to:13, keepers:true }, { floor:13, x:KEEPER_UP_X, to:12 }, { floor:13, x:KEEPER_LADDER_X, to:14 }, { floor:14, x:ATTIC_HOLE_X, to:13 },
+  { floor:14, x:ADMIN_DOOR_X, to:15, admin:true }, { floor:15, x:ADMIN_EXIT_X, to:14 }]; // (a secret admin door on the 3rd floor, only for admins, goes to the admin room: floor 15) // (the shopkeepers' room has an upstairs)
 const STAND_SPOTS = { 1:[390, 610, 830], 2:[530], 3:[800], 9:[720, 1080] };
 const SKIN_X = 830; // the skins booth on the 2nd floor (a big mirror)
 const STANDS = (() => { // items fill the 1st floor, then the 2nd; an item can also ask for a floor of its own
@@ -3792,7 +3793,7 @@ function shopStep(dt) {
   const f = SHOP.floor;
   SHOP.near = STANDS.find(s => s.floor === f && Math.abs(s.x - SHOP.x) < 110) || null;
   SHOP.nearSkins = f === 2 && !SHOP.near && Math.abs(SKIN_X - SHOP.x) < 100;
-  const stair = !SHOP.near && STAIRS.find(s => s.floor === f && Math.abs(s.x - SHOP.x) < 100 && (!s.keepers || keeperRoom()) && (f !== 8 || (SHOP.cage && SHOP.cage.freed))); // the cage room portal only opens once he is free
+  const stair = !SHOP.near && STAIRS.find(s => s.floor === f && Math.abs(s.x - SHOP.x) < 100 && (!s.keepers || keeperRoom()) && (!s.admin || unlocked(CHAR.admin)) && (f !== 8 || (SHOP.cage && SHOP.cage.freed))); // the cage room portal only opens once he is free
   SHOP.nearCage = f === 8 && !!SHOP.cage && !SHOP.cage.freed && Math.abs(SHOP.x - CAGE_X) < 170;
   SHOP.nearStairs = !!stair; SHOP.stairTo = stair ? stair.to : 0; SHOP.stairRoom = stair && stair.room != null ? stair.room : SHOP.stairRoom; // (which dorm door)
   SHOP.nearPal = (f === 10 || f === 12 || f === 13) && !SHOP.nearStairs ? ((f === 10 ? pbSpots() : dormSpots()).find(s => Math.abs(s.x - SHOP.x) < 70) || {}).ch || null : null; // walking up to a fighter in player breaks or a dorm room
@@ -4409,8 +4410,8 @@ function drawKeeperAttic(t) {
   if (night) { g.fillStyle = '#fff6c9'; g.beginPath(); g.arc(1315, 285, 16, 0, TAU); g.fill(); } else { g.fillStyle = C.yellow; g.beginPath(); g.arc(1285, 290, 20, 0, TAU); g.fill(); }
   // boxes, an old teddy bear and a rocking chair
   g.strokeStyle = C.ink; g.lineWidth = 4;
-  for (const [x, y, w, h] of [[560, SHOP_FLOOR - 110, 150, 110], [600, SHOP_FLOOR - 190, 110, 80], [1380, SHOP_FLOOR - 120, 160, 120]]) { g.fillStyle = '#c99a5b'; g.fillRect(x, y, w, h); g.strokeRect(x, y, w, h); g.beginPath(); g.moveTo(x, y + 18); g.lineTo(x + w, y + 18); g.stroke(); }
-  g.fillStyle = C.ink; g.font = `20px ${BODYFONT}`; g.fillText('OLD HATS', 635, SHOP_FLOOR - 50); g.fillText('xmas stuff', 1460, SHOP_FLOOR - 55);
+  for (const [x, y, w, h] of [[560, SHOP_FLOOR - 110, 150, 110], [600, SHOP_FLOOR - 190, 110, 80], [1080, SHOP_FLOOR - 120, 140, 120]]) { g.fillStyle = '#c99a5b'; g.fillRect(x, y, w, h); g.strokeRect(x, y, w, h); g.beginPath(); g.moveTo(x, y + 18); g.lineTo(x + w, y + 18); g.stroke(); }
+  g.fillStyle = C.ink; g.font = `20px ${BODYFONT}`; g.fillText('OLD HATS', 635, SHOP_FLOOR - 50); g.fillText('xmas stuff', 1150, SHOP_FLOOR - 55);
   g.fillStyle = '#a0522d'; for (const [dx, dy, r] of [[0, -40, 34], [0, 10, 40], [-26, -70, 13], [26, -70, 13]]) { g.beginPath(); g.arc(1600 - 340 + dx, SHOP_FLOOR - 40 + dy, r, 0, TAU); g.fill(); g.stroke(); } // a teddy bear
   g.fillStyle = C.ink; for (const k of [-1, 1]) { g.beginPath(); g.arc(1260 + k*12, SHOP_FLOOR - 84, 4, 0, TAU); g.fill(); }
   const rock = Math.sin(t*1.5)*0.06; g.save(); g.translate(820, SHOP_FLOOR - 10); g.rotate(rock); // a rocking chair, rocking by itself...
@@ -4430,7 +4431,8 @@ function drawKeeperAttic(t) {
   g.strokeStyle = '#8a5a2b'; g.lineWidth = 10; g.beginPath(); for (const k of [-40, 40]) { g.moveTo(ATTIC_HOLE_X + k, H); g.lineTo(ATTIC_HOLE_X + k, SHOP_FLOOR - 60); } g.stroke();
   g.lineWidth = 7; for (const y of [SHOP_FLOOR - 30, SHOP_FLOOR + 30, SHOP_FLOOR + 90]) { g.beginPath(); g.moveTo(ATTIC_HOLE_X - 40, y); g.lineTo(ATTIC_HOLE_X + 40, y); g.stroke(); }
   g.fillStyle = '#5a3a6e'; g.font = `24px ${FONT}`; g.fillText('↓ down', ATTIC_HOLE_X, SHOP_FLOOR - 100);
-  if (SHOP.nearStairs) drawPointer(ATTIC_HOLE_X + 60, SHOP_FLOOR - 200, t);
+  if (SHOP.nearStairs && SHOP.stairTo === 13) drawPointer(ATTIC_HOLE_X + 60, SHOP_FLOOR - 200, t);
+  if (unlocked(CHAR.admin)) { drawStaffDoor(ADMIN_DOOR_X, 'admin', '#1f3d1f', 'ADMINS ONLY'); if (SHOP.nearStairs && SHOP.stairTo === 15) drawPointer(ADMIN_DOOR_X + 80, SHOP_FLOOR - 330, t); } // the admin door (only admins can see it)
   if (night) { g.fillStyle = 'rgba(15,10,50,.38)'; g.fillRect(0, 0, W, H); }
 }
 // ---------- chores in the shopkeepers' home: the Fighty Shopkeeper gives you chores (wake her up, make dinner...) for coins.
@@ -4491,6 +4493,20 @@ function drawToys(t) { // toys on the floor upstairs, in front of the TV (Goofy 
   const cx = TOY_X - 230 + (play ? Math.sin(t*5)*60 : 0); // a little toy car
   g.fillStyle = C.orange; roundRect(cx - 30, SHOP_FLOOR - 34, 60, 22, 6); g.fill(); g.stroke(); g.fillStyle = C.ink; for (const k of [-16, 16]) { g.beginPath(); g.arc(cx + k, SHOP_FLOOR - 10, 8, 0, TAU); g.fill(); }
   if (SHOP.nearToys) drawPointer(TOY_X + 70, SHOP_FLOOR - 170, t);
+}
+// ---------- the secret admin room (floor 15): behind the admin door on the shopkeepers' 3rd floor, only for admins ----------
+function drawAdminRoom(t) {
+  g.fillStyle = '#05140a'; g.fillRect(0, 0, W, H);
+  g.font = `22px monospace`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  for (let i=0;i<40;i++) { const x = 20 + i*40, y = ((t*120 + i*97) % (H + 200)) - 100; g.fillStyle = 'rgba(57,255,20,.35)'; g.fillText(String.fromCharCode(48 + (i*7 + Math.floor(t*4)) % 42), x, y); } // falling green code
+  g.fillStyle = '#0b2a14'; g.fillRect(0, SHOP_FLOOR, W, H - SHOP_FLOOR); g.strokeStyle = '#39ff14'; g.lineWidth = 3; g.beginPath(); g.moveTo(0, SHOP_FLOOR); g.lineTo(W, SHOP_FLOOR); g.stroke();
+  g.fillStyle = '#39ff14'; g.font = `56px ${FONT}`; g.fillText('ADMIN ROOM', W/2, 150);
+  for (const x of [520, 820, 1120]) { // glowing computers
+    g.fillStyle = '#222'; g.fillRect(x - 110, SHOP_FLOOR - 120, 220, 120); g.fillStyle = '#111'; g.fillRect(x - 90, SHOP_FLOOR - 290, 180, 130); g.fillRect(x - 10, SHOP_FLOOR - 160, 20, 40);
+    g.fillStyle = '#39ff14'; g.font = '14px monospace'; for (let l=0;l<5;l++) g.fillText(['> hack.exe', '> ban player', '> coins += 1000', '> unlock all', '> admin = true'][(l + Math.floor(t*2) + x) % 5], x, SHOP_FLOOR - 270 + l*22);
+  }
+  for (const x of [1350, 1470]) { g.fillStyle = '#1a1a1a'; g.fillRect(x - 45, SHOP_FLOOR - 360, 90, 360); for (let l=0;l<10;l++) { g.fillStyle = (Math.floor(t*6) + l + x) % 3 ? '#39ff14' : '#ff3b3b'; g.fillRect(x - 30, SHOP_FLOOR - 340 + l*32, 10, 6); } } // server racks with blinking lights
+  drawStaffDoor(ADMIN_EXIT_X, '← 3rd floor', '#1f3d1f', 'ADMINS ONLY');
 }
 function drawDormHall(t) {
   drawWoodRoom('#efe6ff', '#5a3a6e', '#8a6a9e');
@@ -5177,7 +5193,7 @@ function drawManager(g, t) { // %#@% sitting in his chair (drawn in the chair's 
 function drawShop(t) {
   const hall = SHOP.floor === 5, wide = keeperRoom(); // the chase hallway (and the shopkeepers' big room) scrolls with you
   if (hall) { g.save(); g.translate(-(SHOP.cam || 0), 0); drawChaseFloor(t); }
-  else if (SHOP.floor === 14) drawKeeperAttic(t); else if (SHOP.floor === 12 || SHOP.floor === 13) { if (wide) { g.save(); g.translate(-(SHOP.cam || 0), 0); } if (SHOP.floor === 13) drawKeeperUpstairs(t); else drawDormRoom(t); } else if (SHOP.floor === 11) drawDormHall(t); else if (SHOP.floor === 10) drawPlayerBreak(t); else if (SHOP.floor === 9) drawGlitchShop(t); else if (SHOP.floor === 8) drawCageFloor(t); else if (SHOP.floor === 7) drawTopFloor(t); else if (SHOP.floor === 6) drawBreakFloor(t); else if (SHOP.floor === 4) drawOfficeFloor(t); else if (SHOP.floor === 3) drawAtticFloor(t); else if (SHOP.floor === 2) drawFunnyFloor(t); else drawFightyFloor(t);
+  else if (SHOP.floor === 15) drawAdminRoom(t); else if (SHOP.floor === 14) drawKeeperAttic(t); else if (SHOP.floor === 12 || SHOP.floor === 13) { if (wide) { g.save(); g.translate(-(SHOP.cam || 0), 0); } if (SHOP.floor === 13) drawKeeperUpstairs(t); else drawDormRoom(t); } else if (SHOP.floor === 11) drawDormHall(t); else if (SHOP.floor === 10) drawPlayerBreak(t); else if (SHOP.floor === 9) drawGlitchShop(t); else if (SHOP.floor === 8) drawCageFloor(t); else if (SHOP.floor === 7) drawTopFloor(t); else if (SHOP.floor === 6) drawBreakFloor(t); else if (SHOP.floor === 4) drawOfficeFloor(t); else if (SHOP.floor === 3) drawAtticFloor(t); else if (SHOP.floor === 2) drawFunnyFloor(t); else drawFightyFloor(t);
   // an empty pink stand upstairs, waiting for the next thing to sell (a real item takes its place once there is one)
   if (SHOP.floor === 2) {
     const spot = STAND_SPOTS[2].find(x => !STANDS.some(s => s.floor === 2 && s.x === x));
@@ -6043,7 +6059,8 @@ function shopStairs() {
     renderShopCard(true); return;
   }
   if (from === 6) { SHOP.brk = null; shopSay('Did you have a nice break? Hehe... come back soon.', 'jump'); renderShopCard(true); return; }
-  if (to === 14) { SHOP.youSay = 'A secret 3rd floor!'; SHOP.youSayT = 2.5; renderShopCard(true); return; } // up the ladder
+  if (to === 15) { SHOP.youSay = 'Whoa... the secret admin room!'; SHOP.youSayT = 3; renderShopCard(true); return; } // through the admin door
+  if (to === 14) { if (from === 13) { SHOP.youSay = 'A secret 3rd floor!'; SHOP.youSayT = 2.5; } renderShopCard(true); return; } // up the ladder
   if (to === 13) { SHOP.pb = { next:performance.now() + 900, chat:null, line:0 }; if (from === 12) { SHOP.youSay = 'Ooh, an upstairs!'; SHOP.youSayT = 2; } renderShopCard(true); return; } // up the shopkeepers' stairs
   if (from === 13) { SHOP.pb = { next:performance.now() + 600, chat:null, line:0 }; renderShopCard(true); return; } // and back down (to the bottom of the stairs)
   if (to === 12) { SHOP.dorm = SHOP.stairRoom || 0; SHOP.cam = 0; SHOP.ktask = null; SHOP.kdone = new Set(); SHOP.shyAwake = false; SHOP.confessVisit = false; SHOP.pb = { next:performance.now() + 600, chat:null, line:0 }; SHOP.youSay = 'Knock knock!'; SHOP.youSayT = 2; renderShopCard(true); return; } // into a dorm room
@@ -6150,20 +6167,20 @@ function fillShopCard(card, ch, it) {
   if (!it && SHOP.nearSkins) return fillSkinCard(card, ch);
   if (!it && SHOP.nearStairs) {
     const to = SHOP.stairTo, up = to > SHOP.floor;
-    const inner = to >= 13 || SHOP.floor >= 13, ladder = to === 14 || SHOP.floor === 14; // (the stairs inside the shopkeepers' room)
+    const inner = to >= 13 || SHOP.floor >= 13, adminDoor = to === 15 || SHOP.floor === 15, ladder = !adminDoor && (to === 14 || SHOP.floor === 14); // (the stairs inside the shopkeepers' room)
     const door = !inner && (to === 6 || SHOP.floor === 6 || to === 10 || SHOP.floor === 10 || to === 11 || to === 12 || SHOP.floor === 11 || SHOP.floor === 12);
     const dn = DORMS[SHOP.stairRoom || 0].ids.map(dormName); // (the names on a dorm door)
     const text = { 2:SHOP.floor === 10 ? 'Go back out to the funny fun shop.' : SHOP.floor === 6 ? 'Go back out to the funny fun shop. (Your break timer will start over!)' : SHOP.floor === 1 ? 'Go up to the 2nd floor: the funny fun shop. Things that don\'t fit down here go up there.' : 'Go back down to the 2nd floor: the funny fun shop.',
       10:SHOP.floor === 11 ? 'Go back to player breaks.' : 'Go into player breaks: the fighters hang out in here when they are not fighting. Say hi!',
       11:SHOP.floor === 12 ? 'Go back out to the dorms hallway.' : 'Go to the dorms, where the fighters sleep. Each pair of roommates has a room, with their names on the door.',
-      14:'Climb the ladder up to the 3rd floor. What is up there?', 13:SHOP.floor === 14 ? 'Climb back down the ladder.' : 'Go upstairs in the shopkeepers\' room. What do they keep up there?', 12:SHOP.floor === 13 ? 'Go back downstairs to the shopkeepers\' room.' : dormOpen(SHOP.stairRoom || 0) ? `Go into ${dn[0]} and ${dn[1]}'s room.` : `This door is locked! Only ${dn[0]} and ${dn[1]} can go in. (Shop as one of them to get in.)`,
+      15:'A secret door... only admins can open it!', 14:SHOP.floor === 15 ? 'Go back out to the 3rd floor.' : 'Climb the ladder up to the 3rd floor. What is up there?', 13:SHOP.floor === 14 ? 'Climb back down the ladder.' : 'Go upstairs in the shopkeepers\' room. What do they keep up there?', 12:SHOP.floor === 13 ? 'Go back downstairs to the shopkeepers\' room.' : dormOpen(SHOP.stairRoom || 0) ? `Go into ${dn[0]} and ${dn[1]}'s room.` : `This door is locked! Only ${dn[0]} and ${dn[1]} can go in. (Shop as one of them to get in.)`,
       6:'Go into the break room. The shopkeepers take their break in there... the longer you stay, the more stuff they give you!',
       1:SHOP.floor === 8 ? 'The portal is open! Jump in to go home, to the 1st floor.' : 'Go back down to the 1st floor: the fighty shop.',
       8:'A big swirly portal... Where does it go? Is that where HE is?', 4:SHOP.floor === 7 ? `Jump back into the portal. It goes down to the manager's office... careful, ${BOSS_NAME} is in there!` : 'Ride the elevator up to the manager\'s office. Ding!',
       3:SHOP.floor === 4 ? 'Ride the elevator back down to the dark 3rd floor.' : 'Climb up to the 3rd floor. The shopkeepers really don\'t like to talk about it...' }[to];
     const portal = to === 8 || SHOP.floor === 8, lift = !portal && (to === 4 || SHOP.floor === 4);
-    card.innerHTML = `<h3>${door ? (to === 12 ? `${dn[0]} & ${dn[1]}` : to === 11 || SHOP.floor === 11 || SHOP.floor === 12 ? 'Dorms' : to === 10 || SHOP.floor === 10 ? 'Player breaks door' : 'Break room door') : portal ? 'Portal' : lift ? 'Elevator' : to === 3 || ladder ? 'Ladder' : 'Stairs'}</h3><p>${text}</p><div class="row"></div>`;
-    const b = document.createElement('button'); b.className = 'btn'; b.id = 'shopStairs'; b.textContent = door ? (to === 6 || (to === 10 && SHOP.floor !== 11) || to === 12 || (to === 11 && SHOP.floor === 10) ? 'go in' : 'go out') : portal ? 'jump in' : lift ? (up ? 'ride up' : 'ride down') : to === 3 ? 'climb up... if you dare' : ladder ? (up ? 'climb up' : 'climb down') : up ? 'go upstairs' : 'go downstairs';
+    card.innerHTML = `<h3>${door ? (to === 12 ? `${dn[0]} & ${dn[1]}` : to === 11 || SHOP.floor === 11 || SHOP.floor === 12 ? 'Dorms' : to === 10 || SHOP.floor === 10 ? 'Player breaks door' : 'Break room door') : portal ? 'Portal' : lift ? 'Elevator' : adminDoor ? 'Admin door' : to === 3 || ladder ? 'Ladder' : 'Stairs'}</h3><p>${text}</p><div class="row"></div>`;
+    const b = document.createElement('button'); b.className = 'btn'; b.id = 'shopStairs'; b.textContent = door ? (to === 6 || (to === 10 && SHOP.floor !== 11) || to === 12 || (to === 11 && SHOP.floor === 10) ? 'go in' : 'go out') : portal ? 'jump in' : lift ? (up ? 'ride up' : 'ride down') : to === 3 ? 'climb up... if you dare' : adminDoor ? (up ? 'go in' : 'go out') : ladder ? (up ? 'climb up' : 'climb down') : up ? 'go upstairs' : 'go downstairs';
     b.onclick = () => { shopStairs(); cv.focus(); };
     card.querySelector('.row').append(b, Object.assign(document.createElement('span'), { innerHTML:press }));
     return;
@@ -6204,7 +6221,7 @@ function fillShopCard(card, ch, it) {
     card.querySelector('.row').append(ask);
     return;
   }
-  if (!it && SHOP.floor >= 11 && SHOP.floor <= 14) {
+  if (!it && SHOP.floor >= 11 && SHOP.floor <= 15) {
     const d = DORMS[SHOP.dorm || 0];
     card.innerHTML = SHOP.nearTask ? `<h3>${KTASKS[SHOP.nearTask].name}</h3><p>${KTASKS[SHOP.nearTask].hint} Press punch to do it!</p>`
       : SHOP.nearToys ? '<h3>Toys!</h3><p>A box of toys, just for you, Goofy Sparkle! Press punch to play. (No chores for you, little buddy.)</p>'
@@ -6212,6 +6229,7 @@ function fillShopCard(card, ch, it) {
       : SHOP.nearPal && SHOP.nearPal.id === 'keeper2' && shySleeping() ? '<h3>Shy Shopkeeper</h3><p>She is fast asleep... Press punch to wake her up!</p>'
       : SHOP.nearPaper ?
  '<h3>A paper on the wall</h3><p>Someone wrote a secret code on it: <b style="font-size:1.6em">50028</b></p><p class="note">Maybe try it on the codes page, on the main menu...</p>'
+      : SHOP.floor === 15 ? '<h3>The admin room</h3><p>The secret admin room! Only admins can get in here. The door on the left goes back to the 3rd floor.</p>'
       : SHOP.floor === 14 ? '<h3>The 3rd floor</h3><p>A cozy little attic at the very top of the shopkeepers\' home. There is a paper pinned to the wall... walk up to it!</p>'
       : SHOP.floor === 13 && !SHOP.nearPal ? '<h3>Upstairs</h3><p>The shopkeepers\' upstairs, where the Shy Shopkeeper sleeps and hangs out! Her bed, their closet of fancy clothes, a comfy couch with a TV, a telescope and a treasure chest. The stairs on the right go back down.</p>'
       : SHOP.floor === 11 ? '<h3>The dorms</h3><p>This is where the fighters sleep! Each pair of roommates shares a room, and their names are on the door. Walk up to a door to go in.</p><p class="note">The door on the left goes back to player breaks.</p>'
