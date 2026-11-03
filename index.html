@@ -511,8 +511,8 @@ html.adminlook .story-note{color:#1f8a0f}
       <div class="page-foot"><button id="prayBtn" class="btn" hidden>🙏 the edge</button><button id="itBtn" class="btn" hidden>👁️ talk to IT</button><button id="escapeBtn" class="btn" hidden>🔨 escape?</button><button id="reuniteBtn" class="btn" hidden>🤗 reunite</button></div>
       <h3 class="chapter" id="ch5Head">📖 Chapter 5: New home <span id="ch5Done"></span></h3>
       <p id="ch5Lock" class="chapter-lock">🔒 Finish chapter 4 first!</p>
-      <ul class="upds-list" id="ch5List"><li><b>🔑 Get the admins</b>: <span id="adminsWhen"></span></li></ul>
-      <div class="page-foot" id="ch5Foot"><button id="adminsBtn" class="btn" hidden>🔑 get the admins</button></div>
+      <ul class="upds-list" id="ch5List"><li><b>🔑 Get the admins</b>: <span id="adminsWhen"></span></li><li><b>🕳️ Gone</b>: <span id="remakeWhen"></span></li><li><b>🤖 Hex return</b>: <span id="hexWhen"></span></li></ul>
+      <div class="page-foot" id="ch5Foot"><button id="adminsBtn" class="btn" hidden>🔑 get the admins</button><button id="remakeBtn" class="btn" hidden>🕳️ gone</button><button id="hexBtn" class="btn" hidden>🤖 hex return</button></div>
       <p id="kickMsg" hidden style="color:#c0392b;font-size:22px"><b>🥾 The Admin KICKED YOU OUT!</b> You ran out of time on a task. Press the admin room button to try again!</p>
       <div class="page-foot"><button id="dormBtn" class="btn">💌 dorm</button><button id="parkBtn" class="btn">🌳 park</button><button id="dinnerBtn" class="btn">🍝 dinner place</button><button id="weddingBtn" class="btn">💒 wedding</button><button id="attackBtn" class="btn" hidden>🛡️ admin room</button><button id="fellBtn" class="btn" hidden>💔 dorm hall</button><button id="onlyBtn" class="btn" hidden>📺 break room</button></div>
       <div class="page-foot" id="againRow" hidden><button id="againBtn" class="btn">🔁 do it again</button><span id="againPick" hidden><button id="againConfess" class="btn">💌 confession</button><button id="againPark" class="btn">🌳 1st date</button><button id="againDate" class="btn">🍝 2nd date</button><button id="againWedding" class="btn">💍 wedding</button><button id="againAttack" class="btn">🛡️ admins attack</button><button id="againFell" class="btn">💔 they are gone</button></span></div>
@@ -3997,7 +3997,7 @@ function shopStep(dt) {
   if (h.jump && !pr.jump && SHOP.y === groundY && !frozen) { SHOP.vy = -1000*ch.jump; sfx.jump(); }
   const f = SHOP.floor;
   SHOP.near = shopCleared() ? null : STANDS.find(s => s.floor === f && Math.abs(s.x - SHOP.x) < 110) || null; // (no stands while the shop is cleared for the wedding)
-  SHOP.nearSkins = f === 2 && !SHOP.near && !shopCleared() && Math.abs(SKIN_X - SHOP.x) < 100;
+  SHOP.nearSkins = (f === 2 && !SHOP.near && !shopCleared() && Math.abs(SKIN_X - SHOP.x) < 100) || (f === CABIN_SHOP && !SHOP.near && Math.abs(CABIN_SKIN_X - SHOP.x) < 100); // (the skins mirror: in the shop, and in the cabin shop too)
   const stair = !SHOP.near && STAIRS.find(s => s.floor === f && Math.abs(s.x - SHOP.x) < 100 && (!s.keepers || keeperRoom()) && (!s.cabin || SHOP.cabinDorm) && !(s.floor === 12 && s.to === 11 && SHOP.cabinDorm) && (!s.admin || unlocked(CHAR.admin) || attackOn()) && !(s.to === 1 && f === 2 && codeGone()) && !(s.to <= 2 && noShop()) && (f !== 8 || (SHOP.cage && SHOP.cage.freed))); // the cage room portal only opens once he is free
   SHOP.nearCage = f === 8 && !!SHOP.cage && !SHOP.cage.freed && Math.abs(SHOP.x - CAGE_X) < 170;
   SHOP.nearStairs = !!stair; SHOP.stairTo = stair ? stair.to : 0; SHOP.stairRoom = stair && stair.room != null ? stair.room : SHOP.stairRoom; // (which dorm door)
@@ -5627,7 +5627,7 @@ function drawManager(g, t) { // %#@% sitting in his chair (drawn in the chair's 
 function drawShop(t) {
   const hall = SHOP.floor === 5, wide = bigRoom(); // the chase hallway (and the shopkeepers' big room) scrolls with you
   if (hall) { g.save(); g.translate(-(SHOP.cam || 0), 0); drawChaseFloor(t); }
-  else if (SHOP.floor === CABIN_SHOP) { g.save(); g.translate(-(SHOP.cam || 0), 0); drawCabinShop(t); } else if (SHOP.floor === CABIN_DORMS) drawCabinDorms(t); else if (SHOP.floor === CABIN_OUT) drawCabinOutside(t); else if (SHOP.floor === LAB_FLOOR) drawHexLab(t);
+  else if (SHOP.floor === CABIN_SHOP) { g.save(); g.translate(-(SHOP.cam || 0), 0); drawCabinShop(t); } else if (SHOP.floor === CABIN_DORMS) drawCabinDorms(t); else if (SHOP.floor === CABIN_OUT) drawCabinOutside(t); else if (SHOP.floor === LAB_FLOOR) drawHexLab(t); else if (SHOP.floor === GONE_FLOOR) drawGoneShop(t);
   else if (SHOP.floor === CABIN_FLOOR) { g.save(); g.translate(-(SHOP.cam || 0), 0); drawCabin(t); } else if (SHOP.floor === TUNNEL_FLOOR) drawTunnels(t); else if (SHOP.floor === AROOM_FLOOR) drawAdminsRoom(t); else if (SHOP.floor === REUNITE_FLOOR) drawReunite(t); else if (SHOP.floor === TRAIL_FLOOR) drawTrail(t); else if (SHOP.floor === IT_FLOOR) drawItRoom(t); else if (SHOP.floor === EDGE_FLOOR) drawEdge(t); else if (SHOP.floor === VOID_FLOOR) drawVoid(t); else if (SHOP.floor === PARK_FLOOR) drawParkPlace(t); else if (SHOP.floor === DINNER_FLOOR) drawDinnerPlace(t); else if (SHOP.floor === WEDDING_FLOOR) drawWeddingHall(t); else if (SHOP.floor === 15) { drawAdminRoom(t); drawAttack(t); } else if (SHOP.floor === 14) drawKeeperAttic(t); else if (SHOP.floor === 12 || SHOP.floor === 13) { if (wide) { g.save(); g.translate(-(SHOP.cam || 0), 0); } if (SHOP.floor === 13) drawKeeperUpstairs(t); else drawDormRoom(t); } else if (SHOP.floor === 11) drawDormHall(t); else if (SHOP.floor === 10) drawPlayerBreak(t); else if (SHOP.floor === 9) drawGlitchShop(t); else if (SHOP.floor === 8) drawCageFloor(t); else if (SHOP.floor === 7) drawTopFloor(t); else if (SHOP.floor === 6) drawBreakFloor(t); else if (SHOP.floor === 4) drawOfficeFloor(t); else if (SHOP.floor === 3) drawAtticFloor(t); else if (SHOP.floor === 2) drawFunnyFloor(t); else drawFightyFloor(t);
   if (SHOP.floor <= 2) drawShopStory(t); // (the shop changes with the story too)
   if (codeGone() && SHOP.floor >= 11 && SHOP.floor <= 13 && !SHOP.cabinDorm) drawBrokenDorm(t); // (the dorms are broken too, once the code is gone)
@@ -6003,7 +6003,9 @@ function updsTick() { // the countdown on the page
   const esx = escapeText(); if ($('escapeWhen').textContent !== esx) $('escapeWhen').textContent = esx; $('escapeBtn').hidden = !(ch3 && escapeLeft() <= 0);
   const rux = reuniteText(); if ($('reuniteWhen').textContent !== rux) $('reuniteWhen').textContent = rux; $('reuniteBtn').hidden = !(ch3 && reuniteLeft() <= 0);
   const ch4 = ch3 && reuniteLeft() <= 0; // chapter 5 opens once chapter 4 is done
-  $('ch5Lock').hidden = ch4; $('ch5List').hidden = !ch4; $('ch5Head').style.opacity = ch4 ? 1 : 0.5; $('ch5Done').textContent = itStopped() ? '✅' : '';
+  $('ch5Lock').hidden = ch4; $('ch5List').hidden = !ch4; $('ch5Head').style.opacity = ch4 ? 1 : 0.5; $('ch5Done').textContent = itStopped() && remade() && hexBack() ? '✅' : '';
+  const hxt = hexReturnText(); if ($('hexWhen').textContent !== hxt) $('hexWhen').textContent = hxt; $('hexBtn').hidden = !(ch4 && (hexBack() || hexReturnOn())); // (chapter 5: hex return)
+  const rmx = remakeText(); if ($('remakeWhen').textContent !== rmx) $('remakeWhen').textContent = rmx; $('remakeBtn').hidden = !(ch4 && (remade() || remakeLeft() <= 0)); // (chapter 5: gone)
   const adx = adminsText(); if ($('adminsWhen').textContent !== adx) $('adminsWhen').textContent = adx; $('adminsBtn').hidden = !(ch4 && adminsLeft() <= 0);  $('fellBtn').hidden = !(fellLeft() <= 0);
   $('attackBtn').hidden = !(attackLeft() <= 0 && attackLeft() > -ATTACK_LONG*60000);
   againShow();
@@ -6017,6 +6019,8 @@ $('againFell').onclick = () => goPlace(11, 'fell');
 $('fellBtn').onclick = () => goPlace(11);
 $('onlyBtn').onclick = () => { goPlace(6); SHOP.youSayT = 0; };
 $('adminsBtn').onclick = () => goAdmins(); // (off to get the admins, with everyone)
+$('hexBtn').onclick = () => goHexReturn(); // (chapter 5, hex return: off to the repair shop)
+$('remakeBtn').onclick = () => goGone(); // (chapter 5, gone: re-make the shop, and after that, straight to the shop)
 $('reuniteBtn').onclick = () => { goPlace(REUNITE_FLOOR); Object.assign(SHOP, { x:600, youSayT:0, reuniteT0:performance.now() }); }; // (watching everyone get back together)
 $('escapeBtn').onclick = () => { goPlace(TRAIL_FLOOR); Object.assign(SHOP, { x:600, youSayT:0, trailT0:performance.now() }); }; // (watching them escape... and IT take them)
 $('itBtn').onclick = () => { goPlace(IT_FLOOR); Object.assign(SHOP, { x:300, itAsked:[], itSay:null }); SHOP.youSay = 'It is so dark... is somebody there?'; SHOP.youSayT = 3; }; // (into the dark, to talk to IT)
@@ -6331,7 +6335,7 @@ function drawArriving(t) { // on the menu: admins coming down from the sky in gr
   }
 }
 // everyone notices the game falling apart: the shopkeepers say something about it every few seconds, and the fighters talk about it in player breaks and the dorms
-const crumbling = () => storyOk && storyStage() >= 6;
+const crumbling = () => storyOk && storyStage() >= 6 && !shopBack(); // (not once you re-make the shop in chapter 5)
 const CRUMBLE_KEEPER = { 1:['WHOA! Did the floor just MOVE?!', 'Hey! Who is breaking my shop?! ...More admins?!', 'Watch out for the falling ceiling! ...Keep shopping, though!', 'The walls are cracking! Somebody call a fixer!', 'Green lights in the sky... and now my shop is falling apart. This is BAD.', '*catches a falling brick* ...Nobody saw that.'],
   2:['Eek! The ceiling is falling! *hides behind the counter*', 'F-Fighty! Fighty! The shop is breaking!', 'Is it the admins? I saw them coming down from the sky...', 'Careful! Don\'t stand under the cracks!', 'I was getting brave... but THIS is scary! *shaking*', 'My bow almost got hit by a rock! ...It\'s okay. I\'m okay.'] };
 function crumbleKeeperStep(f) { // the shopkeepers notice
@@ -6369,7 +6373,7 @@ function drawGlitch(t) {
 // and the Fighty Shopkeeper works up there now, next to the Shy Shopkeeper. It's the newest story look (🕳️ Code gone): pick an older look to get the 1st floor back
 const GONE_MIN = 20;
 const goneLeft = () => { const a = arriveLeft(); return a === Infinity ? Infinity : a + GONE_MIN*60000; };
-const codeGone = () => storyOk && storyStage() >= 7;
+const codeGone = () => storyOk && storyStage() >= 7 && !shopBack();
 function goneText() { // for the up coming page
   const l = goneLeft(), a = arriveLeft();
   return l === Infinity || a > 0 ? 'after the admins arrive, they delete something important... Coming soon...'
@@ -6453,7 +6457,7 @@ function drawBrokenDorm(t) {
 // where they're both downstairs, worried, and they're hiding Goofy Sparkle up in their attic (at the very top), where the admins can't find him
 const LIFE_MIN = 20;
 const lifeLeft = () => { const g0 = goneLeft(); return g0 === Infinity ? Infinity : g0 + LIFE_MIN*60000; };
-const noShop = () => storyOk && storyStage() >= 8;
+const noShop = () => storyOk && storyStage() >= 8 && !shopBack();
 function lifeText() { // for the up coming page
   const l = lifeLeft(), g0 = goneLeft();
   return l === Infinity || g0 > 0 ? 'after the code is gone, something happens that only happens once in a life time... Coming soon...'
@@ -7048,6 +7052,7 @@ function cabinStep() { // who you're next to, and walking through the portal in 
   SHOP.nearCabin = null;
   if (SHOP.floor === AROOM_FLOOR && SHOP.itBroke && performance.now() - SHOP.itBroke > 2500 && SHOP.x > CABIN_PORTAL_X - 60) return goCabin();
   if (SHOP.floor === CABIN_SHOP) { const KX = CABIN_SHOP_W - 420; for (const [id, x] of [['keeper', KX + 100], ['keeper2', KX + 200]]) if (Math.abs(SHOP.x - x) < 50 && CHARS[SHOP.who].id !== id) SHOP.nearCabin = id; return; } // (the shopkeepers, at the cabin shop's counter)
+  if (SHOP.floor === GONE_FLOOR) return goneStep(); // (where the shop used to be: the code blocks to build)
   if (SHOP.floor === LAB_FLOOR) { if (Math.abs(SHOP.x - OLD_HEX_X) < 90) SHOP.nearCabin = 'oldhex'; else { const p = labPals().find(p => Math.abs(p.x - SHOP.x) < 70); if (p) SHOP.nearCabin = p.ch.id; } return; } // (in the repair shop: the old Hexstar, and everyone fixing him)
   if (SHOP.floor !== CABIN_FLOOR) return;
   const p = cabinPals().find(p => Math.abs(p.x - SHOP.x) < 80); if (p) SHOP.nearCabin = p.ch.id;
@@ -7055,7 +7060,9 @@ function cabinStep() { // who you're next to, and walking through the portal in 
 function goCabin() { Object.assign(SHOP, { floor:CABIN_FLOOR, x:300, y:0, vy:0, cam:0, facing:1 }); SHOP.youSay = 'Whoa... a cabin! It is SO big!'; SHOP.youSayT = 3; if (sfx.zap) sfx.zap(); musicUpdate(); renderShopCard(true); }
 function cabinTalk() { // talking to someone in the cabin
   if (SHOP.nearCabin === 'oldhex') return labHelp();
-  const id = SHOP.nearCabin, lines = (SHOP.floor === CABIN_SHOP ? CABIN_SHOP_TALK : SHOP.floor === LAB_FLOOR ? LAB_TALK : CABIN_TALK)[id] || ['Hi!']; SHOP.cabinTalkN = (SHOP.cabinTalkN || 0) + 1;
+  if (!SHOP.nearCabin) return;
+  if (SHOP.nearCabin.startsWith('gone')) return goneAct(SHOP.nearCabin);
+  const id = SHOP.nearCabin, lines = (SHOP.floor === CABIN_SHOP ? CABIN_SHOP_TALK : SHOP.floor === LAB_FLOOR ? (hexBack() ? LAB_TALK_BACK : LAB_TALK) : CABIN_TALK)[id] || ['Hi!']; SHOP.cabinTalkN = (SHOP.cabinTalkN || 0) + 1;
   SHOP.cabinSay = { id, text:lines[SHOP.cabinTalkN % lines.length], until:performance.now() + 3500 }; if (sfx.ding) sfx.ding(); renderShopCard(true);
 }
 function cabinMenuStep(dt) { // the main menu is the cabin: you walk around it right there on the menu
@@ -7099,7 +7106,7 @@ function drawCabinPortal(t) { // in the admins' room, once IT is stopped: a port
 const CHAPTER_NAMES = ['Confession', 'Admins attack', 'They are gone...', 'Pray for you are in danger', 'New home'];
 const CHAPTER_FIRST = ['💌 Confession', '🛡️ Admins attack', '💔 They are gone...', '🙏 Pray for you are in danger', '🔑 Get the admins'];
 function chaptersDone() { // how many chapters you've finished
-  const w = weddingLeft(), c1 = w !== Infinity && w <= -WEDDING_LONG*60000, c2 = c1 && lifeLeft() <= 0, c3 = c2 && saved() && onlyLeft() <= 0, c4 = c3 && reuniteLeft() <= 0, c5 = c4 && itStopped();
+  const w = weddingLeft(), c1 = w !== Infinity && w <= -WEDDING_LONG*60000, c2 = c1 && lifeLeft() <= 0, c3 = c2 && saved() && onlyLeft() <= 0, c4 = c3 && reuniteLeft() <= 0, c5 = c4 && itStopped() && remade() && hexBack(); /* (chapter 5 ends once you re-make the shop and the old Hexstar is back) */
   return c5 ? 5 : c4 ? 4 : c3 ? 3 : c2 ? 2 : c1 ? 1 : 0;
 }
 let chapterCheckT = 0, chapterFading = false;
@@ -7132,12 +7139,13 @@ function chapterFade(n) { // the story-book transition after finishing chapter n
 // and the 3rd is the dorms (a big bunk room with everyone's beds). A door on the left goes outside, where there's a little stone room with IT in it
 // (its door takes you in to IT). The cabin never glitches
 const CABIN_SHOP_W = 3600; // (the cabin shop is extra big: three screens wide)
+const CABIN_SKIN_X = 810; // (the skins mirror in the cabin shop, between the first two stands)
 const CABIN_SHOP = 27, CABIN_DORMS = 28, CABIN_OUT = 29, CABIN_STAIRS_X = 2300, CABIN_DOOR_X = 70, IT_SHED_X = 980;
 STAIRS.push(...DORM_ROOM_X.map((x, room) => ({ floor:CABIN_DORMS, x, to:12, room })), { floor:12, x:DORM_EXIT_X, to:CABIN_DORMS, cabin:true }); // (the cabin's dorms: a hallway with everyone's rooms, like the old dorms)
 STAIRS.push({ floor:CABIN_FLOOR, x:CABIN_STAIRS_X, to:CABIN_SHOP }, { floor:CABIN_SHOP, x:80, to:CABIN_FLOOR }, { floor:CABIN_SHOP, x:CABIN_SHOP_W - 100, to:CABIN_DORMS }, { floor:CABIN_DORMS, x:1520, to:CABIN_SHOP },
   { floor:CABIN_FLOOR, x:CABIN_DOOR_X, to:CABIN_OUT }, { floor:CABIN_OUT, x:1520, to:CABIN_FLOOR }, { floor:CABIN_OUT, x:IT_SHED_X, to:IT_FLOOR }, { floor:IT_FLOOR, x:110, to:CABIN_OUT });
 STANDS.filter(s => s.floor === 1 || s.floor === 2).forEach((s, i) => STANDS.push({ get item() { return s.item; }, floor:CABIN_SHOP, x:500 + i*620 })); // (the same things you can buy in the shop)
-const cabinHome = () => storyOk && chaptersDone() >= 4; // the main menu is the cabin only once you get to chapter 5 (New home); before that, it's the old menu
+const cabinHome = () => storyOk && chaptersDone() >= 4 && storyStage() >= 17; // the main menu is the cabin only once you get to chapter 5 (New home), and only when the look you picked in settings is chapter 5 too (pick an older chapter, like "In love", and you get the old menu with that chapter's look)
 const cabinPlace = () => (G.state === 'title' && cabinHome()) || (G.state === 'shop' && ((SHOP.floor >= CABIN_FLOOR && SHOP.floor <= CABIN_OUT) || SHOP.floor === 30 || ((SHOP.floor === 12 || SHOP.floor === 13 || SHOP.floor === 14) && SHOP.cabinDorm))); // (in the cabin, nothing glitches)
 // the repair shop, outside the cabin: the old Hexstar (the first one, who did not make it out of the code) is on a workbench, and everyone is trying to fix him.
 // Walk up to him and press punch to help (a little more fixed each time... he's not awake yet, but they won't give up). Talk to the others in there too
@@ -7148,21 +7156,34 @@ const LAB_TALK = {
   circle:['WHAT?! He moved! ...No. That was me. I bumped the table.', 'He was my roommate! He was scared of the dark, so I left the lights on for him. I still do.', 'Come on, buddy... wake up...'],
   hex:['Beep... that is the old me. *boop* I want to meet him!', 'I gave him one of my spare batteries. Beep!', 'When he wakes up, we can BOTH say beep! Two beeps!'],
 };
+const LAB_TALK_BACK = { // (after hex return)
+  keeper:['I TOLD you we would fix him! *happy tears*', 'Welcome back, little buddy. We missed you SO much.', 'Two Hexstars! The cabin is going to be so beepy now.'],
+  circle:['HE IS BACK!!! ...Sorry. I am just SO happy!', 'I left the lights on for you the whole time, Hexstar!', 'Best. Roommate. EVER.'],
+  hex:['Beep! Beep! TWO BEEPS! He is the old me!', 'He says I am a very good new him. *happy boop*', 'We are going to be best robot friends!'],
+};
+const OLD_HEX_TALK = ['B-beep! Hi! ...I was asleep for a LONG time, huh?', 'Is the dark gone? ...It is? Oh good. *relieved beep*', 'There is a NEW me?! He is so shiny! Beep!', 'Thank you for fixing me. I will never forget it. *boop*', 'Circle left the lights on for me... *happy sniff*'];
 const LAB_PALS = [['keeper', 560], ['circle', 1080], ['hex', 1260]];
 const labPals = () => LAB_PALS.filter(([id]) => CHAR[id] && id !== CHARS[SHOP.who].id).map(([id, x]) => ({ ch:CHAR[id], x }));
-const hexFix = () => Math.min(99, +(lsGet('fff-hexfix') || 12)); // how much of the old Hexstar is fixed (it never quite gets to 100... yet)
-function labHelp() { // help fix the old Hexstar
-  const now = Math.min(99, hexFix() + 1 + Math.floor(Math.random()*3)); lsSet('fff-hexfix', String(now)); SHOP.labSpark = performance.now();
-  SHOP.youSay = now >= 99 ? 'Almost... he is SO close. But he is not awake yet...' : ['*bonk bonk* Fixed a bolt!', '*bzzt* Plugged in a wire!', 'Tightened a screw!', 'Polished his glasses!', 'Taped up a crack!'][Math.floor(Math.random()*5)];
+const hexFix = () => hexBack() ? 100 : Math.min(hexReturnOn() ? 100 : 99, +(lsGet('fff-hexfix') || 12)); // how much of the old Hexstar is fixed (it never quite gets to 100... until hex return)
+function labHelp() { // help fix the old Hexstar (once he's back, you talk to him instead)
+  if (hexBack()) { SHOP.oldHexN = (SHOP.oldHexN || 0) + 1; SHOP.oldHexSay = { text:OLD_HEX_TALK[SHOP.oldHexN % OLD_HEX_TALK.length], until:performance.now() + 3500 }; if (sfx.ding) sfx.ding(); return; }
+  const now = Math.min(hexReturnOn() ? 100 : 99, hexFix() + 1 + Math.floor(Math.random()*3)); lsSet('fff-hexfix', String(now)); SHOP.labSpark = performance.now();
+  if (now >= 100) { // hex return: he wakes up!
+    lsSet('fff-hexback', String(Date.now())); SHOP.hexWake = performance.now(); storyCache.t = 0; applyTheme(); if (sfx.win) sfx.win();
+    SHOP.youSay = '100%! He is... he is waking up!'; SHOP.youSayT = 3; SHOP.oldHexSay = { text:'B-beep...? Where am I? ...Circle? Is that you?!', until:performance.now() + 4500 };
+    SHOP.cabinSay = { id:'circle', text:'WHAT?! HEXSTAR!!! YOU ARE BACK!!! *hugs*', until:performance.now() + 4500 }; renderShopCard(true); return;
+  }
+  SHOP.youSay = now >= 99 ? (hexReturnOn() ? 'One more! Just ONE more!' : 'Almost... he is SO close. But he is not awake yet...') : ['*bonk bonk* Fixed a bolt!', '*bzzt* Plugged in a wire!', 'Tightened a screw!', 'Polished his glasses!', 'Taped up a crack!'][Math.floor(Math.random()*5)];
   SHOP.youSayT = 2.5; if (sfx.zap) sfx.zap(); renderShopCard(true);
 }
-function drawOldHex(x, y, r, t) { // the old Hexstar (he looked different from Hexstar 2.0): grey-blue, cracked, with his big round glasses (one lens bigger), his eyes shut and a bandage
+function drawOldHex(x, y, r, t, awake = false) { // the old Hexstar (he looked different from Hexstar 2.0): grey-blue, with his big round glasses (one lens bigger) and a bandage. Before hex return he's cracked with his eyes shut; after, he's patched up and awake
   g.save(); g.translate(x, y); g.rotate(Math.sin(t*0.5)*0.02);
-  g.fillStyle = '#7f97b0'; g.strokeStyle = C.ink; g.lineWidth = 5; starPath(r, 6); g.fill(); g.stroke();
-  g.strokeStyle = '#3a4a5a'; g.lineWidth = 3; g.beginPath(); g.moveTo(-r*0.5, -r*0.6); g.lineTo(-r*0.3, -r*0.3); g.lineTo(-r*0.45, -r*0.1); g.moveTo(r*0.4, r*0.2); g.lineTo(r*0.6, r*0.45); g.stroke(); // cracks
+  g.fillStyle = awake ? '#8fb0d0' : '#7f97b0'; g.strokeStyle = C.ink; g.lineWidth = 5; starPath(r, 6); g.fill(); g.stroke();
+  if (!awake) { g.strokeStyle = '#3a4a5a'; g.lineWidth = 3; g.beginPath(); g.moveTo(-r*0.5, -r*0.6); g.lineTo(-r*0.3, -r*0.3); g.lineTo(-r*0.45, -r*0.1); g.moveTo(r*0.4, r*0.2); g.lineTo(r*0.6, r*0.45); g.stroke(); } // cracks
   g.fillStyle = 'rgba(200,230,255,.5)'; g.strokeStyle = C.ink; g.lineWidth = 4; g.beginPath(); g.arc(-r*0.25, -r*0.08, r*0.24, 0, TAU); g.fill(); g.stroke(); g.beginPath(); g.arc(r*0.27, -r*0.08, r*0.3, 0, TAU); g.fill(); g.stroke(); // his glasses
-  g.lineWidth = 3; for (const ex of [-r*0.25, r*0.27]) { g.beginPath(); g.moveTo(ex - r*0.1, -r*0.06); g.lineTo(ex + r*0.1, -r*0.06); g.stroke(); } // eyes shut
-  g.fillStyle = '#555'; g.fillRect(-r*0.18, r*0.3, r*0.36, r*0.12); // his speaker mouth
+  if (awake) { const dart = Math.sin(t*2.3)*r*0.06; g.fillStyle = C.ink; for (const ex of [-r*0.25, r*0.27]) { g.beginPath(); g.arc(ex + dart, -r*0.08, r*0.07, 0, TAU); g.fill(); } g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.arc(0, r*0.22, r*0.16, 0.2, Math.PI - 0.2); g.stroke(); } // eyes open (they dart around, he's still a bit nervous) and a smile
+  else { g.lineWidth = 3; for (const ex of [-r*0.25, r*0.27]) { g.beginPath(); g.moveTo(ex - r*0.1, -r*0.06); g.lineTo(ex + r*0.1, -r*0.06); g.stroke(); } } // eyes shut
+  if (!awake) { g.fillStyle = '#555'; g.fillRect(-r*0.18, r*0.3, r*0.36, r*0.12); } // his speaker mouth
   g.fillStyle = '#e8d8a8'; g.save(); g.translate(r*0.5, -r*0.55); g.rotate(0.6); g.fillRect(-r*0.18, -r*0.05, r*0.36, r*0.1); g.rotate(-1.2); g.fillRect(-r*0.18, -r*0.05, r*0.36, r*0.1); g.restore(); // a bandage
   g.restore();
 }
@@ -7171,9 +7192,9 @@ function drawCabinLabOutside(t) { // (outside) the little wooden repair shop, wi
   g.strokeStyle = '#5a3a1e'; g.lineWidth = 3; for (let y = SHOP_FLOOR - 220; y < SHOP_FLOOR; y += 30) { g.beginPath(); g.moveTo(x - 170, y); g.lineTo(x + 170, y); g.stroke(); }
   g.fillStyle = '#4a4a4a'; g.beginPath(); g.moveTo(x - 190, SHOP_FLOOR - 250); g.lineTo(x, SHOP_FLOOR - 330); g.lineTo(x + 190, SHOP_FLOOR - 250); g.closePath(); g.fill(); // a tin roof
   g.fillStyle = '#4a2e18'; g.fillRect(x - 45, SHOP_FLOOR - 170, 90, 170); g.fillStyle = C.yellow; g.beginPath(); g.arc(x + 28, SHOP_FLOOR - 85, 6, 0, TAU); g.fill(); // the door
-  const welding = Math.sin(t*1.3) > 0.4, glow = 0.7 + (welding ? Math.sin(t*9)*0.2 : 0); g.fillStyle = `rgba(140,220,255,${glow})`; g.fillRect(x + 75, SHOP_FLOOR - 200, 70, 60); g.strokeStyle = C.ink; g.lineWidth = 4; g.strokeRect(x + 75, SHOP_FLOOR - 200, 70, 60); // the window flickers (welding!)
+  const welding = !hexBack() && Math.sin(t*1.3) > 0.4, glow = 0.7 + (welding ? Math.sin(t*9)*0.2 : 0); g.fillStyle = `rgba(140,220,255,${glow})`; g.fillRect(x + 75, SHOP_FLOOR - 200, 70, 60); g.strokeStyle = C.ink; g.lineWidth = 4; g.strokeRect(x + 75, SHOP_FLOOR - 200, 70, 60); // the window flickers (welding!)
   if (welding) for (let i=0;i<5;i++) { const a = t*12 + i*1.3; g.fillStyle = i % 2 ? C.yellow : '#fff'; g.fillRect(x + 110 + Math.cos(a)*24, SHOP_FLOOR - 170 + Math.sin(a)*18, 4, 4); }
-  g.fillStyle = '#f3e2c7'; g.strokeStyle = '#4a2e18'; g.lineWidth = 3; g.fillRect(x - 120, SHOP_FLOOR - 245, 240, 36); g.strokeRect(x - 120, SHOP_FLOOR - 245, 240, 36); g.fillStyle = '#4a2e18'; g.font = `20px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('🔧 fixing Hexstar', x, SHOP_FLOOR - 226, 230);
+  g.fillStyle = '#f3e2c7'; g.strokeStyle = '#4a2e18'; g.lineWidth = 3; g.fillRect(x - 120, SHOP_FLOOR - 245, 240, 36); g.strokeRect(x - 120, SHOP_FLOOR - 245, 240, 36); g.fillStyle = '#4a2e18'; g.font = `20px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(hexBack() ? '🤖 Hexstar is back!' : '🔧 fixing Hexstar', x, SHOP_FLOOR - 226, 230);
   if (SHOP.nearStairs && SHOP.stairTo === LAB_FLOOR) drawPointer(x + 70, SHOP_FLOOR - 360, t);
 }
 function drawHexLab(t) { // inside the repair shop
@@ -7185,7 +7206,7 @@ function drawHexLab(t) { // inside the repair shop
   g.beginPath(); g.moveTo(270, 210); g.lineTo(270, 330); g.moveTo(330, 210); g.lineTo(310, 330); g.moveTo(380, 220); g.lineTo(380, 340); g.moveTo(430, 210); g.lineTo(450, 320); g.stroke(); g.fillStyle = C.red; g.fillRect(366, 210, 28, 24);
   // a big screen: how much of him is fixed, and a little heartbeat line (he's still in there!)
   const fix = hexFix(); g.fillStyle = '#10161f'; g.strokeStyle = C.ink; g.lineWidth = 6; g.fillRect(620, 150, 360, 170); g.strokeRect(620, 150, 360, 170);
-  g.fillStyle = '#5ff0ff'; g.font = `24px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('REPAIRING: old Hexstar', 800, 185);
+  g.fillStyle = '#5ff0ff'; g.font = `24px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(hexBack() ? 'REPAIRED: old Hexstar ✓' : 'REPAIRING: old Hexstar', 800, 185);
   g.strokeStyle = '#5ff0ff'; g.lineWidth = 3; g.strokeRect(650, 210, 300, 30); g.fillStyle = '#39ff14'; g.fillRect(653, 213, 294*fix/100, 24); g.fillStyle = '#fff'; g.fillText(fix + '%', 800, 226);
   g.strokeStyle = '#39ff14'; g.lineWidth = 3; g.beginPath(); for (let i=0;i<=60;i++) { const px = 650 + i*5, k = ((i/60) + t*0.25) % 1, beat = k > 0.48 && k < 0.52 ? -26 : k > 0.52 && k < 0.55 ? 14 : 0; if (i) g.lineTo(px, 285 + beat); else g.moveTo(px, 285 + beat); } g.stroke();
   // a big computer, with cables to him
@@ -7193,13 +7214,83 @@ function drawHexLab(t) { // inside the repair shop
   g.lineWidth = 6; for (const [col, k] of [[C.red, 0], [C.blue, 20], [C.yellow, 40]]) { g.strokeStyle = col; g.beginPath(); g.moveTo(1380, SHOP_FLOOR - 200 + k); g.bezierCurveTo(1200, SHOP_FLOOR + 10, 1000, SHOP_FLOOR - 40, 850, SHOP_FLOOR - 160 + k/2); g.stroke(); }
   // the workbench, with the old Hexstar on it, and a box of his old parts
   g.fillStyle = '#6b6b6b'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(660, SHOP_FLOOR - 110, 280, 22); g.strokeRect(660, SHOP_FLOOR - 110, 280, 22); for (const lx of [680, 900]) { g.fillRect(lx, SHOP_FLOOR - 88, 20, 88); g.strokeRect(lx, SHOP_FLOOR - 88, 20, 88); }
-  drawOldHex(OLD_HEX_X, SHOP_FLOOR - 170, 62, t);
+  if (hexBack()) { // hex return: he's awake! He hopped off the workbench and bounces around, happy to be back
+    const w = SHOP.hexWake ? (performance.now() - SHOP.hexWake)/1000 : 9, hop = Math.abs(Math.sin(t*4))*16, y = w < 1.2 ? SHOP_FLOOR - 170 + (w/1.2)*(124) : SHOP_FLOOR - 46 - hop;
+    if (w < 2) { g.save(); g.globalAlpha = Math.max(0, 1 - w/2); g.fillStyle = '#fff6c9'; g.beginPath(); g.arc(OLD_HEX_X, SHOP_FLOOR - 140, 80 + w*120, 0, TAU); g.fill(); g.restore(); } // a bright flash as he wakes up
+    drawOldHex(OLD_HEX_X, y, 46, t, true);
+    const os = SHOP.oldHexSay; if (os && performance.now() < os.until) drawBubble(os.text, OLD_HEX_X + 260, SHOP_FLOOR - 140, OLD_HEX_X);
+  } else drawOldHex(OLD_HEX_X, SHOP_FLOOR - 170, 62, t);
   g.fillStyle = '#8a5a2b'; g.fillRect(960, SHOP_FLOOR - 60, 90, 60); g.strokeRect(960, SHOP_FLOOR - 60, 90, 60); g.fillStyle = '#ccc'; for (let i=0;i<4;i++) { g.beginPath(); g.arc(975 + i*20, SHOP_FLOOR - 64, 8, 0, TAU); g.fill(); } g.fillStyle = C.white; g.font = `14px ${BODYFONT}`; g.fillText('old hex parts', 1005, SHOP_FLOOR - 30);
   if (SHOP.labSpark && performance.now() - SHOP.labSpark < 900) { const k = (performance.now() - SHOP.labSpark)/900; for (let i=0;i<12;i++) { const a = i*TAU/12; g.fillStyle = i % 2 ? C.yellow : '#fff'; g.fillRect(OLD_HEX_X + Math.cos(a)*k*120, SHOP_FLOOR - 170 + Math.sin(a)*k*90, 6, 6); } } // sparks when you help
   drawStaffDoor(110, '← outside', '#efe6ff', 'REPAIRS');
   const pals = labPals(); pals.forEach((p, i) => { const ch = p.ch, r = ch.keeper ? dormR(ch)*0.5 : 34*Math.min(ch.size || 1, 1.3), bob = Math.abs(Math.sin(t*2 + i))*3; g.save(); g.translate(p.x, SHOP_FLOOR - r - bob); drawCharacter(g, ch, r, { facing:p.x < OLD_HEX_X ? 1 : -1, ...looks(ch), still:true }); g.restore(); });
   const cs = SHOP.cabinSay, sp = cs && performance.now() < cs.until && pals.find(p => p.ch.id === cs.id); if (sp) drawBubble(cs.text, sp.x + 240, SHOP_FLOOR - 230, sp.x);
   if (SHOP.nearCabin) { const np = SHOP.nearCabin === 'oldhex' ? { x:OLD_HEX_X } : pals.find(p => p.ch.id === SHOP.nearCabin); if (np) drawPointer(np.x + 50, SHOP_FLOOR - 270, t); }
+}
+// chapter 5, gone: 20 minutes after IT is stopped. The old shop's code is gone (just green and black code where it used to be), so you go there with the
+// shopkeepers and re-make it, piece by piece: walk up to each glowing code block and press punch to build that piece. Once it's all built, the shop is back
+// (the old shop isn't broken anymore), and the gone button takes you back to the shop you re-made
+const REMAKE_MIN = 20, GONE_FLOOR = 31;
+const remakeLeft = () => itStopped() ? +lsGet('fff-itstopped') + REMAKE_MIN*60000 - Date.now() : Infinity;
+const remade = () => !!lsGet('fff-remade');
+// chapter 5, hex return: 20 minutes after you re-make the shop, the old Hexstar can finally be fixed all the way. Press the hex return button to go to the
+// repair shop, and help fix him: this time it goes all the way to 100%... and he wakes up! (Shocked Circle, his old roommate, is SO happy.) He stays awake after that
+const HEXBACK_MIN = 20;
+const hexReturnLeft = () => remade() ? +lsGet('fff-remade') + HEXBACK_MIN*60000 - Date.now() : Infinity;
+const hexReturnOn = () => hexReturnLeft() <= 0;
+const hexBack = () => !!lsGet('fff-hexback');
+function hexReturnText() { // for the chapters page
+  const l = hexReturnLeft();
+  return hexBack() ? 'The old Hexstar is BACK! You fixed him all the way, and he woke up! 🤖 Press the hex return button to visit him.' : l === Infinity ? 'someone we lost... Coming soon...' : l > 0 ? `Something is about to happen in the repair shop, in ${mmss(l)}...` : 'The old Hexstar can be fixed all the way now! 🤖 Press the hex return button and help fix him.';
+}
+function goHexReturn() { // the button: to the repair shop, next to the old Hexstar
+  goPlace(LAB_FLOOR); Object.assign(SHOP, { x:640 });
+  SHOP.youSay = hexBack() ? 'Hi, Hexstar! Hi, other Hexstar!' : 'Everyone, this is it! Let\'s fix him all the way!'; SHOP.youSayT = 3; renderShopCard(true);
+}
+const shopBack = () => remade() && storyStage() >= 17; // (the shop is re-made: the old shop isn't broken anymore... unless you picked an older chapter's look)
+const GONE_PIECES = [{ x:300, name:'the floor' }, { x:500, name:'the walls' }, { x:700, name:'the sign' }, { x:900, name:'the stands' }, { x:1100, name:'the counter' }, { x:1300, name:'the stairs' }];
+const GONE_SAYS = [['keeper', 'The floor! Now we can stand on something that is not code!'], ['keeper2', 'The pink walls... just like before... *happy*'], ['keeper', 'Our sign! "shop"! I missed you, sign!'], ['keeper2', 'The stands! I-I will put the hats back on them!'], ['keeper', 'MY COUNTER! *hugs it*'], ['keeper2', 'The stairs... the shop is all back! We did it!']];
+function remakeText() { // for the chapters page
+  const l = remakeLeft();
+  return remade() ? 'You re-made the shop! It is all back. 🛠️ Press the gone button to visit the shop you re-made.' : l === Infinity ? 'the shop... where did it go? Coming soon...' : l > 0 ? `Something is wrong with the shop, in ${mmss(l)}...` : 'The shop\'s code is gone! Go there with the shopkeepers and re-make it. 🕳️ Press the gone button.';
+}
+function goGone() { // the button: before it's re-made, off to where the shop was, to re-make it; after, back to the shop you re-made (not the old shop)
+  if (remade()) { goPlace(GONE_FLOOR); Object.assign(SHOP, { x:300, built:GONE_PIECES.map((p, k) => k), goneDone:performance.now() - 1000 }); SHOP.youSay = 'Our re-made shop! We built this!'; SHOP.youSayT = 2.5; renderShopCard(true); return; }
+  goPlace(GONE_FLOOR); Object.assign(SHOP, { x:160, built:[], goneDone:0 });
+  SHOP.youSay = 'The shop... it is GONE! Only code left...'; SHOP.youSayT = 3; SHOP.cabinSay = { id:'keeper', text:'Our shop! ...Okay. We built it once. We can build it again! Punch the code blocks!', until:performance.now() + 5000 }; renderShopCard(true);
+}
+function goneStep() { // (in cabinStep) what you're next to where the shop used to be
+  const built = SHOP.built || [];
+  if (built.length >= GONE_PIECES.length) return; // (all built: it's the shop you re-made)
+  const i = GONE_PIECES.findIndex((p, k) => !built.includes(k) && Math.abs(p.x - SHOP.x) < 70); if (i >= 0) SHOP.nearCabin = 'gone' + i;
+}
+function goneAct(id) { // punch: build a piece
+  const i = +id.slice(4); SHOP.built = [...(SHOP.built || []), i]; SHOP.goneSpark = { x:GONE_PIECES[i].x, t:performance.now() };
+  const say = GONE_SAYS[SHOP.built.length - 1]; SHOP.cabinSay = { id:say[0], text:say[1], until:performance.now() + 3500 };
+  SHOP.youSay = `Built ${GONE_PIECES[i].name}!`; SHOP.youSayT = 2; if (sfx.zap) sfx.zap();
+  if (SHOP.built.length >= GONE_PIECES.length) { lsSet('fff-remade', String(Date.now())); SHOP.goneDone = performance.now(); storyCache.t = 0; applyTheme(); if (sfx.win) sfx.win(); SHOP.youSay = 'The shop is BACK! We did it!'; SHOP.youSayT = 3; }
+  renderShopCard(true);
+}
+function drawGoneShop(t) { // where the shop used to be: green and black code... and the pieces you've built so far
+  const built = SHOP.built || [], has = k => built.includes(k);
+  g.fillStyle = '#020a02'; g.fillRect(-200, -200, W + 400, H + 400);
+  g.font = `20px ${BODYFONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; for (let c=0;c<40;c++) { const x = c*40 + 20, sp = 60 + (c*37) % 90; for (let k=0;k<6;k++) { const y = ((t*sp + c*97 + k*150) % (H + 100)) - 50; g.fillStyle = `rgba(57,255,20,${0.15 + (k % 3)*0.12})`; g.fillText((c + k + Math.floor(t*3)) % 2 ? '1' : '0', x, y); } } // falling 1s and 0s
+  g.setLineDash([14, 10]); g.strokeStyle = 'rgba(57,255,20,.6)'; g.lineWidth = 3; g.strokeRect(100, 150, 1400, SHOP_FLOOR - 150); g.setLineDash([]); // a ghost outline of where the shop was
+  if (has(1)) { g.fillStyle = '#ffd6e8'; g.fillRect(100, 150, 1400, SHOP_FLOOR - 150); g.fillStyle = 'rgba(255,143,193,.35)'; for (let x = 100; x < 1500; x += 70) g.fillRect(x, 150, 34, SHOP_FLOOR - 150); for (let i=0;i<8;i++) drawLittleHeart(180 + i*170, 230 + (i % 2)*60, 12); } // pink striped walls with hearts
+  if (has(0)) { g.fillStyle = '#b98a5a'; g.fillRect(100, SHOP_FLOOR, 1400, 70); g.strokeStyle = '#8a5f3c'; g.lineWidth = 4; for (let x = 100; x < 1500; x += 120) { g.beginPath(); g.moveTo(x, SHOP_FLOOR); g.lineTo(x, SHOP_FLOOR + 70); g.stroke(); } } // a wooden floor
+  if (has(2)) { g.fillStyle = C.white; g.strokeStyle = C.ink; g.lineWidth = 5; g.fillRect(620, 170, 260, 80); g.strokeRect(620, 170, 260, 80); g.fillStyle = '#e0457b'; g.font = `56px ${FONT}`; g.fillText('shop', 750, 212); } // the sign
+  if (has(3)) for (const [sx, item] of [[740, 'hat'], [860, 'shades'], [980, 'bow']]) { g.fillStyle = '#5a3a1e'; g.fillRect(sx - 6, SHOP_FLOOR - 110, 12, 110); g.fillRect(sx - 40, SHOP_FLOOR - 120, 80, 12); g.save(); g.translate(sx, SHOP_FLOOR - 140); g.scale(1.6, 1.6); if (item === 'hat') drawHat(g, 22, 0, 1); else if (item === 'shades') { g.scale(40, 40); drawGlasses(g, [[-0.2, 0], [0.2, 0]]); } else { g.fillStyle = '#ff8fc1'; g.strokeStyle = C.ink; g.lineWidth = 3; for (const s of [-1, 1]) { g.beginPath(); g.moveTo(0, 0); g.lineTo(s*18, -10); g.lineTo(s*18, 10); g.closePath(); g.fill(); g.stroke(); } } g.restore(); } // the stands, with things on them
+  if (has(4)) { g.fillStyle = '#a0723c'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(1050, SHOP_FLOOR - 130, 190, 130); g.strokeRect(1050, SHOP_FLOOR - 130, 190, 130); g.fillStyle = '#7a5236'; g.fillRect(1040, SHOP_FLOOR - 142, 210, 16); g.fillStyle = '#d4a017'; g.fillRect(1196, SHOP_FLOOR - 172, 36, 30); } // the counter, with the cash register
+  if (has(5)) { g.fillStyle = '#7a4a2a'; for (let i=0;i<7;i++) g.fillRect(1250 + i*28, SHOP_FLOOR - 26 - i*26, 60, 26); } // the stairs up to the 2nd floor
+  GONE_PIECES.forEach((p, k) => { if (has(k)) return; const bob = Math.sin(t*3 + k)*8, y = SHOP_FLOOR - 120 + bob; g.save(); g.shadowColor = '#39ff14'; g.shadowBlur = 18; g.fillStyle = '#0d2a0d'; g.strokeStyle = '#39ff14'; g.lineWidth = 4; g.fillRect(p.x - 34, y - 34, 68, 68); g.strokeRect(p.x - 34, y - 34, 68, 68); g.restore(); g.fillStyle = '#39ff14'; g.font = `26px ${FONT}`; g.fillText(k % 2 ? '01' : '10', p.x, y); g.font = `17px ${BODYFONT}`; g.fillText(p.name, p.x, y + 52); }); // the code blocks still to build
+  if (SHOP.goneSpark && performance.now() - SHOP.goneSpark.t < 900) { const k = (performance.now() - SHOP.goneSpark.t)/900; for (let i=0;i<14;i++) { const a = i*TAU/14; g.fillStyle = i % 2 ? '#39ff14' : C.yellow; g.fillRect(SHOP.goneSpark.x + Math.cos(a)*k*140, SHOP_FLOOR - 120 + Math.sin(a)*k*100, 7, 7); } } // sparks when you build something
+  const done = built.length >= GONE_PIECES.length;
+  if (done) { const k = Math.min(1, (performance.now() - (SHOP.goneDone || 0))/800); g.save(); g.globalAlpha = k; g.fillStyle = '#e0457b'; g.strokeStyle = C.white; g.lineWidth = 8; g.font = `64px ${FONT}`; g.strokeText('THE SHOP IS BACK!', W/2, 110); g.fillText('THE SHOP IS BACK!', W/2, 110); g.restore(); }
+  else { g.fillStyle = '#39ff14'; g.font = `30px ${FONT}`; g.fillText(`re-make the shop: ${built.length}/${GONE_PIECES.length}`, W/2, 110); }
+  const pals = [{ ch:CHAR.keeper2, x:180 }, { ch:CHAR.keeper, x:1420 }].filter(p => p.ch.id !== CHARS[SHOP.who].id); // the shopkeepers, helping
+  pals.forEach((p, i) => { const r = dormR(p.ch)*0.5, hop = done ? Math.abs(Math.sin(t*6 + i))*14 : 0; g.save(); g.translate(p.x, SHOP_FLOOR - r - hop); drawCharacter(g, p.ch, r, { facing:p.x < W/2 ? 1 : -1, ...looks(p.ch), happy:done, scared:!done && built.length === 0, still:true }); g.restore(); });
+  const cs = SHOP.cabinSay, sp = cs && performance.now() < cs.until && pals.find(p => p.ch.id === cs.id); if (sp) drawBubble(cs.text, Math.min(W - 20, sp.x + 300), SHOP_FLOOR - 260, sp.x);
+  const n = SHOP.nearCabin; if (n) drawPointer(GONE_PIECES[+n.slice(4)].x + 40, SHOP_FLOOR - 230, t);
 }
 function drawLogWalls(w) { g.fillStyle = '#8a5a34'; g.fillRect(-200, -200, w + 400, H + 400); for (let y = 40; y < SHOP_FLOOR; y += 46) { g.fillStyle = (y/46) % 2 < 1 ? '#9a6a3e' : '#8a5a34'; g.fillRect(0, y, w, 42); g.fillStyle = 'rgba(0,0,0,.15)'; g.fillRect(0, y + 38, w, 4); } g.fillStyle = '#5a3a1e'; g.fillRect(0, 0, w, 40); g.fillStyle = '#6b4a2a'; g.fillRect(0, SHOP_FLOOR, w, H - SHOP_FLOOR); }
 function drawCabinStairs(x, up, label, t) { // wooden stairs, with a little sign
@@ -7216,8 +7307,9 @@ function drawCabinShop(t) { // the 2nd floor: the cabin shop, extra big (three s
   g.fillStyle = '#b5413a'; for (const [cx, rw] of [[1100, 950], [2600, 550]]) { g.beginPath(); g.ellipse(cx, SHOP_FLOOR + 30, rw, 40, 0, 0, TAU); g.fill(); } // long rugs
   for (const shx of [1260, 2560]) { g.fillStyle = '#5a3a1e'; g.fillRect(shx, SHOP_FLOOR - 280, 260, 18); g.fillRect(shx, SHOP_FLOOR - 190, 260, 18); for (let i=0;i<6;i++) { const x = shx + 20 + i*42; g.fillStyle = [C.red, C.blue, C.yellow, '#ff8fc1', C.green, C.orange][i]; g.fillRect(x, SHOP_FLOOR - 316, 30, 36); g.beginPath(); g.arc(x + 15, SHOP_FLOOR - 212, 15, 0, TAU); g.fill(); } } // shelves of goodies on the wall
   g.fillStyle = '#ffd23f'; g.strokeStyle = C.ink; g.lineWidth = 4; g.save(); g.translate(2690, SHOP_FLOOR - 380); g.rotate(-0.08); g.fillRect(-80, -26, 160, 52); g.strokeRect(-80, -26, 160, 52); g.fillStyle = C.red; g.font = `34px ${FONT}`; g.fillText('SALE!', 0, 2); g.restore(); // a sale sign
-  for (const px of [220, 820, 2060, 2280, 3000]) { g.fillStyle = '#b5652a'; g.fillRect(px - 26, SHOP_FLOOR - 50, 52, 50); g.fillStyle = '#2e9e4f'; for (const [dx, dy, rr] of [[0, -80, 34], [-26, -58, 26], [26, -58, 26]]) { g.beginPath(); g.arc(px + dx, SHOP_FLOOR + dy, rr, 0, TAU); g.fill(); } } // potted plants
+  for (const px of [220, 660, 2060, 2280, 3000]) { g.fillStyle = '#b5652a'; g.fillRect(px - 26, SHOP_FLOOR - 50, 52, 50); g.fillStyle = '#2e9e4f'; for (const [dx, dy, rr] of [[0, -80, 34], [-26, -58, 26], [26, -58, 26]]) { g.beginPath(); g.arc(px + dx, SHOP_FLOOR + dy, rr, 0, TAU); g.fill(); } } // potted plants
   g.fillStyle = '#5a3a1e'; g.fillRect(2140, SHOP_FLOOR - 120, 80, 120); g.fillStyle = '#7a5236'; g.fillRect(2120, SHOP_FLOOR - 130, 120, 14); g.fillStyle = C.white; g.beginPath(); g.ellipse(2180, SHOP_FLOOR - 140, 26, 8, 0, 0, TAU); g.fill(); g.fillStyle = '#6b3d1a'; g.beginPath(); g.ellipse(2180, SHOP_FLOOR - 142, 18, 5, 0, 0, TAU); g.fill(); // a little table with free cocoa
+  drawSkinBooth(t, CABIN_SKIN_X); // the skins mirror
   for (const [id, x] of [['keeper', KX + 100], ['keeper2', KX + 200]]) { const ch = CHAR[id], r = dormR(ch)*0.55; g.save(); g.translate(x, SHOP_FLOOR - r - 70); drawCharacter(g, ch, r, { facing:-1, ...looks(ch), still:true }); g.restore(); } // both shopkeepers, behind the counter
   g.fillStyle = '#a0723c'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(KX - 150, SHOP_FLOOR - 140, 410, 140); g.strokeRect(KX - 150, SHOP_FLOOR - 140, 410, 140); g.fillStyle = '#8a5f30'; for (let px = KX - 150 + 82; px < KX + 260; px += 82) g.fillRect(px - 2, SHOP_FLOOR - 136, 4, 136); g.fillStyle = '#7a5236'; g.fillRect(KX - 165, SHOP_FLOOR - 154, 440, 18); g.strokeRect(KX - 165, SHOP_FLOOR - 154, 440, 18); // the counter (extra big, with wood panels)
   g.fillStyle = '#d4a017'; g.fillRect(KX - 140, SHOP_FLOOR - 182, 44, 28); g.fillStyle = '#333'; g.fillRect(KX - 135, SHOP_FLOOR - 178, 34, 12); // a cash register
@@ -7252,7 +7344,8 @@ function drawCabinOutside(t) { // outside the cabin: a forest, and a little ston
 const CABIN_CARDS = { [CABIN_SHOP]:'<h3>The cabin shop</h3><p>The 2nd floor of the cabin: the same things to buy as in the shop, with both shopkeepers at the counter. Walk up to a stand to buy something, or walk up to a shopkeeper and press punch to talk. The stairs go down to the cabin and up to the dorms.</p>',
   [CABIN_DORMS]:'<h3>The dorms</h3><p>The 3rd floor of the cabin: a big bunk room, with a bed for everyone (their name is on it). The stairs go back down to the shop.</p>',
   [CABIN_OUT]:'<h3>Outside</h3><p>A quiet forest outside the cabin. That little stone room is IT\'s room... IT is locked in there. Walk to its door and press punch to go in and talk to IT. The little wooden shop on the left is the repair shop, where they are trying to fix the old Hexstar. The cabin door is on the right.</p>',
-  [LAB_FLOOR]:'<h3>The repair shop</h3><p>The old Hexstar (the first one, who did not make it out of the code) is on the workbench, and everyone is trying to fix him. Walk up to him and press punch to help fix him, or talk to the others. The screen shows how much of him is fixed... and his heartbeat. He is still in there!</p>' };
+  [GONE_FLOOR]:'<h3>Gone</h3><p>The shop\'s code is gone! Only green and black code is left where it used to be. Re-make it with the shopkeepers: walk up to each glowing code block and press punch to build that piece (the floor, the walls, the sign, the stands, the counter and the stairs). Once it\'s all built, the shop is back!</p>',
+  [LAB_FLOOR]:'<h3>The repair shop</h3><p>The old Hexstar (the first one, who did not make it out of the code) is on the workbench, and everyone is trying to fix him. Walk up to him and press punch to help fix him, or talk to the others. The screen shows how much of him is fixed... and his heartbeat. He is still in there! (In chapter 5\'s hex return, he can be fixed all the way to 100%... and once he wakes up, walk up to him and press punch to talk to him.)</p>' };
 const STORY_NOTES = ['', '💕 The shopkeepers are in love! 💕', '🌳 The shopkeepers are dating! 🌳', '🍝 Date night at Café Fun! 🍝', '💍 Just married! 💍', '🛡️ The Admin is watching... 🛡️', '💥 Everything is falling apart! 💥', '🕳️ The code is gone... the 1st floor is gone! 🕳️', '🏠 There is no shop now... 🏠', '💔 They are gone...', '🌀 The void...', '👁️ ...uoy teg lliw ti 👁️', '📺 It\'s only them...', '🙏 Pray for you are in danger 🙏', '👁️ IT is here 👁️', '🔨 escape? 🔨', '🤗 Together again 🤗', '🔑 Get the admins 🔑'];
 let storyCache = { t:0, s:0 };
 const STORY_LOOKS = [['love','💕 In love'], ['park','🌳 Park'], ['cafe','🍝 Café'], ['wedding','💍 Wedding'], ['admin','🛡️ Admin'], ['crumble','💥 Falling apart'], ['gone','🕳️ Code gone'], ['life','🏠 Once in a life time'], ['fell','💔 They are gone'], ['void','🌀 The void'], ['eyes','👁️ uoy teg lliw ti'], ['only','📺 It\'s only them'], ['pray','🙏 Pray for you are in danger'], ['it','👁️ IT is here'], ['escape','🔨 escape?'], ['reunite','🤗 Reunite'], ['admins','🔑 Get the admins']]; // (the looks, in story order, for the settings and the admin panel)
@@ -7281,7 +7374,7 @@ function drawStoryFx(t) { // floating up and falling down over the sky
 }
 function drawShopStory(t) { // the story look in the shop: the same hearts, butterflies, lights, petals or code, plus a garland across the top in the look's colors
   const s = storyStage(); if (!s) return;
-  if (s >= 6) { drawCracks(SHOP_FLOOR); drawRubble(t, 0); } if (s >= 7 && SHOP.floor === 2) drawCodeHole(t); // (the shop is falling apart: cracks in the walls, and bits of the ceiling falling down)
+  if (s >= 6 && !shopBack()) { drawCracks(SHOP_FLOOR); drawRubble(t, 0); } if (s >= 7 && SHOP.floor === 2 && !shopBack()) drawCodeHole(t); /* (no cracks once you re-make the shop) */ // (the shop is falling apart: cracks in the walls, and bits of the ceiling falling down)
   g.save(); g.globalAlpha = 0.55; drawStoryFx(t); g.restore(); // (a bit see-through, so they don't get in the way)
   const cols = [null, ['#ff8fc1', '#e75a9b'], ['#2e9e4f', '#8fd16a'], ['#7a1f2b', '#ffd65a'], ['#ffd23f', C.white], ['#39ff14', '#0b2a14'], ['#8a7f74', '#39ff14'], ['#000', '#39ff14'], ['#000', '#39ff14'], ['#000', '#39ff14'], ['#000', '#39ff14'], ['#000', '#e8ffe0'], ['#ff8fc1', '#ffd23f'], ['#ff4040', '#000'], ['#39ff14', '#000'], ['#c9a26b', '#39ff14'], ['#ffb02e', '#ffd23f'], ['#39ff14', '#ffd23f']][s];
   g.strokeStyle = cols[0]; g.lineWidth = 3; g.beginPath(); for (let x = 0; x <= W; x += 10) { const y = 160 + Math.abs(Math.sin(x/200*Math.PI))*-30 + 30; x ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke();
@@ -7354,7 +7447,7 @@ $('apUnlock').onclick = () => { // Missing Arrow, every item (but the attic's go
 $('apStory').onclick = () => { // every chapter at once: the whole story already happened (you saw it all), so every background is yours, plus Flower Girl and everything in the shop
   const now = Date.now(), M = 60000;
   lsSet('fff-confess', String(now - 400*M)); lsSet('fff-confessed', String(now - 350*M)); // (dating 290 minutes ago, the 2nd date 280...)
-  lsSet('fff-wedding', String(now - 250*M)); lsSet('fff-attack', String(now - 200*M)); lsSet('fff-attackwon', '1'); lsSet('fff-fell', String(now)); lsSet('fff-saved', String(now)); lsSet('fff-itstopped', String(now)); lsSet('fff-chdone', '5'); // (...the wedding 250, the Admin's attack 200, and the rest of chapter 2 and 3 after it)
+  lsSet('fff-wedding', String(now - 250*M)); lsSet('fff-attack', String(now - 200*M)); lsSet('fff-attackwon', '1'); lsSet('fff-fell', String(now)); lsSet('fff-saved', String(now)); lsSet('fff-itstopped', String(now)); lsSet('fff-remade', String(now)); lsSet('fff-hexback', String(now)); lsSet('fff-hexfix', '100'); lsSet('fff-chdone', '5'); // (...the wedding 250, the Admin's attack 200, and the rest of chapter 2 and 3 after it)
   shop.unlocked = { ...(shop.unlocked || {}), flower:true };
   $('apUnlock').onclick(); // (and everything in the shop)
   setup.storyLook = 'on'; saveSetup(); applyTheme(); renderSeg('apStorySeg', [['on','Newest'], ...STORY_LOOKS, ['off','Off']], 'storyLook', applyTheme);
@@ -7963,8 +8056,8 @@ function fillSkinCard(card, ch) {
     box.append(b);
   }
 }
-function drawSkinBooth(t) { // a big gold mirror on a stand: it shows you in each skin, one after another
-  const x = SKIN_X, top = SHOP_FLOOR - 260, ch = CHARS[SHOP.who], list = skinsFor(ch).filter(s => forSale(s) || hasSkin(ch, s.id)), shown = list[Math.floor(t/1.3) % list.length];
+function drawSkinBooth(t, x = SKIN_X) { // a big gold mirror on a stand: it shows you in each skin, one after another
+  const top = SHOP_FLOOR - 260, ch = CHARS[SHOP.who], list = skinsFor(ch).filter(s => forSale(s) || hasSkin(ch, s.id)), shown = list[Math.floor(t/1.3) % list.length];
   g.fillStyle = PINK_DARK; g.fillRect(x - 12, top + 200, 24, SHOP_FLOOR - top - 200); g.beginPath(); g.ellipse(x, SHOP_FLOOR, 60, 12, 0, 0, TAU); g.fill();
   g.fillStyle = '#e0b030'; g.strokeStyle = C.ink; g.lineWidth = 4; roundRect(x - 80, top, 160, 205, 20); g.fill(); g.stroke();
   g.fillStyle = '#e4f6ff'; roundRect(x - 64, top + 16, 128, 160, 14); g.fill();
@@ -7981,7 +8074,7 @@ function renderShopCard(force) {
   const key = [shop.coins, ch.id, justWatching(), (SHOP.itAsked || []).length, (SHOP.clues || []).length, (SHOP.termHeld || []).length, !!SHOP.itBroke, SHOP.floor >= DINNER_FLOOR ? placeMsg() : '', SHOP.floor === 15 && attackOn(), !!(SHOP.atk && SHOP.atk.won), SHOP.nearWed, SHOP.nearPark, SHOP.nearPaper, SHOP.ktask, SHOP.nearTask, SHOP.nearToys, it && it.id, it && shop.owned[it.id], ITEMS.map(i => wears(i.id, ch)).join(), SHOP.nearKeeper, SHOP.nearStairs, SHOP.stairTo, SHOP.floor, jokeOpen(), !!SHOP.revealed, SHOP.nearSmi, SHOP.nearSkins, skinOf(ch), skinRec(ch).have.join(), SHOP.nearCage, SHOP.cage && SHOP.cage.lock.left, SHOP.cage && SHOP.cage.hp, SHOP.cage && SHOP.cage.freed, SHOP.nearPal && SHOP.nearPal.id, SHOP.stairRoom, SHOP.dorm, SHOP.nearSwitch, setup.dormTime].join('|');
   if (!force && key === SHOP.key) return;
   SHOP.key = key; $('coinCount').textContent = shop.coins; $('shopWho').textContent = ch.name;
-  const card = $('shopCard'); if (CABIN_CARDS[SHOP.floor] && !it) card.innerHTML = CABIN_CARDS[SHOP.floor];
+  const card = $('shopCard'); if (CABIN_CARDS[SHOP.floor] && !it && !SHOP.nearSkins) card.innerHTML = CABIN_CARDS[SHOP.floor];
   else if (SHOP.floor === CABIN_FLOOR) card.innerHTML = '<h3>The cabin</h3><p>Your big, cozy home, with everyone in it: the shopkeepers and all the fighters. Walk up to someone and press punch to talk. The stairs on the right go up to the shop (2nd floor) and the dorms (3rd floor), and the door on the left goes outside.</p>';
   else if (SHOP.floor === TUNNEL_FLOOR || SHOP.floor === AROOM_FLOOR) card.innerHTML = ch5Card(); else if (SHOP.floor === REUNITE_FLOOR) card.innerHTML = '<h3>Reunite</h3><p>Deep in the code, in a dark cave with a little campfire: this is where all the fighters went. And now IT has brought the shopkeepers here too...</p><p class="note">You are not anybody here. You just watch. Press back to leave.</p>'; else if (SHOP.floor === TRAIL_FLOOR) card.innerHTML = '<h3>escape?</h3><p>A door at the edge of the world... the shopkeepers step out onto a quiet trail, and it leads to an empty place full of tools to build with. Are they free...?</p><p class="note">You are not anybody here. You just watch. Press back to leave.</p>'; else if (SHOP.floor === IT_FLOOR) card.innerHTML = itCard(); else if (SHOP.floor === EDGE_FLOOR) card.innerHTML = '<h3>Pray for you are in danger</h3><p>The edge of the world. The shopkeepers are trying to get out of this world: pushing on the wall of code, reaching for the crack in the sky, jumping into the portal... and every time, it fails. So they pray, and try again.</p><p class="note">You are not anybody here. You just watch them try. Press back to leave.</p>';
   else if (onlyThemHere()) card.innerHTML = '<h3>It\'s only them</h3><p>Just the two shopkeepers, alone in the broken break room. Their memories are moving on a paper on the wall all by themselves: the confession, their first date, Café Fun and the big day... and they are scared.</p><p class="note">You are not anybody here. You just watch. Press back to leave.</p>'; else fillShopCard(card, ch, it); // (it's only them: no fighter, no things to wear)
@@ -8641,7 +8734,7 @@ function renderLobby() {
 }
 // ----- the story, together online: in a team, the host presses "story together", and everyone goes into the story, using the host's chapters.
 // You all see each other walking around (with name tags and speech bubbles) in the cabin and every story place, and progress anyone makes is shared
-const STORY_KEYS = ['fff-confess', 'fff-confessed', 'fff-wedding', 'fff-attack', 'fff-attackwon', 'fff-fell', 'fff-saved', 'fff-itstopped'];
+const STORY_KEYS = ['fff-confess', 'fff-confessed', 'fff-wedding', 'fff-attack', 'fff-attackwon', 'fff-fell', 'fff-saved', 'fff-itstopped', 'fff-remade', 'fff-hexback'];
 function storySnapshot() { const o = {}; for (const k of STORY_KEYS) { try { o[k] = localStorage.getItem(k); } catch { o[k] = null; } } return o; }
 function chapterSnapshot(ch) { // the story for the chosen chapter: where the host is, or the start of a chapter (with all the chapters before it done)
   if (!ch || ch === 'now') return storySnapshot();
