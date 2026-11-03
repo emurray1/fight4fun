@@ -489,6 +489,10 @@ html.adminlook .story-note{color:#1f8a0f}
       <h3 class="chapter" id="ch3Head">📖 Chapter 3: They are gone... <span id="ch3Done"></span></h3>
       <p id="ch3Lock" class="chapter-lock">🔒 Finish chapter 2 first!</p>
       <ul class="upds-list" id="ch3List"><li><b>💔 They are gone...</b>: <span id="fellWhen"></span></li><li><b>🌀 The void</b>: <span id="voidWhen"></span></li><li><b>👁️ uoy teg lliw ti</b>: <span id="eyesWhen"></span></li><li><b>📺 It's only them</b>: <span id="onlyWhen"></span></li></ul>
+      <h3 class="chapter" id="ch4Head">📖 Chapter 4: Pray for you are in danger <span id="ch4Done"></span></h3>
+      <p id="ch4Lock" class="chapter-lock">🔒 Finish chapter 3 first!</p>
+      <ul class="upds-list" id="ch4List"><li><b>🙏 Pray for you are in danger</b>: <span id="prayWhen">something dangerous is coming... Coming soon...</span></li></ul>
+      <div class="page-foot"><button id="prayBtn" class="btn" hidden>🙏 the edge</button></div>
       <p id="kickMsg" hidden style="color:#c0392b;font-size:22px"><b>🥾 The Admin KICKED YOU OUT!</b> You ran out of time on a task. Press the admin room button to try again!</p>
       <div class="page-foot"><button id="dormBtn" class="btn">💌 dorm</button><button id="parkBtn" class="btn">🌳 park</button><button id="dinnerBtn" class="btn">🍝 dinner place</button><button id="weddingBtn" class="btn">💒 wedding</button><button id="attackBtn" class="btn" hidden>🛡️ admin room</button><button id="fellBtn" class="btn" hidden>💔 dorm hall</button><button id="onlyBtn" class="btn" hidden>📺 break room</button></div>
       <div class="page-foot" id="againRow" hidden><button id="againBtn" class="btn">🔁 do it again</button><span id="againPick" hidden><button id="againConfess" class="btn">💌 confession</button><button id="againPark" class="btn">🌳 1st date</button><button id="againDate" class="btn">🍝 2nd date</button><button id="againWedding" class="btn">💍 wedding</button><button id="againAttack" class="btn">🛡️ admins attack</button><button id="againFell" class="btn">💔 they are gone</button></span></div>
@@ -3960,13 +3964,13 @@ function drawOverlayText() {
   }
 }
 function shopStep(dt) {
-  const wp = $('shop').querySelector('.who-pick'), nobody = onlyThemHere(); if (wp.hidden !== nobody) wp.hidden = nobody; // (when it's only them, you aren't a fighter: no picking who you shop as)
+  const wp = $('shop').querySelector('.who-pick'), nobody = justWatching(); if (wp.hidden !== nobody) wp.hidden = nobody; // (when it's only them, you aren't a fighter: no picking who you shop as)
   const h = readHeld('local'), pr = SHOP.prev, ch = CHARS[SHOP.who]; SHOP.prev = h;
   SHOP.youSayT = Math.max(0, (SHOP.youSayT || 0) - dt);
   SHOP.toyT = Math.max(0, (SHOP.toyT || 0) - dt);
   if (pushStep(dt) || carryStep(dt)) { SHOP.msgT = Math.max(0, SHOP.msgT - dt); renderShopCard(); return; }
   const hall = SHOP.floor === 5; // the chase hallway is much longer than the screen, and has boxes to jump over
-  const frozen = (hall && SHOP.chase && (SHOP.chase.t < 2.6 || SHOP.chase.done)) || voidWatching() || onlyThemHere(); // you freeze while the eyes open (and once you're safe)
+  const frozen = (hall && SHOP.chase && (SHOP.chase.t < 2.6 || SHOP.chase.done)) || voidWatching() || justWatching(); // you freeze while the eyes open (and once you're safe)
   let nx = Math.max(SHOP.floor === 4 && !SHOP.chase ? 0 : 70, Math.min(hall ? CHASE_LEN - 60 : dormRoomW() - 70, SHOP.x + (frozen ? 0 : h.x)*430*ch.speed*dt));
   if (hall) nx = chaseBlock(SHOP.x, nx);
   if (pkOn()) nx = pkBlock(SHOP.x, nx); // (the broken dorm hall: bits of floor to jump between)
@@ -5497,7 +5501,7 @@ function drawManager(g, t) { // %#@% sitting in his chair (drawn in the chair's 
 function drawShop(t) {
   const hall = SHOP.floor === 5, wide = keeperRoom(); // the chase hallway (and the shopkeepers' big room) scrolls with you
   if (hall) { g.save(); g.translate(-(SHOP.cam || 0), 0); drawChaseFloor(t); }
-  else if (SHOP.floor === VOID_FLOOR) drawVoid(t); else if (SHOP.floor === PARK_FLOOR) drawParkPlace(t); else if (SHOP.floor === DINNER_FLOOR) drawDinnerPlace(t); else if (SHOP.floor === WEDDING_FLOOR) drawWeddingHall(t); else if (SHOP.floor === 15) { drawAdminRoom(t); drawAttack(t); } else if (SHOP.floor === 14) drawKeeperAttic(t); else if (SHOP.floor === 12 || SHOP.floor === 13) { if (wide) { g.save(); g.translate(-(SHOP.cam || 0), 0); } if (SHOP.floor === 13) drawKeeperUpstairs(t); else drawDormRoom(t); } else if (SHOP.floor === 11) drawDormHall(t); else if (SHOP.floor === 10) drawPlayerBreak(t); else if (SHOP.floor === 9) drawGlitchShop(t); else if (SHOP.floor === 8) drawCageFloor(t); else if (SHOP.floor === 7) drawTopFloor(t); else if (SHOP.floor === 6) drawBreakFloor(t); else if (SHOP.floor === 4) drawOfficeFloor(t); else if (SHOP.floor === 3) drawAtticFloor(t); else if (SHOP.floor === 2) drawFunnyFloor(t); else drawFightyFloor(t);
+  else if (SHOP.floor === EDGE_FLOOR) drawEdge(t); else if (SHOP.floor === VOID_FLOOR) drawVoid(t); else if (SHOP.floor === PARK_FLOOR) drawParkPlace(t); else if (SHOP.floor === DINNER_FLOOR) drawDinnerPlace(t); else if (SHOP.floor === WEDDING_FLOOR) drawWeddingHall(t); else if (SHOP.floor === 15) { drawAdminRoom(t); drawAttack(t); } else if (SHOP.floor === 14) drawKeeperAttic(t); else if (SHOP.floor === 12 || SHOP.floor === 13) { if (wide) { g.save(); g.translate(-(SHOP.cam || 0), 0); } if (SHOP.floor === 13) drawKeeperUpstairs(t); else drawDormRoom(t); } else if (SHOP.floor === 11) drawDormHall(t); else if (SHOP.floor === 10) drawPlayerBreak(t); else if (SHOP.floor === 9) drawGlitchShop(t); else if (SHOP.floor === 8) drawCageFloor(t); else if (SHOP.floor === 7) drawTopFloor(t); else if (SHOP.floor === 6) drawBreakFloor(t); else if (SHOP.floor === 4) drawOfficeFloor(t); else if (SHOP.floor === 3) drawAtticFloor(t); else if (SHOP.floor === 2) drawFunnyFloor(t); else drawFightyFloor(t);
   if (SHOP.floor <= 2) drawShopStory(t); // (the shop changes with the story too)
   if (codeGone() && SHOP.floor >= 11 && SHOP.floor <= 13) drawBrokenDorm(t); // (the dorms are broken too, once the code is gone)
   if (SHOP.floor === 11) drawFell(t); // (they are gone: the scene, then the shopkeepers trying to save them)
@@ -5548,7 +5552,7 @@ function drawShop(t) {
   const found = ch.id === 'shuriken' && SHOP.floor === 2 && SHOP.sparkleHere; // Shuriken is happy he found Goofy Sparkle
   const yay = (excited || (found && SHOP.foundT < 4)) && SHOP.y === 0 && !moving ? Math.abs(Math.sin(t*7))*22 : 0;
   g.save(); g.translate(SHOP.x + (scared ? Math.sin(t*55)*2.5 : 0), SHOP_FLOOR - bottom + SHOP.y - hop - yay); g.rotate(moving ? Math.sin(t*12)*0.08 : laughing ? Math.sin(t*16)*0.1 : excited ? Math.sin(t*7)*0.12 : 0);
-  if (!onlyThemHere()) drawCharacter(g, ch, r, { facing:SHOP.facing, walk:moving ? t*10 : null, ...looks(ch), scared, excited, happy:found }); g.restore(); /* (it's only them: you're not there, you just watch) */
+  if (!justWatching()) drawCharacter(g, ch, r, { facing:SHOP.facing, walk:moving ? t*10 : null, ...looks(ch), scared, excited, happy:found }); g.restore(); /* (it's only them: you're not there, you just watch) */
   const above = SHOP_FLOOR - bottom - 80 + SHOP.y;
   if (SHOP.youSayT > 0) drawBubble(SHOP.youSay, SHOP.x + 120, above, SHOP.x + 20);
   else if (laughing) drawBubble('Hahaha!', SHOP.x + 70, above, SHOP.x + 20);
@@ -5858,6 +5862,10 @@ function updsTick() { // the countdown on the page
   const etext = eyesText(); if ($('eyesWhen').textContent !== etext) $('eyesWhen').textContent = etext;
   const otext = onlyText(); if ($('onlyWhen').textContent !== otext) $('onlyWhen').textContent = otext;
   $('onlyBtn').hidden = !(onlyLeft() <= 0);
+  const ch3 = ch2 && saved() && onlyLeft() <= 0; // chapter 4 opens once chapter 3 is done
+  $('ch4Lock').hidden = ch3; $('ch4List').hidden = !ch3; $('ch4Head').style.opacity = ch3 ? 1 : 0.5;
+  const ptext = prayText(); if ($('prayWhen').textContent !== ptext) $('prayWhen').textContent = ptext;
+  $('prayBtn').hidden = !(ch3 && prayLeft() <= 0); $('ch4Done').textContent = ch3 && prayLeft() <= 0 ? '✅' : '';
   $('fellBtn').hidden = !(fellLeft() <= 0);
   $('attackBtn').hidden = !(attackLeft() <= 0 && attackLeft() > -ATTACK_LONG*60000);
   againShow();
@@ -5869,7 +5877,8 @@ function againShow() { const any = Object.values(againOk).some(f => f()); $('aga
 $('againAttack').onclick = () => goPlace(15, 'attack');
 $('againFell').onclick = () => goPlace(11, 'fell');
 $('fellBtn').onclick = () => goPlace(11);
-$('onlyBtn').onclick = () => { goPlace(6); SHOP.youSayT = 0; }; // (you just watch them, so you don't say anything)
+$('onlyBtn').onclick = () => { goPlace(6); SHOP.youSayT = 0; };
+$('prayBtn').onclick = () => { goPlace(EDGE_FLOOR); SHOP.x = 600; SHOP.youSayT = 0; SHOP.edgeT0 = performance.now(); }; // (watching them try to get out of this world) // (you just watch them, so you don't say anything)
 $('attackBtn').onclick = () => goPlace(15);
 $('againConfess').onclick = () => goKeeperRoom('confess');
 $('againPark').onclick = () => goPlace(PARK_FLOOR, 'park');
@@ -6536,11 +6545,126 @@ function drawOnlyThem(t) { // the broken break room: a paper on the wall with th
   drawRubble(t, 0);
   if ((t % 4.7) < 0.25 || ((t % 4.7) > 0.4 && (t % 4.7) < 0.5)) { g.fillStyle = 'rgba(0,0,0,.45)'; g.fillRect(0, 0, W, H); } // the lights flicker
 }
-const STORY_NOTES = ['', '💕 The shopkeepers are in love! 💕', '🌳 The shopkeepers are dating! 🌳', '🍝 Date night at Café Fun! 🍝', '💍 Just married! 💍', '🛡️ The Admin is watching... 🛡️', '💥 Everything is falling apart! 💥', '🕳️ The code is gone... the 1st floor is gone! 🕳️', '🏠 There is no shop now... 🏠', '💔 They are gone...', '🌀 The void...', '👁️ ...uoy teg lliw ti 👁️', '📺 It\'s only them...'];
+// pray for you are in danger (chapter 4): 20 minutes after it's only them, the shopkeepers try to get out of this world. At the edge of the world (floor 20)
+// they try again and again, and you can only watch (you're nobody here, like in the break room): they push on the wall of code at the end of the world,
+// Fighty lifts her up to a crack in the sky, they jump into a portal together... and every time it fails. Then they pray, and try again
+const PRAY_MIN = 20, EDGE_FLOOR = 20, EDGE_WALL = 1300, EDGE_CRACK = 900, EDGE_PORTAL = 600;
+const prayLeft = () => { const o = onlyLeft(); return o === Infinity ? Infinity : o + PRAY_MIN*60000; };
+const prayOn = () => storyOk && storyStage() >= 13;
+const justWatching = () => onlyThemHere() || SHOP.floor === EDGE_FLOOR; // (you're nobody: you just watch)
+function prayText() { // for the up coming page
+  const l = prayLeft(), o = onlyLeft();
+  return l === Infinity || o > 0 ? 'something dangerous is coming... Coming soon...' : l > 0 ? `Danger in ${mmss(l)}... the shopkeepers are getting ready to leave.`
+    : 'The shopkeepers are trying to get out of this world! 🙏 Press the edge button (or the shop button) to watch them try.';
+}
+const ESCAPE_LINES = [ // [from (seconds into the 32 second loop), who, what they say]
+  [0, 'keeper', 'There HAS to be a way out of this world! Come on!'], [3, 'keeper2', 'P-push! The wall won\'t move!'], [6, 'keeper', '*bounces back* OOF! It pushed us back...'],
+  [8, 'keeper', 'The crack in the sky! Climb on my shoulders!'], [11, 'keeper2', 'I can almost reach it... a little more...'], [13.5, 'keeper2', 'N-no! It closed!'],
+  [16, 'keeper', 'A portal! Hold my hand. Together, on three!'], [18, 'keeper2', 'One... two... THREE!'], [21, 'keeper', '*thud* ...it threw us right back out.'],
+  [24, 'keeper2', '*hands together* please... please let us out of here...'], [27.5, 'keeper', 'We WILL get out of this world. I promise. Let\'s try again!'],
+];
+function edgeSpots(p) { // where the two of them are, and what they're doing, at p seconds into the loop
+  const lerp = (a, b, k) => a + (b - a)*Math.max(0, Math.min(1, k)), sh = Math.sin(p*40)*3;
+  if (p < 8) { // run to the wall at the end of the world and push... then get bounced back
+    const x = p < 2.5 ? lerp(350, EDGE_WALL - 110, p/2.5) : p < 6 ? EDGE_WALL - 110 + sh : lerp(EDGE_WALL - 110, 900, (p - 6)/0.6);
+    return [{ id:'keeper', x, y:0, pose:p < 6 ? 'run' : 'worried', f:1 }, { id:'keeper2', x:x - 130, y:0, pose:p < 6 ? 'run' : 'worried', f:1 }];
+  }
+  if (p < 16) { const x = lerp(900, EDGE_CRACK, p - 8); return [{ id:'keeper', x, y:0, pose:'cheer', f:1 }, { id:'keeper2', x, y:p < 9.5 ? lerp(0, 165, (p - 8)/1.5) : 165 + Math.sin(p*3)*6, pose:'cheer', f:1 }]; } // she climbs onto his shoulders and reaches up
+  if (p < 24) { // run, hand in hand, and jump into the portal... and get thrown back out
+    if (p < 19) { const x = lerp(EDGE_CRACK, EDGE_PORTAL + 80, (p - 16)/3); return [{ id:'keeper', x, y:0, pose:'run', f:-1 }, { id:'keeper2', x:x + 110, y:0, pose:'run', f:-1 }]; }
+    if (p < 21) return []; // (inside the portal)
+    const k = Math.min(1, (p - 21)/0.8), x = lerp(EDGE_PORTAL, 300, k), y = Math.sin(k*Math.PI)*160;
+    return [{ id:'keeper', x, y, pose:'worried', f:1 }, { id:'keeper2', x:x + 120, y, pose:'worried', f:1 }];
+  }
+  return [{ id:'keeper', x:420, y:0, pose:'worried', f:1 }, { id:'keeper2', x:540, y:0, pose:'worried', f:-1 }]; // praying, close together
+}
+// how they get there: every time you come to the edge, you first see it happen. In the broken break room, the paper with their memories glows,
+// rips open and pulls them in... and they fall out of a hole in the sky, land at the edge of the world, look around, and decide to get out
+const EDGE_PULL = 5, EDGE_INTRO = 16;
+const EDGE_INTRO_LINES = [[0, 'keeper2', 'The paper... it\'s glowing! W-what is happening?!'], [2.5, 'keeper', 'It\'s pulling us in! HOLD ON TO ME!'], [5, 'keeper2', 'AAAAAH!!'], [6, 'keeper', 'Whoa! We are on floating rocks! Jump! Follow me!'], [8.3, 'keeper2', 'I-I am not good at parkour...! *jump* *jump*'], [11.2, 'keeper2', 'We made it... where are we?'], [12.7, 'keeper', 'The edge of the world... look, a wall of code!'], [14.2, 'keeper2', 'If there is an edge... maybe there is a way OUT!']];
+function drawEdgePull(t, s) { // part 1: the paper in the break room rips open and pulls them in
+  g.fillStyle = '#120a08'; g.fillRect(-3000, -3000, W + 6000, H + 6000); drawCracks(SHOP_FLOOR);
+  const grow = 1 + s*0.25, glow = Math.min(1, s/2); g.save(); g.translate(W/2, 330); g.scale(grow, grow); g.rotate(Math.sin(t*6)*0.03*s);
+  g.fillStyle = '#f6efdc'; g.fillRect(-190, -150, 380, 300); g.strokeStyle = '#8a7a5a'; g.lineWidth = 3; g.strokeRect(-190, -150, 380, 300); // the paper from the break room
+  if (s > 1.5) { const k = Math.min(1, (s - 1.5)/1.5); g.fillStyle = '#000'; g.beginPath(); g.moveTo(-120*k, -10); for (let i=0;i<=10;i++) g.lineTo(-120*k + i*24*k, (i % 2 ? -60 : 50)*k); g.lineTo(120*k, 10); for (let i=10;i>=0;i--) g.lineTo(-120*k + i*24*k, (i % 2 ? 70 : -40)*k); g.closePath(); g.fill(); g.save(); g.clip(); g.fillStyle = 'rgba(57,255,20,.8)'; g.font = 'bold 20px monospace'; g.textAlign = 'center'; for (let i=0;i<14;i++) g.fillText((i + Math.floor(t*6)) % 2 ? '1' : '0', -110 + (i*17) % 220, -60 + ((t*120 + i*23) % 130)); g.restore(); } // it rips open
+  g.restore();
+  g.save(); g.globalAlpha = glow*0.5; const halo = g.createRadialGradient(W/2, 330, 20, W/2, 330, 420); halo.addColorStop(0, '#b6ffb0'); halo.addColorStop(1, 'rgba(182,255,176,0)'); g.fillStyle = halo; g.fillRect(0, 0, W, H); g.restore();
+  [['keeper', -1], ['keeper2', 1]].forEach(([id, side]) => { const ch = CHAR[id], k = Math.max(0, (s - 2.5)/2.5), r = dormR(ch)*0.6*(1 - k*0.85), x = W/2 + side*(260 - k*250), y = SHOP_FLOOR - 60 - k*(SHOP_FLOOR - 390);
+    g.save(); g.translate(x + Math.sin(t*30)*3, y); g.rotate(k*t*6); drawCharacter(g, ch, r, { facing:-side, ...looks(ch), pose:k > 0 ? 'cheer' : 'worried', still:true }); g.restore(); }); // pulled in, spinning and shrinking
+  const line = [...EDGE_INTRO_LINES].reverse().find(([from]) => s >= from), wx = line[1] === 'keeper' ? W/2 - 260 : W/2 + 260; drawBubble(line[2], wx + 240, SHOP_FLOOR - 220, wx);
+}
+const EDGE_PK = [[90, 470], [260, 380], [420, 300], [560, 190]]; // floating broken chunks of the world, leading down to the edge: [x, how high]
+function edgeIntroPos(id, s) { // part 2: they drop out of a hole onto the first chunk, then parkour down from chunk to chunk to the edge (her a little behind him)
+  const pts = [...EDGE_PK, [id === 'keeper' ? 640 : 760, 0]], st = EDGE_PULL + 0.8 + (id === 'keeper' ? 0 : 0.7);
+  if (s < st) { const drop = Math.max(0, 1 - (s - EDGE_PULL)/0.8); return { x:pts[0][0] + (id === 'keeper' ? 20 : -20), y:pts[0][1] + drop*420, air:drop > 0 }; }
+  const j = (s - st)/1.1, i = Math.floor(j), k = j - i;
+  if (i >= pts.length - 1) return { x:pts[pts.length - 1][0], y:0, air:false, landed:s - st - (pts.length - 1)*1.1 };
+  const [x0, h0] = pts[i], [x1, h1] = pts[i + 1]; return { x:x0 + (x1 - x0)*k, y:h0 + (h1 - h0)*k + Math.sin(k*Math.PI)*110, air:true };
+}
+const EDGE_JUNK = [['door', 260, 200], ['tree', 1060, 260], ['sign', 760, 330], ['lamp', 480, 470], ['window', 1180, 470], ['bed', 330, 600]]; // bits of the world, floating away in the background
+function drawEdgeWorld(t, p) { // the edge of the world, glitchy and detailed
+  const sky = g.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#1a0626'); sky.addColorStop(0.6, '#0c0310'); sky.addColorStop(1, '#000'); g.fillStyle = sky; g.fillRect(-3000, -3000, W + 6000, H + 6000);
+  for (let x = 0; x < EDGE_WALL; x += 60) for (let y = 0; y < 300; y += 60) if (glitchRnd(x*7 + y + Math.floor(t*2)) > 0.86) { g.fillStyle = (x + y)/60 % 2 ? 'rgba(255,0,255,.18)' : 'rgba(0,0,0,.4)'; g.fillRect(x, y, 60, 60); } // a missing texture, flickering in the sky
+  for (let i=0;i<50;i++) if (glitchRnd(i*3 + Math.floor(t*5)) > 0.3) { g.fillStyle = i % 4 ? 'rgba(230,255,230,.7)' : 'rgba(255,60,60,.8)'; g.fillRect((i*137) % EDGE_WALL, (i*61) % 520, 3 + (i % 3), 3 + (i % 3)); } // glitchy stars
+  EDGE_JUNK.forEach(([kind, x0, y0], i) => { // pieces of the world, floating away
+    const x = x0 + Math.sin(t*0.3 + i)*30, y = y0 + Math.sin(t*0.5 + i*2)*20; g.save(); g.translate(x, y); g.rotate(Math.sin(t*0.4 + i)*0.4); g.globalAlpha = 0.55; g.strokeStyle = '#39ff14'; g.lineWidth = 2;
+    if (kind === 'door') { g.fillStyle = '#6b4a2a'; g.fillRect(-25, -45, 50, 90); g.strokeRect(-25, -45, 50, 90); g.fillStyle = C.yellow; g.beginPath(); g.arc(14, 0, 4, 0, TAU); g.fill(); }
+    else if (kind === 'tree') { g.fillStyle = '#7a4a2a'; g.fillRect(-6, 0, 12, 40); g.fillStyle = '#2e9e4f'; g.beginPath(); g.arc(0, -10, 32, 0, TAU); g.fill(); g.stroke(); }
+    else if (kind === 'sign') { g.fillStyle = '#ffd6ea'; g.fillRect(-50, -20, 100, 40); g.strokeRect(-50, -20, 100, 40); g.fillStyle = C.ink; g.font = `26px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('shop', 0, 2); }
+    else if (kind === 'lamp') { g.fillStyle = '#444'; g.fillRect(-4, -40, 8, 80); g.fillStyle = 'rgba(255,230,120,.8)'; g.beginPath(); g.arc(0, -46, 14, 0, TAU); g.fill(); }
+    else if (kind === 'window') { g.fillStyle = '#1b2a4a'; g.fillRect(-35, -30, 70, 60); g.strokeStyle = '#d4a017'; g.lineWidth = 5; g.strokeRect(-35, -30, 70, 60); g.beginPath(); g.moveTo(0, -30); g.lineTo(0, 30); g.stroke(); }
+    else { g.fillStyle = '#c77dd1'; g.fillRect(-50, -12, 100, 30); g.fillStyle = C.white; g.fillRect(-46, -20, 30, 12); }
+    g.restore(); });
+  g.fillStyle = `rgba(255,0,0,${0.08 + Math.abs(Math.sin(t*2))*0.08})`; g.fillRect(0, 0, W, H); // danger!
+  const title = glitchRnd(Math.floor(t*3)) > 0.85 ? 'THE ED6E OF TH3 W0RLD' : glitchRnd(Math.floor(t*3) + 7) > 0.93 ? 'ERROR ERROR ERROR' : 'THE EDGE OF THE WORLD';
+  g.font = `44px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; for (const [dx, col] of [[-4, 'rgba(57,255,20,.7)'], [4, 'rgba(0,200,255,.6)'], [0, '#ff4040']]) { g.fillStyle = col; g.fillText(title, 330 + dx + (glitchRnd(Math.floor(t*8)) > 0.8 ? 10 : 0), 70); } // the title, glitching
+  // the floating chunks they parkour across (with bits of code dripping off)
+  EDGE_PK.forEach(([x, h], i) => { const y = SHOP_FLOOR - h + Math.sin(t*1.5 + i)*4; g.fillStyle = '#2a2235'; g.strokeStyle = '#ff4040'; g.lineWidth = 3; g.beginPath(); g.moveTo(x - 55, y); g.lineTo(x + 55, y); g.lineTo(x + 40, y + 28); g.lineTo(x + 8, y + 48); g.lineTo(x - 30, y + 30); g.closePath(); g.fill(); g.stroke(); g.fillStyle = 'rgba(57,255,20,.5)'; g.fillRect(x - 8 + Math.sin(t*3 + i)*20, y + 44 + ((t*40 + i*20) % 60), 6, 6); });
+}
+function drawEdgeGround(t, p) { // the ground at the edge: tiles with glowing cracks and missing pieces, crumbling behind them, and a DANGER sign
+  g.fillStyle = '#2a2235'; g.fillRect(140, SHOP_FLOOR, EDGE_WALL - 140, H - SHOP_FLOOR);
+  g.strokeStyle = '#1a1424'; g.lineWidth = 2; for (let x = 140; x < EDGE_WALL; x += 60) { g.beginPath(); g.moveTo(x, SHOP_FLOOR); g.lineTo(x, H); g.stroke(); } for (let y = SHOP_FLOOR + 40; y < H; y += 40) { g.beginPath(); g.moveTo(140, y); g.lineTo(EDGE_WALL, y); g.stroke(); } // tiles
+  for (const x of [380, 860, 1100]) { g.fillStyle = '#000'; g.fillRect(x, SHOP_FLOOR + 40, 60, 40); g.fillStyle = 'rgba(57,255,20,.35)'; g.fillRect(x + 4, SHOP_FLOOR + 44 + Math.sin(t*4 + x)*4, 52, 6); } // missing tiles
+  g.save(); g.shadowColor = '#ff4040'; g.shadowBlur = 10; g.strokeStyle = '#ff6060'; g.lineWidth = 3; for (const [a, b] of [[200, 330], [700, 820], [1000, 1180]]) { g.beginPath(); g.moveTo(a, SHOP_FLOOR + 2); for (let i=1;i<=5;i++) g.lineTo(a + (b - a)*i/5, SHOP_FLOOR + 8 + (i % 2 ? 14 : 0)); g.stroke(); } g.restore(); // glowing red cracks
+  g.strokeStyle = '#ff4040'; g.lineWidth = 3; g.beginPath(); g.moveTo(140, SHOP_FLOOR); g.lineTo(EDGE_WALL, SHOP_FLOOR); g.stroke();
+  for (let i=0;i<8;i++) { const k = (t*0.5 + i/8) % 1; g.fillStyle = i % 2 ? '#2a2235' : '#3a3245'; g.fillRect(110 - i*10, SHOP_FLOOR + k*220, 22 + (i % 3)*6, 16); } // bits breaking off the crumbling edge and falling
+  for (let i=0;i<12;i++) { const k = (t*0.7 + i/12) % 1; g.fillStyle = i % 2 ? '#39ff14' : '#2a2235'; g.fillRect(EDGE_WALL - 40 - (1 - k)*90 + k*60, SHOP_FLOOR - 10 - k*120 - (i % 4)*20, 8, 8); } // pixels breaking off and getting sucked into the wall
+  g.save(); g.translate(230, SHOP_FLOOR); g.rotate(-0.15); g.fillStyle = '#6b4a2a'; g.fillRect(-4, -110, 8, 110); g.fillStyle = C.yellow; g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.moveTo(0, -190); g.lineTo(46, -112); g.lineTo(-46, -112); g.closePath(); g.fill(); g.stroke(); g.fillStyle = C.ink; g.font = `bold 20px ${FONT}`; g.textAlign = 'center'; g.fillText('!', 0, -132); g.font = `16px ${FONT}`; g.fillText('DANGER', 0, -98); g.restore(); // a DANGER sign
+}
+function drawEdgeWall(t, p) { // the wall of code at the end of the world, glitching
+  const push = p >= 2.5 && p < 6 ? Math.sin(t*20)*6 : 0;
+  g.fillStyle = '#000'; g.beginPath(); g.moveTo(EDGE_WALL + push, 0); for (let y = 0; y <= H; y += 30) g.lineTo(EDGE_WALL + push + (glitchRnd(y + Math.floor(t*6)) - 0.5)*24, y); g.lineTo(W + 40, H); g.lineTo(W + 40, 0); g.closePath(); g.fill(); // (its edge flickers)
+  g.font = 'bold 24px monospace'; g.textAlign = 'center'; g.textBaseline = 'middle'; for (let c=0;c<9;c++) for (let r=0;r<14;r++) { g.fillStyle = `rgba(57,255,20,${0.3 + ((c + r + Math.floor(t*4)) % 3)*0.25})`; g.fillText((c*7 + r + Math.floor(t*3)) % 2 ? '1' : '0', EDGE_WALL + 30 + c*34 + push, ((r*70 + t*90 + c*31) % (H + 70)) - 35); }
+  if (glitchRnd(Math.floor(t*4)) > 0.6) { g.fillStyle = '#ff4040'; g.font = 'bold 34px monospace'; g.fillText(['ERROR', '404', 'NO EXIT', 'ERR0R'][Math.floor(t*4) % 4], EDGE_WALL + 150 + push, 150 + glitchRnd(Math.floor(t*4) + 3)*500); } // error messages flashing
+  for (let i=0;i<3;i++) if (glitchRnd(Math.floor(t*7) + i*11) > 0.7) { g.fillStyle = i % 2 ? 'rgba(255,40,40,.6)' : 'rgba(57,255,20,.6)'; g.fillRect(EDGE_WALL - 60 + push, glitchRnd(Math.floor(t*7) + i)*H, 400, 6 + i*4); } // glitch bars
+}
+function drawEdge(t) { // the edge of the world
+  const s = (performance.now() - (SHOP.edgeT0 || 0))/1000; // (how long since you came here: first you see how they get here)
+  if (s < EDGE_PULL) return drawEdgePull(t, s);
+  const intro = s < EDGE_INTRO, p = intro ? 31 : (s - EDGE_INTRO) % 32;
+  drawEdgeWorld(t, p);
+  // the crack in the sky (wide open while she reaches for it, then it closes)
+  const open = p >= 8 && p < 16 ? (p < 13.5 ? 1 : Math.max(0, 1 - (p - 13.5)*2)) : 0.15, cy = 140;
+  g.save(); g.shadowColor = '#b6ffb0'; g.shadowBlur = 30*open; g.strokeStyle = `rgba(230,255,230,${0.3 + open*0.7})`; g.lineWidth = 3 + open*10; g.beginPath(); g.moveTo(EDGE_CRACK - 90*open - 10, cy); for (let i=1;i<=6;i++) g.lineTo(EDGE_CRACK - 90*open - 10 + i*(180*open + 20)/6, cy + (i % 2 ? -18 : 14)*open); g.stroke(); g.restore();
+  // the portal (swirling; it glows bright when they jump in, and spits them out)
+  const pg = p >= 16 && p < 22 ? 1 : 0.35; for (let i=0;i<4;i++) { g.strokeStyle = i % 2 ? `rgba(160,60,255,${pg})` : `rgba(57,255,20,${pg})`; g.lineWidth = 8; g.beginPath(); g.ellipse(EDGE_PORTAL, SHOP_FLOOR - 120, 70 - i*14, 110 - i*22, 0, t*2*(i % 2 ? 1 : -1), t*2*(i % 2 ? 1 : -1) + 4.6); g.stroke(); }
+  drawEdgeGround(t, p); drawEdgeWall(t, p);
+  if (intro) { // part 2: they drop onto the floating chunks and parkour down to the edge, then look around
+    const shut = Math.max(0, 1 - Math.max(0, s - EDGE_PULL - 1.5)/2); if (shut > 0) { g.fillStyle = '#000'; g.strokeStyle = '#b6ffb0'; g.lineWidth = 4; g.beginPath(); g.ellipse(EDGE_PK[0][0], 60, 70*shut, 24*shut, 0, 0, TAU); g.fill(); g.stroke(); } // the hole they dropped out of (closing behind them)
+    const pos = {}; ['keeper', 'keeper2'].forEach(id => { const q = pos[id] = edgeIntroPos(id, s), ch = CHAR[id], r = dormR(ch)*0.6; g.save(); g.translate(q.x, SHOP_FLOOR - r - q.y); drawCharacter(g, ch, r, { facing:1, ...looks(ch), pose:q.air ? 'run' : q.landed > 0.6 ? 'worried' : 'cheer' }); g.restore();
+      if (q.landed != null && q.landed < 0.7) { g.fillStyle = 'rgba(160,150,170,.5)'; g.beginPath(); g.ellipse(q.x, SHOP_FLOOR - 6, 30 + q.landed*80, 9, 0, 0, TAU); g.fill(); } }); // (a puff of dust when they land)
+    const line = [...EDGE_INTRO_LINES].reverse().find(([from]) => s >= from), w = pos[line[1]]; drawBubble(line[2], Math.min(W - 40, w.x + 240), Math.max(110, SHOP_FLOOR - 230 - w.y), w.x); return;
+  }
+  // the two of them, trying
+  edgeSpots(p).forEach(s => { const ch = CHAR[s.id], r = dormR(ch)*0.6; g.save(); g.translate(s.x, SHOP_FLOOR - r - s.y); drawCharacter(g, ch, r, { facing:s.f, ...looks(ch), pose:s.pose }); g.restore(); });
+  const line = [...ESCAPE_LINES].reverse().find(([from]) => p >= from), who = edgeSpots(p).find(s => s.id === line[1]) || { x:EDGE_PORTAL, y:0 };
+  drawBubble(line[2], Math.min(W - 40, who.x + 240), SHOP_FLOOR - 230 - who.y, who.x);
+}
+const STORY_NOTES = ['', '💕 The shopkeepers are in love! 💕', '🌳 The shopkeepers are dating! 🌳', '🍝 Date night at Café Fun! 🍝', '💍 Just married! 💍', '🛡️ The Admin is watching... 🛡️', '💥 Everything is falling apart! 💥', '🕳️ The code is gone... the 1st floor is gone! 🕳️', '🏠 There is no shop now... 🏠', '💔 They are gone...', '🌀 The void...', '👁️ ...uoy teg lliw ti 👁️', '📺 It\'s only them...', '🙏 Pray for you are in danger 🙏'];
 let storyCache = { t:0, s:0 };
-const STORY_LOOKS = [['love','💕 In love'], ['park','🌳 Park'], ['cafe','🍝 Café'], ['wedding','💍 Wedding'], ['admin','🛡️ Admin'], ['crumble','💥 Falling apart'], ['gone','🕳️ Code gone'], ['life','🏠 Once in a life time'], ['fell','💔 They are gone'], ['void','🌀 The void'], ['eyes','👁️ uoy teg lliw ti'], ['only','📺 It\'s only them']]; // (the looks, in story order, for the settings and the admin panel)
-const STORY_PICKS = { love:1, park:2, cafe:3, wedding:4, admin:5, crumble:6, gone:7, life:8, fell:9, void:10, eyes:11, only:12 }; // (or pick one in settings: any look you've reached)
-function storyReached() { const w = weddingLeft(), a = attackLeft(), d = DATING_MIN*60000 - (Date.now() - (+lsGet('fff-confessed') || 0)); return onlyLeft() <= 0 ? 12 : eyesLeft() <= 0 ? 11 : voidLeft() <= 0 ? 10 : fellLeft() <= 0 ? 9 : lifeLeft() <= 0 ? 8 : goneLeft() <= 0 ? 7 : arriveLeft() <= 0 ? 6 : w <= -WEDDING_LONG*60000 && a <= 0 ? 5 : w <= 0 ? 4 : date2Left() <= 0 ? 3 : confessSeen() && d <= 0 ? 2 : confessSeen() ? 1 : 0; } // (in love, dating, the 2nd date, married, the Admin's attack)
+const STORY_LOOKS = [['love','💕 In love'], ['park','🌳 Park'], ['cafe','🍝 Café'], ['wedding','💍 Wedding'], ['admin','🛡️ Admin'], ['crumble','💥 Falling apart'], ['gone','🕳️ Code gone'], ['life','🏠 Once in a life time'], ['fell','💔 They are gone'], ['void','🌀 The void'], ['eyes','👁️ uoy teg lliw ti'], ['only','📺 It\'s only them'], ['pray','🙏 Pray for you are in danger']]; // (the looks, in story order, for the settings and the admin panel)
+const STORY_PICKS = { love:1, park:2, cafe:3, wedding:4, admin:5, crumble:6, gone:7, life:8, fell:9, void:10, eyes:11, only:12, pray:13 }; // (or pick one in settings: any look you've reached)
+function storyReached() { const w = weddingLeft(), a = attackLeft(), d = DATING_MIN*60000 - (Date.now() - (+lsGet('fff-confessed') || 0)); return prayLeft() <= 0 ? 13 : onlyLeft() <= 0 ? 12 : eyesLeft() <= 0 ? 11 : voidLeft() <= 0 ? 10 : fellLeft() <= 0 ? 9 : lifeLeft() <= 0 ? 8 : goneLeft() <= 0 ? 7 : arriveLeft() <= 0 ? 6 : w <= -WEDDING_LONG*60000 && a <= 0 ? 5 : w <= 0 ? 4 : date2Left() <= 0 ? 3 : confessSeen() && d <= 0 ? 2 : confessSeen() ? 1 : 0; } // (in love, dating, the 2nd date, married, the Admin's attack)
 function storyStage() {
   if (!storyOk || setup.storyLook === 'off') return 0;
   const now = Date.now(); if (now - storyCache.t < 1000) return storyCache.s; // (it only has to check once a second)
@@ -6566,7 +6690,7 @@ function drawShopStory(t) { // the story look in the shop: the same hearts, butt
   const s = storyStage(); if (!s) return;
   if (s >= 6) { drawCracks(SHOP_FLOOR); drawRubble(t, 0); } if (s >= 7 && SHOP.floor === 2) drawCodeHole(t); // (the shop is falling apart: cracks in the walls, and bits of the ceiling falling down)
   g.save(); g.globalAlpha = 0.55; drawStoryFx(t); g.restore(); // (a bit see-through, so they don't get in the way)
-  const cols = [null, ['#ff8fc1', '#e75a9b'], ['#2e9e4f', '#8fd16a'], ['#7a1f2b', '#ffd65a'], ['#ffd23f', C.white], ['#39ff14', '#0b2a14'], ['#8a7f74', '#39ff14'], ['#000', '#39ff14'], ['#000', '#39ff14'], ['#000', '#39ff14'], ['#000', '#39ff14'], ['#000', '#e8ffe0'], ['#ff8fc1', '#ffd23f']][s];
+  const cols = [null, ['#ff8fc1', '#e75a9b'], ['#2e9e4f', '#8fd16a'], ['#7a1f2b', '#ffd65a'], ['#ffd23f', C.white], ['#39ff14', '#0b2a14'], ['#8a7f74', '#39ff14'], ['#000', '#39ff14'], ['#000', '#39ff14'], ['#000', '#39ff14'], ['#000', '#39ff14'], ['#000', '#e8ffe0'], ['#ff8fc1', '#ffd23f'], ['#ff4040', '#000']][s];
   g.strokeStyle = cols[0]; g.lineWidth = 3; g.beginPath(); for (let x = 0; x <= W; x += 10) { const y = 160 + Math.abs(Math.sin(x/200*Math.PI))*-30 + 30; x ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke();
   for (let x = 40; x < W; x += 80) { const y = 160 + Math.abs(Math.sin(x/200*Math.PI))*-30 + 30, i = x/80 | 0; g.fillStyle = cols[i % 2]; g.strokeStyle = C.ink; g.lineWidth = 2; // little flags (hearts on the love look)
     if (s === 1) drawLittleHeart(x, y + 16, 12); else { g.beginPath(); g.moveTo(x - 16, y); g.lineTo(x + 16, y); g.lineTo(x, y + 30); g.closePath(); g.fill(); g.stroke(); } }
@@ -7014,7 +7138,8 @@ function openShop() {
   SHOP.smiSay = SHOP.smi7y ? 'Yo! It\'s SMI7Y! Come say hi!' : ''; SHOP.smiSayT = SHOP.smi7y ? 4 : 0; SHOP.smiTalk = -1;
   SHOP.enterClock = 0; SHOP.replies = CHARS[SHOP.who].id === 'shuriken' ? SHURIKEN_REPLIES.map(r => ({ ...r })) : [];
   if (noShop()) Object.assign(SHOP, { floor:12, dorm:DORMS.findIndex(d => d.keepers), x:300, cam:0, visit:null, enterT:0, smi7y:false, smiSayT:0, ktask:null, kdone:new Set(), shyAwake:false, pb:{ next:performance.now() + 800, chat:null, line:0 } }); // (there is no shop now: you go to the shopkeepers' home)
-  if (onlyOn()) Object.assign(SHOP, { floor:6, x:600, y:0, visit:null, enterT:0, youSayT:0, smi7y:false, smiSayT:0 }); // (it's only them: you show up in the break room, and you're not anybody, you just watch)
+  if (prayOn()) Object.assign(SHOP, { floor:EDGE_FLOOR, x:600, y:0, visit:null, enterT:0, youSayT:0, smi7y:false, smiSayT:0, edgeT0:performance.now() }); // (pray for you are in danger: you show up at the edge of the world, watching them try to get out)
+  else if (onlyOn()) Object.assign(SHOP, { floor:6, x:600, y:0, visit:null, enterT:0, youSayT:0, smi7y:false, smiSayT:0 }); // (it's only them: you show up in the break room, and you're not anybody, you just watch)
   openPage('shop'); renderShopCard(true); cv.focus();
 }
 // nobody in the shop can see the Admin: the shopkeepers act like the shop is empty and just keep talking
@@ -7257,17 +7382,18 @@ function drawSkinBooth(t) { // a big gold mirror on a stand: it shows you in eac
 }
 function renderShopCard(force) {
   const ch = CHARS[SHOP.who], st = SHOP.near, it = st && ITEMS.find(i => i.id === st.item);
-  const key = [shop.coins, ch.id, onlyThemHere(), SHOP.floor >= DINNER_FLOOR ? placeMsg() : '', SHOP.floor === 15 && attackOn(), !!(SHOP.atk && SHOP.atk.won), SHOP.nearWed, SHOP.nearPark, SHOP.nearPaper, SHOP.ktask, SHOP.nearTask, SHOP.nearToys, it && it.id, it && shop.owned[it.id], ITEMS.map(i => wears(i.id, ch)).join(), SHOP.nearKeeper, SHOP.nearStairs, SHOP.stairTo, SHOP.floor, jokeOpen(), !!SHOP.revealed, SHOP.nearSmi, SHOP.nearSkins, skinOf(ch), skinRec(ch).have.join(), SHOP.nearCage, SHOP.cage && SHOP.cage.lock.left, SHOP.cage && SHOP.cage.hp, SHOP.cage && SHOP.cage.freed, SHOP.nearPal && SHOP.nearPal.id, SHOP.stairRoom, SHOP.dorm, SHOP.nearSwitch, setup.dormTime].join('|');
+  const key = [shop.coins, ch.id, justWatching(), SHOP.floor >= DINNER_FLOOR ? placeMsg() : '', SHOP.floor === 15 && attackOn(), !!(SHOP.atk && SHOP.atk.won), SHOP.nearWed, SHOP.nearPark, SHOP.nearPaper, SHOP.ktask, SHOP.nearTask, SHOP.nearToys, it && it.id, it && shop.owned[it.id], ITEMS.map(i => wears(i.id, ch)).join(), SHOP.nearKeeper, SHOP.nearStairs, SHOP.stairTo, SHOP.floor, jokeOpen(), !!SHOP.revealed, SHOP.nearSmi, SHOP.nearSkins, skinOf(ch), skinRec(ch).have.join(), SHOP.nearCage, SHOP.cage && SHOP.cage.lock.left, SHOP.cage && SHOP.cage.hp, SHOP.cage && SHOP.cage.freed, SHOP.nearPal && SHOP.nearPal.id, SHOP.stairRoom, SHOP.dorm, SHOP.nearSwitch, setup.dormTime].join('|');
   if (!force && key === SHOP.key) return;
   SHOP.key = key; $('coinCount').textContent = shop.coins; $('shopWho').textContent = ch.name;
-  const card = $('shopCard'); if (onlyThemHere()) card.innerHTML = '<h3>It\'s only them</h3><p>Just the two shopkeepers, alone in the broken break room. Their memories are moving on a paper on the wall all by themselves: the confession, their first date, Café Fun and the big day... and they are scared.</p><p class="note">You are not anybody here. You just watch. Press back to leave.</p>'; else fillShopCard(card, ch, it); // (it's only them: no fighter, no things to wear)
+  const card = $('shopCard'); if (SHOP.floor === EDGE_FLOOR) card.innerHTML = '<h3>Pray for you are in danger</h3><p>The edge of the world. The shopkeepers are trying to get out of this world: pushing on the wall of code, reaching for the crack in the sky, jumping into the portal... and every time, it fails. So they pray, and try again.</p><p class="note">You are not anybody here. You just watch them try. Press back to leave.</p>';
+  else if (onlyThemHere()) card.innerHTML = '<h3>It\'s only them</h3><p>Just the two shopkeepers, alone in the broken break room. Their memories are moving on a paper on the wall all by themselves: the confession, their first date, Café Fun and the big day... and they are scared.</p><p class="note">You are not anybody here. You just watch. Press back to leave.</p>'; else fillShopCard(card, ch, it); // (it's only them: no fighter, no things to wear)
   // a ✕ to close this pop-up (it stays closed until you click "show info"; punch still works without it)
   card.hidden = !!SHOP.cardClosed; $('shopCardOpen').hidden = !SHOP.cardClosed;
   const x = document.createElement('button'); x.className = 'card-x'; x.id = 'shopCardClose'; x.textContent = '✕'; x.title = 'Close'; x.setAttribute('aria-label', 'Close this pop-up');
   x.onclick = () => { SHOP.cardClosed = true; renderShopCard(true); cv.focus(); };
   card.prepend(x);
   // what this fighter has on, with a button to take each thing off from anywhere in the shop
-  if (!ITEMS.some(i => shop.owned[i.id]) || onlyThemHere()) return; // (when it's only them, you aren't anybody, so you aren't wearing anything)
+  if (!ITEMS.some(i => shop.owned[i.id]) || justWatching()) return; // (when it's only them, you aren't anybody, so you aren't wearing anything)
   const row = document.createElement('div'); row.className = 'wearing';
   const on = ITEMS.filter(i => wears(i.id, ch) && canWear(i, ch));
   if (!on.length) row.textContent = `${ch.name} isn't wearing anything from the shop.`;
