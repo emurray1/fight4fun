@@ -520,11 +520,15 @@ html.adminlook .story-note{color:#1f8a0f}
       <div class="page-foot" id="ch6Foot"><button id="gardenBtn" class="btn" hidden>🌱 garden</button><button id="pondBtn" class="btn" hidden>🐟 pond</button><button id="partyBtn" class="btn" hidden>🎉 party</button><button id="realBtn" class="btn" hidden>💼 real life</button></div>
       <h3 class="chapter" id="ch7Head">📖 Chapter 7: Just like Goofy! <span id="ch7Done"></span></h3>
       <p id="ch7Lock" class="chapter-lock">🔒 Finish chapter 6 first!</p>
-      <ul class="upds-list" id="ch7List"><li><b>🔒 What's up there?</b>: <span id="lockedWhen"></span></li><li><b>👀 The secret</b>: <span id="kidsecretWhen"></span></li><li><b>🏃 Just like Goofy!</b>: <span id="goofykidWhen"></span></li></ul>
-      <div class="page-foot" id="ch7Foot"><button id="lockedBtn" class="btn" hidden>🔒 what's up there?</button><button id="kidsecretBtn" class="btn" hidden>👀 the secret</button><button id="goofykidBtn" class="btn" hidden>🏃 just like goofy!</button></div>
+      <ul class="upds-list" id="ch7List"><li><b>🔒 What's up there?</b>: <span id="lockedWhen"></span></li><li><b>👀 The secret</b>: <span id="kidsecretWhen"></span></li><li><b>🏃 Just like Goofy!</b>: <span id="goofykidWhen"></span></li><li><b>🗣️ Now we know</b>: <span id="nowknowWhen"></span></li></ul>
+      <div class="page-foot" id="ch7Foot"><button id="lockedBtn" class="btn" hidden>🔒 what's up there?</button><button id="kidsecretBtn" class="btn" hidden>👀 the secret</button><button id="goofykidBtn" class="btn" hidden>🏃 just like goofy!</button><button id="nowknowBtn" class="btn" hidden>🗣️ now we know</button></div>
+      <h3 class="chapter" id="ch8Head">📖 Chapter 8: New room <span id="ch8Done"></span></h3>
+      <p id="ch8Lock" class="chapter-lock">🔒 Finish chapter 7 first!</p>
+      <ul class="upds-list" id="ch8List"><li><b>🧱 Too big!</b>: <span id="toobigWhen"></span></li><li><b>🔨 Build her room</b>: <span id="builtWhen"></span></li><li><b>🎨 Move in</b>: <span id="movedWhen"></span></li></ul>
+      <div class="page-foot" id="ch8Foot"><button id="toobigBtn" class="btn" hidden>🧱 too big!</button><button id="builtBtn" class="btn" hidden>🔨 build her room</button><button id="movedBtn" class="btn" hidden>🎨 move in</button></div>
       <p id="kickMsg" hidden style="color:#c0392b;font-size:22px"><b>🥾 The Admin KICKED YOU OUT!</b> You ran out of time on a task. Press the admin room button to try again!</p>
       <div class="page-foot"><button id="dormBtn" class="btn">💌 dorm</button><button id="parkBtn" class="btn">🌳 park</button><button id="dinnerBtn" class="btn">🍝 dinner place</button><button id="weddingBtn" class="btn">💒 wedding</button><button id="attackBtn" class="btn" hidden>🛡️ admin room</button><button id="fellBtn" class="btn" hidden>💔 dorm hall</button><button id="onlyBtn" class="btn" hidden>📺 break room</button></div>
-      <div class="page-foot" id="againRow" hidden><button id="againBtn" class="btn">🔁 do it again</button><span id="againPick" hidden><button id="againConfess" class="btn">💌 confession</button><button id="againPark" class="btn">🌳 1st date</button><button id="againDate" class="btn">🍝 2nd date</button><button id="againWedding" class="btn">💍 wedding</button><button id="againAttack" class="btn">🛡️ admins attack</button><button id="againFell" class="btn">💔 they are gone</button><button id="againGone" class="btn">🕳️ gone</button><button id="againHex" class="btn">🤖 hex return</button><button id="againHesIn" class="btn">🏠 he's in!</button><button id="againGarden" class="btn">🌱 garden</button><button id="againPond" class="btn">🐟 pond</button><button id="againParty" class="btn">🎉 party</button><button id="againReal" class="btn">💼 real life</button><button id="againLocked" class="btn">🔒 what's up there?</button><button id="againSecret" class="btn">👀 the secret</button><button id="againGoofykid" class="btn">🏃 just like goofy!</button></span></div>
+      <div class="page-foot" id="againRow" hidden><button id="againBtn" class="btn">🔁 do it again</button><span id="againPick" hidden><button id="againConfess" class="btn">💌 confession</button><button id="againPark" class="btn">🌳 1st date</button><button id="againDate" class="btn">🍝 2nd date</button><button id="againWedding" class="btn">💍 wedding</button><button id="againAttack" class="btn">🛡️ admins attack</button><button id="againFell" class="btn">💔 they are gone</button><button id="againGone" class="btn">🕳️ gone</button><button id="againHex" class="btn">🤖 hex return</button><button id="againHesIn" class="btn">🏠 he's in!</button><button id="againGarden" class="btn">🌱 garden</button><button id="againPond" class="btn">🐟 pond</button><button id="againParty" class="btn">🎉 party</button><button id="againReal" class="btn">💼 real life</button><button id="againLocked" class="btn">🔒 what's up there?</button><button id="againSecret" class="btn">👀 the secret</button><button id="againGoofykid" class="btn">🏃 just like goofy!</button><button id="againNowknow" class="btn">🗣️ now we know</button><button id="againToobig" class="btn">🧱 too big!</button><button id="againBuilt" class="btn">🔨 build her room</button><button id="againMoved" class="btn">🎨 move in</button></span></div>
     </div>
   </div>
 </div>
@@ -4007,7 +4011,7 @@ function shopStep(dt) {
   const f = SHOP.floor;
   SHOP.near = shopCleared() ? null : STANDS.find(s => s.floor === f && Math.abs(s.x - SHOP.x) < 110) || null; // (no stands while the shop is cleared for the wedding)
   SHOP.nearSkins = (f === 2 && !SHOP.near && !shopCleared() && Math.abs(SKIN_X - SHOP.x) < 100) || (f === CABIN_SHOP && !SHOP.near && Math.abs(CABIN_SKIN_X - SHOP.x) < 100); // (the skins mirror: in the shop, and in the cabin shop too)
-  const stair = !SHOP.near && STAIRS.find(s => s.floor === f && Math.abs(s.x - SHOP.x) < 100 && (!s.keepers || keeperRoom()) && (!s.meadow || newLifeOn()) && (!s.cabin || SHOP.cabinDorm) && !(s.floor === 12 && s.to === 11 && SHOP.cabinDorm) && (!s.admin || unlocked(CHAR.admin) || attackOn()) && !(s.to === 1 && f === 2 && codeGone()) && !(s.to <= 2 && noShop()) && (f !== 8 || (SHOP.cage && SHOP.cage.freed))); // the cage room portal only opens once he is free
+  const stair = !SHOP.near && STAIRS.find(s => s.floor === f && Math.abs(s.x - SHOP.x) < 100 && (!s.keepers || keeperRoom()) && (!s.meadow || newLifeOn()) && (!s.babyroom || tooBigDone()) && (!s.cabin || SHOP.cabinDorm) && !(s.floor === 12 && s.to === 11 && SHOP.cabinDorm) && (!s.admin || unlocked(CHAR.admin) || attackOn()) && !(s.to === 1 && f === 2 && codeGone()) && !(s.to <= 2 && noShop()) && (f !== 8 || (SHOP.cage && SHOP.cage.freed))); // the cage room portal only opens once he is free
   SHOP.nearCage = f === 8 && !!SHOP.cage && !SHOP.cage.freed && Math.abs(SHOP.x - CAGE_X) < 170;
   SHOP.nearStairs = !!stair; SHOP.stairTo = stair ? stair.to : 0; SHOP.stairRoom = stair && stair.room != null ? stair.room : SHOP.stairRoom; // (which dorm door)
   SHOP.nearPal = (f === 10 || f === 12 || f === 13) && !SHOP.nearStairs ? ((f === 10 ? pbSpots() : dormSpots()).find(s => Math.abs(s.x - SHOP.x) < 70) || {}).ch || null : null; // walking up to a fighter in player breaks or a dorm room
@@ -4015,6 +4019,7 @@ function shopStep(dt) {
   SHOP.nearBox = f === 12 && SHOP.hesIn && SHOP.dorm === 6 && !SHOP.nearStairs ? HESIN_BOXES.findIndex((b, k) => !SHOP.unpacked.includes(k) && Math.abs(b.x - SHOP.x) < 55) : -1; // one of Hexstar 1.0's moving boxes (he's in!)
   SHOP.nearK7 = f >= 12 && f <= 14 && !SHOP.nearStairs ? kid7Near() : null; // (chapter 7: the key's hiding spots, or the kid)
   if (SHOP.askWho && (f !== SHOP.askFloor || Math.abs(SHOP.x - SHOP.askX) > 170)) { SHOP.askWho = null; renderShopCard(true); } // (walking away from a shopkeeper ends the talk)
+  if (SHOP.blockOpen && (f !== SHOP.askFloor || Math.abs(SHOP.x - SHOP.askX) > 170 || !bedBlock())) { SHOP.blockOpen = false; renderShopCard(true); }
   SHOP.nearPaper = f === 14 && !SHOP.nearStairs && Math.abs(SHOP.x - PAPER_X) < 90; // the paper with the code on it
   const ktask = SHOP.ktask && KTASKS[SHOP.ktask]; SHOP.nearTask = ktask && keeperRoom() && ktask.floor === f && !SHOP.nearStairs && Math.abs(SHOP.x - ktask.x) < 70 ? SHOP.ktask : null; // the spot for your chore
   SHOP.nearToys = f === 13 && isKid() && !SHOP.nearStairs && Math.abs(SHOP.x - TOY_X) < 80; // (only Goofy Sparkle plays with the toys)
@@ -4352,6 +4357,7 @@ function pbStep() { // the next thing someone says (by the clock, so it keeps go
 }
 function palTalk() { // you walked up to someone and pressed punch
   const p = SHOP.nearPal; if (!p) return;
+  if (SHOP.floor === 13 && bedBlock()) return bedBlockOpen(); // (at night, by the ladder, they only want you gone)
   if (G.state === 'shop' && SHOP.cabinDorm && (p.id === 'keeper' || p.id === 'keeper2') && !(p.id === 'keeper2' && shySleeping())) return keeperAsk(p.id); // (in their cabin home, you pick what to ask them)
   if (SHOP.cabinDorm && kidTalk(p)) return; // (chapter 7: they lie about the 3rd floor)
   if (keeperRoom() && p.id === 'keeper') return fightyTalk(); // at home, Fighty gives you chores
@@ -4686,7 +4692,7 @@ function dormStep() { // the roommates take turns talking (by the clock)
   const here = new Set(dormSpots().map(s => s.ch.id)); if (!here.size) return;
   const keepersDown = DORMS[SHOP.dorm || 0].keepers && SHOP.floor === 12;
   const youKeeper = keepersDown && (confessPending() || SHOP.replay === 'confess') && CHARS[SHOP.who].keeper; if (youKeeper) here.add(CHARS[SHOP.who].id); // (playing as one of the shopkeepers: you say their part of the confession)
-  const chats = (keepersDown && SHOP.cabinDorm ? KEEPER_LOVE : keepersDown && voidTaskNow() ? VOID_ASK_LINES : keepersDown && noShop() ? (saved() ? SAVED_LINES : HIDE_GOOFY_LINES) : keepersDown && (confessPending() || SHOP.replay === 'confess') ? [CONFESS_LINES] : keepersDown && SHOP.confessVisit ? KEEPER_LOVE : keepersDown && eatingDinner() ? KEEPER_EAT : keepersDown && shyDown() ? KEEPER_DINNER : (crumbling() && !SHOP.cabinDorm && !DORMS[SHOP.dorm || 0].keepers ? (watchOn() ? EYE_CHATS : theyGone() ? SAD_CHATS : scaredAll() ? SCARED_CHATS : codeGone() ? GOOFY_COMFORT.concat(GOOFY_COMFORT, CRUMBLE_CHATS) : CRUMBLE_CHATS) : gossipOn() && !DORMS[SHOP.dorm || 0].keepers ? CONFESS_GOSSIP : []).concat(dormNight() ? DORMS[SHOP.dorm || 0].chats : DORM_DAY[SHOP.dorm || 0], SHOP.cabinDorm && dormNight() && secretDone() && !DORMS[SHOP.dorm || 0].keepers ? KID_CHATS : [])).filter(c => c.every(([id]) => here.has(id))); // (night talk or morning talk, and in the cabin, once they know about the kid, they talk about her)
+  const chats = (keepersDown && SHOP.cabinDorm ? KEEPER_LOVE : keepersDown && voidTaskNow() ? VOID_ASK_LINES : keepersDown && noShop() ? (saved() ? SAVED_LINES : HIDE_GOOFY_LINES) : keepersDown && (confessPending() || SHOP.replay === 'confess') ? [CONFESS_LINES] : keepersDown && SHOP.confessVisit ? KEEPER_LOVE : keepersDown && eatingDinner() ? KEEPER_EAT : keepersDown && shyDown() ? KEEPER_DINNER : (crumbling() && !SHOP.cabinDorm && !DORMS[SHOP.dorm || 0].keepers ? (watchOn() ? EYE_CHATS : theyGone() ? SAD_CHATS : scaredAll() ? SCARED_CHATS : codeGone() ? GOOFY_COMFORT.concat(GOOFY_COMFORT, CRUMBLE_CHATS) : CRUMBLE_CHATS) : gossipOn() && !DORMS[SHOP.dorm || 0].keepers ? CONFESS_GOSSIP : []).concat(dormNight() ? DORMS[SHOP.dorm || 0].chats : DORM_DAY[SHOP.dorm || 0], SHOP.cabinDorm && dormNight() && nowKnowDone() && !DORMS[SHOP.dorm || 0].keepers ? KID_CHATS : [])).filter(c => c.every(([id]) => here.has(id))); // (night talk or morning talk, and in the cabin, once they know about the kid, they talk about her)
   if (!chats.length) { const id = [...here][0], lines = (DORMS[SHOP.dorm || 0].crush && { diamond:['Hi, Missing Arrow... *blushes*', 'I saved you some snacks, hehe.', 'You look cute when you glitch.'], arrow:['H-hi, Sly Diamond... *happy glitch*', 'Y-your eyelashes are really pretty...', '*blushes and glitches*'] }[id]) || (id === 'keeper2' && shySleeping() && ['Zzz...', '*snores softly*', 'zzz... one pink bow, please... zzz']) || PB_SOLO[id] || ['...']; pbSay(id, lines[Math.floor(Math.random()*lines.length)]); pb.next = now + 3200; return; } // (alone in the room) // (alone with you in their room, they say sweet things to the one they like)
   if (!pb.chat || pb.line >= pb.chat.length) { pb.chat = chats[(pb.ci = ((pb.ci ?? -1) + 1) % chats.length)]; pb.line = 0; }
   const [id, text] = pb.chat[pb.line++]; if (id === CHARS[SHOP.who].id) { SHOP.youSay = text; SHOP.youSayT = 2.8; } else pbSay(id, text); pb.next = now + (pb.line >= pb.chat.length ? 4000 : 3000);
@@ -4708,7 +4714,7 @@ function drawKidRoom(t, night) { // in the cabin, the shopkeepers' 3rd floor is 
   g.fillStyle = C.white; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(540, SHOP_FLOOR - 170, 200, 14); g.strokeRect(540, SHOP_FLOOR - 170, 200, 14); g.fillRect(540, SHOP_FLOOR - 60, 200, 14); g.strokeRect(540, SHOP_FLOOR - 60, 200, 14);
   for (const lx of [540, 726]) { g.fillRect(lx, SHOP_FLOOR - 190, 14, 190); g.strokeRect(lx, SHOP_FLOOR - 190, 14, 190); }
   g.fillStyle = '#ffb3d1'; roundRect(556, SHOP_FLOOR - 92, 168, 34, 10); g.fill(); g.stroke(); g.fillStyle = '#a8e0ff'; roundRect(560, SHOP_FLOOR - 104, 50, 20, 8); g.fill(); g.stroke();
-  if (goofyKidDone() && dormNight() && !bedCarrying()) drawSleepingBaby(t, 655, SHOP_FLOOR - 112, 106); // (chapter 7: at night, the baby, fast asleep in her crib)
+  if (goofyKidDone() && dormNight() && !bedCarrying() && !movedIn()) drawSleepingBaby(t, 655, SHOP_FLOOR - 112, 106); // (chapter 7: at night, the baby, fast asleep in her crib)
   g.strokeStyle = C.ink; g.lineWidth = 3; for (let x = 570; x < 726; x += 22) { g.beginPath(); g.moveTo(x, SHOP_FLOOR - 156); g.lineTo(x, SHOP_FLOOR - 60); g.stroke(); } // the bars
   // a mobile over the crib, turning slowly: a star, a moon, a heart and a little top hat
   g.strokeStyle = C.ink; g.lineWidth = 2; g.beginPath(); g.moveTo(640, 0); g.lineTo(640, 360); g.stroke(); g.lineWidth = 4; g.beginPath(); g.moveTo(560, 360); g.lineTo(720, 360); g.stroke();
@@ -4777,7 +4783,7 @@ const KTASKS = { // each chore, and where you do it
   plant:{ name:'Water the plant', ask:'Our plant looks thirsty. Can you water it? It is next to the fridge.', hint:'The plant is next to the fridge.', floor:12, x:1690, done:'*splish splash* The plant looks happy!' },
 };
 const TASK_PAY = 20, TOY_X = 1150;
-const shySleeping = () => SHOP.floor === 13 && !noShop() && dormNight() && !(SHOP.cabinDorm && kid7Spots()) && !SHOP.shyAwake && !confessPending() && !SHOP.confessVisit && SHOP.replay !== 'confess'; // at night, the Shy Shopkeeper is asleep in her bed (until you wake her up for dinner)
+const shySleeping = () => SHOP.floor === 13 && !noShop() && dormNight() && !(SHOP.cabinDorm && (kid7Spots() || goofyKidDone())) && !SHOP.shyAwake && !confessPending() && !SHOP.confessVisit && SHOP.replay !== 'confess'; // at night, the Shy Shopkeeper is asleep in her bed (until you wake her up for dinner)
 const kDone = () => SHOP.kdone || (SHOP.kdone = new Set());
 function nextKTask() { return (dormNight() ? ['wake'] : []).concat(['dinner', 'fire', 'plant']).find(id => !kDone().has(id)) || null; } // (she can only be woken up at night)
 function fightyTalk() { // you walked up to the Fighty Shopkeeper at home and pressed punch
@@ -5669,7 +5675,7 @@ function drawManager(g, t) { // %#@% sitting in his chair (drawn in the chair's 
 function drawShop(t) {
   const hall = SHOP.floor === 5, wide = bigRoom(); // the chase hallway (and the shopkeepers' big room) scrolls with you
   if (hall) { g.save(); g.translate(-(SHOP.cam || 0), 0); drawChaseFloor(t); }
-  else if (SHOP.floor === CABIN_SHOP) { g.save(); g.translate(-(SHOP.cam || 0), 0); drawCabinShop(t); } else if (SHOP.floor === CABIN_DORMS) drawCabinDorms(t); else if (SHOP.floor === CABIN_OUT) drawCabinOutside(t); else if (SHOP.floor === LAB_FLOOR) drawHexLab(t); else if (SHOP.floor === GONE_FLOOR) drawGoneShop(t); else if (SHOP.floor === MEADOW_FLOOR) drawMeadow(t); else if (jobsPlace(SHOP.floor)) drawJobs(t);
+  else if (SHOP.floor === CABIN_SHOP) { g.save(); g.translate(-(SHOP.cam || 0), 0); drawCabinShop(t); } else if (SHOP.floor === CABIN_DORMS) drawCabinDorms(t); else if (SHOP.floor === CABIN_OUT) drawCabinOutside(t); else if (SHOP.floor === LAB_FLOOR) drawHexLab(t); else if (SHOP.floor === GONE_FLOOR) drawGoneShop(t); else if (SHOP.floor === MEADOW_FLOOR) drawMeadow(t); else if (SHOP.floor === BABY_FLOOR) drawBabyRoom(t); else if (jobsPlace(SHOP.floor)) drawJobs(t);
   else if (SHOP.floor === CABIN_FLOOR) { g.save(); g.translate(-(SHOP.cam || 0), 0); drawCabin(t); } else if (SHOP.floor === TUNNEL_FLOOR) drawTunnels(t); else if (SHOP.floor === AROOM_FLOOR) drawAdminsRoom(t); else if (SHOP.floor === REUNITE_FLOOR) drawReunite(t); else if (SHOP.floor === TRAIL_FLOOR) drawTrail(t); else if (SHOP.floor === IT_FLOOR) drawItRoom(t); else if (SHOP.floor === EDGE_FLOOR) drawEdge(t); else if (SHOP.floor === VOID_FLOOR) drawVoid(t); else if (SHOP.floor === PARK_FLOOR) drawParkPlace(t); else if (SHOP.floor === DINNER_FLOOR) drawDinnerPlace(t); else if (SHOP.floor === WEDDING_FLOOR) drawWeddingHall(t); else if (SHOP.floor === 15) { drawAdminRoom(t); drawAttack(t); } else if (SHOP.floor === 14) drawKeeperAttic(t); else if (SHOP.floor === 12 || SHOP.floor === 13) { if (wide) { g.save(); g.translate(-(SHOP.cam || 0), 0); } if (SHOP.floor === 13) drawKeeperUpstairs(t); else drawDormRoom(t); } else if (SHOP.floor === 11) drawDormHall(t); else if (SHOP.floor === 10) drawPlayerBreak(t); else if (SHOP.floor === 9) drawGlitchShop(t); else if (SHOP.floor === 8) drawCageFloor(t); else if (SHOP.floor === 7) drawTopFloor(t); else if (SHOP.floor === 6) drawBreakFloor(t); else if (SHOP.floor === 4) drawOfficeFloor(t); else if (SHOP.floor === 3) drawAtticFloor(t); else if (SHOP.floor === 2) drawFunnyFloor(t); else drawFightyFloor(t);
   if (SHOP.floor <= 2) drawShopStory(t); // (the shop changes with the story too)
   if (codeGone() && SHOP.floor >= 11 && SHOP.floor <= 13 && !SHOP.cabinDorm) drawBrokenDorm(t); // (the dorms are broken too, once the code is gone)
@@ -6051,8 +6057,10 @@ function updsTick() { // the countdown on the page
   const ch5 = newLifeOn(); // chapter 6 opens once chapter 5 is done
   $('ch6Lock').hidden = ch5; $('ch6List').hidden = !ch5; $('ch6Head').style.opacity = ch5 ? 1 : 0.5; $('ch6Done').textContent = ch5 && gardenDone() && pondDone() && partyDone() && realLife() ? '✅' : '';
   for (const [id, txt, on] of [['garden', gardenText(), ch5], ['pond', pondText(), ch5 && gardenDone()], ['party', partyText(), ch5 && pondDone()], ['real', realLifeText(), ch5 && partyDone()]]) { if ($(id + 'When').textContent !== txt) $(id + 'When').textContent = txt; $(id + 'Btn').hidden = !on; } // (chapter 6: the garden, the pond, the party and real life, one after the other)
-  const ch6 = kidOn(); $('ch7Lock').hidden = ch6; $('ch7List').hidden = !ch6; $('ch7Head').style.opacity = ch6 ? 1 : 0.5; $('ch7Done').textContent = ch6 && lockedDone() && secretDone() && goofyKidDone() ? '✅' : ''; // chapter 7 opens once chapter 6 is done
-  for (const [id, txt, on] of [['locked', lockedText(), ch6], ['kidsecret', secretText(), ch6 && lockedDone()], ['goofykid', goofyKidText(), ch6 && secretDone()]]) { if ($(id + 'When').textContent !== txt) $(id + 'When').textContent = txt; $(id + 'Btn').hidden = !on; } // (chapter 7: what's up there, the secret and just like goofy, one after the other)
+  const ch6 = kidOn(); $('ch7Lock').hidden = ch6; $('ch7List').hidden = !ch6; $('ch7Head').style.opacity = ch6 ? 1 : 0.5; $('ch7Done').textContent = ch6 && lockedDone() && secretDone() && goofyKidDone() && nowKnowDone() ? '✅' : ''; // chapter 7 opens once chapter 6 is done
+  for (const [id, txt, on] of [['locked', lockedText(), ch6], ['kidsecret', secretText(), ch6 && lockedDone()], ['goofykid', goofyKidText(), ch6 && secretDone()], ['nowknow', nowKnowText(), ch6 && goofyKidDone()]]) { if ($(id + 'When').textContent !== txt) $(id + 'When').textContent = txt; $(id + 'Btn').hidden = !on; } // (chapter 7: what's up there, the secret and just like goofy, one after the other)
+  const ch7 = ch8On(); $('ch8Lock').hidden = ch7; $('ch8List').hidden = !ch7; $('ch8Head').style.opacity = ch7 ? 1 : 0.5; $('ch8Done').textContent = ch7 && tooBigDone() && roomBuilt() && movedIn() ? '✅' : ''; // chapter 8 opens once chapter 7 is done
+  for (const [id, txt, on] of [['toobig', tooBigText(), ch7], ['built', builtText(), ch7 && tooBigDone()], ['moved', movedText(), ch7 && roomBuilt()]]) { if ($(id + 'When').textContent !== txt) $(id + 'When').textContent = txt; $(id + 'Btn').hidden = !on; } // (chapter 8: too big, build her room and move in, one after the other)
   const rmx = remakeText(); if ($('remakeWhen').textContent !== rmx) $('remakeWhen').textContent = rmx; $('remakeBtn').hidden = !(ch4 && (remade() || remakeLeft() <= 0)); // (chapter 5: gone)
   const adx = adminsText(); if ($('adminsWhen').textContent !== adx) $('adminsWhen').textContent = adx; $('adminsBtn').hidden = !(ch4 && adminsLeft() <= 0);  $('fellBtn').hidden = !(fellLeft() <= 0);
   $('attackBtn').hidden = !(attackLeft() <= 0 && attackLeft() > -ATTACK_LONG*60000);
@@ -6061,7 +6069,7 @@ function updsTick() { // the countdown on the page
 $('updsBtn').onclick = () => { $('againPick').hidden = true; $('kickMsg').hidden = true; audioOn(); if (!confessStart()) lsSet('fff-confess', String(Date.now())); openPage('upds'); updsTick(); };
 // do it again: once you've been through part of the story, you can do it again right away, any time (no waiting, and the countdowns don't start over)
 const againOk = { park:() => againOk.confess(), confess:() => confessSeen() || !!shop.owned.chefhat || unlocked(CHAR.flower), date:() => !!shop.owned.chefhat, wedding:() => unlocked(CHAR.flower), attack:() => attackLeft() <= 0, fell:() => !!lsGet('fff-fell'),
-  gone:() => !!lsGet('fff-remade'), hex:() => !!lsGet('fff-hexback'), hesIn:() => !!lsGet('fff-hexin'), garden:() => !!lsGet('fff-garden'), pond:() => !!lsGet('fff-pond'), party:() => !!lsGet('fff-party'), real:() => !!lsGet('fff-reallife'), locked:() => !!lsGet('fff-locked'), secret:() => !!lsGet('fff-secret'), goofykid:() => !!lsGet('fff-goofykid') }; // (chapters 5, 6 and 7: each one starts over from the beginning, but your save stays the same)
+  gone:() => !!lsGet('fff-remade'), hex:() => !!lsGet('fff-hexback'), hesIn:() => !!lsGet('fff-hexin'), garden:() => !!lsGet('fff-garden'), pond:() => !!lsGet('fff-pond'), party:() => !!lsGet('fff-party'), real:() => !!lsGet('fff-reallife'), locked:() => !!lsGet('fff-locked'), secret:() => !!lsGet('fff-secret'), goofykid:() => !!lsGet('fff-goofykid'), nowknow:() => !!lsGet('fff-nowknow'), toobig:() => !!lsGet('fff-toobig'), built:() => !!lsGet('fff-built'), moved:() => !!lsGet('fff-moved') }; // (chapters 5, 6 and 7: each one starts over from the beginning, but your save stays the same)
 function againShow() { const any = Object.values(againOk).some(f => f()); $('againRow').hidden = !any; for (const k in againOk) $('again' + k[0].toUpperCase() + k.slice(1)).hidden = !againOk[k](); }
 $('againGone').onclick = () => goGone('gone');
 $('againHex').onclick = () => goHexReturn('hex');
@@ -6073,6 +6081,10 @@ $('againReal').onclick = () => goRealLife('real');
 $('againLocked').onclick = () => goLocked('locked'); // (and then the secret and just like goofy, like the first time)
 $('againSecret').onclick = () => goSecret('secret');
 $('againGoofykid').onclick = () => goGoofyKid('goofykid');
+$('againNowknow').onclick = () => goNowKnow('nowknow');
+$('againToobig').onclick = () => goTooBig('toobig'); // (and then building her room and moving in, like the first time)
+$('againBuilt').onclick = () => goBabyRoom('built');
+$('againMoved').onclick = () => goBabyRoom('moved');
 $('againAttack').onclick = () => goPlace(15, 'attack');
 $('againFell').onclick = () => goPlace(11, 'fell');
 $('fellBtn').onclick = () => goPlace(11);
@@ -6081,7 +6093,7 @@ $('adminsBtn').onclick = () => goAdmins(); // (off to get the admins, with every
 $('hexBtn').onclick = () => goHexReturn(); // (chapter 5, hex return: off to the repair shop)
 $('hesInBtn').onclick = () => goHesIn(); // (chapter 5, he's in!: off to the robots' room)
 $('gardenBtn').onclick = () => goGarden(); $('pondBtn').onclick = () => goPond(); $('partyBtn').onclick = () => goParty(); $('realBtn').onclick = () => goRealLife(); // (chapter 6: off to the meadow)
-$('lockedBtn').onclick = () => goLocked(); $('kidsecretBtn').onclick = () => goSecret(); $('goofykidBtn').onclick = () => goGoofyKid(); // (chapter 7: off to the shopkeepers' cabin home)
+$('lockedBtn').onclick = () => goLocked(); $('kidsecretBtn').onclick = () => goSecret(); $('goofykidBtn').onclick = () => goGoofyKid(); $('nowknowBtn').onclick = () => goNowKnow(); $('toobigBtn').onclick = () => goTooBig(); $('builtBtn').onclick = () => goBabyRoom(); $('movedBtn').onclick = () => goBabyRoom(); // (chapter 7: off to the shopkeepers' cabin home)
 $('remakeBtn').onclick = () => goGone(); // (chapter 5, gone: re-make the shop, and after that, straight to the shop)
 $('reuniteBtn').onclick = () => { goPlace(REUNITE_FLOOR); Object.assign(SHOP, { x:600, youSayT:0, reuniteT0:performance.now() }); }; // (watching everyone get back together)
 $('escapeBtn').onclick = () => { goPlace(TRAIL_FLOOR); Object.assign(SHOP, { x:600, youSayT:0, trailT0:performance.now() }); }; // (watching them escape... and IT take them)
@@ -7116,6 +7128,7 @@ function cabinStep() { // who you're next to, and walking through the portal in 
   if (SHOP.floor === CABIN_SHOP) { const KX = CABIN_SHOP_W - 420; for (const [id, x] of [['keeper', KX + 100], ['keeper2', KX + 200]]) if (Math.abs(SHOP.x - x) < 50 && CHARS[SHOP.who].id !== id) SHOP.nearCabin = id; if (!SHOP.nearCabin && !SHOP.near && goofyKidDone() && Math.abs(SHOP.x - KID_SHOP_X) < 110) SHOP.nearCabin = 'kid'; return; } // (the shopkeepers, at the cabin shop's counter, and the baby)
   if (SHOP.floor === GONE_FLOOR) return goneStep(); // (where the shop used to be: the code blocks to build)
   if (SHOP.floor === MEADOW_FLOOR) return meadowStep(); // (chapter 6: the garden, the pond and the party)
+  if (SHOP.floor === BABY_FLOOR) return babyRoomStep(); // (chapter 8: her new room)
   if (jobsPlace(SHOP.floor)) return jobsStep(); // (chapter 6, real life: everyone's jobs, each in its own room)
   if (SHOP.floor === LAB_FLOOR) { if (Math.abs(SHOP.x - OLD_HEX_X) < 90) SHOP.nearCabin = 'oldhex'; else { const p = labPals().find(p => Math.abs(p.x - SHOP.x) < 70); if (p) SHOP.nearCabin = p.ch.id; } return; } // (in the repair shop: the old Hexstar, and everyone fixing him)
   if (SHOP.floor !== CABIN_FLOOR) return;
@@ -7125,17 +7138,19 @@ function goCabin() { Object.assign(SHOP, { floor:CABIN_FLOOR, x:300, y:0, vy:0, 
 function cabinTalk() { // talking to someone in the cabin
   if (SHOP.nearCabin === 'oldhex') return labHelp();
   if (!SHOP.nearCabin) return;
+  if (SHOP.nearCabin.startsWith('room')) return babyRoomAct(SHOP.nearCabin);
   if (SHOP.nearCabin === 'kid') return kidShh();
+  if (telling() && !CHAR[SHOP.nearCabin].keeper) return tellPal(SHOP.nearCabin); // (chapter 7: telling everyone about the baby)
   if (G.state === 'shop' && (SHOP.nearCabin === 'keeper' || SHOP.nearCabin === 'keeper2') && (SHOP.floor === CABIN_SHOP || SHOP.floor === CABIN_FLOOR)) return keeperAsk(SHOP.nearCabin); // (you pick what to ask them)
   if (SHOP.nearCabin.startsWith('gone')) return goneAct(SHOP.nearCabin);
   if (/^(plot|lant)\d|^dock$/.test(SHOP.nearCabin)) return meadowAct(SHOP.nearCabin);
   if (/^job\d$/.test(SHOP.nearCabin)) return jobAct(SHOP.nearCabin);
   const id = SHOP.nearCabin, lines = (SHOP.floor === CABIN_SHOP ? CABIN_SHOP_TALK : SHOP.floor === MEADOW_FLOOR ? MEADOW_TALK : jobsPlace(SHOP.floor) ? JOB_TALK : SHOP.floor === LAB_FLOOR ? (hexBack() ? LAB_TALK_BACK : LAB_TALK) : CABIN_TALK)[id] || ['Hi!']; SHOP.cabinTalkN = (SHOP.cabinTalkN || 0) + 1;
-  const kidLine = SHOP.floor === CABIN_FLOOR && secretDone() && KID_GOSSIP[id] && SHOP.cabinTalkN % 2; // (once everyone knows about the kid, every other thing they say is about her)
+  const kidLine = SHOP.floor === CABIN_FLOOR && nowKnowDone() && KID_GOSSIP[id] && !(CHAR[id].keeper && tooBigDone()) && SHOP.cabinTalkN % 2; // (once you've told everyone about the baby, every other thing they say is about her)
   SHOP.cabinSay = { id, text:kidLine ? KID_GOSSIP[id][0] : lines[SHOP.cabinTalkN % lines.length], until:performance.now() + 3500 }; if (sfx.ding) sfx.ding(); renderShopCard(true);
 }
 function cabinMenuStep(dt) { // the main menu is the cabin: you walk around it right there on the menu
-  if (!SHOP.cabinReady || (![CABIN_FLOOR, CABIN_SHOP, CABIN_DORMS, CABIN_OUT, IT_FLOOR, LAB_FLOOR, MEADOW_FLOOR].includes(SHOP.floor) && !jobsPlace(SHOP.floor) && !SHOP.cabinDorm)) { // (you can walk all over the cabin, outside and into IT's room, right from the menu)
+  if (!SHOP.cabinReady || (![CABIN_FLOOR, CABIN_SHOP, CABIN_DORMS, CABIN_OUT, IT_FLOOR, LAB_FLOOR, MEADOW_FLOOR, BABY_FLOOR].includes(SHOP.floor) && !jobsPlace(SHOP.floor) && !SHOP.cabinDorm)) { // (you can walk all over the cabin, outside and into IT's room, right from the menu)
     if (SHOP.who == null) SHOP.who = Math.max(0, CHARS.findIndex(ch => (CTRL[setup.slots[ch.id]] || CTRL.off).kind === 'human'));
     Object.assign(SHOP, { floor:CABIN_FLOOR, x:600, y:0, vy:0, facing:1, cam:0, near:null, nearKeeper:false, nearStairs:false, msg:'', msgT:0, echoT:0, carry:false, pushT:0, pushing:false, youSayT:0, chase:null, bossT:-1, visit:null, pb:null, prev:readHeld('local'), cabinReady:true, smi7y:false });
   }
@@ -7163,6 +7178,9 @@ function drawCabin(t) { // a big, cozy log cabin (drawn 2400 wide; the room scro
   const pals = cabinPals(); pals.forEach((p, i) => { const ch = p.ch, r = ch.keeper ? dormR(ch)*0.5 : ch.id === 'admin' ? 46 : 34*Math.min(ch.size || 1, 1.3), bob = Math.abs(Math.sin(t*2 + i))*4; g.save(); g.translate(p.x, SHOP_FLOOR - r - bob); drawCharacter(g, ch, r, { facing:p.x < SHOP.x ? 1 : -1, ...looks(ch), happy:true, still:true }); g.restore(); });
   const cs = SHOP.cabinSay, sp = cs && performance.now() < cs.until && pals.find(p => p.ch.id === cs.id); if (sp) drawBubble(cs.text, sp.x + 240, SHOP_FLOOR - 200, sp.x);
   if (SHOP.nearCabin) { const np = pals.find(p => p.ch.id === SHOP.nearCabin); if (np) drawPointer(np.x + 50, SHOP_FLOOR - 220, t); }
+  drawTelling(t); // (chapter 7: now we know)
+  if (tooBigDone()) drawCabinDoor(BABY_DOOR_X, 'baby\'s room →', t); // (chapter 8: the door to her new room)
+  if (SHOP.nearStairs && SHOP.stairTo === BABY_FLOOR) drawPointer(BABY_DOOR_X + 60, SHOP_FLOOR - 250, t);
 }
 function drawCabinPortal(t) { // in the admins' room, once IT is stopped: a portal opens on the right
   if (!SHOP.itBroke || performance.now() - SHOP.itBroke < 2500) return;
@@ -7173,13 +7191,14 @@ function drawCabinPortal(t) { // in the admins' room, once IT is stopped: a port
 // "Chapter 1: Confession... The End", the page turns to "Chapter 2: Admins attack" (and its first event), and it fades back in with you already where
 // the next chapter starts (it starts right away: no waiting). After chapter 6 it's "The End... for now", and you go home to the cabin.
 // (Chapters you finished before this existed don't replay, and it doesn't happen while you play the story together online)
-const CHAPTER_NAMES = ['Confession', 'Admins attack', 'They are gone...', 'Pray for you are in danger', 'New home', 'New life', 'Just like Goofy!'];
-const CHAPTER_FIRST = ['💌 Confession', '🛡️ Admins attack', '💔 They are gone...', '🙏 Pray for you are in danger', '🔑 Get the admins', '🌱 The garden', "🔒 What's up there?"];
+const CHAPTER_NAMES = ['Confession', 'Admins attack', 'They are gone...', 'Pray for you are in danger', 'New home', 'New life', 'Just like Goofy!', 'New room'];
+const CHAPTER_FIRST = ['💌 Confession', '🛡️ Admins attack', '💔 They are gone...', '🙏 Pray for you are in danger', '🔑 Get the admins', '🌱 The garden', "🔒 What's up there?", '🧱 Too big!'];
 function chaptersDone() { // how many chapters you've finished
   const w = weddingLeft(), c1 = w !== Infinity && w <= -WEDDING_LONG*60000, c2 = c1 && lifeLeft() <= 0, c3 = c2 && saved() && onlyLeft() <= 0, c4 = c3 && reuniteLeft() <= 0, c5 = c4 && itStopped() && remade() && hexBack() && hexIn(); /* (chapter 5 ends once you re-make the shop, the old Hexstar is back and he's moved in) */
   const c6 = c5 && gardenDone() && pondDone() && partyDone() && realLife(); // (chapter 6 ends once you plant the garden, catch the fish, have the party and do everyone's jobs)
-  const c7 = c6 && lockedDone() && secretDone() && goofyKidDone(); // (chapter 7 ends once you've found out about the kid and caught her)
-  return c7 ? 7 : c6 ? 6 : c5 ? 5 : c4 ? 4 : c3 ? 3 : c2 ? 2 : c1 ? 1 : 0;
+  const c7 = c6 && lockedDone() && secretDone() && goofyKidDone() && nowKnowDone(); // (chapter 7 ends once you've found out about the baby, caught her and told everyone)
+  const c8 = c7 && tooBigDone() && roomBuilt() && movedIn(); // (chapter 8 ends once the baby has moved into her new room)
+  return c8 ? 8 : c7 ? 7 : c6 ? 6 : c5 ? 5 : c4 ? 4 : c3 ? 3 : c2 ? 2 : c1 ? 1 : 0;
 }
 let chapterCheckT = 0, chapterFading = false;
 function chapterTick() { // once a second: did you just finish a chapter?
@@ -7197,10 +7216,11 @@ function chapterNext(n) { // after finishing chapter n: start chapter n + 1 righ
   else if (n === 4) { start(243); goAdmins(); }
   else if (n === 5) goGarden(); // (chapter 6: off to the meadow, to plant the garden)
   else if (n === 6) goLocked(); // (chapter 7: off to the shopkeepers' locked 3rd floor)
+  else if (n === 7) goTooBig(); // (chapter 8: off to the counter she's too big for)
   else openShop(); // (the end, for now: home to the cabin)
 }
 function chapterFade(n) { // the story-book transition after finishing chapter n
-  chapterFading = true; const box = $('chapterFade'), a = $('chapterFadeA'), b = $('chapterFadeB'), last = n >= 7;
+  chapterFading = true; const box = $('chapterFade'), a = $('chapterFadeA'), b = $('chapterFadeB'), last = n >= 8;
   a.innerHTML = `📖 Chapter ${n}: ${CHAPTER_NAMES[n - 1]}<small>The End</small>`;
   b.innerHTML = last ? 'The End... for now<small>Welcome home 🏡</small>' : `📖 Chapter ${n + 1}: ${CHAPTER_NAMES[n]}<small>${CHAPTER_FIRST[n]}</small>`;
   box.hidden = false; box.className = ''; a.className = 'page'; b.className = 'page hidden-page'; requestAnimationFrame(() => requestAnimationFrame(() => { box.className = 'fade-in'; })); if (sfx.win) sfx.win();
@@ -7220,7 +7240,7 @@ STAIRS.push({ floor:CABIN_FLOOR, x:CABIN_STAIRS_X, to:CABIN_SHOP }, { floor:CABI
   { floor:CABIN_FLOOR, x:CABIN_DOOR_X, to:CABIN_OUT }, { floor:CABIN_OUT, x:1520, to:CABIN_FLOOR }, { floor:CABIN_OUT, x:IT_SHED_X, to:IT_FLOOR }, { floor:IT_FLOOR, x:110, to:CABIN_OUT });
 STANDS.filter(s => s.floor === 1 || s.floor === 2).forEach((s, i) => STANDS.push({ get item() { return s.item; }, floor:CABIN_SHOP, x:500 + i*620 })); // (the same things you can buy in the shop)
 const cabinHome = () => storyOk && chaptersDone() >= 4 && storyStage() >= 17; // the main menu is the cabin only once you get to chapter 5 (New home), and only when the look you picked in settings is chapter 5 too (pick an older chapter, like "In love", and you get the old menu with that chapter's look)
-const cabinPlace = () => (G.state === 'title' && cabinHome()) || (G.state === 'shop' && ((SHOP.floor >= CABIN_FLOOR && SHOP.floor <= CABIN_OUT) || SHOP.floor === 30 || SHOP.floor === 32 || (SHOP.floor >= 33 && SHOP.floor <= 37) || ((SHOP.floor === 12 || SHOP.floor === 13 || SHOP.floor === 14) && SHOP.cabinDorm))); // (in the cabin, nothing glitches)
+const cabinPlace = () => (G.state === 'title' && cabinHome()) || (G.state === 'shop' && ((SHOP.floor >= CABIN_FLOOR && SHOP.floor <= CABIN_OUT) || SHOP.floor === 30 || SHOP.floor === 32 || (SHOP.floor >= 33 && SHOP.floor <= 38) || ((SHOP.floor === 12 || SHOP.floor === 13 || SHOP.floor === 14) && SHOP.cabinDorm))); // (in the cabin, nothing glitches)
 // the repair shop, outside the cabin: the old Hexstar (the first one, who did not make it out of the code) is on a workbench, and everyone is trying to fix him.
 // Walk up to him and press punch to help (a little more fixed each time... he's not awake yet, but they won't give up). Talk to the others in there too
 const LAB_FLOOR = 30, LAB_X = 380, OLD_HEX_X = 800;
@@ -7624,9 +7644,9 @@ function drawJobs(t) { // the jobs hallway (a door for each job), or one job's r
 // you can't get up, and there's no key. 🔒 What's up there?: ask them both and try the ladder (they lie, "there's nothing up there!") until you hear a giggle from
 // upstairs. 👀 The secret: the kid sneaks out (just like Goofy Sparkle always does!) and hides downstairs; find her, and the shopkeepers have to admit it.
 // 🏃 Just like Goofy!: the kid runs all over the house, just like Goofy Sparkle. Catch her 3 times. After that, the kid (a girl) plays downstairs ----------
-const K7_ORDER = ['locked', 'secret', 'goofykid'], notYet7 = k => { const r = K7_ORDER.indexOf(SHOP.replay); return r >= 0 && K7_ORDER.indexOf(k) >= r; }; // (doing it again: that one and the ones after it aren't done yet)
+const K7_ORDER = ['locked', 'secret', 'goofykid', 'nowknow'], notYet7 = k => { const r = K7_ORDER.indexOf(SHOP.replay); return r >= 0 && K7_ORDER.indexOf(k) >= r; }; // (doing it again: that one and the ones after it aren't done yet)
 const kidOn = () => storyOk && chaptersDone() >= 6;
-const lockedDone = () => !!lsGet('fff-locked') && !notYet7('locked'), secretDone = () => !!lsGet('fff-secret') && !notYet7('secret'), goofyKidDone = () => !!lsGet('fff-goofykid') && !notYet7('goofykid');
+const lockedDone = () => !!lsGet('fff-locked') && !notYet7('locked'), secretDone = () => !!lsGet('fff-secret') && !notYet7('secret'), goofyKidDone = () => !!lsGet('fff-goofykid') && !notYet7('goofykid'), nowKnowDone = () => !!lsGet('fff-nowknow') && !notYet7('nowknow');
 const atticLocked = () => kidOn() && !goofyKidDone(); // (the kid's room is locked: you can't get up, and there's no key... until chapter 7 is done, when the shopkeepers open it up for you)
 const kidInShop = () => goofyKidDone() && !(SHOP.k7 && SHOP.k7.hug && performance.now() - SHOP.k7.hug < 6000); // (once chapter 7 is done, she's hidden inside the cabin shop's counter, snoring, and at night they put her to bed on the 3rd floor of their home)
 const KID_SHOP_X = CABIN_SHOP_W - 480; // (where she is in the cabin shop: inside the counter)
@@ -7643,10 +7663,10 @@ function drawBedtime(t) { // the shopkeepers carry the baby in, tuck her into th
   const line = BEDTIME.filter(l => l[0] <= e && l[1] !== you).pop(); if (line && e < 11.5) { const x = line[1] === carrier ? cx : hx; drawBubble(line[2], x + 240, F - 300, x); }
 }
 function drawCounterSnore(t) { // (in the cabin shop) you can't see her, but the counter shakes a little and z's float out of it... unless they've just shushed it
-  if (!goofyKidDone()) return; const F = SHOP_FLOOR, x = KID_SHOP_X; if (SHOP.nearCabin === 'kid') drawPointer(x + 60, F - 190, t); if (babyHidden()) return;
+  if (!goofyKidDone() || tooBigDone()) return drawCounterBaby(t); const F = SHOP_FLOOR, x = KID_SHOP_X; if (SHOP.nearCabin === 'kid') drawPointer(x + 60, F - 190, t); if (babyHidden()) return;
   g.textAlign = 'center'; g.textBaseline = 'middle'; for (let i=0;i<3;i++) { const k = (t*0.28 + i/3) % 1, tx = i === 1 ? '*snore*' : i ? 'zzz' : 'z', px = x + Math.sin(k*8 + i)*14, py = F - 150 - k*120; g.save(); g.globalAlpha = Math.min(1, (1 - k)*1.6); g.font = `${26 + k*14}px ${FONT}`; g.strokeStyle = C.ink; g.lineWidth = 5; g.fillStyle = C.white; g.strokeText(tx, px, py); g.fillText(tx, px, py); g.restore(); }
 }
-function kidShh() { const n = SHOP.kidShhN = (SHOP.kidShhN || 0) + 1; SHOP.youSay = SHOP.floor !== CABIN_SHOP ? ['Shh... she is fast asleep.', 'Aww... sweet dreams, little one.', '*tiptoes*'][n % 3] : babyHidden() ? 'Hmm... it stopped. That is suspicious.' : ['Is that counter... snoring?', '*puts an ear on the counter* ...zzz...', 'There is definitely someone in there.'][n % 3]; SHOP.youSayT = 2.5; renderShopCard(true); }
+function kidShh() { if (SHOP.floor === CABIN_SHOP && ch8On() && !tooBigDone()) return kidBurst(); if (SHOP.floor === CABIN_SHOP && tooBigDone()) { SHOP.youSay = movedIn() ? 'She made a big hole in this counter!' : !isHeart() ? 'Only Lovely Heart can look after the baby.' : 'Hi, little one! You are SO big now!'; SHOP.youSayT = 2.5; renderShopCard(true); return; } const n = SHOP.kidShhN = (SHOP.kidShhN || 0) + 1; SHOP.youSay = SHOP.floor !== CABIN_SHOP ? (isHeart() ? ['Shh... she is fast asleep.', 'Aww... sweet dreams, little one.', '*tiptoes*'][n % 3] : 'Shh... only Lovely Heart can look after the baby.') : babyHidden() ? 'Hmm... it stopped. That is suspicious.' : ['Is that counter... snoring?', '*puts an ear on the counter* ...zzz...', 'There is definitely someone in there.'][n % 3]; SHOP.youSayT = 2.5; renderShopCard(true); }
 const KID_HIDE_SPOTS = [{ x:350, name:'behind the coats' }, { x:1760, name:'by the cookie jar' }, { x:1980, name:'behind the flower pot' }];
 const KID_CATCH = 3;
 const LIES = { keeper:['The 3rd floor? Nothing up there! Just... dust! Lots of dust!', 'Nope! Nothing! Why do you ask? Hehe... heh.', 'It is locked because... um... the dust is SO dusty!'], keeper2:['N-nothing is up there! *looks away*', 'W-we just keep old boxes up there... yes... boxes...', '*sweats* ...what 3rd floor?'] };
@@ -7697,7 +7717,7 @@ function kid7Check() { // asked them both and tried the ladder: then you hear so
   setTimeout(() => { if (SHOP.floor === 13 && SHOP.pb) { pbSay('keeper', 'That was... uh... the wind! Hehe... heh.', 4); SHOP.pb.next = performance.now() + 4200; } }, 2200);
 }
 function kid7Near() { // (in shopStep) the kid's hiding spots, or the kid
-  if (!SHOP.cabinDorm || !kidOn()) return null; if (goofyKidDone() && dormNight() && !bedCarrying() && SHOP.floor === 14 && Math.abs(SHOP.x - 640) < 130) return 'sleep'; if (SHOP.floor !== 12) return null; const s = k7(), x = SHOP.x, now = performance.now();
+  if (!SHOP.cabinDorm || !kidOn()) return null; if (goofyKidDone() && dormNight() && !bedCarrying() && !movedIn() && SHOP.floor === 14 && Math.abs(SHOP.x - 640) < 130) return 'sleep'; if (SHOP.floor !== 12) return null; const s = k7(), x = SHOP.x, now = performance.now();
   if (lockedDone() && !secretDone()) { const i = KID_HIDE_SPOTS.findIndex((p, k) => !s.checked.includes(k) && Math.abs(p.x - x) < 60); return i >= 0 ? 'hide' + i : null; }
   if (!secretDone() || kidInShop() || (s.reveal && now - s.reveal < 13000)) return null;
   const kid = s.kid, dt = Math.min(0.05, (now - (kid.last || now))/1000); kid.last = now; // the baby crawls all over the house (she can't run!)
@@ -7717,25 +7737,115 @@ function kid7Act() { // punch: look in a hiding spot, catch the kid, or talk to 
   else if (n === 'sleep') return kidShh();
   renderShopCard(true);
 }
+// chapter 7, now we know: after you catch the baby, you go around the cabin's living room and tell every fighter about her. Each one reacts. Once they all know, that's it... "NOW WE KNOW!" (and the shopkeepers STILL say there's no baby)
+const NOW_KNOW = { heart:'A BABY?! Aww! Can I hug her?!', star:'A baby in the counter. ...That is pretty cool.', tri:'So THAT is what keeps snoring! GRRR! ...Aww.', square:'A BABY?!!! I WILL BE VERY QUIET!!!', sparkle:'A baby?! Can she come play?! Hehe!', shuriken:'They hid a baby in a COUNTER? ...Of course they did.', circle:'WHAT?! A BABY?! WHAT?!', diamond:'I knew already... hehe. But thanks for telling me.', arrow:'A-a baby?! *surprised glitch*', flower:'Aww! I will pick her some flowers!', hex:'Beep! A tiny new friend! Boop!' };
+const telling = () => SHOP.floor === CABIN_FLOOR && kidOn() && goofyKidDone() && !nowKnowDone();
+const tellPals = () => cabinPals().filter(p => !p.ch.keeper);
+function nowKnowText() { return nowKnowDone() ? 'You told everyone about the baby! Now we know. 🗣️ (The shopkeepers STILL say there is no baby.)' : goofyKidDone() ? 'Nobody else knows about the baby! Go tell everyone in the cabin. 🗣️ Press the now we know button.' : 'a big secret... Coming soon...'; }
+function goNowKnow(replay = null) { goPlace(CABIN_FLOOR, replay); Object.assign(SHOP, { x:300, y:0, told:[], knowT:0 }); SHOP.youSay = nowKnowDone() ? 'Everybody knows now! Hehe!' : 'Time to tell everyone about the baby!'; SHOP.youSayT = 3; musicUpdate(); renderShopCard(true); }
+function tellPal(id) { // you tell a fighter about the baby
+  const now = performance.now(), told = SHOP.told = SHOP.told || [];
+  if (told.includes(id)) { SHOP.cabinSay = { id, text:'I know! A baby! In the counter! Shh!', until:now + 3000 }; return; }
+  told.push(id); SHOP.youSay = 'Psst... the shopkeepers have a baby! She is in the counter!'; SHOP.youSayT = 2.5; SHOP.cabinSay = { id, text:NOW_KNOW[id] || 'Whoa! A baby?!', until:now + 3800 }; if (sfx.ding) sfx.ding();
+  if (tellPals().every(p => told.includes(p.ch.id))) { lsSet('fff-nowknow', String(Date.now())); SHOP.replay = null; SHOP.knowT = now; if (sfx.win) sfx.win(); SHOP.youSay = 'That is everyone! Now we ALL know!'; SHOP.youSayT = 3.5; }
+  renderShopCard(true);
+}
+function drawTelling(t) { // (in the cabin's living room) a "!" over everyone you still have to tell, and "NOW WE KNOW!" when you've told them all
+  if (telling()) for (const p of tellPals()) { if ((SHOP.told || []).includes(p.ch.id)) continue; const y = SHOP_FLOOR - 112 + Math.sin(t*4 + p.x)*5; g.fillStyle = C.yellow; g.strokeStyle = C.ink; g.lineWidth = 5; g.font = `34px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.strokeText('!', p.x, y); g.fillText('!', p.x, y); }
+  const e = performance.now() - (SHOP.knowT || 0); if (SHOP.knowT && e < 6000) { const cx = (SHOP.cam || 0) + W/2; g.save(); g.globalAlpha = Math.min(1, e/400, (6000 - e)/800); g.fillStyle = '#ff5fa2'; g.strokeStyle = C.white; g.lineWidth = 8; g.font = `76px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.strokeText('NOW WE KNOW!', cx, 230); g.fillText('NOW WE KNOW!', cx, 230); g.restore(); }
+}
+// ---------- chapter 8, new room: once chapter 7 is done, the baby has outgrown the counter. 🧱 Too big!: knock on the counter, she bursts out, and the shopkeepers finally admit it (they stop hiding her).
+// 🔨 Build her room: a new door in the cabin's living room goes to an empty room (floor 38), and you build it piece by piece. 🎨 Move in: pick her wallpaper and a toy, and bring her in.
+// After that, she lives there: crawling around in the day, and at night they put her to bed in her new crib ----------
+const BABY_FLOOR = 38, BABY_DOOR_X = 1990, K8_ORDER = ['toobig', 'built', 'moved'], notYet8 = k => { const r = K8_ORDER.indexOf(SHOP.replay); return r >= 0 && K8_ORDER.indexOf(k) >= r; };
+const ch8On = () => storyOk && chaptersDone() >= 7;
+const tooBigDone = () => !!lsGet('fff-toobig') && !notYet8('toobig'), roomBuilt = () => !!lsGet('fff-built') && !notYet8('built'), movedIn = () => !!lsGet('fff-moved') && !notYet8('moved');
+STAIRS.push({ floor:CABIN_FLOOR, x:BABY_DOOR_X, to:BABY_FLOOR, babyroom:true }, { floor:BABY_FLOOR, x:110, to:CABIN_FLOOR });
+const ROOM_PIECES = [{ x:300, name:'the walls' }, { x:480, name:'the floor' }, { x:700, name:'the crib' }, { x:900, name:'the window' }, { x:1100, name:'the rug' }, { x:1300, name:'the toy shelf' }];
+const ROOM_SAYS = [['keeper', 'Walls! Now nobody can see her! ...Oh. Right. We do not have to hide her anymore.'], ['keeper2', 'a nice soft floor... for crawling...'], ['keeper2', 'H-her very own crib... *happy tears*'], ['keeper', 'A window! So she can see the whole forest!'], ['keeper2', 'It is SO soft! Hehe...'], ['keeper', 'And a shelf for all her toys! It is DONE!']];
+const ROOM_WALLS = { pink:'#ffd6e8', blue:'#d6ecff', yellow:'#fff3c4', green:'#d8f5d0' }, ROOM_TOYS = { blocks:'🧱 blocks', ball:'⚽ a ball', teddy:'🧸 a teddy bear' };
+const BURST = [[0, 'kid', '*CRASH* Goo goo!'], [2.5, 'keeper', 'Okay... OKAY! There IS a baby!'], [5.5, 'keeper2', 's-she got too big for the counter...'], [8.5, 'keeper', 'She needs a REAL room! Lovely Heart, will you help us build it?']];
+const roomLook = () => { try { return { wall:'pink', toy:'teddy', ...JSON.parse(lsGet('fff-babyroom') || '{}') }; } catch (e) { return { wall:'pink', toy:'teddy' }; } };
+function tooBigText() { return tooBigDone() ? 'She burst out of the counter, and the shopkeepers finally admitted it! 🧱 Press the too big button to see the counter.' : ch8On() ? 'The baby has gotten too big for the counter! 🧱 Press the too big button, and knock on the counter.' : 'someone is growing... Coming soon...'; }
+function builtText() { return roomBuilt() ? 'You built the baby a room! 🔨 Press the build button to go there.' : tooBigDone() ? 'She needs a REAL room! Only Lovely Heart can help: play as her, and press the build button. 🔨' : 'a big empty room... Coming soon...'; }
+function movedText() { return movedIn() ? 'The Little Shopkeeper has her very own room! 🎨 Lovely Heart can press the move in button to visit her and change how it looks.' : roomBuilt() ? 'Pick her wallpaper and a toy, and bring her in! Only Lovely Heart can: play as her, and press the move in button. 🎨' : 'moving day... Coming soon...'; }
+function goTooBig(replay = null) { goPlace(CABIN_SHOP, replay); Object.assign(SHOP, { x:KID_SHOP_X - 220, y:0, burstT:0 }); SHOP.youSay = tooBigDone() ? 'Look at that hole in the counter!' : 'That counter is shaking! Let me knock on it...'; SHOP.youSayT = 3; musicUpdate(); renderShopCard(true); }
+const isHeart = () => CHARS[SHOP.who].id === 'heart', ONLY_HEART = 'Only Lovely Heart can go in there! She looks after the baby.'; // (only Lovely Heart can go in the baby's room, or look after her: pick her with the arrows at the top)
+function heartOnly() { SHOP.youSay = ONLY_HEART; SHOP.youSayT = 3.5; if (sfx.bonk) sfx.bonk(); renderShopCard(true); }
+function goBabyRoom(replay = null) { if (SHOP.who == null) SHOP.who = Math.max(0, CHARS.findIndex(ch => (CTRL[setup.slots[ch.id]] || CTRL.off).kind === 'human')); if (!isHeart()) { goPlace(CABIN_FLOOR); Object.assign(SHOP, { x:BABY_DOOR_X - 130, y:0 }); return heartOnly(); } goPlace(BABY_FLOOR, replay); Object.assign(SHOP, { x:220, y:0, roomParts:[], moveT:0, bedT:movedIn() && dormNight() ? performance.now() : 0, cardClosed:false }); SHOP.youSay = roomBuilt() ? 'Her new room!' : 'It is so empty... let\'s build it!'; SHOP.youSayT = 3; musicUpdate(); renderShopCard(true); }
+function kidBurst() { lsSet('fff-toobig', String(Date.now())); if (SHOP.replay === 'toobig') SHOP.replay = 'built'; SHOP.burstT = performance.now(); SHOP.youSay = '*knock knock*'; SHOP.youSayT = 1.5; if (sfx.win) sfx.win(); renderShopCard(true); }
+function babyRoomStep() { // (in cabinStep) what you're next to in her room
+  const x = SHOP.x, parts = SHOP.roomParts = SHOP.roomParts || [];
+  if (!roomBuilt()) { const i = ROOM_PIECES.findIndex((p, k) => !parts.includes(k) && Math.abs(p.x - x) < 60); if (i >= 0) SHOP.nearCabin = 'room' + i; return; }
+  if (movedIn() && !bedCarrying()) { if (dormNight() ? Math.abs(x - 640) < 130 : Math.abs(x - babyRoomX()) < 70) SHOP.nearCabin = 'roombaby'; }
+}
+const babyRoomX = () => 1000 + 200*Math.sin(performance.now()/5000);
+function babyRoomAct(id) { // punch: build a piece, or say hi to her
+  const now = performance.now();
+  if (id === 'roombaby') { if (dormNight()) return kidShh(); SHOP.roomSay = { text:['Goo goo! Hehe!', 'Ba ba ba!', '*giggles*', 'Wheee!'][(SHOP.kidShhN = (SHOP.kidShhN || 0) + 1) % 4], until:now + 3000 }; if (sfx.ding) sfx.ding(); return; }
+  const i = +id.slice(4); SHOP.roomParts = [...SHOP.roomParts, i]; SHOP.roomSpark = { x:ROOM_PIECES[i].x, t:now }; const [who, text] = ROOM_SAYS[SHOP.roomParts.length - 1]; SHOP.cabinSay = { id:who, text, until:now + 3500 }; SHOP.youSay = `Built ${ROOM_PIECES[i].name}!`; SHOP.youSayT = 2; if (sfx.zap) sfx.zap();
+  if (SHOP.roomParts.length >= ROOM_PIECES.length) { lsSet('fff-built', String(Date.now())); if (SHOP.replay === 'built') SHOP.replay = 'moved'; if (sfx.win) sfx.win(); SHOP.youSay = 'It is all built! Now to make it look nice!'; SHOP.youSayT = 3; }
+  renderShopCard(true);
+}
+function roomPick(kind, v) { // the buttons on the card: her wallpaper, her toy, and bringing her in
+  if (kind === 'go') { lsSet('fff-moved', String(Date.now())); SHOP.replay = null; SHOP.moveT = performance.now(); if (sfx.win) sfx.win(); SHOP.cabinSay = { id:'keeper', text:'Welcome to your new room, little one! No more counter!', until:performance.now() + 5000 }; }
+  else { lsSet('fff-babyroom', JSON.stringify({ ...roomLook(), [kind]:v })); if (sfx.ding) sfx.ding(); }
+  renderShopCard(true); cv.focus();
+}
+function babyRoomCard() { // the info card in her room
+  if (!roomBuilt()) return `<h3>🔨 Build her room</h3><p>Walk up to each crate and press punch to build that piece, with the shopkeepers.</p><p>Built: ${(SHOP.roomParts || []).length}/${ROOM_PIECES.length}</p>`;
+  const look = roomLook(), btn = (kind, v, label, on) => `<button class="btn" data-room="${kind}:${v}" style="font-size:18px;padding:4px 12px;margin:3px;${on ? 'background:#ffe066' : ''}">${label}</button>`;
+  return `<h3>${movedIn() ? 'The baby&#39;s new room' : '🎨 Move in'}</h3><p>${movedIn() ? (dormNight() ? 'At night, they put her to bed in her crib.' : 'She crawls around in here in the daytime. Walk up to her and press punch to say hi.') : 'Pick her wallpaper and a toy, then bring her in!'}</p><div class="row">` + Object.keys(ROOM_WALLS).map(w => btn('wall', w, w + ' walls', look.wall === w)).join('') + '</div><div class="row">' + Object.entries(ROOM_TOYS).map(([k, l]) => btn('toy', k, l, look.toy === k)).join('') + '</div>' + (movedIn() ? '' : '<div class="row">' + btn('go', '1', '🏠 Bring her in!') + '</div>') + '<p class="note">The door on the left goes back to the cabin.</p>';
+}
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-room]'); if (b) { const [k, v] = b.dataset.room.split(':'); roomPick(k, v); } });
+function drawBabyRoom(t) { // her room: bare wood until you build it, then all her own
+  const F = SHOP_FLOOR, parts = SHOP.roomParts || [], done = roomBuilt(), has = k => done || parts.includes(k), look = roomLook(), now = performance.now(), night = dormNight();
+  g.fillStyle = '#8a6a4a'; g.fillRect(-200, -200, W + 400, H + 400); g.fillStyle = '#7a5a3a'; for (let x=20;x<W;x+=120) g.fillRect(x, 0, 16, F); // bare wood beams
+  if (has(0)) { g.fillStyle = ROOM_WALLS[look.wall]; g.fillRect(0, 60, W, F - 60); g.fillStyle = 'rgba(255,255,255,.45)'; for (let x=0;x<W;x+=90) g.fillRect(x, 60, 45, F - 60); g.fillStyle = C.white; g.fillRect(0, F - 34, W, 34); }
+  g.fillStyle = has(1) ? '#d9b382' : '#5a4632'; g.fillRect(-200, F, W + 400, H - F + 200); if (has(1)) { g.strokeStyle = '#b98f5e'; g.lineWidth = 3; for (let x=0;x<W;x+=110) { g.beginPath(); g.moveTo(x, F); g.lineTo(x, H); g.stroke(); } }
+  if (has(3)) { g.fillStyle = night ? '#1b2a4a' : '#9ed8ff'; g.strokeStyle = C.white; g.lineWidth = 12; g.fillRect(860, 190, 280, 180); g.strokeRect(860, 190, 280, 180); g.fillStyle = night ? '#fff6c9' : C.yellow; g.beginPath(); g.arc(1070, 240, 24, 0, TAU); g.fill(); g.fillStyle = '#2e9e4f'; for (const px of [900, 980, 1070]) { g.beginPath(); g.moveTo(px - 28, 362); g.lineTo(px, 290); g.lineTo(px + 28, 362); g.fill(); } g.strokeStyle = C.white; g.lineWidth = 6; g.beginPath(); g.moveTo(1000, 190); g.lineTo(1000, 370); g.stroke(); }
+  if (has(4)) { g.fillStyle = '#ff8fc1'; g.beginPath(); g.ellipse(950, F + 40, 330, 34, 0, 0, TAU); g.fill(); g.fillStyle = '#ffd6e8'; g.beginPath(); g.ellipse(950, F + 40, 230, 22, 0, 0, TAU); g.fill(); }
+  if (has(5)) { g.fillStyle = '#a0723c'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(1250, F - 190, 220, 190); g.strokeRect(1250, F - 190, 220, 190); g.fillStyle = '#7a5236'; g.fillRect(1262, F - 100, 196, 8); g.font = `44px ${BODYFONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = C.ink; g.fillText(ROOM_TOYS[look.toy].split(' ')[0], 1360, F - 138); g.font = `34px ${BODYFONT}`; g.fillText('🚂', 1310, F - 46); g.fillText('🎈', 1410, F - 46); } // her toy shelf (with the toy you picked)
+  if (has(2)) { const asleep = movedIn() && night && !bedCarrying(); g.fillStyle = C.white; g.strokeStyle = C.ink; g.lineWidth = 4; for (const lx of [540, 726]) { g.fillRect(lx, F - 190, 14, 190); g.strokeRect(lx, F - 190, 14, 190); } g.fillRect(540, F - 170, 200, 14); g.strokeRect(540, F - 170, 200, 14); g.fillRect(540, F - 60, 200, 14); g.strokeRect(540, F - 60, 200, 14); g.fillStyle = '#ffb3d1'; roundRect(556, F - 92, 168, 34, 10); g.fill(); g.stroke(); g.fillStyle = '#a8e0ff'; roundRect(560, F - 104, 50, 20, 8); g.fill(); g.stroke(); if (asleep) drawSleepingBaby(t, 655, F - 112, 106); g.strokeStyle = C.ink; g.lineWidth = 3; for (let x = 570; x < 726; x += 22) { g.beginPath(); g.moveTo(x, F - 156); g.lineTo(x, F - 60); g.stroke(); } } // her crib
+  g.fillStyle = '#f3e2c7'; g.strokeStyle = '#4a2e18'; g.lineWidth = 5; g.fillRect(520, 70, 560, 70); g.strokeRect(520, 70, 560, 70); g.fillStyle = '#4a2e18'; g.font = `44px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('the baby\'s new room', 800, 107, 530);
+  drawCabinDoor(110, '← the cabin', t); if (night) { g.fillStyle = 'rgba(15,10,50,.38)'; g.fillRect(-200, -200, W + 400, H + 400); }
+  if (!done) ROOM_PIECES.forEach((p, k) => { if (parts.includes(k)) return; g.fillStyle = '#c8a06a'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(p.x - 40, F - 70, 80, 70); g.strokeRect(p.x - 40, F - 70, 80, 70); g.fillStyle = C.ink; g.font = `15px ${BODYFONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(p.name, p.x, F - 90); if (SHOP.nearCabin === 'room' + k) drawPointer(p.x + 40, F - 170, t); }); // the crates, each with a piece to build
+  if (SHOP.roomSpark && now - SHOP.roomSpark.t < 800) { const k = (now - SHOP.roomSpark.t)/800; for (let i=0;i<12;i++) { const a = i*TAU/12; g.fillStyle = i % 2 ? C.yellow : C.white; g.fillRect(SHOP.roomSpark.x + Math.cos(a)*k*120, F - 60 + Math.sin(a)*k*80, 7, 7); } }
+  if (!movedIn() || (SHOP.moveT && now - SHOP.moveT < 6000)) { for (const [id, x] of [['keeper', 1130], ['keeper2', 1000]]) { if (CHARS[SHOP.who].id === id) continue; const ch = CHAR[id], r = dormR(ch)*0.62; g.save(); g.translate(x, F - r); drawCharacter(g, ch, r, { facing:-1, ...looks(ch), happy:true, still:true }); g.restore(); } const cs = SHOP.cabinSay; if (cs && now < cs.until && (cs.id === 'keeper' || cs.id === 'keeper2')) drawBubble(cs.text, (cs.id === 'keeper' ? 1130 : 1000) + 240, F - 300, cs.id === 'keeper' ? 1130 : 1000); }
+  if (movedIn() && !night) { const bx = babyRoomX(), d = Math.cos(now/5000) >= 0 ? 1 : -1; drawLittleKid(bx, F, t, true, true, d); if (SHOP.nearCabin === 'roombaby') drawPointer(bx + 50, F - 130, t); if (SHOP.roomSay && now < SHOP.roomSay.until) drawBubble(SHOP.roomSay.text, bx + 240, F - 120, bx); }
+  if (movedIn() && night) { if (SHOP.bedT) drawBedtime(t); if (SHOP.nearCabin === 'roombaby') drawPointer(690, F - 230, t); }
+  if (SHOP.moveT && now - SHOP.moveT < 6000) { const e = now - SHOP.moveT; g.save(); g.globalAlpha = Math.min(1, e/400, (6000 - e)/800); g.fillStyle = '#ff5fa2'; g.strokeStyle = C.white; g.lineWidth = 8; g.font = `64px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.strokeText('WELCOME HOME, LITTLE ONE!', W/2, 230); g.fillText('WELCOME HOME, LITTLE ONE!', W/2, 230); g.restore(); }
+  if (SHOP.nearStairs && SHOP.stairTo === CABIN_FLOOR) drawPointer(150, F - 300, t);
+}
+function drawCounterBaby(t) { // (in the cabin shop, once she's burst out) a hole in the counter, with her next to it, until she moves into her room; and the shopkeepers finally admitting it
+  if (!ch8On() && !tooBigDone()) return; const F = SHOP_FLOOR, x = KID_SHOP_X, now = performance.now(); if (!tooBigDone()) return;
+  g.fillStyle = '#2a1a10'; g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.moveTo(x - 46, F); g.lineTo(x - 54, F - 70); g.lineTo(x - 24, F - 96); g.lineTo(x + 4, F - 76); g.lineTo(x + 34, F - 100); g.lineTo(x + 52, F - 60); g.lineTo(x + 46, F); g.closePath(); g.fill(); g.stroke(); // the hole she made
+  const e = SHOP.burstT ? (now - SHOP.burstT)/1000 : 99; if (e < 1.2) for (let i=0;i<10;i++) { g.fillStyle = '#a0723c'; const a = -0.3 - i*0.25; g.fillRect(x + Math.cos(a)*e*220, F - 60 + Math.sin(a)*e*220 + e*e*120, 22, 8); } // bits of counter, flying
+  if (!movedIn()) { drawLittleKid(x - 60, F, t, true, true, -1); if (SHOP.nearCabin === 'kid') drawPointer(x - 20, F - 130, t); }
+  if (e < 11.5) { const you = CHARS[SHOP.who].id, line = BURST.filter(l => l[0] <= e && l[1] !== you).pop(); if (line) { const KX = CABIN_SHOP_W - 420, lx = line[1] === 'kid' ? x - 60 : KX + (line[1] === 'keeper' ? 100 : 200); drawBubble(line[2], lx - 20, F - 260, lx); } }
+}
 // ---------- questions for the shopkeepers: in the cabin, the cabin shop and their cabin home, walk up to one and press punch, and pick what to ask from the card (or press
 // its number). Ask them ANYTHING about the baby and they deny it and shush her, even after you know about her. Asking counts for chapter 7's "what's up there?", when you ask by the locked ladder ----------
 const KEEPER_ASK = [
   { id:'snore', q:'Why is there someone snoring on the 3rd floor of your dorm?', show:() => kidOn(), upstairs:true, baby:true,
+    t:{ keeper:'Hehe... that is our baby girl! She snores just like her Papa.', keeper2:'Shh... she is so cute when she snores...' },
     lie:{ keeper:'Snoring? That is... um... the pipes! Old pipes snore! Everybody knows that!', keeper2:'W-what snoring? I do not hear any snoring... *snnnk* ...that was me. I did that.' },
     a:{ keeper:'SNORING?! What snoring?! *knocks on the counter* It is the pipes! Old pipes!', keeper2:'W-what baby? I mean... what snoring?! *coughs to cover it up*' } },
   { id:'floor', q:'What is on the 3rd floor?', show:() => kidOn(), upstairs:true, baby:true,
+    t:{ keeper:'Her old crib! She has a whole new room now!', keeper2:'Just her old blankets... hehe.' },
     lie:{ keeper:LIES.keeper[0], keeper2:LIES.keeper2[1] },
     a:{ keeper:'The 3rd floor?! Nothing! Nothing at all! Stop looking over there!', keeper2:'j-just boxes... lots of boxes... *looks away*' } },
   { id:'lock', q:'Why is the ladder locked?', show:() => kidOn() && !goofyKidDone(), upstairs:true, baby:true,
     lie:{ keeper:LIES.keeper[2], keeper2:LIES.keeper2[2] },
     a:{ keeper:'Locked? Is it? Hehe... no reason! NO reason at all!', keeper2:'*stands in front of the ladder* w-what ladder?' } },
   { id:'baby', q:'Tell me about your baby!', show:() => kidOn() && secretDone(), baby:true,
+    t:{ keeper:'She has my sunglasses... and her Mama\'s everything else! Lucky kid!', keeper2:'She is the best thing that ever happened to us... hehe.' },
     a:{ keeper:'Baby?! What baby?! There is NO baby here! *coughs REALLY loudly*', keeper2:'b-baby? I do not know any babies... *giggle* ...that was me.' } },
   { id:'shop', q:'How is the shop doing?', show:() => true,
     a:{ keeper:'Business is GOOD! Everyone comes up here now!', keeper2:'w-we sold one pink bow today... *happy*' } },
   { id:'meet', q:'How did you two meet?', show:() => true,
     a:{ keeper:'We both worked at the shop! I was downstairs, and she was upstairs.', keeper2:'I told him I liked him, in the dorms... it was SO scary... hehe.' } },
-  { id:'chores', q:'Any chores for me?', show:() => SHOP.askWho === 'keeper' && keeperRoom() && !isKid() },
+  { id:'chores', q:'Any chores for me?', show:() => SHOP.askWho === 'keeper' && keeperRoom() && !isKid() && !(goofyKidDone() && dormNight()) },
   { id:'bye', q:'Bye!', show:() => true },
 ];
 const keeperAskList = () => KEEPER_ASK.filter(o => o.show());
@@ -7747,21 +7857,48 @@ function keeperAnswer(oid) { // you picked a question
   const o = KEEPER_ASK.find(k => k.id === oid), id = SHOP.askWho; if (!o || !id) return;
   if (oid === 'bye') { SHOP.askWho = null; keeperSays(id, id === 'keeper' ? 'See you later!' : 'b-bye...'); renderShopCard(true); cv.focus(); return; }
   if (oid === 'chores') { SHOP.askWho = null; fightyTalk(); renderShopCard(true); cv.focus(); return; }
-  keeperSays(id, (o.lie && !secretDone() ? o.lie : o.a)[id]); if (o.baby) SHOP.babyHide = performance.now() + 9000; /* (they hide her!) */ SHOP.askDone = [...new Set([...SHOP.askDone, oid])]; if (sfx.ding) sfx.ding();
+  const honest = o.t && tooBigDone(); keeperSays(id, (honest ? o.t : o.lie && !secretDone() ? o.lie : o.a)[id]); if (o.baby && !honest) SHOP.babyHide = performance.now() + 9000; /* (they hide her!) */ SHOP.askDone = [...new Set([...SHOP.askDone, oid])]; if (sfx.ding) sfx.ding();
   if (o.upstairs && SHOP.floor === 13 && kidOn() && !lockedDone()) { const s = k7(); if (!s.asked.includes(id)) { s.asked.push(id); kid7Check(); } } // (chapter 7: asking them about it, by the locked ladder)
   renderShopCard(true); cv.focus();
 }
 function keeperAskCard() { return `<h3>Talking to ${CHAR[SHOP.askWho].name}</h3><p>What do you want to ask? (Click one, or press its number.)</p><div class="row">` + keeperAskList().map((o, i) => `<button class="btn" data-ask="${o.id}" style="font-size:18px;padding:4px 12px;margin:3px;${SHOP.askDone.includes(o.id) ? 'opacity:.55' : ''}">${i + 1}. ${o.q}</button>`).join('') + '</div>'; }
 document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-ask]'); if (b) keeperAnswer(b.dataset.ask); });
 document.addEventListener('keydown', e => { if (G.state !== 'shop' || !SHOP.askWho || !/^Digit[1-9]$/.test(e.code)) return; const o = keeperAskList()[+e.code.slice(5) - 1]; if (o) { e.preventDefault(); keeperAnswer(o.id); } });
+// (chapter 7) at night, the shopkeepers guard the ladder while it's nearly bedtime, and won't let you up. Say the right thing to distract them, and they run off downstairs: then climb up quick, and you get to see them put her to bed
+const BED_DISTRACT = [
+  { id:'customer', q:'Look! A customer in the shop!', ok:true, who:'keeper', a:'A CUSTOMER?! AT THIS HOUR?! COINS! Come on, let\'s go!' },
+  { id:'soup', q:'I think something is burning in the kitchen!', ok:true, who:'keeper2', a:'M-my soup?! Oh no oh no oh no!' },
+  { id:'goofy', q:'Is that Goofy Sparkle on the roof?!', ok:true, who:'keeper', a:'NOT AGAIN! Goofy! Get DOWN from there!' },
+  { id:'baby', q:'I just want to see the baby.', who:'keeper', a:'Baby?! What baby?! There is NO baby! Nothing to see up there!' },
+  { id:'please', q:'Please let me up?', who:'keeper2', a:'n-no... um... the dust is very dusty tonight...' },
+];
+const BED_RUN = 1400, bedAway = () => performance.now() < (SHOP.bedAwayUntil || 0); // (how long they take to run off, and they're only gone for a little while)
+const bedBlock = () => G.state === 'shop' && SHOP.cabinDorm && goofyKidDone() && dormNight() && !bedAway() && !CHARS[SHOP.who].keeper && !tooBigDone(); // (they don't stop each other, and once they've admitted it in chapter 8, they stop guarding the ladder)
+function bedBlockOpen() { // you tried the ladder, or talked to them: they stop you, and you pick what to say
+  Object.assign(SHOP, { blockOpen:true, askX:SHOP.x, askFloor:SHOP.floor, blockTried:SHOP.blockTried || [], cardClosed:false }); keeperSays('keeper', 'NOPE! You can\'t go up there! There is nothing up there! Go away!'); if (sfx.bonk) sfx.bonk(); renderShopCard(true);
+}
+function bedDistract(oid) { // you picked something to say
+  const o = BED_DISTRACT.find(d => d.id === oid); if (!o || !SHOP.blockOpen) return; keeperSays(o.who, o.a);
+  if (o.ok) { const now = performance.now(); Object.assign(SHOP, { blockOpen:false, bedRunT:now, bedAwayUntil:now + 25000 }); SHOP.youSay = 'They fell for it! Quick, up the ladder!'; SHOP.youSayT = 3.5; if (sfx.win) sfx.win(); }
+  else { SHOP.blockTried = [...new Set([...SHOP.blockTried, oid])]; if (sfx.bonk) sfx.bonk(); }
+  renderShopCard(true); cv.focus();
+}
+function bedBlockCard() { return '<h3>They won\'t let you up!</h3><p>The shopkeepers are guarding the ladder. Say something to distract them! (Click one, or press its number.)</p><div class="row">' + BED_DISTRACT.map((o, i) => `<button class="btn" data-distract="${o.id}" style="font-size:18px;padding:4px 12px;margin:3px;${SHOP.blockTried.includes(o.id) ? 'opacity:.55' : ''}">${i + 1}. ${o.q}</button>`).join('') + '</div>'; }
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-distract]'); if (b) bedDistract(b.dataset.distract); });
+document.addEventListener('keydown', e => { if (G.state !== 'shop' || !SHOP.blockOpen || !/^Digit[1-9]$/.test(e.code)) return; const o = BED_DISTRACT[+e.code.slice(5) - 1]; if (o) { e.preventDefault(); bedDistract(o.id); } });
 function kid7Spots() { // (in keeperSpots) both shopkeepers stand by the locked ladder while you ask them about it
-  return SHOP.floor === 13 && kidOn() && !lockedDone() ? [{ ch:CHAR.keeper, x:1640 }, { ch:CHAR.keeper2, x:1800 }].filter(s => s.ch.id !== CHARS[SHOP.who].id) : null;
+  if (SHOP.floor === 13 && kidOn() && !lockedDone()) return [{ ch:CHAR.keeper, x:1640 }, { ch:CHAR.keeper2, x:1800 }].filter(s => s.ch.id !== CHARS[SHOP.who].id);
+  if (SHOP.floor !== 13 || G.state !== 'shop' || !SHOP.cabinDorm || !goofyKidDone() || !dormNight() || CHARS[SHOP.who].keeper || tooBigDone()) return null;
+  const e = performance.now() - (SHOP.bedRunT || 0), away = bedAway(); if (away && e >= BED_RUN) return []; // (at night, they guard the ladder... until you distract them, and they run off down the stairs)
+  const k = away ? e/BED_RUN : 0; return [{ ch:CHAR.keeper, x:1920 + k*(2300 - 1920), walking:away }, { ch:CHAR.keeper2, x:2140 + k*(2300 - 2140), walking:away }];
 }
 function kid7Card() { // the info card, while something from chapter 7 is going on
+  if (telling()) return `<h3>🗣️ Now we know</h3><p>Nobody else knows about the baby! Walk up to each fighter with a "!" and press punch to tell them. (The shopkeepers still say there is no baby.)</p><p>Told: ${(SHOP.told || []).length}/${tellPals().length}</p>`;
   if (!SHOP.cabinDorm || !kidOn()) return null; const s = k7(), f = SHOP.floor;
   if (f === 13 && !lockedDone()) return `<h3>🔒 What's up there?</h3><p>The ladder to the 3rd floor is locked, and there is no key! Ask the shopkeepers what is up there (walk up to them and press punch), and try the ladder.</p><p>Checked: ${s.asked.length}/${kid7Need().length}</p>`;
   if (f === 12 && lockedDone() && !secretDone()) return `<h3>👀 The secret</h3><p>Someone crawled out of the locked room and is hiding down here! Look behind the coats, by the cookie jar and behind the flower pot (walk up and press punch).</p><p>Looked: ${s.checked.length}/${KID_HIDE_SPOTS.length}</p>`;
   if (f === 12 && secretDone() && !goofyKidDone()) return `<h3>🏃 Just like Goofy!</h3><p>The Little Shopkeeper is crawling all over the house, just like Goofy Sparkle! Walk up to her and press punch to catch her.</p><p>Caught: ${s.caught}/${KID_CATCH}</p>`;
+  if (f === 14 && movedIn()) return '<h3>Her old room</h3><p>The crib up here is empty now: the baby has her own new room, through the new door in the cabin&#39;s living room.</p>';
   if (f === 14 && goofyKidDone()) return (dormNight() ? '<h3>The baby&#39;s room</h3><p>Shh... at night, the shopkeepers put the Little Shopkeeper to bed in her crib.</p>' : '<h3>The baby&#39;s room</h3><p>Her crib is empty in the daytime. Listen for the snoring in the cabin shop...</p>') + '<p class="note">The hatch on the left goes back down.</p>';
   return null;
 }
@@ -7798,9 +7935,9 @@ function drawKid7(t) { // chapter 7 things in the shopkeepers' cabin home
   const say = (text, x, y, tip) => drawBubble(text, x, y, tip);
   if (f === 13) {
     if (atticLocked()) { drawPadlock(KEEPER_LADDER_X, F - 330, 0.5); g.strokeStyle = '#888'; g.lineWidth = 6; g.beginPath(); g.moveTo(KEEPER_LADDER_X - 70, 116); g.lineTo(KEEPER_LADDER_X + 70, 116); g.stroke(); } // a padlock on the hatch (and a chain)
-    g.fillStyle = '#5a3a6e'; g.textAlign = 'center'; g.textBaseline = 'middle'; for (let i=0;i<3;i++) { const k = (t*0.25 + i/3) % 1; g.save(); g.globalAlpha = 1 - k; g.font = `${16 + k*14}px ${FONT}`; g.fillText(i === 1 ? '*snore*' : 'z', KEEPER_LADDER_X - 110 + Math.sin(k*8)*10, 130 + k*90); g.restore(); } // someone snoring, up above the hatch...
+    g.fillStyle = '#5a3a6e'; g.textAlign = 'center'; g.textBaseline = 'middle'; if (!tooBigDone()) for (let i=0;i<3;i++) { const k = (t*0.25 + i/3) % 1; g.save(); g.globalAlpha = 1 - k; g.font = `${16 + k*14}px ${FONT}`; g.fillText(i === 1 ? '*snore*' : 'z', KEEPER_LADDER_X - 110 + Math.sin(k*8)*10, 130 + k*90); g.restore(); } // someone snoring, up above the hatch...
     if (s.noise && now - s.noise < 4000) { const sh = Math.sin(now/30)*4; g.save(); g.translate(sh, 0); say('*giggle giggle* Wheee! *CRASH*', KEEPER_LADDER_X + 200, 250, KEEPER_LADDER_X); g.restore(); } // a noise from upstairs!
-  } else if (f === 14) { if (goofyKidDone() && dormNight() && SHOP.bedT) drawBedtime(t); if (SHOP.nearK7 === 'sleep') drawPointer(690, F - 230, t);
+  } else if (f === 14) { if (goofyKidDone() && dormNight() && SHOP.bedT && !movedIn()) drawBedtime(t); if (SHOP.nearK7 === 'sleep') drawPointer(690, F - 230, t);
   } else if (f === 12) {
     g.fillStyle = '#8a5f30'; g.strokeStyle = C.ink; g.lineWidth = 3; g.fillRect(1710, F - 80, 100, 12); g.fillRect(1754, F - 68, 12, 68); g.fillStyle = 'rgba(200,230,255,.8)'; g.fillRect(1735, F - 140, 50, 60); g.strokeRect(1735, F - 140, 50, 60); g.fillStyle = '#c98a4a'; for (let k=0;k<3;k++) { g.beginPath(); g.arc(1748 + k*12, F - 98 - (k % 2)*12, 7, 0, TAU); g.fill(); } // a cookie jar on a little table
     g.fillStyle = '#c0643a'; g.beginPath(); g.moveTo(1950, F - 70); g.lineTo(2010, F - 70); g.lineTo(2000, F); g.lineTo(1960, F); g.closePath(); g.fill(); g.stroke(); g.fillStyle = '#2e9e4f'; for (const a of [-0.6, 0, 0.6]) { g.save(); g.translate(1980, F - 70); g.rotate(a); g.beginPath(); g.ellipse(0, -40, 12, 40, 0, 0, TAU); g.fill(); g.restore(); } // a big flower pot
@@ -7977,7 +8114,7 @@ $('apUnlock').onclick = () => { // Missing Arrow, every item (but the attic's go
 $('apStory').onclick = () => { // every chapter at once: the whole story already happened (you saw it all), so every background is yours, plus Flower Girl and everything in the shop
   const now = Date.now(), M = 60000;
   lsSet('fff-confess', String(now - 600*M)); lsSet('fff-confessed', String(now - 550*M)); // (dating 290 minutes ago, the 2nd date 280...)
-  lsSet('fff-wedding', String(now - 450*M)); lsSet('fff-attack', String(now - 400*M)); lsSet('fff-attackwon', '1'); lsSet('fff-fell', String(now)); lsSet('fff-saved', String(now)); lsSet('fff-itstopped', String(now)); lsSet('fff-remade', String(now)); lsSet('fff-hexback', String(now)); lsSet('fff-hexin', String(now)); lsSet('fff-garden', String(now)); lsSet('fff-pond', String(now)); lsSet('fff-party', String(now)); lsSet('fff-reallife', String(now)); lsSet('fff-locked', String(now)); lsSet('fff-secret', String(now)); lsSet('fff-goofykid', String(now)); lsSet('fff-hexfix', '100'); lsSet('fff-chdone', '7'); // (...the wedding 450, the Admin's attack 400, and every chapter after it, so even the last one is reached)
+  lsSet('fff-wedding', String(now - 450*M)); lsSet('fff-attack', String(now - 400*M)); lsSet('fff-attackwon', '1'); lsSet('fff-fell', String(now)); lsSet('fff-saved', String(now)); lsSet('fff-itstopped', String(now)); lsSet('fff-remade', String(now)); lsSet('fff-hexback', String(now)); lsSet('fff-hexin', String(now)); lsSet('fff-garden', String(now)); lsSet('fff-pond', String(now)); lsSet('fff-party', String(now)); lsSet('fff-reallife', String(now)); lsSet('fff-locked', String(now)); lsSet('fff-secret', String(now)); lsSet('fff-goofykid', String(now)); lsSet('fff-nowknow', String(now)); lsSet('fff-toobig', String(now)); lsSet('fff-built', String(now)); lsSet('fff-moved', String(now)); lsSet('fff-hexfix', '100'); lsSet('fff-chdone', '8'); // (...the wedding 450, the Admin's attack 400, and every chapter after it, so even the last one is reached)
   shop.unlocked = { ...(shop.unlocked || {}), flower:true };
   $('apUnlock').onclick(); // (and everything in the shop)
   setup.storyLook = 'on'; saveSetup(); applyTheme(); renderSeg('apStorySeg', [['on','Newest'], ...STORY_LOOKS, ['off','Off']], 'storyLook', applyTheme);
@@ -8321,7 +8458,7 @@ $('glitchShopBtn').onclick = () => { // straight into the glitch shop, as Missin
 $('glitchShopBtn').hidden = !unlocked(CHAR.arrow); $('adminBtn').hidden = !unlocked(CHAR.admin);
 // ----- the day/night button in the corner: in the dorms it flips the lights, and in a fight it switches the sky (online, only the host can) -----
 function dayBtnPlace() { // where the button shows up right now: 'dorm', 'fight' or nothing
-  if ((G.state === 'shop' || (G.state === 'title' && cabinHome())) && [CABIN_FLOOR, CABIN_SHOP, CABIN_DORMS, CABIN_OUT, MEADOW_FLOOR].includes(SHOP.floor)) return 'dorm'; // (everywhere in the cabin, too)
+  if ((G.state === 'shop' || (G.state === 'title' && cabinHome())) && [CABIN_FLOOR, CABIN_SHOP, CABIN_DORMS, CABIN_OUT, MEADOW_FLOOR, BABY_FLOOR].includes(SHOP.floor)) return 'dorm'; // (everywhere in the cabin, too)
   if (G.state === 'shop' && SHOP.floor >= 11 && SHOP.floor <= 14) return 'dorm';
   if (G.state === 'fight' && G.mode !== 'race' && G.mode !== 'horror' && G.online !== 'client') return 'fight';
   return null;
@@ -8502,8 +8639,10 @@ function shopLaugh() { // you laugh at the joke, and the shopkeeper is happy you
 }
 function shopStairs() {
   if (SHOP.stairTo === 14 && SHOP.floor === 13 && SHOP.cabinDorm && atticLocked()) return kidLadder(); // (chapter 7: the 3rd floor is locked for good, and there's no key)
+  if (SHOP.stairTo === 14 && SHOP.floor === 13 && bedBlock()) return bedBlockOpen(); // (at night, they try to stop you going up)
   if (SHOP.stairTo === 8) { enterCage(); return; } // the 5th floor portal goes to Missing Arrow's cage
   if (SHOP.stairTo === 12 && !dormOpen(SHOP.stairRoom || 0)) { SHOP.youSay = `It's locked! Only ${DORMS[SHOP.stairRoom].ids.map(dormName).join(' and ')} can go in.`; SHOP.youSayT = 3; if (sfx.bonk) sfx.bonk(); renderShopCard(true); return; } // a locked dorm door
+  if (SHOP.stairTo === BABY_FLOOR && !isHeart()) return heartOnly(); // (only Lovely Heart can go in the baby's room)
   const from = SHOP.floor, to0 = SHOP.stairTo || (from === 1 ? 2 : 1), to = to0 === 1 && codeGone() ? 2 : to0, back = STAIRS.find(s => s.floor === to && s.to === (to0 === to ? from : 1)); // (once the code is gone, the way down goes to the 2nd floor instead)
   if (to === 3 && isKid()) { // the shy shopkeeper thinks the attic is too scary for Goofy Sparkle, so she lifts him off the ladder
     Object.assign(SHOP, { carry:true, carryT:0, x:LADDER_X, facing:-1 });
@@ -8531,7 +8670,8 @@ function shopStairs() {
   }
   if (from === 6) { SHOP.brk = null; shopSay('Did you have a nice break? Hehe... come back soon.', 'jump'); renderShopCard(true); return; }
   if (to === 15) { SHOP.youSay = 'Whoa... the secret admin room!'; SHOP.youSayT = 3; renderShopCard(true); return; } // through the admin door
-  if (to === 14) { if (from === 13) { SHOP.youSay = 'A secret 3rd floor!'; SHOP.youSayT = 2.5; } SHOP.bedT = SHOP.cabinDorm && goofyKidDone() && dormNight() ? performance.now() : 0; /* (chapter 7: at night, they're putting her to bed) */ renderShopCard(true); return; } // up the ladder
+  if (to === BABY_FLOOR) { SHOP.bedT = movedIn() && dormNight() ? performance.now() : 0; renderShopCard(true); return; } // (at night, they're putting her to bed in her new room)
+  if (to === 14) { if (from === 13) { SHOP.youSay = 'A secret 3rd floor!'; SHOP.youSayT = 2.5; } SHOP.bedT = SHOP.cabinDorm && goofyKidDone() && dormNight() && !movedIn() ? performance.now() : 0; if (SHOP.bedT && bedAway()) { SHOP.youSay = 'Shh... here they come! Do not let them see you!'; SHOP.youSayT = 3; } /* (chapter 7: at night, they're putting her to bed) */ renderShopCard(true); return; } // up the ladder
   if (to === 13) { SHOP.pb = { next:performance.now() + 900, chat:null, line:0 }; if (from === 12) { SHOP.youSay = 'Ooh, an upstairs!'; SHOP.youSayT = 2; } renderShopCard(true); return; } // up the shopkeepers' stairs
   if (from === 13) { SHOP.pb = { next:performance.now() + 600, chat:null, line:0 }; renderShopCard(true); return; } // and back down (to the bottom of the stairs)
   if (to === 12) { SHOP.cabinDorm = from === CABIN_DORMS; SHOP.dorm = SHOP.stairRoom || 0; SHOP.hesIn = false; /* (a room off the cabin's dorms, or the old dorms) */ SHOP.cam = 0; SHOP.ktask = null; SHOP.kdone = new Set(); SHOP.shyAwake = false; SHOP.confessVisit = false; SHOP.pb = { next:performance.now() + 600, chat:null, line:0 }; SHOP.youSay = 'Knock knock!'; SHOP.youSayT = 2; renderShopCard(true); return; } // into a dorm room
@@ -8606,7 +8746,7 @@ function renderShopCard(force) {
   const key = [shop.coins, ch.id, justWatching(), (SHOP.itAsked || []).length, (SHOP.clues || []).length, (SHOP.termHeld || []).length, !!SHOP.itBroke, SHOP.floor >= DINNER_FLOOR ? placeMsg() : '', SHOP.floor === 15 && attackOn(), !!(SHOP.atk && SHOP.atk.won), SHOP.nearWed, SHOP.nearPark, SHOP.nearPaper, SHOP.ktask, SHOP.nearTask, SHOP.nearToys, it && it.id, it && shop.owned[it.id], ITEMS.map(i => wears(i.id, ch)).join(), SHOP.nearKeeper, SHOP.nearStairs, SHOP.stairTo, SHOP.floor, jokeOpen(), !!SHOP.revealed, SHOP.nearSmi, SHOP.nearSkins, skinOf(ch), skinRec(ch).have.join(), SHOP.nearCage, SHOP.cage && SHOP.cage.lock.left, SHOP.cage && SHOP.cage.hp, SHOP.cage && SHOP.cage.freed, SHOP.nearPal && SHOP.nearPal.id, SHOP.stairRoom, SHOP.dorm, SHOP.nearSwitch, setup.dormTime].join('|');
   if (!force && key === SHOP.key) return;
   SHOP.key = key; $('coinCount').textContent = shop.coins; $('shopWho').textContent = ch.name;
-  const card = $('shopCard'); if (SHOP.askWho && !it) card.innerHTML = keeperAskCard(); else if (SHOP.floor === MEADOW_FLOOR && !it) card.innerHTML = meadowCard(); else if (jobsPlace(SHOP.floor) && !it) card.innerHTML = jobsCard(); else if (!it && kid7Card()) card.innerHTML = kid7Card(); else if (CABIN_CARDS[SHOP.floor] && !it && !SHOP.nearSkins) card.innerHTML = CABIN_CARDS[SHOP.floor];
+  const card = $('shopCard'); if (SHOP.floor === BABY_FLOOR && !it) card.innerHTML = babyRoomCard(); else if (SHOP.blockOpen && !it) card.innerHTML = bedBlockCard(); else if (SHOP.askWho && !it) card.innerHTML = keeperAskCard(); else if (SHOP.floor === MEADOW_FLOOR && !it) card.innerHTML = meadowCard(); else if (jobsPlace(SHOP.floor) && !it) card.innerHTML = jobsCard(); else if (!it && kid7Card()) card.innerHTML = kid7Card(); else if (CABIN_CARDS[SHOP.floor] && !it && !SHOP.nearSkins) card.innerHTML = CABIN_CARDS[SHOP.floor];
   else if (SHOP.floor === CABIN_FLOOR) card.innerHTML = '<h3>The cabin</h3><p>Your big, cozy home, with everyone in it: the shopkeepers and all the fighters. Walk up to someone and press punch to talk. The stairs on the right go up to the shop (2nd floor) and the dorms (3rd floor), and the door on the left goes outside.</p>';
   else if (SHOP.floor === TUNNEL_FLOOR || SHOP.floor === AROOM_FLOOR) card.innerHTML = ch5Card(); else if (SHOP.floor === REUNITE_FLOOR) card.innerHTML = '<h3>Reunite</h3><p>Deep in the code, in a dark cave with a little campfire: this is where all the fighters went. And now IT has brought the shopkeepers here too...</p><p class="note">You are not anybody here. You just watch. Press back to leave.</p>'; else if (SHOP.floor === TRAIL_FLOOR) card.innerHTML = '<h3>escape?</h3><p>A door at the edge of the world... the shopkeepers step out onto a quiet trail, and it leads to an empty place full of tools to build with. Are they free...?</p><p class="note">You are not anybody here. You just watch. Press back to leave.</p>'; else if (SHOP.floor === IT_FLOOR) card.innerHTML = itCard(); else if (SHOP.floor === EDGE_FLOOR) card.innerHTML = '<h3>Pray for you are in danger</h3><p>The edge of the world. The shopkeepers are trying to get out of this world: pushing on the wall of code, reaching for the crack in the sky, jumping into the portal... and every time, it fails. So they pray, and try again.</p><p class="note">You are not anybody here. You just watch them try. Press back to leave.</p>';
   else if (onlyThemHere()) card.innerHTML = '<h3>It\'s only them</h3><p>Just the two shopkeepers, alone in the broken break room. Their memories are moving on a paper on the wall all by themselves: the confession, their first date, Café Fun and the big day... and they are scared.</p><p class="note">You are not anybody here. You just watch. Press back to leave.</p>'; else fillShopCard(card, ch, it); // (it's only them: no fighter, no things to wear)
@@ -8616,7 +8756,7 @@ function renderShopCard(force) {
   x.onclick = () => { SHOP.cardClosed = true; renderShopCard(true); cv.focus(); };
   card.prepend(x);
   // what this fighter has on, with a button to take each thing off from anywhere in the shop
-  if (!ITEMS.some(i => shop.owned[i.id]) || justWatching() || SHOP.floor === IT_FLOOR || SHOP.askWho) return; // (when it's only them, you aren't anybody, so you aren't wearing anything)
+  if (!ITEMS.some(i => shop.owned[i.id]) || justWatching() || SHOP.floor === IT_FLOOR || SHOP.askWho || SHOP.blockOpen) return; // (when it's only them, you aren't anybody, so you aren't wearing anything)
   const row = document.createElement('div'); row.className = 'wearing';
   const on = ITEMS.filter(i => wears(i.id, ch) && canWear(i, ch));
   if (!on.length) row.textContent = `${ch.name} isn't wearing anything from the shop.`;
@@ -9267,7 +9407,7 @@ function renderLobby() {
 }
 // ----- the story, together online: in a team, the host presses "story together", and everyone goes into the story, using the host's chapters.
 // You all see each other walking around (with name tags and speech bubbles) in the cabin and every story place, and progress anyone makes is shared
-const STORY_KEYS = ['fff-confess', 'fff-confessed', 'fff-wedding', 'fff-attack', 'fff-attackwon', 'fff-fell', 'fff-saved', 'fff-itstopped', 'fff-remade', 'fff-hexback', 'fff-hexin', 'fff-garden', 'fff-pond', 'fff-party', 'fff-reallife', 'fff-locked', 'fff-secret', 'fff-goofykid'];
+const STORY_KEYS = ['fff-confess', 'fff-confessed', 'fff-wedding', 'fff-attack', 'fff-attackwon', 'fff-fell', 'fff-saved', 'fff-itstopped', 'fff-remade', 'fff-hexback', 'fff-hexin', 'fff-garden', 'fff-pond', 'fff-party', 'fff-reallife', 'fff-locked', 'fff-secret', 'fff-goofykid', 'fff-nowknow', 'fff-toobig', 'fff-built', 'fff-moved', 'fff-babyroom'];
 function storySnapshot() { const o = {}; for (const k of STORY_KEYS) { try { o[k] = localStorage.getItem(k); } catch { o[k] = null; } } return o; }
 function chapterSnapshot(ch) { // the story for the chosen chapter: where the host is, or the start of a chapter (with all the chapters before it done)
   if (!ch || ch === 'now') return storySnapshot();
