@@ -1133,9 +1133,9 @@ function drawFace(g, ch, r, o = {}) {
         g.fillStyle = '#7fd4ff'; g.beginPath(); g.moveTo(0.38, -0.3); g.quadraticCurveTo(0.46, -0.16, 0.38, -0.12); g.quadraticCurveTo(0.3, -0.16, 0.38, -0.3); g.fill();
         g.fillStyle = C.ink; break;
       }
-      for (const [ex, px, py] of [[-0.19, -0.04, -0.03], [0.19, 0.04, 0.04]]) {
-        g.fillStyle = '#fff'; g.beginPath(); g.arc(ex, -0.1, 0.17, 0, TAU); g.fill(); g.stroke();
-        g.fillStyle = C.ink; dot(ex + px, -0.1 + py, 0.1); g.fillStyle = '#fff'; dot(ex + px - 0.03, -0.13 + py, 0.03); // big baby eyes, with a shine
+      for (const [ex, px, py] of [[-0.2, -0.04, -0.03], [0.2, 0.04, 0.04]]) {
+        g.fillStyle = '#fff'; g.beginPath(); g.arc(ex, -0.1, 0.2, 0, TAU); g.fill(); g.stroke();
+        g.fillStyle = C.ink; dot(ex + px, -0.1 + py, 0.13); g.fillStyle = '#fff'; dot(ex + px - 0.04, -0.14 + py, 0.04); // great big newborn eyes, with a shine
       }
       g.fillStyle = '#ff8fc1'; g.strokeStyle = C.ink; g.lineWidth = 0.03; g.beginPath(); g.ellipse(0, 0.2, 0.15, 0.07, 0, 0, TAU); g.fill(); g.stroke(); g.fillStyle = '#8fd3ff'; dot(0, 0.2, 0.05); g.strokeStyle = C.ink; g.lineWidth = 0.035; g.beginPath(); g.arc(0, 0.3, 0.05, 0, TAU); g.stroke(); // a pacifier
       g.fillStyle = 'rgba(255,90,110,.55)'; oval(-0.33, 0.13, 0.1, 0.06); oval(0.33, 0.13, 0.1, 0.06); // rosy baby cheeks
@@ -4388,7 +4388,7 @@ function drawPlayerBreak(t) {
   // everyone hanging out, with whoever is talking bouncing a little
   const say = SHOP.pb && SHOP.pb.say && performance.now() < SHOP.pb.say.until ? SHOP.pb.say : null;
   for (const { ch, x } of pbSpots()) {
-    const r = 42*Math.min(ch.size || 1, 1.8), bottom = ch.shape === 'circle' ? r : Math.max(...shapeVerts(ch.shape, r, true).map(v => v.y));
+    const r = ch.id === 'sparkle' ? GOOFY_R : 42*Math.min(ch.size || 1, 1.8), bottom = ch.shape === 'circle' ? r : Math.max(...shapeVerts(ch.shape, r, true).map(v => v.y));
     const talking = say && say.id === ch.id, bob = Math.abs(Math.sin(t*2 + x))*4 + (talking ? Math.abs(Math.sin(t*12))*6 : 0);
     g.save(); g.translate(x, SHOP_FLOOR - bottom - bob); drawCharacter(g, ch, r, { facing:x < SHOP.x ? 1 : -1, ...looks(ch), happy:talking }); g.restore();
     if (SHOP.nearPal === ch) drawPointer(x, SHOP_FLOOR - bottom*2 - 70, t);
@@ -4442,7 +4442,8 @@ function dormLight() { // flip the light switch: day to night, or night to day
 const dormName = id => id === 'oldhex' ? (hexIn() || SHOP.hesIn ? 'Hexstar 1.0' : '(empty bed)') : CHAR[id].keeper || unlocked(CHAR[id]) ? CHAR[id].name : '???'; // (a locked fighter's name stays a secret, but everyone knows the shopkeepers)
 const dormOpen = i => !DORMS[i].locked || DORMS[i].ids.includes(CHARS[SHOP.who].id); // a locked door only opens for the two who live there
 const KEEPER_SHOP_R = { keeper:0.75*350/2.1, keeper2:255/2.1 }; // the size that draws the shopkeepers about as big as they are in their shops (Fighty a bit smaller)
-const dormR = ch => KEEPER_SHOP_R[ch.id] || 46*Math.min(ch.size || 1, 1.8);
+const GOOFY_R = 20; // (how big baby Goofy Sparkle is when he's just hanging out: the same size as the shopkeepers' baby)
+const dormR = ch => ch.id === 'sparkle' ? GOOFY_R : KEEPER_SHOP_R[ch.id] || 46*Math.min(ch.size || 1, 1.8);
 const dormTall = ch => dormR(ch)*(ch.keeper ? 3 : 2); // (how tall they stand, for speech bubbles)
 // when you wake her up at night, the Shy Shopkeeper gets out of bed and walks down the stairs for dinner
 const shyDown = () => dormNight() && SHOP.shyAwake;
@@ -5966,7 +5967,7 @@ function renderSettings() {
   renderSeg('spookySeg', [['auto','In October'],['on','Always'],['off','Off']], 'halloween', applyTheme);
   renderSeg('xmasSeg', [['auto','In December'],['on','Always'],['off','Off']], 'christmas', applyTheme);
   renderSeg('thanksSeg', [['auto','In November'],['on','Always'],['off','Off']], 'thanksgiving', applyTheme);
-  renderStoryLooks('storySeg', STORY_LOOKS.slice(0, storyOk ? storyReached() : 0)); // (only the looks you've reached, by chapter)
+  renderStoryLooks('storySeg', STORY_LOOKS, storyOk ? storyReached() : 0); // (the looks you've reached, by chapter, and locks on what's coming next)
 }
 let backTo = 'title';
 function openPage(id) { backTo = G.state; G.state = id; waitingKey = null; if (id === 'settings') renderSettings(); if (id === 'keys') { renderKeys(); $('keysMsg').textContent = ''; } fillKeyLabels(); showScreen(id); $(id).scrollTop = 0; $(id).querySelector('[data-back]').focus(); }
@@ -7191,7 +7192,7 @@ function drawCabin(t) { // a big, cozy log cabin (drawn 2400 wide; the room scro
   if (dormNight()) { g.fillStyle = 'rgba(15,10,50,.38)'; g.fillRect(-200, -200, CW + 400, H + 400); } // (dim at night)
   if (tooBigDone()) drawCabinDoor(BABY_DOOR_X, "baby's room →", t); // (chapter 8: the door to her new room, behind everyone)
   // everyone, hanging out (and whoever you're talking to says something)
-  const pals = cabinPals(); pals.forEach((p, i) => { const ch = p.ch, r = ch.keeper ? dormR(ch)*0.5 : ch.id === 'admin' ? 46 : 34*Math.min(ch.size || 1, 1.3), bob = Math.abs(Math.sin(t*2 + i))*4; g.save(); g.translate(p.x, SHOP_FLOOR - r - bob); drawCharacter(g, ch, r, { facing:p.x < SHOP.x ? 1 : -1, ...looks(ch), happy:true, still:true }); g.restore(); });
+  const pals = cabinPals(); pals.forEach((p, i) => { const ch = p.ch, r = ch.keeper ? dormR(ch)*0.5 : ch.id === 'admin' ? 46 : ch.id === 'sparkle' ? GOOFY_R : 34*Math.min(ch.size || 1, 1.3), bob = Math.abs(Math.sin(t*2 + i))*4; g.save(); g.translate(p.x, SHOP_FLOOR - r - bob); drawCharacter(g, ch, r, { facing:p.x < SHOP.x ? 1 : -1, ...looks(ch), happy:true, still:true }); g.restore(); });
   const cs = SHOP.cabinSay, sp = cs && performance.now() < cs.until && pals.find(p => p.ch.id === cs.id); if (sp) drawBubble(cs.text, sp.x + 240, SHOP_FLOOR - 200, sp.x);
   if (SHOP.nearCabin) { const np = pals.find(p => p.ch.id === SHOP.nearCabin); if (np) drawPointer(np.x + 50, SHOP_FLOOR - 220, t); }
   drawTelling(t); // (chapter 7: now we know)
@@ -7552,7 +7553,7 @@ function drawMeadow(t) { // the meadow: grass and trees, the garden on the left,
   for (const cx of [-18, 0, 18]) { g.fillStyle = '#ff8fc1'; g.fillRect(CAKE_X + cx - 3, F - 172, 6, 20); if (partying) { g.fillStyle = Math.sin(t*12 + cx) > 0 ? '#ffd23f' : '#ff8c1a'; g.beginPath(); g.ellipse(CAKE_X + cx, F - 178, 4, 7, 0, 0, TAU); g.fill(); } } // candles (lit at the party)
   if (partying) { for (let i=0;i<40;i++) { const x = (i*97 + t*40*(1 + i % 3)) % W, y = ((i*53 + t*90*(1 + i % 2)) % (F - 60)); g.fillStyle = ['#ff5fa2', '#ffd23f', '#7dd3ff', '#9ce37d', '#c77dd1'][i % 5]; g.save(); g.translate(x, y); g.rotate(t*3 + i); g.fillRect(-5, -3, 10, 6); g.restore(); } // confetti
     const e = now - (SHOP.partyT || 0); if (e < 7000) { g.save(); g.globalAlpha = Math.min(1, e/500, (7000 - e)/800); g.fillStyle = '#ff5fa2'; g.strokeStyle = C.white; g.lineWidth = 8; g.font = `60px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.strokeText('WELCOME TO YOUR NEW LIFE!', W/2, 140); g.fillText('WELCOME TO YOUR NEW LIFE!', W/2, 140); g.restore(); } }
-  const pals = meadowPals(); pals.forEach((p, i) => { const r = p.ch.keeper ? dormR(p.ch)*0.5 : 36*Math.min(p.ch.size || 1, 1.3), hop = p.party ? Math.abs(Math.sin(t*5 + i))*22 : Math.abs(Math.sin(t*2 + i))*3; g.save(); g.translate(p.x, F - r - hop); drawCharacter(g, p.ch, r, { facing:p.x < SHOP.x ? 1 : -1, ...looks(p.ch), happy:p.party, still:true }); g.restore(); });
+  const pals = meadowPals(); pals.forEach((p, i) => { const r = p.ch.keeper ? dormR(p.ch)*0.5 : p.ch.id === 'sparkle' ? GOOFY_R : 36*Math.min(p.ch.size || 1, 1.3), hop = p.party ? Math.abs(Math.sin(t*5 + i))*22 : Math.abs(Math.sin(t*2 + i))*3; g.save(); g.translate(p.x, F - r - hop); drawCharacter(g, p.ch, r, { facing:p.x < SHOP.x ? 1 : -1, ...looks(p.ch), happy:p.party, still:true }); g.restore(); });
   const cs = SHOP.cabinSay, sp = cs && now < cs.until && pals.find(p => p.ch.id === cs.id); if (sp) drawBubble(cs.text, Math.min(W - 20, sp.x + 260), F - 220, sp.x);
   const n = SHOP.nearCabin; if (n) { const nx = n.startsWith('plot') ? PLOTS[+n.slice(4)].x : n === 'dock' ? DOCK_X : n.startsWith('lant') ? LANTERNS[+n.slice(4)] : (pals.find(p => p.ch.id === n) || {}).x; if (nx != null) drawPointer(nx + 40, n.startsWith('lant') ? 360 : F - 200, t); }
   if (SHOP.nearStairs && SHOP.stairTo === CABIN_OUT) drawPointer(150, F - 300, t);
@@ -7652,7 +7653,7 @@ function drawJobs(t) { // the jobs hallway (a door for each job), or one job's r
     if (SHOP.nearStairs && SHOP.stairTo === JOBS_FLOOR) drawPointer(150, F - 300, t);
   }
   if (SHOP.jobSpark && now - SHOP.jobSpark.t < 800 && i >= 0) { const k = (now - SHOP.jobSpark.t)/800; for (let q=0;q<12;q++) { const a = q*TAU/12; g.fillStyle = q % 2 ? C.yellow : C.white; g.fillRect(SHOP.jobSpark.x + Math.cos(a)*k*120, F - 120 + Math.sin(a)*k*80, 7, 7); } } // sparkles when you help
-  const pals = jobPals(), paid = SHOP.payT && now - SHOP.payT < 7000; pals.forEach((p, q) => { const r = 40*Math.min(p.ch.size || 1, 1.3), hop = paid ? Math.abs(Math.sin(t*6 + q))*20 : Math.abs(Math.sin(t*2 + q))*3; g.save(); g.translate(p.x, F - r - hop); drawCharacter(g, p.ch, r, { facing:-1, ...looks(p.ch), happy:paid, still:true }); g.restore(); });
+  const pals = jobPals(), paid = SHOP.payT && now - SHOP.payT < 7000; pals.forEach((p, q) => { const r = p.ch.id === 'sparkle' ? GOOFY_R : 40*Math.min(p.ch.size || 1, 1.3), hop = paid ? Math.abs(Math.sin(t*6 + q))*20 : Math.abs(Math.sin(t*2 + q))*3; g.save(); g.translate(p.x, F - r - hop); drawCharacter(g, p.ch, r, { facing:-1, ...looks(p.ch), happy:paid, still:true }); g.restore(); });
   if (paid) { for (let q=0;q<24;q++) { const x = (q*131 + (now - SHOP.payT)*0.05*(1 + q % 3)) % W, y = ((now - SHOP.payT)*0.25*(1 + q % 2) + q*40) % F; g.fillStyle = '#ffd23f'; g.strokeStyle = '#b8860b'; g.lineWidth = 2; g.beginPath(); g.arc(x, y, 10, 0, TAU); g.fill(); g.stroke(); } // coins raining down
     const e = now - SHOP.payT; g.save(); g.globalAlpha = Math.min(1, e/400, (7000 - e)/800); g.fillStyle = '#2e9e4f'; g.strokeStyle = C.white; g.lineWidth = 8; g.font = `64px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.strokeText(SHOP.payLabel, W/2, 210); g.fillText(SHOP.payLabel, W/2, 210); g.restore(); }
   const cs = SHOP.cabinSay, sp = cs && now < cs.until && pals.find(p => p.ch.id === cs.id); if (sp) drawBubble(cs.text, Math.min(W - 20, sp.x + 240), F - 160, sp.x);
@@ -7691,7 +7692,7 @@ const LIES = { keeper:['The 3rd floor? Nothing up there! Just... dust! Lots of d
 const KID_CAUGHT = ['Hehe! Goo goo!', 'Wheee! Ba ba!', '*giggles and gives you a hug*'];
 const KID_GOSSIP = { // what everyone says about the Little Shopkeeper, once they know about her (the shopkeepers say there's no baby, but everyone knows)
   keeper:['Baby?! What baby?! There is NO baby here!'], keeper2:['b-baby? I do not know any babies... *giggle* ...that was me.'],
-  heart:['The shopkeepers say there is no baby... but I saw them tuck her in! She is SO cute!'], star:['That baby has cool shades. ...Just like me.'],
+  heart:['The shopkeepers say there is no baby... but I saw them tuck her in! She is SO cute!'], star:['That baby is SO tiny. ...Cool kid.'],
   tri:['Grr... that counter snores SO loud! ...It is kind of cute.'], square:['THE COUNTER IS SNORING! I AM BEING VERY QUIET!'],
   sparkle:['Ga ga! Goo goo ba! *points at the counter*'], shuriken:['TWO Goofys?! I can barely keep up with ONE!'],
   circle:['WHAT?! The counter is SNORING?!'], diamond:['I know all about the baby... hehe. They think nobody knows.'],
@@ -7699,7 +7700,7 @@ const KID_GOSSIP = { // what everyone says about the Little Shopkeeper, once the
   hex:['Beep! The counter goes zzz! ...Counters do not do that.'], admin:['I knew. I am the admin.'],
 };
 const KID_CHATS = [ // in the cabin's dorms at night, everyone talks about her
-  [['heart', 'Did you see the baby today?'], ['star', 'She has cool shades. ...Just like me.'], ['heart', 'They keep her in the counter! Hehe!']],
+  [['heart', 'Did you see the baby today?'], ['star', 'She is so tiny. ...Cool kid.'], ['heart', 'They keep her in the counter! Hehe!']],
   [['sparkle', 'Ga ga! Goo ba!'], ['shuriken', 'No. Do NOT get in the counter, Goofy.']],
   [['square', 'THE COUNTER IS SNORING!'], ['tri', 'Shh! You will wake her up! ...Grr.']],
   [['circle', 'WHAT?! A baby in the COUNTER?!'], ['flower', 'Hehe, yes! Shh...']],
@@ -7923,8 +7924,8 @@ function drawPlayroom(t) { // the playroom: bright walls, a big rug, a toy box, 
   if (crash) { const k = (now - SHOP.crashT)/2500; for (let i=0;i<4;i++) { const a = -2.6 + i*0.7; g.fillStyle = ['#ff8fc1', '#8fd3ff', '#ffd23f', '#9ce37d'][i]; g.strokeStyle = C.ink; g.lineWidth = 3; g.save(); g.translate(PLAY_TOWER + Math.cos(a)*k*340, Math.min(F - 26, F - 150 + Math.sin(a)*k*280 + k*k*520)); g.rotate(k*6 + i); g.fillRect(-26, -26, 52, 52); g.strokeRect(-26, -26, 52, 52); g.restore(); } }
   if (towerDone() && !teddyDone()) { g.fillStyle = '#b97a57'; g.strokeStyle = C.ink; g.lineWidth = 3; g.save(); g.translate(SHOP.teddyX == null ? PLAY_G + 60 : SHOP.teddyX, F - 34 - (SHOP.teddyX === SHOP.teddyTo ? 0 : Math.abs(Math.sin((SHOP.teddyX || 0)/40))*40)); for (const [dx, dy, r] of [[-24, 16, 10], [24, 16, 10], [-16, 28, 10], [16, 28, 10], [0, 12, 22], [0, -18, 18], [-14, -32, 8], [14, -32, 8]]) { g.beginPath(); g.arc(dx, dy, r, 0, TAU); g.fill(); g.stroke(); } g.fillStyle = '#e8c9a8'; g.beginPath(); g.arc(0, -13, 8, 0, TAU); g.fill(); g.fillStyle = C.ink; for (const s of [-1, 1]) { g.beginPath(); g.arc(s*7, -22, 2.5, 0, TAU); g.fill(); } g.beginPath(); g.arc(0, -15, 3, 0, TAU); g.fill(); g.restore(); } // the teddy bear, hopping between them
   const you = youGoofy(), gx = crash ? g0 + Math.min(1, (now - SHOP.crashT)/900)*(PLAY_TOWER - g0) : g0;
-  if (asleep) { if (!you) { const ch = CHAR.sparkle; g.save(); g.translate(g0, F - 28); g.rotate(-1.4); drawCharacter(g, ch, 26, { ...looks(ch), still:true }); g.restore(); g.fillStyle = '#d6ecff'; g.strokeStyle = C.ink; g.lineWidth = 3; roundRect(g0 - 6, F - 46, 56, 40, 14); g.fill(); g.stroke(); } drawSleepingBaby(t, b0 + 40, F - 44, 90); }
-  else { if (!you) { const ch = CHAR.sparkle, r = 26; g.save(); g.translate(gx, F - r - 6 - Math.abs(Math.sin(t*4))*3); g.rotate(0.3 + Math.sin(t*5)*0.08); drawCharacter(g, ch, r, { facing:1, ...looks(ch), happy:true, still:true }); g.restore(); if ((SHOP.tucked || []).includes('g')) { g.fillStyle = '#d6ecff'; g.strokeStyle = C.ink; g.lineWidth = 3; roundRect(g0 - 40, F - 40, 80, 40, 12); g.fill(); g.stroke(); } } drawLittleKid(b0, F, t, true, true, -1); if ((SHOP.tucked || []).includes('b')) { g.fillStyle = '#ffd6e8'; g.strokeStyle = C.ink; g.lineWidth = 3; roundRect(b0 - 60, F - 40, 110, 40, 12); g.fill(); g.stroke(); } }
+  if (asleep) { if (!you) { const ch = CHAR.sparkle; g.save(); g.translate(g0, F - 28); g.rotate(-1.4); drawCharacter(g, ch, GOOFY_R, { ...looks(ch), still:true }); g.restore(); g.fillStyle = '#d6ecff'; g.strokeStyle = C.ink; g.lineWidth = 3; roundRect(g0 - 6, F - 40, 46, 34, 12); g.fill(); g.stroke(); } drawSleepingBaby(t, b0 + 40, F - 44, 90); }
+  else { if (!you) { const ch = CHAR.sparkle, r = GOOFY_R; g.save(); g.translate(gx, F - r - 6 - Math.abs(Math.sin(t*4))*3); g.rotate(0.3 + Math.sin(t*5)*0.08); drawCharacter(g, ch, r, { facing:1, ...looks(ch), happy:true, still:true }); g.restore(); if ((SHOP.tucked || []).includes('g')) { g.fillStyle = '#d6ecff'; g.strokeStyle = C.ink; g.lineWidth = 3; roundRect(g0 - 40, F - 40, 80, 40, 12); g.fill(); g.stroke(); } } drawLittleKid(b0, F, t, true, true, -1); if ((SHOP.tucked || []).includes('b')) { g.fillStyle = '#ffd6e8'; g.strokeStyle = C.ink; g.lineWidth = 3; roundRect(b0 - 60, F - 40, 110, 40, 12); g.fill(); g.stroke(); } }
   if (SHOP.playCarry) { const bx = SHOP.x, by = F - 130; g.fillStyle = towerDone() ? '#ffd6e8' : ['#ff8fc1', '#8fd3ff', '#ffd23f', '#9ce37d'][(SHOP.playN || 0) % 4]; g.strokeStyle = C.ink; g.lineWidth = 3; if (towerDone()) { roundRect(bx - 45, by, 90, 24, 8); g.fill(); g.stroke(); } else { g.fillRect(bx - 22, by - 22, 44, 44); g.strokeRect(bx - 22, by - 22, 44, 44); } } // what you're carrying
   const n = SHOP.nearCabin, px = n === 'playblock' ? (SHOP.playCarry ? PLAY_TOWER : PLAY_PILE) : n === 'playteddy' ? SHOP.teddyX : n === 'playblanket' ? PLAY_PILE : n === 'playtuckg' ? g0 : n === 'playtuckb' ? b0 : null; if (px != null) drawPointer(px + 40, F - 160, t);
   const ps = SHOP.playSay; if (ps && now < ps.until) { const lx = ps.id === 'kid' ? b0 : (you ? SHOP.x : gx); drawBubble(ps.text, Math.min(W - 20, lx + 240), F - 140, lx); }
@@ -7950,7 +7951,7 @@ const KEEPER_ASK = [
     lie:{ keeper:LIES.keeper[2], keeper2:LIES.keeper2[2] },
     a:{ keeper:'Locked? Is it? Hehe... no reason! NO reason at all!', keeper2:'*stands in front of the ladder* w-what ladder?' } },
   { id:'baby', q:'Tell me about your baby!', show:() => kidOn() && secretDone(), baby:true,
-    t:{ keeper:'She has my sunglasses... and her Mama\'s everything else! Lucky kid!', keeper2:'She is the best thing that ever happened to us... hehe.' },
+    t:{ keeper:'She has my big laugh... and her Mama\'s everything else! Lucky kid!', keeper2:'She is the best thing that ever happened to us... hehe.' },
     a:{ keeper:'Baby?! What baby?! There is NO baby here! *coughs REALLY loudly*', keeper2:'b-baby? I do not know any babies... *giggle* ...that was me.' } },
   { id:'shop', q:'How is the shop doing?', show:() => true,
     a:{ keeper:'Business is GOOD! Everyone comes up here now!', keeper2:'w-we sold one pink bow today... *happy*' } },
@@ -8014,8 +8015,8 @@ function kid7Card() { // the info card, while something from chapter 7 is going 
   if (f === 14 && goofyKidDone()) return (dormNight() ? '<h3>The baby&#39;s room</h3><p>Shh... at night, the shopkeepers put the Little Shopkeeper to bed in her crib.</p>' : '<h3>The baby&#39;s room</h3><p>Her crib is empty in the daytime. Listen for the snoring in the cabin shop...</p>') + '<p class="note">The hatch on the left goes back down.</p>';
   return null;
 }
-function drawLittleKid(x, groundY, t, happy, crawl = false, dir = 1, asleep = false) { // the shopkeepers' baby girl, mostly like her Mama, the Shy Shopkeeper: little pigtails, bangs, eyelashes and a purple dress with puffy sleeves, plus a bib with a heart and a little black bow (and a diaper!). From her Papa, just his sunglasses, pushed up on her head. She's a baby, so she can't run: she crawls (or she's asleep)
-  const S = 0.62, step = crawl ? Math.sin(t*6) : 0; g.save(); g.translate(x, groundY); g.scale(S*dir, S); if (crawl) { g.translate(-40, -30); g.rotate(1.2); } // (on her hands and knees)
+function drawLittleKid(x, groundY, t, happy, crawl = false, dir = 1, asleep = false) { // the shopkeepers' baby girl, mostly like her Mama, the Shy Shopkeeper: little pigtails, bangs, eyelashes and a purple dress with puffy sleeves, plus a bib with a heart and a little black bow (and a diaper!). She's a baby, so she can't run: she crawls (or she's asleep)
+  const S = 0.44, step = crawl ? Math.sin(t*6) : 0; g.save(); g.translate(x, groundY); g.scale(S*dir, S); if (crawl) { g.translate(-40, -30); g.rotate(1.2); } // (on her hands and knees)
   g.fillStyle = C.grey; g.strokeStyle = C.ink; g.lineWidth = 3; g.lineJoin = 'round'; if (crawl) for (const k of [-1, 1]) { g.beginPath(); g.ellipse(26, -14 + k*(5 + step*5), 10, 9, 0, 0, TAU); g.fill(); g.stroke(); } else for (const k of [-1, 1]) { g.beginPath(); g.ellipse(k*14, -9, 10, 9, 0, 0, TAU); g.fill(); g.stroke(); } // chubby little legs
   g.fillStyle = C.white; g.lineWidth = 3; g.beginPath(); g.ellipse(0, -20, 23, 13, 0, 0, TAU); g.fill(); g.stroke(); // a diaper
   g.fillStyle = C.purple; g.lineWidth = 4; g.beginPath(); g.moveTo(-15, -58); g.lineTo(15, -58); g.quadraticCurveTo(32, -38, 29, -25); g.quadraticCurveTo(0, -19, -29, -25); g.quadraticCurveTo(-32, -38, -15, -58); g.closePath(); g.fill(); g.stroke(); // a little purple dress, like Mama's
@@ -8023,18 +8024,18 @@ function drawLittleKid(x, groundY, t, happy, crawl = false, dir = 1, asleep = fa
   for (const s of [-1, 1]) { const wave = happy && !crawl && !asleep && s === 1, hx = crawl ? 44 : wave ? 32 : s*27, hy = crawl ? -56 + s*(8 - step*6) : wave ? -72 + Math.sin(t*8)*4 : -40; g.strokeStyle = C.ink; g.lineWidth = 9; g.lineCap = 'round'; g.beginPath(); g.moveTo(crawl ? 8 : s*14, -52); g.lineTo(hx, hy); g.stroke(); g.fillStyle = C.grey; g.lineWidth = 3; g.beginPath(); g.arc(hx, hy, 6, 0, TAU); g.fill(); g.stroke(); } // stubby little arms (one waving when she's happy, and on the floor when she crawls)
   g.fillStyle = '#b46fc0'; g.strokeStyle = C.ink; g.lineWidth = 3; for (const s of [-1, 1]) { g.beginPath(); g.ellipse(s*15, -54, 9, 7, 0, 0, TAU); g.fill(); g.stroke(); } // puffy sleeves
   g.fillStyle = C.ink; for (const s of [-1, 1]) { g.beginPath(); g.ellipse(s*8, -60, 8, 5, s*0.3, 0, TAU); g.fill(); } g.beginPath(); g.arc(0, -60, 3.5, 0, TAU); g.fill(); // a little black bow, like Mama's
-  g.save(); g.translate(0, -94); if (crawl) g.rotate(-1.2 + Math.sin(t*3)*0.05); // (she looks where she's going)
+  g.save(); g.translate(0, -96); g.scale(1.12, 1.12); if (crawl) g.rotate(-1.2 + Math.sin(t*3)*0.05); // (a big baby head, and she looks where she's going)
   const HAIR = '#3b2a2a';
-  for (const s of [-1, 1]) { g.fillStyle = HAIR; g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.ellipse(s*39, -18 + Math.sin(t*2 + s)*(asleep ? 0 : 1.5), 8, 11, s*0.6, 0, TAU); g.fill(); g.stroke(); g.fillStyle = '#ff7aa8'; g.beginPath(); g.arc(s*32, -14, 4, 0, TAU); g.fill(); } // two tiny pigtails, with pink bands
+  for (const s of [-1, 1]) { const sway = Math.sin(t*2 + s)*(asleep ? 0 : 1.5); g.fillStyle = HAIR; g.strokeStyle = C.ink; g.lineWidth = 3; for (const [px, py] of [[45, 0], [47, -11], [41, -20]]) { g.beginPath(); g.arc(s*px, py + sway, 8, 0, TAU); g.fill(); g.stroke(); } g.fillStyle = '#ff7aa8'; g.beginPath(); g.arc(s*34, -18, 4, 0, TAU); g.fill(); } // two curly little pigtails, with pink bands
   g.fillStyle = C.grey; g.strokeStyle = C.ink; g.lineWidth = 4; g.beginPath(); g.arc(0, 0, 38, 0, TAU); g.fill(); g.stroke(); // a big round baby head
-  g.fillStyle = HAIR; g.lineWidth = 3; g.beginPath(); g.arc(0, 0, 39, Math.PI*1.08, Math.PI*1.92); for (let i=0;i<=6;i++) g.lineTo(32 - i*10.7, i % 2 ? -19 : -24); g.closePath(); g.fill(); g.stroke(); // Mama's bangs
+  g.fillStyle = HAIR; g.lineWidth = 3; for (const a of [-2.75, -2.4, -2.05, -1.75, -1.39, -1.09, -0.74, -0.39]) { g.beginPath(); g.arc(Math.cos(a)*38, Math.sin(a)*38, 10, 0, TAU); g.fill(); g.stroke(); } // soft round curls, all over the top of her head
+  g.beginPath(); g.arc(0, 0, 39, Math.PI*1.04, Math.PI*1.96); for (let i=0;i<6;i++) g.quadraticCurveTo(29.2 - i*11.7, -7, 23.3 - i*11.7, -19); g.closePath(); g.fill(); g.stroke(); g.strokeStyle = '#6b5050'; g.lineWidth = 2; for (const [cx, cy] of [[-20, -28], [-4, -31], [13, -29], [24, -24]]) { g.beginPath(); g.arc(cx, cy, 4, 0.4, 5); g.stroke(); } // and curly bangs, with little curls drawn in them
   if (asleep) { g.strokeStyle = C.ink; g.lineWidth = 3; for (const ex of [-14, 14]) { g.beginPath(); g.arc(ex, 2, 8, 0.15, Math.PI - 0.15); g.stroke(); } } // eyes shut, fast asleep
   else { g.fillStyle = C.white; for (const ex of [-14, 14]) { g.beginPath(); g.arc(ex, 3, 10, 0, TAU); g.fill(); } g.fillStyle = C.ink; for (const ex of [-14, 14]) { g.beginPath(); g.arc(ex + 1.5, 4, 6.5, 0, TAU); g.fill(); } g.fillStyle = C.white; for (const ex of [-14, 14]) { g.beginPath(); g.arc(ex - 0.5, 1, 2.5, 0, TAU); g.fill(); } } // big baby eyes
   g.strokeStyle = C.ink; g.lineWidth = 1.5; for (const [ex, s] of [[-14, -1], [14, 1]]) for (const k of [0, 1]) { g.beginPath(); g.moveTo(ex + s*8, -3 + k*3 + (asleep ? 7 : 0)); g.lineTo(ex + s*13, -6 + k*3 + (asleep ? 7 : 0)); g.stroke(); } // and Mama's eyelashes
   g.fillStyle = 'rgba(255,120,150,.5)'; for (const s of [-1, 1]) { g.beginPath(); g.ellipse(s*25, 16, 8, 5, 0, 0, TAU); g.fill(); } // rosy cheeks
   if (asleep) { g.strokeStyle = C.ink; g.lineWidth = 2.5; g.beginPath(); g.arc(0, 21, 3 + Math.sin(t*1.5), 0, TAU); g.stroke(); } // a tiny sleepy mouth, breathing
-  else { g.fillStyle = '#7a2a3a'; g.strokeStyle = C.ink; g.lineWidth = 2; g.beginPath(); g.arc(0, 18, happy ? 7 : 4, 0, Math.PI); g.closePath(); g.fill(); g.stroke(); g.fillStyle = C.white; g.fillRect(-2, 18, 4, 3); } // a tiny baby smile, with one tooth
-  g.fillStyle = C.ink; for (const ex of [-11, 11]) { roundRect(ex - 9, -36, 18, 11, 4); g.fill(); } g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.moveTo(-3, -32); g.lineTo(3, -32); g.stroke(); g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineWidth = 2; for (const ex of [-11, 11]) { g.beginPath(); g.moveTo(ex - 4, -27); g.lineTo(ex + 1, -34); g.stroke(); } // and Papa's sunglasses, pushed up on her head
+  else { g.fillStyle = '#ff8fc1'; g.strokeStyle = C.ink; g.lineWidth = 2; g.beginPath(); g.ellipse(0, 21, 11, 5, 0, 0, TAU); g.fill(); g.stroke(); g.fillStyle = '#8fd3ff'; g.beginPath(); g.arc(0, 21, 4, 0, TAU); g.fill(); g.beginPath(); g.arc(0, 28, 4, 0, TAU); g.stroke(); } // a pacifier, just like Goofy Sparkle's (no teeth yet)
   g.restore(); g.restore();
 }
 function drawSleepingBaby(t, fx, y, w) { // the baby, lying down fast asleep (fx: where her feet are, y: how high up), tucked in under a blanket (w wide), with Zzz floating up
@@ -8058,7 +8059,7 @@ function drawKid7(t) { // chapter 7 things in the shopkeepers' cabin home
     if (secretDone() && !kidInShop()) {
       const e = s.reveal ? (now - s.reveal)/1000 : 99, revealing = e < 13, chase = !goofyKidDone();
       const kx = revealing ? s.revealX : s.kid.x, ky = F; // (where you found her, then crawling around)
-      if (!revealing && (chase || (s.hug && now - s.hug < 5000)) && CHARS[SHOP.who].id !== 'sparkle') { const r = 36; g.save(); g.translate(1500, F - r - Math.abs(Math.sin(t*6))*14); drawCharacter(g, CHAR.sparkle, r, { facing:-1, ...looks(CHAR.sparkle), happy:true, still:true }); g.restore(); } // Goofy Sparkle, cheering them on
+      if (!revealing && (chase || (s.hug && now - s.hug < 5000)) && CHARS[SHOP.who].id !== 'sparkle') { const r = GOOFY_R; g.save(); g.translate(1500, F - r - Math.abs(Math.sin(t*6))*14); drawCharacter(g, CHAR.sparkle, r, { facing:-1, ...looks(CHAR.sparkle), happy:true, still:true }); g.restore(); } // Goofy Sparkle, cheering them on
       drawLittleKid(kx, ky, t, true, true, revealing ? 1 : (s.kid.tx >= s.kid.x ? 1 : -1));
       if (revealing) { const line = KID_REVEAL.filter(l => l[0] <= e && l[1] !== CHARS[SHOP.who].id).pop(); if (line) { /* (if you're one of the shopkeepers, the other one does the talking) */ const x = line[1] === 'kid' ? kx : line[1] === 'keeper' ? 1000 : 1240; say(line[2], x + 260, F - 260, x); } }
       else { if (s.kidSay && now < s.kidSay.until) say(s.kidSay.text, kx + 240, F - 120, kx); if (s.goofySay && now < s.goofySay.until) say(s.goofySay.text, 1740, F - 240, 1500);
@@ -8128,11 +8129,11 @@ const CABIN_CARDS = { [CABIN_SHOP]:'<h3>The cabin shop</h3><p>The 2nd floor of t
 const NEW_LOOKS = [['remade','🕳️ Gone','🛠️ You re-made the shop! 🛠️','fff-remade','🛠️'], ['hexreturn','🤖 Hex return','🤖 The old Hexstar is back! 🤖','fff-hexback','🤖'], ['hesin','🏠 He\'s in!','🏠 Hexstar 1.0 moved in! 🏠','fff-hexin','🏠'], ['garden','🌱 The garden','🌱 Everything is growing! 🌱','fff-garden','🌱'], ['pond','🐟 The pond','🐟 Gone fishing! 🐟','fff-pond','🐟'], ['party','🎉 The party','🎉 Welcome to your new life! 🎉','fff-party','🎉'], ['reallife','💼 Real life','💼 Everyone has a job! 💼','fff-reallife','💰'], ['locked','🔒 What\'s up there?','🔒 What is on the 3rd floor...? 🔒','fff-locked','🔒'], ['secret','👀 The secret','👀 There IS a baby! 👀','fff-secret','👀'], ['goofy','🏃 Just like Goofy!','🏃 Just like Goofy Sparkle! 🏃','fff-goofykid','🍼'], ['nowknow','🗣️ Now we know','🗣️ Now we ALL know! 🗣️','fff-nowknow','🗣️'], ['toobig','🧱 Too big!','🧱 She is too big for the counter! 🧱','fff-toobig','🧱'], ['built','🔨 Build her room','🔨 Building the baby a room! 🔨','fff-built','🔨'], ['moved','🎨 Move in','🎨 Welcome home, little one! 🎨','fff-moved','🧸'], ['hearttrust','💖 Heart trust','💖 They trust Lovely Heart! 💖','fff-hearttrust','💖'], ['invite','💌 The invite','💌 Goofy Sparkle wants a playdate! 💌','fff-invite','💌'], ['tower','🧱 Block tower','🧱 *CRASH* Hehe! 🧱','fff-tower','🧱'], ['teddy','🧸 Play with the teddy','🧸 Teddy wants a hug! 🧸','fff-teddy','🧸'], ['nap','😴 Nap time','😴 Best playdate ever! 😴','fff-nap','😴']]; // (the looks after "Get the admins", in story order: name, what the menu says, what unlocks it, and what floats around the cabin)
 const STORY_CHAPTER_LOOKS = [4, 4, 4, 4, 4, 4, 4, 4, 4]; // (how many looks each chapter has, in order: the list in settings is split up by chapter)
 const newLooksDone = () => { for (let i = NEW_LOOKS.length - 1; i >= 0; i--) if (lsGet(NEW_LOOKS[i][3])) return i + 1; return 0; }; // (the newest one you've done: the ones before it count too)
-function renderStoryLooks(id, looks) { // the story look buttons: Newest and Off, then a row for each chapter you've reached
-  const box = $(id), pick = val => { setup.storyLook = val; saveSetup(); renderStoryLooks(id, looks); applyTheme(); }; box.innerHTML = ''; box.className = 'story-looks';
-  const row = opts => { const r = document.createElement('div'); r.className = 'seg'; for (const [val, label] of opts) { const b = document.createElement('button'); b.id = `${id}-${val}`; b.textContent = label; b.setAttribute('aria-pressed', String(setup.storyLook === val)); b.onclick = () => pick(val); r.appendChild(b); } box.appendChild(r); };
-  row([['on', 'Newest'], ['off', 'Off']]);
-  let at = 0; STORY_CHAPTER_LOOKS.forEach((n, c) => { const some = looks.slice(at, at + n); at += n; if (!some.length) return; const h = document.createElement('div'); h.className = 'story-ch'; h.textContent = `Chapter ${c + 1}: ${CHAPTER_NAMES[c]}`; box.appendChild(h); row(some); });
+function renderStoryLooks(id, looks, limit = looks.length) { // the story look buttons: Newest and Off, then a row for each chapter you've reached, and the next one. Looks you haven't reached yet show a lock
+  const box = $(id), pick = val => { setup.storyLook = val; saveSetup(); renderStoryLooks(id, looks, limit); applyTheme(); }; box.innerHTML = ''; box.className = 'story-looks';
+  const row = (opts, from = 0) => { const r = document.createElement('div'); r.className = 'seg'; opts.forEach(([val, label], k) => { const locked = from + k >= limit && from >= 0, b = document.createElement('button'); b.id = `${id}-${val}`; b.textContent = locked ? `🔒 ${label.slice(label.indexOf(" ") + 1)}` : label; b.setAttribute('aria-pressed', String(setup.storyLook === val)); if (locked) { b.disabled = true; b.style.opacity = 0.45; b.title = 'You have not reached this one yet'; } else b.onclick = () => pick(val); r.appendChild(b); }); box.appendChild(r); };
+  row([['on', 'Newest'], ['off', 'Off']], -1000); if (!limit) return;
+  let at = 0, seen = 0; STORY_CHAPTER_LOOKS.forEach((n, c) => { const from = at, some = looks.slice(at, at + n); at += n; if (!some.length || seen > 1) return; if (from + n > limit) seen++; const h = document.createElement('div'); h.className = 'story-ch'; h.textContent = `Chapter ${c + 1}: ${CHAPTER_NAMES[c]}`; box.appendChild(h); row(some, from); }); // (the chapter you're on, plus the next one: nothing further, so it stays a surprise)
 }
 function drawLookFloats(t) { // (in the cabin) the newer looks: little things floating up around the room
   const s = storyStage(); if (s < 18) return; const em = NEW_LOOKS[s - 18][4]; g.font = `34px ${BODYFONT}`; g.textAlign = 'center'; g.textBaseline = 'middle';
