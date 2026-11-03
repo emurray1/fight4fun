@@ -310,7 +310,8 @@ html.cabin #title .title-card h1{font-size:44px}
 html.cabin #title .title-card .btn{font-size:20px;padding:4px 12px;transform:none}
 html.cabin #title .title-card .menu{gap:6px}
 html.cabin #title .story-note,html.cabin #title .thanks-note,html.cabin #title .xmas-note,html.cabin #title .spooky-note{font-size:18px}
-html.gone #title .title-chars{position:fixed;right:0;bottom:0;width:min(560px,46vw);height:27vh;background:#7f7f7f;overflow:auto;align-content:flex-start;padding:10px;z-index:1}
+html.gone #title .title-chars{position:static;width:auto;height:auto;margin-top:12px;background:#7f7f7f;overflow:visible;align-content:flex-start;padding:10px;z-index:1}
+html.gone #title .title-card{animation:none;transform:none} /* (no wobble here, so the menu stays easy to use) */
 html.cabin #title .title-chars{display:none}html.cabin #title .title-card{opacity:.95}
 #showMenuBtn{position:fixed;left:16px;top:16px;z-index:5;font-size:22px;padding:6px 16px}.hide-menu{font-size:15px !important;padding:2px 10px !important;align-self:flex-end;margin:4px 6px 0 0}html:not(.cabin) .hide-menu{display:none}html:not(.cabin) #showMenuBtn{display:none}html.cabin.menuhide #title .title-card{display:none}
 .cabin-who{position:fixed;left:16px;bottom:16px;z-index:5;display:flex;align-items:center;gap:8px;background:var(--paper);border:4px solid var(--ink);padding:6px 10px;font-size:20px}.cabin-who .btn{font-size:20px;padding:2px 12px}html:not(.cabin) .cabin-who{display:none}
@@ -7022,7 +7023,7 @@ function ch5Card() { // the info box, in the tunnels and the admins' room
 // with you) where everyone lives now: the shopkeepers, all the fighters and the admins. And from then on, the main menu IS the cabin: you walk around
 // and talk to everyone (walk up to someone and press punch), with the menu buttons in a little box in the corner
 const CABIN_FLOOR = 26, CABIN_PORTAL_X = 1520;
-const cabinMenu = () => storyOk && itStopped();
+const cabinMenu = () => storyOk && itStopped() && storyStage() >= 17; // (the shop button takes you to the cabin once IT is stopped... unless you picked an older chapter's look, then it's that chapter's shop)
 const bigRoom = () => keeperRoom() || SHOP.floor === CABIN_FLOOR || SHOP.floor === CABIN_SHOP; // (the rooms that are wider than the screen, and scroll with you)
 const CABIN_SHOP_TALK = { // what the shopkeepers say at the cabin shop's counter
   keeper:['Welcome to the cabin shop! Walk up to a stand to buy something!', 'Business is GOOD in the cabin! Everyone comes up here.', 'Need more coins? Win some fights!', 'I built this counter myself. With a LOT of help.', 'The new Hexstar? ...The old Hexstar did not make it out of the code. But Hexstar 2.0 is great.'],
@@ -7233,10 +7234,9 @@ function drawHexLab(t) { // inside the repair shop
 const REMAKE_MIN = 20, GONE_FLOOR = 31;
 const remakeLeft = () => itStopped() ? +lsGet('fff-itstopped') + REMAKE_MIN*60000 - Date.now() : Infinity;
 const remade = () => !!lsGet('fff-remade');
-// chapter 5, hex return: 20 minutes after you re-make the shop, the old Hexstar can finally be fixed all the way. Press the hex return button to go to the
+// chapter 5, hex return: open right away once IT is stopped (no waiting, and you don't need to re-make the shop first), the old Hexstar can finally be fixed all the way. Press the hex return button to go to the
 // repair shop, and help fix him: this time it goes all the way to 100%... and he wakes up! (Shocked Circle, his old roommate, is SO happy.) He stays awake after that
-const HEXBACK_MIN = 20;
-const hexReturnLeft = () => remade() ? +lsGet('fff-remade') + HEXBACK_MIN*60000 - Date.now() : Infinity;
+const hexReturnLeft = () => itStopped() ? 0 : Infinity;
 const hexReturnOn = () => hexReturnLeft() <= 0;
 const hexBack = () => !!lsGet('fff-hexback');
 function hexReturnText() { // for the chapters page
