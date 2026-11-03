@@ -312,7 +312,7 @@ html.cabin #title .title-card .menu{gap:6px}
 html.cabin #title .story-note,html.cabin #title .thanks-note,html.cabin #title .xmas-note,html.cabin #title .spooky-note{font-size:18px}
 html.gone #title .title-chars{position:fixed;right:0;bottom:0;width:min(560px,46vw);height:27vh;background:#7f7f7f;overflow:auto;align-content:flex-start;padding:10px;z-index:1}
 html.cabin #title .title-chars{display:none}html.cabin #title .title-card{opacity:.95}
-#showMenuBtn{position:fixed;left:16px;top:16px;z-index:5;font-size:22px;padding:6px 16px}.hide-menu{font-size:15px !important;padding:2px 10px !important;align-self:flex-end;margin:4px 6px 0 0}html:not(.cabin) .hide-menu{display:none}html.menuhide #title .title-card{display:none}
+#showMenuBtn{position:fixed;left:16px;top:16px;z-index:5;font-size:22px;padding:6px 16px}.hide-menu{font-size:15px !important;padding:2px 10px !important;align-self:flex-end;margin:4px 6px 0 0}html:not(.cabin) .hide-menu{display:none}html:not(.cabin) #showMenuBtn{display:none}html.cabin.menuhide #title .title-card{display:none}
 .cabin-who{position:fixed;left:16px;bottom:16px;z-index:5;display:flex;align-items:center;gap:8px;background:var(--paper);border:4px solid var(--ink);padding:6px 10px;font-size:20px}.cabin-who .btn{font-size:20px;padding:2px 12px}html:not(.cabin) .cabin-who{display:none}
 html.scared .title-chars canvas{animation:shiver .12s linear infinite}@keyframes shiver{0%,100%{translate:0 0}25%{translate:-2px 1px}50%{translate:2px 0}75%{translate:-1px -1px}}
 .story-note{margin:0;font-family:var(--display);font-size:30px;color:#e75a9b}
@@ -509,7 +509,7 @@ html.adminlook .story-note{color:#1f8a0f}
       <p id="ch4Lock" class="chapter-lock">🔒 Finish chapter 3 first!</p>
       <ul class="upds-list" id="ch4List"><li><b>🙏 Pray for you are in danger</b>: <span id="prayWhen">something dangerous is coming... Coming soon...</span></li><li><b>👁️ IT is here</b>: <span id="itWhen"></span></li><li><b>🔨 escape?</b>: <span id="escapeWhen"></span></li><li><b>🤗 Reunite</b>: <span id="reuniteWhen"></span></li></ul>
       <div class="page-foot"><button id="prayBtn" class="btn" hidden>🙏 the edge</button><button id="itBtn" class="btn" hidden>👁️ talk to IT</button><button id="escapeBtn" class="btn" hidden>🔨 escape?</button><button id="reuniteBtn" class="btn" hidden>🤗 reunite</button></div>
-      <h3 class="chapter" id="ch5Head">📖 Chapter 5: Stop IT <span id="ch5Done"></span></h3>
+      <h3 class="chapter" id="ch5Head">📖 Chapter 5: New home <span id="ch5Done"></span></h3>
       <p id="ch5Lock" class="chapter-lock">🔒 Finish chapter 4 first!</p>
       <ul class="upds-list" id="ch5List"><li><b>🔑 Get the admins</b>: <span id="adminsWhen"></span></li></ul>
       <div class="page-foot" id="ch5Foot"><button id="adminsBtn" class="btn" hidden>🔑 get the admins</button></div>
@@ -4200,6 +4200,7 @@ function drawFightyFloor(t) { // downstairs: the fighty shop
   if (SHOP.nearKeeper) drawPointer(kx + 150, 395, t);
 }
 function drawBubble(say, right, bottom, tipX) { // a speech bubble that ends at `right`, with its tail pointing to tipX
+  if (say == null) return; // (nothing to say: no bubble, instead of stopping the whole game)
   g.font = `30px ${BODYFONT}`;
   const lines = [], words = say.split(' '); let line = '';
   for (const w of words) { const next = line ? line + ' ' + w : w; if (line && g.measureText(next).width > 440) { lines.push(line); line = w; } else line = next; }
@@ -4450,7 +4451,7 @@ function drawKeeperRoom(t, night) {
   if (night) { g.fillStyle = '#fff6c9'; g.beginPath(); g.arc(wx + 90, wy + 55, 32, 0, TAU); g.fill(); g.fillStyle = C.white; for (const [sx, sy] of [[-120, 40], [-80, 140], [40, 150], [-30, 70], [120, 130]]) g.fillRect(wx + sx, wy + sy, 5, 5); }
   else { g.fillStyle = C.yellow; g.beginPath(); g.arc(wx - 90, wy + 60, 34, 0, TAU); g.fill(); g.fillStyle = C.white; for (const [cx, cy, cr] of [[60, 130, 22], [86, 120, 28], [112, 132, 20]]) { g.beginPath(); g.arc(wx + cx, wy + cy, cr, 0, TAU); g.fill(); } }
   g.strokeStyle = C.ink; g.lineWidth = 5; g.beginPath(); g.moveTo(wx, wy); g.lineTo(wx, wy + wh); g.moveTo(wx - ww/2, wy + wh/2); g.lineTo(wx + ww/2, wy + wh/2); g.stroke();
-  g.fillStyle = '#a349a4'; for (const k of [-1, 1]) g.fillRect(wx + k*(ww/2 + 14) - 18, wy - 16, 36, wh + 40); // purple curtains
+  g.fillStyle = SHOP.cabinDorm ? '#b8322a' : '#a349a4'; for (const k of [-1, 1]) g.fillRect(wx + k*(ww/2 + 14) - 18, wy - 16, 36, wh + 40); // purple curtains
   g.fillStyle = '#d4a017'; g.fillRect(wx - ww/2 - 50, wy - 24, ww + 100, 10);
   // a cozy lamp hanging over the dining table
   g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.moveTo(1500, 110); g.lineTo(1500, 420); g.stroke();
@@ -4458,8 +4459,10 @@ function drawKeeperRoom(t, night) {
   g.fillStyle = '#c0392b'; g.beginPath(); g.moveTo(1460, 470); g.lineTo(1540, 470); g.lineTo(1515, 418); g.lineTo(1485, 418); g.closePath(); g.fill(); g.stroke(); // the shade
   if (night) { const lg = g.createRadialGradient(1500, 480, 10, 1500, 560, 240); lg.addColorStop(0, 'rgba(255,220,120,.45)'); lg.addColorStop(1, 'rgba(255,220,120,0)'); g.fillStyle = lg; g.fillRect(1260, 440, 480, SHOP_FLOOR - 440); }
   // a fireplace under the picture, with a crackling fire
-  g.fillStyle = '#b5523b'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(430, SHOP_FLOOR - 200, 250, 200); g.strokeRect(430, SHOP_FLOOR - 200, 250, 200);
-  g.strokeStyle = 'rgba(0,0,0,.25)'; g.lineWidth = 2; for (let y = SHOP_FLOOR - 180; y < SHOP_FLOOR; y += 22) { g.beginPath(); g.moveTo(430, y); g.lineTo(680, y); g.stroke(); } // bricks
+  if (SHOP.cabinDorm) { g.fillStyle = '#8a8a8a'; g.fillRect(450, 100, 210, SHOP_FLOOR - 300); g.fillStyle = '#a4a09a'; for (let y = 110, r = 0; y < SHOP_FLOOR - 210; y += 40, r++) for (let x = 452 + (r % 2)*35; x < 650; x += 70) { roundRect(x, y, 64, 34, 12); g.fill(); } } // (in the cabin: a tall stone chimney up to the roof)
+  g.fillStyle = SHOP.cabinDorm ? '#9a9a9a' : '#b5523b'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(430, SHOP_FLOOR - 200, 250, 200); g.strokeRect(430, SHOP_FLOOR - 200, 250, 200);
+  if (SHOP.cabinDorm) { g.fillStyle = '#b0b0b0'; for (let y = SHOP_FLOOR - 196, r = 0; y < SHOP_FLOOR - 10; y += 32, r++) for (let x = 434 + (r % 2)*30; x < 670; x += 60) { roundRect(x, y, 54, 28, 10); g.fill(); } } // (round stones)
+  else g.strokeStyle = 'rgba(0,0,0,.25)'; if (!SHOP.cabinDorm) g.lineWidth = 2; if (!SHOP.cabinDorm) for (let y = SHOP_FLOOR - 180; y < SHOP_FLOOR; y += 22) { g.beginPath(); g.moveTo(430, y); g.lineTo(680, y); g.stroke(); } // bricks
   g.fillStyle = '#6b3d1a'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(410, SHOP_FLOOR - 214, 290, 18); g.strokeRect(410, SHOP_FLOOR - 214, 290, 18); // the mantel
   g.fillStyle = '#2a1a10'; g.beginPath(); g.moveTo(480, SHOP_FLOOR); g.lineTo(480, SHOP_FLOOR - 100); g.quadraticCurveTo(555, SHOP_FLOOR - 160, 630, SHOP_FLOOR - 100); g.lineTo(630, SHOP_FLOOR); g.fill();
   for (const [k, col, s] of [[-24, C.orange, 1], [20, C.orange, 0.85], [0, '#ffd23f', 0.7]]) { const fh = (60 + Math.sin(t*9 + k)*10)*s*(kDone().has('fire') ? 1.6 : 1); g.fillStyle = col; g.beginPath(); g.moveTo(555 + k - 22, SHOP_FLOOR - 10); g.quadraticCurveTo(555 + k - 18, SHOP_FLOOR - fh*0.6, 555 + k + Math.sin(t*7 + k)*5, SHOP_FLOOR - 10 - fh); g.quadraticCurveTo(555 + k + 18, SHOP_FLOOR - fh*0.6, 555 + k + 22, SHOP_FLOOR - 10); g.fill(); }
@@ -4471,6 +4474,7 @@ function drawKeeperRoom(t, night) {
   g.save(); g.translate(350, SHOP_FLOOR - 250); drawHat(g, 30, 0, 1); g.restore();
   // a plant in a pot
   drawHomePlant(1690, t);
+  if (SHOP.cabinDorm) drawCabinHomeExtras(t, night);
   if (kDone().has('dinner')) for (const px of [1440, 1560]) { // (after you make dinner, there's soup on the table)
     g.fillStyle = C.white; g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.arc(px, SHOP_FLOOR - 128, 22, 0, Math.PI); g.closePath(); g.fill(); g.stroke();
     g.fillStyle = '#e67e22'; g.fillRect(px - 18, SHOP_FLOOR - 132, 36, 6);
@@ -4483,7 +4487,7 @@ function drawKeeperRoom(t, night) {
   }
   if (SHOP.kfx && SHOP.kfx.id === 'plant' && performance.now() - SHOP.kfx.t < 1800) { g.fillStyle = '#5ab4ff'; for (let i=0;i<6;i++) { const k = ((performance.now() - SHOP.kfx.t)/600 + i/6) % 1; g.beginPath(); g.ellipse(1660 + i*12, SHOP_FLOOR - 220 + k*140, 4, 7, 0, 0, TAU); g.fill(); } } // water drops
   g.lineWidth = 3; g.strokeStyle = C.ink;
-  drawKeeperBed(1000, false); // Fighty's big bed (the Shy Shopkeeper's is upstairs)
+  if (SHOP.cabinDorm) drawMarriedBed(1000); else drawKeeperBed(1000, false); // Fighty's big bed (in the cabin it's their bed: they're married) (the Shy Shopkeeper's is upstairs)
   // a dining table where her bed used to be, with two chairs and dinner on it
   g.fillStyle = '#6b3d1a'; g.strokeStyle = C.ink; g.lineWidth = 4;
   for (const k of [-1, 1]) { g.fillRect(1500 + k*150 - 12, SHOP_FLOOR - 170, 24, 170); g.strokeRect(1500 + k*150 - 12, SHOP_FLOOR - 170, 24, 170); g.fillRect(1500 + k*150 - (k < 0 ? 30 : -6), SHOP_FLOOR - 80, 36, 14); } // two chairs
@@ -4512,6 +4516,7 @@ function drawKeeperRoom(t, night) {
   g.fillStyle = '#d4a017'; g.fillRect(470, 230, 170, 130); g.fillStyle = C.white; g.fillRect(482, 242, 146, 106);
   g.fillStyle = '#7f7f7f'; g.beginPath(); g.arc(530, 290, 20, 0, TAU); g.fill(); g.fillStyle = '#a349a4'; g.beginPath(); g.arc(582, 296, 16, 0, TAU); g.fill();
   g.fillStyle = C.ink; g.font = `16px ${BODYFONT}`; g.fillText('best shopkeepers', 555, 334);
+  if (SHOP.cabinDorm) drawWeddingPhoto(); // (in the cabin, it's their wedding photo)
   g.fillStyle = 'rgba(255,255,255,.35)'; g.beginPath(); g.ellipse(1250, SHOP_FLOOR + 32, 320, 28, 0, 0, TAU); g.fill(); // a fluffy rug
   // stairs up to their upstairs, at the far end
   const n = 10, x0 = 2150, sw = 25, sh = (SHOP_FLOOR - 110)/n;
@@ -4523,6 +4528,24 @@ function drawKeeperRoom(t, night) {
   if (SHOP.nearStairs && SHOP.stairTo === 13) drawPointer(KEEPER_STAIRS_X, SHOP_FLOOR - 400, t);
   if (confessSeen()) for (let i=0;i<6;i++) { const k = (t*0.35 + i/6) % 1; g.save(); g.globalAlpha = 1 - k; drawLittleHeart(1120 + Math.sin(t*2 + i*2)*110, SHOP_FLOOR - 140 - k*300, 10 + i % 3*5); g.restore(); } // hearts, now they like each other
   drawTaskPointer(t);
+}
+function drawMarriedBed(x) { // in the cabin they're married, so they share one big bed: two pillows, a heart on the headboard, his top hat and her bow on the posts, and a quilt that's half his colours and half hers
+  g.fillStyle = '#4a2c14'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(x - 190, SHOP_FLOOR - 200, 26, 200); g.fillRect(x + 164, SHOP_FLOOR - 120, 26, 120);
+  g.fillStyle = '#6b3d1a'; g.beginPath(); g.moveTo(x - 164, SHOP_FLOOR - 104); g.lineTo(x - 164, SHOP_FLOOR - 170); g.quadraticCurveTo(x - 60, SHOP_FLOOR - 230, x + 40, SHOP_FLOOR - 170); g.lineTo(x + 40, SHOP_FLOOR - 104); g.closePath(); g.fill(); g.stroke(); // a big headboard
+  g.fillStyle = '#ff5fa2'; g.save(); g.translate(x - 62, SHOP_FLOOR - 176); g.beginPath(); g.moveTo(0, 14); g.bezierCurveTo(-22, -2, -10, -20, 0, -8); g.bezierCurveTo(10, -20, 22, -2, 0, 14); g.fill(); g.stroke(); g.restore(); // a heart carved in it
+  g.save(); g.translate(x - 177, SHOP_FLOOR - 206); drawHat(g, 40, 0, 1); g.restore(); // his top hat
+  g.fillStyle = '#ff8fc1'; g.save(); g.translate(x + 177, SHOP_FLOOR - 128); for (const s of [-1, 1]) { g.beginPath(); g.moveTo(0, 0); g.lineTo(s*20, -12); g.lineTo(s*20, 12); g.closePath(); g.fill(); g.stroke(); } g.beginPath(); g.arc(0, 0, 6, 0, TAU); g.fill(); g.stroke(); g.restore(); // her pink bow
+  g.fillStyle = '#c77dd1'; roundRect(x - 170, SHOP_FLOOR - 104, 340, 66, 14); g.fill(); g.stroke();
+  for (let i=0;i<6;i++) { g.fillStyle = (i < 3 ? ['#b0b0b0', '#6f6f6f', '#e8e8e8'] : ['#e3a8ec', '#b06cc0', '#fff1a8'])[i % 3]; g.fillRect(x - 150 + i*50, SHOP_FLOOR - 96, 46, 50); } // the quilt: his half and her half
+  drawLittleHeart(x - 2, SHOP_FLOOR - 72, 14); // (a heart right in the middle, where the halves meet)
+  g.fillStyle = C.white; g.strokeStyle = C.ink; g.lineWidth = 4; roundRect(x - 160, SHOP_FLOOR - 130, 80, 30, 12); g.fill(); g.stroke(); g.fillStyle = '#f6d8f9'; roundRect(x - 74, SHOP_FLOOR - 130, 80, 30, 12); g.fill(); g.stroke(); // two pillows
+}
+function drawWeddingPhoto() { // over the fireplace in the cabin: their wedding photo (him in his top hat, her in a veil, and a "just married" heart)
+  g.fillStyle = '#f5f0e6'; g.strokeStyle = '#d4a017'; g.lineWidth = 8; g.fillRect(470, 230, 170, 130); g.strokeRect(470, 230, 170, 130); g.fillStyle = '#ffe6f2'; g.fillRect(482, 242, 146, 106);
+  g.fillStyle = '#7f7f7f'; g.beginPath(); g.arc(530, 296, 20, 0, TAU); g.fill(); g.save(); g.translate(530, 276); drawHat(g, 22, 0, 1); g.restore(); // him
+  g.fillStyle = 'rgba(255,255,255,.85)'; g.beginPath(); g.moveTo(570, 280); g.quadraticCurveTo(582, 262, 596, 280); g.lineTo(604, 320); g.lineTo(562, 320); g.closePath(); g.fill(); // her veil
+  g.fillStyle = '#a349a4'; g.beginPath(); g.arc(582, 298, 16, 0, TAU); g.fill();
+  drawLittleHeart(556, 262, 10); g.fillStyle = C.ink; g.font = `16px ${BODYFONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('just married!', 555, 334);
 }
 function drawKeeperBed(x, shy) { // a big bed: Fighty's grey one with a top hat on the bedpost, or the Shy Shopkeeper's purple one with a canopy and a heart
   g.fillStyle = '#4a2c14'; g.fillRect(x - 190, SHOP_FLOOR - 190, 26, 190); g.fillRect(x + 164, SHOP_FLOOR - 110, 26, 110);
@@ -4537,7 +4560,28 @@ function drawHomePlant(x, t) { // a leafy plant in a pot
   for (const [a, l] of [[-0.6, 90], [-0.25, 120], [0.1, 130], [0.45, 105], [0.8, 80]]) { const sway = Math.sin(t*1.5 + a*3)*0.04; g.save(); g.translate(x, SHOP_FLOOR - 70); g.rotate(a + sway); g.beginPath(); g.ellipse(0, -l/2, 16, l/2, 0, 0, TAU); g.fill(); g.stroke(); g.restore(); }
   g.fillStyle = '#c0703b'; g.beginPath(); g.moveTo(x - 36, SHOP_FLOOR - 76); g.lineTo(x + 36, SHOP_FLOOR - 76); g.lineTo(x + 26, SHOP_FLOOR); g.lineTo(x - 26, SHOP_FLOOR); g.closePath(); g.fill(); g.stroke();
 }
+function drawCabinHomeWalls(RW) { // the shopkeepers' home in the cabin is a log cabin home: honey-coloured logs, a stone wall along the bottom and a dark plank floor
+  g.fillStyle = '#c98e4f'; g.fillRect(0, 0, RW, H);
+  for (let y = 110; y < SHOP_FLOOR - 120; y += 44) { g.fillStyle = (y/44) % 2 < 1 ? '#d9a061' : '#c98e4f'; g.fillRect(0, y, RW, 40); g.fillStyle = 'rgba(90,50,20,.3)'; g.fillRect(0, y + 38, RW, 6); for (let x = (y*7) % 260; x < RW; x += 260) { g.beginPath(); g.ellipse(x, y + 20, 10, 6, 0, 0, TAU); g.fill(); } } // logs, with knots in them
+  g.fillStyle = '#9a9a9a'; g.fillRect(0, SHOP_FLOOR - 120, RW, 120); for (let y = SHOP_FLOOR - 116, r = 0; y < SHOP_FLOOR; y += 38, r++) for (let x = (r % 2)*45; x < RW; x += 90) { g.fillStyle = ['#b0b0b0', '#8a8a8a', '#a4a09a'][(x/45 + r) % 3 | 0]; roundRect(x + 3, y + 3, 84, 32, 10); g.fill(); } // a stone wall
+  g.fillStyle = '#5a3a1e'; g.fillRect(0, 0, RW, 110); g.fillStyle = '#3e2612'; for (let x = 0; x < RW; x += 240) { g.fillRect(x, 0, 40, 120); g.beginPath(); g.moveTo(x + 40, 110); g.lineTo(x + 90, 110); g.lineTo(x + 40, 150); g.fill(); } // thick log rafters, with braces
+  g.fillStyle = '#6b4226'; g.fillRect(0, SHOP_FLOOR, RW, H - SHOP_FLOOR); g.strokeStyle = '#4a2c14'; g.lineWidth = 4; // a dark plank floor
+  for (const y of [SHOP_FLOOR + 4, SHOP_FLOOR + 50, SHOP_FLOOR + 96]) { g.beginPath(); g.moveTo(0, y); g.lineTo(RW, y); g.stroke(); }
+  for (let x = 0; x < RW; x += 190) { const y = SHOP_FLOOR + ((x/190) % 2 ? 50 : 4); g.beginPath(); g.moveTo(x, y); g.lineTo(x, y + 46); g.stroke(); }
+}
+function drawCabinHomeExtras(t, night) { // the cabin home's own things: a plaid rug, a wood pile, snowshoes, lanterns, a moose made of hats and a carved sign
+  g.save(); g.beginPath(); g.ellipse(560, SHOP_FLOOR + 40, 230, 30, 0, 0, TAU); g.clip(); g.fillStyle = '#b8322a'; g.fillRect(320, SHOP_FLOOR, 480, 80); g.fillStyle = 'rgba(30,30,30,.35)'; for (let x = 330; x < 800; x += 40) g.fillRect(x, SHOP_FLOOR, 14, 80); for (let y = SHOP_FLOOR + 14; y < SHOP_FLOOR + 80; y += 20) g.fillRect(320, y, 480, 7); g.restore(); // a red plaid rug by the fire
+  g.strokeStyle = C.ink; g.lineWidth = 3; for (let r=0;r<3;r++) for (let k=0;k<3 - r;k++) { const x = 730 + k*34 + r*17, y = SHOP_FLOOR - 16 - r*30; g.fillStyle = '#8a5a2b'; g.fillRect(x - 17, y - 14, 34, 28); g.strokeRect(x - 17, y - 14, 34, 28); g.fillStyle = '#e8c48a'; g.beginPath(); g.arc(x, y, 9, 0, TAU); g.fill(); g.stroke(); } // a pile of firewood
+  for (const [sx, a] of [[1680, -0.35], [1720, 0.35]]) { g.save(); g.translate(sx, 300); g.rotate(a); g.fillStyle = '#8a5a2b'; g.strokeStyle = C.ink; g.lineWidth = 4; g.beginPath(); g.ellipse(0, 0, 26, 70, 0, 0, TAU); g.fill(); g.stroke(); g.strokeStyle = '#e8c48a'; g.lineWidth = 2; for (let y=-50;y<=50;y+=20) { g.beginPath(); g.moveTo(-22, y); g.lineTo(22, y); g.stroke(); } g.restore(); } // crossed snowshoes on the wall
+  for (const lx of [250, 1000, 1950]) { g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.moveTo(lx, 110); g.lineTo(lx, 170); g.stroke(); g.fillStyle = '#333'; g.fillRect(lx - 16, 170, 32, 6); g.fillRect(lx - 16, 214, 32, 6); const fl = 0.75 + Math.sin(t*6 + lx)*0.15; g.fillStyle = `rgba(255,200,80,${fl})`; g.fillRect(lx - 12, 176, 24, 38); g.strokeStyle = '#333'; g.strokeRect(lx - 14, 174, 28, 42); // hanging lanterns
+    if (night) { const lg = g.createRadialGradient(lx, 195, 4, lx, 195, 120); lg.addColorStop(0, 'rgba(255,210,110,.35)'); lg.addColorStop(1, 'rgba(255,210,110,0)'); g.fillStyle = lg; g.fillRect(lx - 120, 75, 240, 240); } }
+  g.save(); g.translate(2200, 260); g.fillStyle = '#6b3d1a'; g.strokeStyle = C.ink; g.lineWidth = 4; roundRect(-60, -50, 120, 100, 14); g.fill(); g.stroke(); drawHat(g, 34, 0, 1); for (const s of [-1, 1]) { g.save(); g.scale(s, 1); g.translate(40, -10); g.rotate(0.6); drawHat(g, 20, 0, 1); g.restore(); } g.restore(); // a "moose" made of top hats, on a plaque (Fighty's idea)
+  g.fillStyle = '#8a5a2b'; g.strokeStyle = '#3e2612'; g.lineWidth = 5; roundRect(1600, 150, 240, 56, 22); g.fill(); g.stroke(); g.fillStyle = '#3e2612'; g.font = `26px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('Mr. & Mrs. Shopkeeper', 1720, 180, 220); // a carved wooden sign (they're married!)
+  g.strokeStyle = '#6b3d1a'; g.lineWidth = 4; g.save(); g.translate(880, 250); g.beginPath(); g.moveTo(0, 26); g.bezierCurveTo(-44, -4, -20, -40, 0, -16); g.bezierCurveTo(20, -40, 44, -4, 0, 26); g.stroke(); g.fillStyle = '#6b3d1a'; g.font = `20px ${FONT}`; g.fillText('F + S', 0, -2); g.restore(); // their initials carved in a heart on a log
+  for (let i=0;i<14;i++) { const x = 1100 + i*25, y = 140 + Math.sin(i/13*Math.PI)*34; g.save(); g.translate(x, y); g.fillStyle = i % 2 ? '#ff8fc1' : C.white; g.beginPath(); g.moveTo(0, 10); g.bezierCurveTo(-12, 0, -6, -10, 0, -4); g.bezierCurveTo(6, -10, 12, 0, 0, 10); g.fill(); g.restore(); } // a string of little hearts over the window
+}
 function drawKeeperWalls(RW) { // the same cozy walls, ceiling and floor upstairs and down: flowery wallpaper, wooden beams and a wooden floor
+  if (SHOP.cabinDorm) return drawCabinHomeWalls(RW); // (in the cabin, their home is a log cabin home)
   g.fillStyle = '#fde3cf'; g.fillRect(0, 0, RW, H);
   for (let x = 40; x < RW; x += 90) for (let y = 160 + (x/90 % 2)*45; y < SHOP_FLOOR - 20; y += 90) { g.fillStyle = 'rgba(255,143,193,.35)'; for (let p=0;p<5;p++) { const a = p*TAU/5; g.beginPath(); g.arc(x + Math.cos(a)*7, y + Math.sin(a)*7, 6, 0, TAU); g.fill(); } g.fillStyle = 'rgba(255,210,63,.6)'; g.beginPath(); g.arc(x, y, 4, 0, TAU); g.fill(); } // little flowers
   g.fillStyle = '#e8c4a8'; g.fillRect(0, SHOP_FLOOR - 120, RW, 120); g.fillStyle = '#b98a5a'; g.fillRect(0, SHOP_FLOOR - 126, RW, 8); // wood panels on the bottom of the wall
@@ -4635,22 +4679,47 @@ function drawNameDoor(x, names, color = '#b97a57') { // a brown dorm door, with 
 }
 // ---------- the 3rd floor of the shopkeepers' home (floor 14): a cozy attic, with a paper on the wall that has a secret code ----------
 function readPaper() { SHOP.youSay = '5... 0... 0... 2... 8. A code! I should try it on the codes page!'; SHOP.youSayT = 4; if (sfx.grab) sfx.grab(); renderShopCard(true); }
+function drawKidRoom(t, night) { // in the cabin, the shopkeepers' 3rd floor is a kid's room (they're married now!): a crib with a spinning mobile, a toy chest, ABC blocks, a rocking horse and bunting
+  g.strokeStyle = C.ink; g.lineWidth = 3; for (let i=0;i<16;i++) { const x = 360 + i*56, y = 14 + Math.sin(i/15*Math.PI)*30; g.fillStyle = ['#ffb3d1', '#a8e0ff', '#fff1a8', '#c8f2c0'][i % 4]; g.beginPath(); g.moveTo(x - 20, y); g.lineTo(x + 20, y); g.lineTo(x, y + 30); g.closePath(); g.fill(); g.stroke(); } // pastel bunting
+  // the crib, with a little blanket and a pillow
+  g.fillStyle = C.white; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(540, SHOP_FLOOR - 170, 200, 14); g.strokeRect(540, SHOP_FLOOR - 170, 200, 14); g.fillRect(540, SHOP_FLOOR - 60, 200, 14); g.strokeRect(540, SHOP_FLOOR - 60, 200, 14);
+  for (const lx of [540, 726]) { g.fillRect(lx, SHOP_FLOOR - 190, 14, 190); g.strokeRect(lx, SHOP_FLOOR - 190, 14, 190); }
+  g.fillStyle = '#ffb3d1'; roundRect(556, SHOP_FLOOR - 92, 168, 34, 10); g.fill(); g.stroke(); g.fillStyle = '#a8e0ff'; roundRect(560, SHOP_FLOOR - 104, 50, 20, 8); g.fill(); g.stroke();
+  g.lineWidth = 3; for (let x = 570; x < 726; x += 22) { g.beginPath(); g.moveTo(x, SHOP_FLOOR - 156); g.lineTo(x, SHOP_FLOOR - 60); g.stroke(); } // the bars
+  // a mobile over the crib, turning slowly: a star, a moon, a heart and a little top hat
+  g.strokeStyle = C.ink; g.lineWidth = 2; g.beginPath(); g.moveTo(640, 0); g.lineTo(640, 360); g.stroke(); g.lineWidth = 4; g.beginPath(); g.moveTo(560, 360); g.lineTo(720, 360); g.stroke();
+  for (let k=0;k<4;k++) { const a = t*0.8 + k*Math.PI/2, mx = 640 + Math.cos(a)*80, my = 400 + Math.sin(a)*8; g.lineWidth = 2; g.beginPath(); g.moveTo(640 + Math.cos(a)*80, 360); g.lineTo(mx, my - 14); g.stroke(); g.save(); g.translate(mx, my);
+    if (k === 0) { g.fillStyle = C.yellow; starPath(14); g.fill(); g.stroke(); } else if (k === 1) { g.fillStyle = '#fff6c9'; g.beginPath(); g.arc(0, 0, 13, 0.6, Math.PI*2 - 0.6); g.arc(6, 0, 10, Math.PI*2 - 0.8, 0.8, true); g.closePath(); g.fill(); g.stroke(); }
+    else if (k === 2) drawLittleHeart(0, 0, 12); else drawHat(g, 16, 0, 1); g.restore(); }
+  // a toy chest, with toys peeking out
+  g.fillStyle = '#ff8fc1'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(1060, SHOP_FLOOR - 100, 160, 100); g.strokeRect(1060, SHOP_FLOOR - 100, 160, 100); g.save(); g.translate(1060, SHOP_FLOOR - 100); g.rotate(-0.35); g.fillStyle = '#e06aa0'; g.fillRect(0, -22, 160, 22); g.strokeRect(0, -22, 160, 22); g.restore();
+  g.fillStyle = C.red; g.beginPath(); g.arc(1110, SHOP_FLOOR - 104, 18, 0, TAU); g.fill(); g.stroke(); g.fillStyle = '#4a9be0'; g.fillRect(1150, SHOP_FLOOR - 130, 14, 34); g.strokeRect(1150, SHOP_FLOOR - 130, 14, 34); // a ball and a toy rocket
+  g.fillStyle = C.white; g.font = `24px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('TOYS', 1140, SHOP_FLOOR - 50);
+  // ABC blocks
+  for (const [bx, by, l, col] of [[930, SHOP_FLOOR - 22, 'A', '#ff8fc1'], [976, SHOP_FLOOR - 22, 'B', '#a8e0ff'], [953, SHOP_FLOOR - 66, 'C', '#fff1a8']]) { g.fillStyle = col; g.strokeStyle = C.ink; g.lineWidth = 3; g.fillRect(bx - 22, by - 22, 44, 44); g.strokeRect(bx - 22, by - 22, 44, 44); g.fillStyle = C.ink; g.font = `26px ${FONT}`; g.fillText(l, bx, by + 2); }
+  // a little rocking horse, rocking
+  g.save(); g.translate(455, SHOP_FLOOR - 8); g.rotate(Math.sin(t*2)*0.08); g.strokeStyle = '#6b3d1a'; g.lineWidth = 8; g.beginPath(); g.moveTo(-70, 0); g.quadraticCurveTo(0, 20, 70, 0); g.stroke();
+  g.fillStyle = '#d9a061'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(-46, -90, 92, 40); g.strokeRect(-46, -90, 92, 40); g.fillRect(28, -140, 30, 60); g.strokeRect(28, -140, 30, 60); g.fillRect(28, -140, 50, 26); g.strokeRect(28, -140, 50, 26);
+  g.lineWidth = 6; g.beginPath(); for (const lx of [-36, 36]) { g.moveTo(lx, -50); g.lineTo(lx + (lx < 0 ? -10 : 10), 6); } g.stroke(); g.fillStyle = '#ff5fa2'; g.fillRect(24, -146, 10, 40); g.fillStyle = C.ink; g.beginPath(); g.arc(60, -130, 3, 0, TAU); g.fill(); g.restore();
+  if (night) { const lg = g.createRadialGradient(780, SHOP_FLOOR - 30, 4, 780, SHOP_FLOOR - 30, 160); lg.addColorStop(0, 'rgba(255,230,140,.4)'); lg.addColorStop(1, 'rgba(255,230,140,0)'); g.fillStyle = lg; g.fillRect(620, SHOP_FLOOR - 190, 320, 220); g.fillStyle = C.yellow; g.save(); g.translate(780, SHOP_FLOOR - 26); starPath(14); g.fill(); g.restore(); } // a star night light
+}
 function drawKeeperAttic(t) {
   const night = dormNight();
-  g.fillStyle = '#f6dcc0'; g.fillRect(0, 0, W, H); // the walls
+  g.fillStyle = SHOP.cabinDorm ? '#e6f3ff' : '#f6dcc0'; g.fillRect(0, 0, W, H); // the walls (soft blue in the kid's room)
   g.fillStyle = '#7a4a2a'; g.beginPath(); g.moveTo(0, 0); g.lineTo(W, 0); g.lineTo(W, 330); g.lineTo(W - 330, 0); g.lineTo(330, 0); g.lineTo(0, 330); g.closePath(); g.fill(); // the sloped roof
   g.strokeStyle = '#5a3a1e'; g.lineWidth = 14; g.beginPath(); g.moveTo(0, 330); g.lineTo(330, 0); g.moveTo(W, 330); g.lineTo(W - 330, 0); g.stroke();
   g.lineWidth = 10; for (const x of [500, 800, 1100]) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, 40); g.stroke(); }
   g.fillStyle = '#b5835a'; g.fillRect(0, SHOP_FLOOR, W, H - SHOP_FLOOR); g.strokeStyle = '#8a5f3c'; g.lineWidth = 4; // a wooden floor
   for (const y of [SHOP_FLOOR + 4, SHOP_FLOOR + 50, SHOP_FLOOR + 96]) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
-  g.fillStyle = '#5a3a6e'; g.font = `44px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('3rd floor', W/2, 120);
+  g.fillStyle = '#5a3a6e'; g.font = `44px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(SHOP.cabinDorm ? 'the kid\'s room' : '3rd floor', W/2, 120);
   // a little round window
   g.fillStyle = night ? '#1b2a4a' : '#8fd3ff'; g.strokeStyle = '#6b3d1a'; g.lineWidth = 10; g.beginPath(); g.arc(1300, 300, 60, 0, TAU); g.fill(); g.stroke();
   if (night) { g.fillStyle = '#fff6c9'; g.beginPath(); g.arc(1315, 285, 16, 0, TAU); g.fill(); } else { g.fillStyle = C.yellow; g.beginPath(); g.arc(1285, 290, 20, 0, TAU); g.fill(); }
   // boxes, an old teddy bear and a rocking chair
   g.strokeStyle = C.ink; g.lineWidth = 4;
+  if (SHOP.cabinDorm) drawKidRoom(t, night); else { // (in the cabin it's a kid's room; in the old dorms, boxes of old things)
   for (const [x, y, w, h] of [[560, SHOP_FLOOR - 110, 150, 110], [600, SHOP_FLOOR - 190, 110, 80], [1080, SHOP_FLOOR - 120, 140, 120]]) { g.fillStyle = '#c99a5b'; g.fillRect(x, y, w, h); g.strokeRect(x, y, w, h); g.beginPath(); g.moveTo(x, y + 18); g.lineTo(x + w, y + 18); g.stroke(); }
-  g.fillStyle = C.ink; g.font = `20px ${BODYFONT}`; g.fillText('OLD HATS', 635, SHOP_FLOOR - 50); g.fillText('xmas stuff', 1150, SHOP_FLOOR - 55);
+  g.fillStyle = C.ink; g.font = `20px ${BODYFONT}`; g.fillText('OLD HATS', 635, SHOP_FLOOR - 50); g.fillText('xmas stuff', 1150, SHOP_FLOOR - 55); }
   g.fillStyle = '#a0522d'; for (const [dx, dy, r] of [[0, -40, 34], [0, 10, 40], [-26, -70, 13], [26, -70, 13]]) { g.beginPath(); g.arc(1600 - 340 + dx, SHOP_FLOOR - 40 + dy, r, 0, TAU); g.fill(); g.stroke(); } // a teddy bear
   g.fillStyle = C.ink; for (const k of [-1, 1]) { g.beginPath(); g.arc(1260 + k*12, SHOP_FLOOR - 84, 4, 0, TAU); g.fill(); }
   const rock = Math.sin(t*1.5)*0.06; g.save(); g.translate(820, SHOP_FLOOR - 10); g.rotate(rock); // a rocking chair, rocking by itself...
@@ -4762,16 +4831,60 @@ function drawDormHall(t) {
   const near = SHOP.nearStairs && SHOP.stairTo === 12 ? DORM_ROOM_X[SHOP.stairRoom] : null;
   if (near != null) drawPointer(near, SHOP_FLOOR - 330, t);
 }
-function drawRoomBeds(cols, marks) { // the two beds, in the roommates' colours, with something of theirs on each headboard
-  [[500, cols[0], marks[0]], [1200, cols[1], marks[1]]].forEach(([x, col, mark]) => {
-    g.fillStyle = '#6b3d1a'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(x - 130, SHOP_FLOOR - 130, 20, 130); g.fillRect(x + 110, SHOP_FLOOR - 80, 20, 80);
-    g.fillStyle = col; roundRect(x - 115, SHOP_FLOOR - 80, 230, 50, 10); g.fill(); g.stroke();
-    g.fillStyle = C.white; roundRect(x - 108, SHOP_FLOOR - 100, 60, 26, 10); g.fill(); g.stroke();
-    if (mark) { g.save(); g.translate(x - 120, SHOP_FLOOR - 150); mark(); g.restore(); }
-  });
+const ROOM_BEDS = ['bunk', 'floor', 'together', 'loft']; // how each room's beds are set up: a bunk bed, sleepover mattresses on the floor, two beds pushed together, and a loft bed up high
+function drawOneBed(x, y, col, mark) { // a bed (its top at y), in the roommate's colour, with something of theirs on the headboard
+  g.fillStyle = '#6b3d1a'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(x - 130, y - 50, 20, 130); g.fillRect(x + 110, y, 20, 80);
+  g.fillStyle = col; roundRect(x - 115, y, 230, 50, 10); g.fill(); g.stroke();
+  g.fillStyle = C.white; roundRect(x - 108, y - 20, 60, 26, 10); g.fill(); g.stroke();
+  if (mark) { g.save(); g.translate(x - 120, y - 70); mark(); g.restore(); }
+}
+function drawRoomBeds(cols, marks) { // the two beds, set up a different way in each room
+  const how = ROOM_BEDS[SHOP.dorm || 0] || 'apart', F = SHOP_FLOOR;
+  if (how === 'bunk') { // a bunk bed: one on the bottom, one on top, with a ladder
+    g.fillStyle = '#6b3d1a'; g.strokeStyle = C.ink; g.lineWidth = 4; for (const px of [470, 730]) { g.fillRect(px - 10, F - 300, 20, 300); g.strokeRect(px - 10, F - 300, 20, 300); }
+    drawOneBed(600, F - 80, cols[0], marks[0]); drawOneBed(600, F - 250, cols[1], marks[1]);
+    g.strokeStyle = '#6b3d1a'; g.lineWidth = 6; g.beginPath(); g.moveTo(760, F); g.lineTo(760, F - 250); g.moveTo(800, F); g.lineTo(800, F - 250); for (let y=F - 30; y>F - 250; y-=40) { g.moveTo(760, y); g.lineTo(800, y); } g.stroke();
+  } else if (how === 'floor') { // sleepover mattresses on the floor (Goofy kicked his bed frame apart... with a pillow)
+    for (const [x, col, mark] of [[520, cols[0], marks[0]], [1040, cols[1], marks[1]]]) {
+      g.fillStyle = col; g.strokeStyle = C.ink; g.lineWidth = 4; roundRect(x - 140, F - 40, 280, 40, 12); g.fill(); g.stroke();
+      g.fillStyle = C.white; roundRect(x - 130, F - 62, 70, 28, 12); g.fill(); g.stroke();
+      if (mark) { g.save(); g.translate(x - 95, F - 90); mark(); g.restore(); }
+    }
+  } else if (how === 'together') { drawOneBed(560, F - 80, cols[0], marks[0]); drawOneBed(830, F - 80, cols[1], marks[1]); } // pushed right next to each other (and they STILL argue)
+  else if (how === 'loft') { // a loft bed up high (nothing can hide under it!), with a ladder, and a normal bed
+    g.fillStyle = '#6b3d1a'; g.strokeStyle = C.ink; g.lineWidth = 4; for (const px of [330, 570]) { g.fillRect(px - 10, F - 240, 20, 240); g.strokeRect(px - 10, F - 240, 20, 240); }
+    drawOneBed(450, F - 250, cols[0], marks[0]);
+    g.strokeStyle = '#6b3d1a'; g.lineWidth = 6; g.beginPath(); g.moveTo(600, F); g.lineTo(600, F - 200); g.moveTo(640, F); g.lineTo(640, F - 200); for (let y=F - 30; y>F - 200; y-=40) { g.moveTo(600, y); g.lineTo(640, y); } g.stroke();
+    drawOneBed(1150, F - 80, cols[1], marks[1]);
+  } else { drawOneBed(500, F - 80, cols[0], marks[0]); drawOneBed(1200, F - 80, cols[1], marks[1]); }
 }
 const starPath = (r, n = 5) => { g.beginPath(); for (let i=0;i<n*2;i++) { const a = -Math.PI/2 + i*Math.PI/n, rr = i % 2 ? r*0.45 : r; g.lineTo(Math.cos(a)*rr, Math.sin(a)*rr); } g.closePath(); };
 function drawSign(x, y, w, text, bg, fg, size = 28) { g.fillStyle = bg; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(x - w/2, y - 30, w, 60); g.strokeRect(x - w/2, y - 30, w, 60); g.fillStyle = fg; g.font = `${size}px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, x, y + 2, w - 12); }
+function drawRoomSky(path, x, y, w, h, night) { // the sky through a window of any shape: the moon and stars at night, the sun and clouds in the day
+  g.save(); path(); g.clip(); g.fillStyle = night ? '#1b2a4a' : '#8fd3ff'; g.fillRect(x, y, w, h);
+  if (night) { g.fillStyle = '#fff6c9'; g.beginPath(); g.arc(x + w*0.7, y + h*0.35, Math.min(w, h)*0.17, 0, TAU); g.fill(); g.fillStyle = C.white; for (const [sx, sy] of [[0.2, 0.25], [0.35, 0.7], [0.8, 0.75], [0.25, 0.5]]) g.fillRect(x + w*sx, y + h*sy, 4, 4); }
+  else { g.fillStyle = C.yellow; g.beginPath(); g.arc(x + w*0.3, y + h*0.3, Math.min(w, h)*0.18, 0, TAU); g.fill(); g.fillStyle = C.white; for (const [cx, cr] of [[0.65, 0.12], [0.78, 0.15], [0.9, 0.11]]) { g.beginPath(); g.arc(x + w*cx, y + h*0.72, Math.min(w, h)*cr, 0, TAU); g.fill(); } }
+  g.restore(); g.strokeStyle = C.ink; g.lineWidth = 6; path(); g.stroke();
+}
+function drawRoomShell(i, d, night) { // each room has its own walls, floor and window (so no two rooms look the same)
+  if (i === 0) { // Lovely Heart & Cool Star: pink and purple striped wallpaper, a soft purple carpet and a round window
+    drawWoodRoom(d.wall, '#a45a8a', '#8a5fb0'); g.fillStyle = 'rgba(255,143,193,.35)'; for (let x=0;x<W;x+=80) g.fillRect(x, 110, 40, SHOP_FLOOR - 110);
+    const p = () => { g.beginPath(); g.arc(850, 260, 85, 0, TAU); }; drawRoomSky(p, 765, 175, 170, 170, night); g.strokeStyle = C.ink; g.lineWidth = 4; g.beginPath(); g.moveTo(850, 175); g.lineTo(850, 345); g.stroke();
+  } else if (i === 1) { // Goofy Sparkle & Grumpy Shuriken: yellow polka dots (Goofy's half) and bamboo (Grumpy's half), a green carpet and a house-shaped window
+    drawWoodRoom(d.wall, '#c9962f', '#4f9a4f'); g.fillStyle = 'rgba(255,170,60,.45)'; for (let x=40;x<850;x+=90) for (let y=150;y<SHOP_FLOOR;y+=90) { g.beginPath(); g.arc(x + (y % 180 ? 45 : 0), y, 14, 0, TAU); g.fill(); }
+    g.fillStyle = '#d9e8c0'; g.fillRect(850, 110, W - 850, SHOP_FLOOR - 110); g.strokeStyle = '#8fb36a'; g.lineWidth = 10; for (let x=890;x<W;x+=70) { g.beginPath(); g.moveTo(x, 110); g.lineTo(x, SHOP_FLOOR); g.stroke(); g.lineWidth = 3; for (let y=170;y<SHOP_FLOOR;y+=120) { g.beginPath(); g.moveTo(x - 6, y); g.lineTo(x + 6, y); g.stroke(); } g.lineWidth = 10; }
+    const p = () => { g.beginPath(); g.moveTo(780, 360); g.lineTo(780, 240); g.lineTo(850, 175); g.lineTo(920, 240); g.lineTo(920, 360); g.closePath(); }; drawRoomSky(p, 780, 175, 140, 185, night);
+  } else if (i === 2) { // Angry Triangle & Yelling Square: a red brick wall, a dark rubber floor (for training) and a little square window with bars
+    drawWoodRoom('#c8624a', '#5a2a1a', '#3a3a3a'); g.strokeStyle = 'rgba(255,230,210,.5)'; g.lineWidth = 3;
+    for (let y=110, r=0; y<SHOP_FLOOR; y+=40, r++) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); for (let x=(r % 2)*50; x<W; x+=100) { g.beginPath(); g.moveTo(x, y); g.lineTo(x, y + 40); g.stroke(); } }
+    const p = () => { g.beginPath(); g.rect(790, 200, 120, 120); }; drawRoomSky(p, 790, 200, 120, 120, night); g.strokeStyle = '#555'; g.lineWidth = 6; for (const x of [820, 850, 880]) { g.beginPath(); g.moveTo(x, 200); g.lineTo(x, 320); g.stroke(); }
+  } else { // Shocked Circle & Nervous Hexstar: shiny metal panels with bolts (like a robot), a checker floor and a wide window with lots of little panes
+    drawWoodRoom('#cfd8e3', '#5d6b7d', '#8a96a8'); g.strokeStyle = '#9aa7b8'; g.lineWidth = 4; g.fillStyle = '#7d8a9c';
+    for (let x=0;x<W;x+=200) for (let y=110;y<SHOP_FLOOR;y+=165) { g.strokeRect(x + 6, y + 6, 188, 153); for (const [bx, by] of [[16, 16], [184, 16], [16, 149], [184, 149]]) { g.beginPath(); g.arc(x + bx, y + by, 5, 0, TAU); g.fill(); } }
+    g.fillStyle = '#5d6b7d'; for (let x=0;x<W;x+=60) for (let y=SHOP_FLOOR, r=0; y<H; y+=46, r++) if ((x/60 + r) % 2) g.fillRect(x, y, 60, 46);
+    const p = () => { g.beginPath(); g.rect(700, 200, 300, 120); }; drawRoomSky(p, 700, 200, 300, 120, night); g.strokeStyle = C.ink; g.lineWidth = 4; g.beginPath(); for (const x of [775, 850, 925]) { g.moveTo(x, 200); g.lineTo(x, 320); } g.moveTo(700, 260); g.lineTo(1000, 260); g.stroke();
+  }
+}
 function drawThemedRoom(i, t) { // each pair of roommates has a room that fits them
   if (i === 0) { // Lovely Heart & Cool Star: hearts and cool stuff
     for (let k=0;k<9;k++) { const x = 230 + k*150, on = Math.sin(t*3 + k) > 0; g.fillStyle = on ? '#ffd23f' : '#fff6c9'; g.save(); g.translate(x, 135 + (k % 2)*16); starPath(12); g.fill(); g.restore(); } // twinkly star lights
@@ -4826,15 +4939,15 @@ function drawDormRoom(t) {
   const d = DORMS[SHOP.dorm || 0];
   const night = dormNight(), lampX = d.keepers ? 1250 : 850;
   if (d.keepers) drawKeeperRoom(t, night); else {
-  drawWoodRoom(d.wall, '#7a4a2a', '#b98a5a');
+  if (d.crush) { drawWoodRoom(d.wall, '#7a4a2a', '#b98a5a');
   g.fillStyle = night ? '#1b2a4a' : '#8fd3ff'; g.strokeStyle = C.ink; g.lineWidth = 6; g.fillRect(760, 200, 180, 140); g.strokeRect(760, 200, 180, 140); // a window: the moon at night, the sun in the day
   if (night) { g.fillStyle = '#fff6c9'; g.beginPath(); g.arc(880, 245, 24, 0, TAU); g.fill(); g.fillStyle = C.white; for (const [sx, sy] of [[790, 230], [820, 300], [905, 310], [800, 270]]) g.fillRect(sx, sy, 4, 4); }
   else { g.fillStyle = C.yellow; g.beginPath(); g.arc(800, 240, 26, 0, TAU); g.fill(); g.fillStyle = C.white; for (const [cx, cy, cr] of [[885, 300, 18], [905, 292, 22], [925, 302, 16]]) { g.beginPath(); g.arc(cx, cy, cr, 0, TAU); g.fill(); } }
-  g.strokeStyle = C.ink; g.lineWidth = 4; g.beginPath(); g.moveTo(850, 200); g.lineTo(850, 340); g.moveTo(760, 270); g.lineTo(940, 270); g.stroke();
+  g.strokeStyle = C.ink; g.lineWidth = 4; g.beginPath(); g.moveTo(850, 200); g.lineTo(850, 340); g.moveTo(760, 270); g.lineTo(940, 270); g.stroke(); } else drawRoomShell(SHOP.dorm || 0, d, night); /* (every other room has its own walls, floor and window) */
   if (d.crush) drawTherapyRoom(t); else drawThemedRoom(SHOP.dorm || 0, t); // (each room fits the two who live there)
   g.fillStyle = 'rgba(255,255,255,.5)'; g.beginPath(); g.ellipse(850, SHOP_FLOOR + 30, 220, 26, 0, 0, TAU); g.fill(); // a rug
   }
-  g.fillStyle = '#5a3a6e'; g.font = `44px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(`${dormName(d.ids[0])} & ${dormName(d.ids[1])}'s room`, W/2, 160, 1000);
+  g.fillStyle = '#5a3a6e'; g.font = `44px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(d.keepers && SHOP.cabinDorm ? "Mr. & Mrs. Shopkeeper's home" : `${dormName(d.ids[0])} & ${dormName(d.ids[1])}'s room`, W/2, 160, 1000); // (in the cabin, the shopkeepers are married)
   drawStaffDoor(DORM_EXIT_X, '← hallway', '#efe6ff', 'DORMS');
   // the light switch by the door (press punch next to it), and at night the room is dark, with a little lamp glowing
   g.fillStyle = '#f3e2c7'; g.strokeStyle = C.ink; g.lineWidth = 3; g.fillRect(DORM_SWITCH_X - 16, SHOP_FLOOR - 190, 32, 46); g.strokeRect(DORM_SWITCH_X - 16, SHOP_FLOOR - 190, 32, 46);
@@ -5514,7 +5627,7 @@ function drawManager(g, t) { // %#@% sitting in his chair (drawn in the chair's 
 function drawShop(t) {
   const hall = SHOP.floor === 5, wide = bigRoom(); // the chase hallway (and the shopkeepers' big room) scrolls with you
   if (hall) { g.save(); g.translate(-(SHOP.cam || 0), 0); drawChaseFloor(t); }
-  else if (SHOP.floor === CABIN_SHOP) { g.save(); g.translate(-(SHOP.cam || 0), 0); drawCabinShop(t); } else if (SHOP.floor === CABIN_DORMS) drawCabinDorms(t); else if (SHOP.floor === CABIN_OUT) drawCabinOutside(t);
+  else if (SHOP.floor === CABIN_SHOP) { g.save(); g.translate(-(SHOP.cam || 0), 0); drawCabinShop(t); } else if (SHOP.floor === CABIN_DORMS) drawCabinDorms(t); else if (SHOP.floor === CABIN_OUT) drawCabinOutside(t); else if (SHOP.floor === LAB_FLOOR) drawHexLab(t);
   else if (SHOP.floor === CABIN_FLOOR) { g.save(); g.translate(-(SHOP.cam || 0), 0); drawCabin(t); } else if (SHOP.floor === TUNNEL_FLOOR) drawTunnels(t); else if (SHOP.floor === AROOM_FLOOR) drawAdminsRoom(t); else if (SHOP.floor === REUNITE_FLOOR) drawReunite(t); else if (SHOP.floor === TRAIL_FLOOR) drawTrail(t); else if (SHOP.floor === IT_FLOOR) drawItRoom(t); else if (SHOP.floor === EDGE_FLOOR) drawEdge(t); else if (SHOP.floor === VOID_FLOOR) drawVoid(t); else if (SHOP.floor === PARK_FLOOR) drawParkPlace(t); else if (SHOP.floor === DINNER_FLOOR) drawDinnerPlace(t); else if (SHOP.floor === WEDDING_FLOOR) drawWeddingHall(t); else if (SHOP.floor === 15) { drawAdminRoom(t); drawAttack(t); } else if (SHOP.floor === 14) drawKeeperAttic(t); else if (SHOP.floor === 12 || SHOP.floor === 13) { if (wide) { g.save(); g.translate(-(SHOP.cam || 0), 0); } if (SHOP.floor === 13) drawKeeperUpstairs(t); else drawDormRoom(t); } else if (SHOP.floor === 11) drawDormHall(t); else if (SHOP.floor === 10) drawPlayerBreak(t); else if (SHOP.floor === 9) drawGlitchShop(t); else if (SHOP.floor === 8) drawCageFloor(t); else if (SHOP.floor === 7) drawTopFloor(t); else if (SHOP.floor === 6) drawBreakFloor(t); else if (SHOP.floor === 4) drawOfficeFloor(t); else if (SHOP.floor === 3) drawAtticFloor(t); else if (SHOP.floor === 2) drawFunnyFloor(t); else drawFightyFloor(t);
   if (SHOP.floor <= 2) drawShopStory(t); // (the shop changes with the story too)
   if (codeGone() && SHOP.floor >= 11 && SHOP.floor <= 13 && !SHOP.cabinDorm) drawBrokenDorm(t); // (the dorms are broken too, once the code is gone)
@@ -5588,7 +5701,7 @@ function frame(now) {
   if (G.online === 'client' && G.state === 'fight') { clientSmooth(dt); clientSendInput(now); }
   else if (G.state === 'fight' && !G.paused) { acc += dt*1000*((G.fx && G.fx.speed) || 1); let n = 0; while (acc >= STEP && n < 6) { if (G.mode === 'race') raceStep(); else if (G.mode === 'horror') horrorStep(); else step(); acc -= STEP; n++; } if (n === 6) acc = 0; }
   else if (G.state === 'shop') shopStep(dt);
-  else if (G.state === 'title') cabinMenuStep(dt); // (the main menu is the cabin: walk around it)
+  else if (G.state === 'title' && cabinHome()) cabinMenuStep(dt); // (in chapter 5, the main menu is the cabin: walk around it)
   netPosTick(); // (story together online: tell the team where you are)
   chapterTick(); // (finished a chapter? turn the page to the next one)
   if (G.state !== 'fight' && storyOk && storyStage() >= 6 && quakeOn(now/1000)) G.shake = Math.max(G.shake, 10); // (the game is falling apart: the menus and the shop shake now and then)
@@ -5612,7 +5725,7 @@ function frame(now) {
     for (const p of G.fighters) if (p.alive && p.grabbing) drawFighter(p, t);
     drawParticles(G.paused ? 0 : dt); if (zoomed) g.restore(); if (G.boss) drawGlitches(t); drawDisco(t); if (flip) g.restore();
     drawWatchers(t); drawHUD(); drawCoinRain(t); drawPopups(t); drawOverlayText();
-  } else if (G.state === 'title') drawShop(t); // (the cabin, right there on the main menu)
+  } else if (G.state === 'title' && cabinHome()) drawShop(t); // (the cabin, right there on the main menu)
   else { drawSky(t, null); drawMenuGround(t); }
   if (G.state !== 'fight' && storyOk && storyStage() >= 6 && !itStopped() && !cabinPlace() && !onlyThemHere() && !(G.state === 'shop' && SHOP.floor === TRAIL_FLOOR && (performance.now() - (SHOP.trailT0 || 0))/1000 < 20) && !(G.state === 'shop' && SHOP.floor === REUNITE_FLOOR)) drawGlitch(t); // (no glitching on the quiet trail, until IT comes) // (glitchy, in green and black)
   if (G.state !== 'fight' && watchOn() && !itStopped() && !cabinPlace() && !onlyThemHere() && !(G.state === 'shop' && (SHOP.floor === IT_FLOOR || SHOP.floor === TRAIL_FLOOR || SHOP.floor === REUNITE_FLOOR))) drawWatcher(t); // (uoy teg lliw ti: something is looking at you)
@@ -5914,7 +6027,8 @@ $('againPark').onclick = () => goPlace(PARK_FLOOR, 'park');
 const cabinSwitch = step => { do SHOP.who = (SHOP.who + CHARS.length + step) % CHARS.length; while (!unlocked(CHARS[SHOP.who])); $('cabinWhoName').textContent = CHARS[SHOP.who].name; renderShopCard(true); cv.focus(); }; // change who you walk around the cabin as
 $('cabinPrev').onclick = () => cabinSwitch(-1);
 $('cabinNext').onclick = () => cabinSwitch(1);
-$('hideMenuBtn').onclick = () => { document.documentElement.classList.add('menuhide'); $('showMenuBtn').hidden = false; cv.focus(); }; // hide the menu, to walk around the cabin without it in the way$('showMenuBtn').onclick = () => { document.documentElement.classList.remove('menuhide'); $('showMenuBtn').hidden = true; $('okBtn').focus(); };
+$('hideMenuBtn').onclick = () => { document.documentElement.classList.add('menuhide'); $('showMenuBtn').hidden = false; cv.focus(); }; // hide the menu, to walk around the cabin without it in the way
+$('showMenuBtn').onclick = () => { document.documentElement.classList.remove('menuhide'); $('showMenuBtn').hidden = true; $('okBtn').focus(); };
 $('dormBtn').onclick = () => goKeeperRoom(null); // teleport to the shopkeepers' room in the dorms (where the confession happens)
 $('parkBtn').onclick = () => goPlace(PARK_FLOOR);
 $('againBtn').onclick = () => { $('againPick').hidden = !$('againPick').hidden; }; // (one button: press it to pick what to do again)
@@ -6934,16 +7048,18 @@ function cabinStep() { // who you're next to, and walking through the portal in 
   SHOP.nearCabin = null;
   if (SHOP.floor === AROOM_FLOOR && SHOP.itBroke && performance.now() - SHOP.itBroke > 2500 && SHOP.x > CABIN_PORTAL_X - 60) return goCabin();
   if (SHOP.floor === CABIN_SHOP) { const KX = CABIN_SHOP_W - 420; for (const [id, x] of [['keeper', KX + 100], ['keeper2', KX + 200]]) if (Math.abs(SHOP.x - x) < 50 && CHARS[SHOP.who].id !== id) SHOP.nearCabin = id; return; } // (the shopkeepers, at the cabin shop's counter)
+  if (SHOP.floor === LAB_FLOOR) { if (Math.abs(SHOP.x - OLD_HEX_X) < 90) SHOP.nearCabin = 'oldhex'; else { const p = labPals().find(p => Math.abs(p.x - SHOP.x) < 70); if (p) SHOP.nearCabin = p.ch.id; } return; } // (in the repair shop: the old Hexstar, and everyone fixing him)
   if (SHOP.floor !== CABIN_FLOOR) return;
   const p = cabinPals().find(p => Math.abs(p.x - SHOP.x) < 80); if (p) SHOP.nearCabin = p.ch.id;
 }
 function goCabin() { Object.assign(SHOP, { floor:CABIN_FLOOR, x:300, y:0, vy:0, cam:0, facing:1 }); SHOP.youSay = 'Whoa... a cabin! It is SO big!'; SHOP.youSayT = 3; if (sfx.zap) sfx.zap(); musicUpdate(); renderShopCard(true); }
 function cabinTalk() { // talking to someone in the cabin
-  const id = SHOP.nearCabin, lines = (SHOP.floor === CABIN_SHOP ? CABIN_SHOP_TALK : CABIN_TALK)[id] || ['Hi!']; SHOP.cabinTalkN = (SHOP.cabinTalkN || 0) + 1;
+  if (SHOP.nearCabin === 'oldhex') return labHelp();
+  const id = SHOP.nearCabin, lines = (SHOP.floor === CABIN_SHOP ? CABIN_SHOP_TALK : SHOP.floor === LAB_FLOOR ? LAB_TALK : CABIN_TALK)[id] || ['Hi!']; SHOP.cabinTalkN = (SHOP.cabinTalkN || 0) + 1;
   SHOP.cabinSay = { id, text:lines[SHOP.cabinTalkN % lines.length], until:performance.now() + 3500 }; if (sfx.ding) sfx.ding(); renderShopCard(true);
 }
 function cabinMenuStep(dt) { // the main menu is the cabin: you walk around it right there on the menu
-  if (!SHOP.cabinReady || (![CABIN_FLOOR, CABIN_SHOP, CABIN_DORMS, CABIN_OUT, IT_FLOOR].includes(SHOP.floor) && !SHOP.cabinDorm)) { // (you can walk all over the cabin, outside and into IT's room, right from the menu)
+  if (!SHOP.cabinReady || (![CABIN_FLOOR, CABIN_SHOP, CABIN_DORMS, CABIN_OUT, IT_FLOOR, LAB_FLOOR].includes(SHOP.floor) && !SHOP.cabinDorm)) { // (you can walk all over the cabin, outside and into IT's room, right from the menu)
     if (SHOP.who == null) SHOP.who = Math.max(0, CHARS.findIndex(ch => (CTRL[setup.slots[ch.id]] || CTRL.off).kind === 'human'));
     Object.assign(SHOP, { floor:CABIN_FLOOR, x:600, y:0, vy:0, facing:1, cam:0, near:null, nearKeeper:false, nearStairs:false, msg:'', msgT:0, echoT:0, carry:false, pushT:0, pushing:false, youSayT:0, chase:null, bossT:-1, visit:null, pb:null, prev:readHeld('local'), cabinReady:true, smi7y:false });
   }
@@ -6980,7 +7096,7 @@ function drawCabinPortal(t) { // in the admins' room, once IT is stopped: a port
 // "Chapter 1: Confession... The End", the page turns to "Chapter 2: Admins attack" (and its first event), and it fades back in with you already where
 // the next chapter starts (it starts right away: no waiting). After chapter 5 it's "The End... for now", and you go home to the cabin.
 // (Chapters you finished before this existed don't replay, and it doesn't happen while you play the story together online)
-const CHAPTER_NAMES = ['Confession', 'Admins attack', 'They are gone...', 'Pray for you are in danger', 'Stop IT'];
+const CHAPTER_NAMES = ['Confession', 'Admins attack', 'They are gone...', 'Pray for you are in danger', 'New home'];
 const CHAPTER_FIRST = ['💌 Confession', '🛡️ Admins attack', '💔 They are gone...', '🙏 Pray for you are in danger', '🔑 Get the admins'];
 function chaptersDone() { // how many chapters you've finished
   const w = weddingLeft(), c1 = w !== Infinity && w <= -WEDDING_LONG*60000, c2 = c1 && lifeLeft() <= 0, c3 = c2 && saved() && onlyLeft() <= 0, c4 = c3 && reuniteLeft() <= 0, c5 = c4 && itStopped();
@@ -7021,7 +7137,70 @@ STAIRS.push(...DORM_ROOM_X.map((x, room) => ({ floor:CABIN_DORMS, x, to:12, room
 STAIRS.push({ floor:CABIN_FLOOR, x:CABIN_STAIRS_X, to:CABIN_SHOP }, { floor:CABIN_SHOP, x:80, to:CABIN_FLOOR }, { floor:CABIN_SHOP, x:CABIN_SHOP_W - 100, to:CABIN_DORMS }, { floor:CABIN_DORMS, x:1520, to:CABIN_SHOP },
   { floor:CABIN_FLOOR, x:CABIN_DOOR_X, to:CABIN_OUT }, { floor:CABIN_OUT, x:1520, to:CABIN_FLOOR }, { floor:CABIN_OUT, x:IT_SHED_X, to:IT_FLOOR }, { floor:IT_FLOOR, x:110, to:CABIN_OUT });
 STANDS.filter(s => s.floor === 1 || s.floor === 2).forEach((s, i) => STANDS.push({ get item() { return s.item; }, floor:CABIN_SHOP, x:500 + i*620 })); // (the same things you can buy in the shop)
-const cabinPlace = () => G.state === 'title' || (G.state === 'shop' && ((SHOP.floor >= CABIN_FLOOR && SHOP.floor <= CABIN_OUT) || ((SHOP.floor === 12 || SHOP.floor === 13) && SHOP.cabinDorm))); // (in the cabin, nothing glitches)
+const cabinHome = () => storyOk && chaptersDone() >= 4; // the main menu is the cabin only once you get to chapter 5 (New home); before that, it's the old menu
+const cabinPlace = () => (G.state === 'title' && cabinHome()) || (G.state === 'shop' && ((SHOP.floor >= CABIN_FLOOR && SHOP.floor <= CABIN_OUT) || SHOP.floor === 30 || ((SHOP.floor === 12 || SHOP.floor === 13 || SHOP.floor === 14) && SHOP.cabinDorm))); // (in the cabin, nothing glitches)
+// the repair shop, outside the cabin: the old Hexstar (the first one, who did not make it out of the code) is on a workbench, and everyone is trying to fix him.
+// Walk up to him and press punch to help (a little more fixed each time... he's not awake yet, but they won't give up). Talk to the others in there too
+const LAB_FLOOR = 30, LAB_X = 380, OLD_HEX_X = 800;
+STAIRS.push({ floor:CABIN_OUT, x:LAB_X, to:LAB_FLOOR }, { floor:LAB_FLOOR, x:110, to:CABIN_OUT });
+const LAB_TALK = {
+  keeper:['*wipes forehead* Hand me that wrench? ...Thanks! We WILL fix him.', 'He was the bravest little robot I ever knew.', 'Every day we fix a little more. He is going to wake up. I know it.'],
+  circle:['WHAT?! He moved! ...No. That was me. I bumped the table.', 'He was my roommate! He was scared of the dark, so I left the lights on for him. I still do.', 'Come on, buddy... wake up...'],
+  hex:['Beep... that is the old me. *boop* I want to meet him!', 'I gave him one of my spare batteries. Beep!', 'When he wakes up, we can BOTH say beep! Two beeps!'],
+};
+const LAB_PALS = [['keeper', 560], ['circle', 1080], ['hex', 1260]];
+const labPals = () => LAB_PALS.filter(([id]) => CHAR[id] && id !== CHARS[SHOP.who].id).map(([id, x]) => ({ ch:CHAR[id], x }));
+const hexFix = () => Math.min(99, +(lsGet('fff-hexfix') || 12)); // how much of the old Hexstar is fixed (it never quite gets to 100... yet)
+function labHelp() { // help fix the old Hexstar
+  const now = Math.min(99, hexFix() + 1 + Math.floor(Math.random()*3)); lsSet('fff-hexfix', String(now)); SHOP.labSpark = performance.now();
+  SHOP.youSay = now >= 99 ? 'Almost... he is SO close. But he is not awake yet...' : ['*bonk bonk* Fixed a bolt!', '*bzzt* Plugged in a wire!', 'Tightened a screw!', 'Polished his glasses!', 'Taped up a crack!'][Math.floor(Math.random()*5)];
+  SHOP.youSayT = 2.5; if (sfx.zap) sfx.zap(); renderShopCard(true);
+}
+function drawOldHex(x, y, r, t) { // the old Hexstar (he looked different from Hexstar 2.0): grey-blue, cracked, with his big round glasses (one lens bigger), his eyes shut and a bandage
+  g.save(); g.translate(x, y); g.rotate(Math.sin(t*0.5)*0.02);
+  g.fillStyle = '#7f97b0'; g.strokeStyle = C.ink; g.lineWidth = 5; starPath(r, 6); g.fill(); g.stroke();
+  g.strokeStyle = '#3a4a5a'; g.lineWidth = 3; g.beginPath(); g.moveTo(-r*0.5, -r*0.6); g.lineTo(-r*0.3, -r*0.3); g.lineTo(-r*0.45, -r*0.1); g.moveTo(r*0.4, r*0.2); g.lineTo(r*0.6, r*0.45); g.stroke(); // cracks
+  g.fillStyle = 'rgba(200,230,255,.5)'; g.strokeStyle = C.ink; g.lineWidth = 4; g.beginPath(); g.arc(-r*0.25, -r*0.08, r*0.24, 0, TAU); g.fill(); g.stroke(); g.beginPath(); g.arc(r*0.27, -r*0.08, r*0.3, 0, TAU); g.fill(); g.stroke(); // his glasses
+  g.lineWidth = 3; for (const ex of [-r*0.25, r*0.27]) { g.beginPath(); g.moveTo(ex - r*0.1, -r*0.06); g.lineTo(ex + r*0.1, -r*0.06); g.stroke(); } // eyes shut
+  g.fillStyle = '#555'; g.fillRect(-r*0.18, r*0.3, r*0.36, r*0.12); // his speaker mouth
+  g.fillStyle = '#e8d8a8'; g.save(); g.translate(r*0.5, -r*0.55); g.rotate(0.6); g.fillRect(-r*0.18, -r*0.05, r*0.36, r*0.1); g.rotate(-1.2); g.fillRect(-r*0.18, -r*0.05, r*0.36, r*0.1); g.restore(); // a bandage
+  g.restore();
+}
+function drawCabinLabOutside(t) { // (outside) the little wooden repair shop, with a flickering window and sparks
+  const x = LAB_X; g.fillStyle = '#7a5236'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(x - 170, SHOP_FLOOR - 250, 340, 250); g.strokeRect(x - 170, SHOP_FLOOR - 250, 340, 250);
+  g.strokeStyle = '#5a3a1e'; g.lineWidth = 3; for (let y = SHOP_FLOOR - 220; y < SHOP_FLOOR; y += 30) { g.beginPath(); g.moveTo(x - 170, y); g.lineTo(x + 170, y); g.stroke(); }
+  g.fillStyle = '#4a4a4a'; g.beginPath(); g.moveTo(x - 190, SHOP_FLOOR - 250); g.lineTo(x, SHOP_FLOOR - 330); g.lineTo(x + 190, SHOP_FLOOR - 250); g.closePath(); g.fill(); // a tin roof
+  g.fillStyle = '#4a2e18'; g.fillRect(x - 45, SHOP_FLOOR - 170, 90, 170); g.fillStyle = C.yellow; g.beginPath(); g.arc(x + 28, SHOP_FLOOR - 85, 6, 0, TAU); g.fill(); // the door
+  const welding = Math.sin(t*1.3) > 0.4, glow = 0.7 + (welding ? Math.sin(t*9)*0.2 : 0); g.fillStyle = `rgba(140,220,255,${glow})`; g.fillRect(x + 75, SHOP_FLOOR - 200, 70, 60); g.strokeStyle = C.ink; g.lineWidth = 4; g.strokeRect(x + 75, SHOP_FLOOR - 200, 70, 60); // the window flickers (welding!)
+  if (welding) for (let i=0;i<5;i++) { const a = t*12 + i*1.3; g.fillStyle = i % 2 ? C.yellow : '#fff'; g.fillRect(x + 110 + Math.cos(a)*24, SHOP_FLOOR - 170 + Math.sin(a)*18, 4, 4); }
+  g.fillStyle = '#f3e2c7'; g.strokeStyle = '#4a2e18'; g.lineWidth = 3; g.fillRect(x - 120, SHOP_FLOOR - 245, 240, 36); g.strokeRect(x - 120, SHOP_FLOOR - 245, 240, 36); g.fillStyle = '#4a2e18'; g.font = `20px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('🔧 fixing Hexstar', x, SHOP_FLOOR - 226, 230);
+  if (SHOP.nearStairs && SHOP.stairTo === LAB_FLOOR) drawPointer(x + 70, SHOP_FLOOR - 360, t);
+}
+function drawHexLab(t) { // inside the repair shop
+  g.fillStyle = '#5d6b7d'; g.fillRect(-200, -200, W + 400, H + 400); g.fillStyle = '#7d8a9c'; for (let x = 0; x < W; x += 120) g.fillRect(x, 0, 6, SHOP_FLOOR); // metal walls
+  g.fillStyle = '#3a3a3a'; g.fillRect(0, SHOP_FLOOR, W, H - SHOP_FLOOR); g.fillStyle = '#d4a017'; for (let x = 0; x < W; x += 80) { g.beginPath(); g.moveTo(x, SHOP_FLOOR); g.lineTo(x + 40, SHOP_FLOOR); g.lineTo(x + 20, SHOP_FLOOR + 14); g.fill(); } // a hazard stripe
+  for (const lx of [500, 1100]) { g.strokeStyle = '#222'; g.lineWidth = 3; g.beginPath(); g.moveTo(lx, 0); g.lineTo(lx, 90); g.stroke(); g.fillStyle = '#ffe9a8'; g.beginPath(); g.moveTo(lx - 40, 120); g.lineTo(lx + 40, 120); g.lineTo(lx + 16, 90); g.lineTo(lx - 16, 90); g.closePath(); g.fill(); g.fillStyle = 'rgba(255,240,180,.12)'; g.beginPath(); g.moveTo(lx - 40, 120); g.lineTo(lx + 40, 120); g.lineTo(lx + 220, SHOP_FLOOR); g.lineTo(lx - 220, SHOP_FLOOR); g.closePath(); g.fill(); } // work lights
+  // a pegboard of tools
+  g.fillStyle = '#c9a36a'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(230, 180, 260, 200); g.strokeRect(230, 180, 260, 200); g.strokeStyle = '#555'; g.lineWidth = 8; g.lineCap = 'round';
+  g.beginPath(); g.moveTo(270, 210); g.lineTo(270, 330); g.moveTo(330, 210); g.lineTo(310, 330); g.moveTo(380, 220); g.lineTo(380, 340); g.moveTo(430, 210); g.lineTo(450, 320); g.stroke(); g.fillStyle = C.red; g.fillRect(366, 210, 28, 24);
+  // a big screen: how much of him is fixed, and a little heartbeat line (he's still in there!)
+  const fix = hexFix(); g.fillStyle = '#10161f'; g.strokeStyle = C.ink; g.lineWidth = 6; g.fillRect(620, 150, 360, 170); g.strokeRect(620, 150, 360, 170);
+  g.fillStyle = '#5ff0ff'; g.font = `24px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('REPAIRING: old Hexstar', 800, 185);
+  g.strokeStyle = '#5ff0ff'; g.lineWidth = 3; g.strokeRect(650, 210, 300, 30); g.fillStyle = '#39ff14'; g.fillRect(653, 213, 294*fix/100, 24); g.fillStyle = '#fff'; g.fillText(fix + '%', 800, 226);
+  g.strokeStyle = '#39ff14'; g.lineWidth = 3; g.beginPath(); for (let i=0;i<=60;i++) { const px = 650 + i*5, k = ((i/60) + t*0.25) % 1, beat = k > 0.48 && k < 0.52 ? -26 : k > 0.52 && k < 0.55 ? 14 : 0; if (i) g.lineTo(px, 285 + beat); else g.moveTo(px, 285 + beat); } g.stroke();
+  // a big computer, with cables to him
+  g.fillStyle = '#93a3bd'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(1380, SHOP_FLOOR - 320, 140, 320); g.strokeRect(1380, SHOP_FLOOR - 320, 140, 320); for (let i=0;i<6;i++) { g.fillStyle = Math.sin(t*5 + i*2) > 0 ? '#39ff14' : '#2e5e2e'; g.fillRect(1400 + (i % 3)*36, SHOP_FLOOR - 290 + Math.floor(i/3)*30, 16, 12); }
+  g.lineWidth = 6; for (const [col, k] of [[C.red, 0], [C.blue, 20], [C.yellow, 40]]) { g.strokeStyle = col; g.beginPath(); g.moveTo(1380, SHOP_FLOOR - 200 + k); g.bezierCurveTo(1200, SHOP_FLOOR + 10, 1000, SHOP_FLOOR - 40, 850, SHOP_FLOOR - 160 + k/2); g.stroke(); }
+  // the workbench, with the old Hexstar on it, and a box of his old parts
+  g.fillStyle = '#6b6b6b'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(660, SHOP_FLOOR - 110, 280, 22); g.strokeRect(660, SHOP_FLOOR - 110, 280, 22); for (const lx of [680, 900]) { g.fillRect(lx, SHOP_FLOOR - 88, 20, 88); g.strokeRect(lx, SHOP_FLOOR - 88, 20, 88); }
+  drawOldHex(OLD_HEX_X, SHOP_FLOOR - 170, 62, t);
+  g.fillStyle = '#8a5a2b'; g.fillRect(960, SHOP_FLOOR - 60, 90, 60); g.strokeRect(960, SHOP_FLOOR - 60, 90, 60); g.fillStyle = '#ccc'; for (let i=0;i<4;i++) { g.beginPath(); g.arc(975 + i*20, SHOP_FLOOR - 64, 8, 0, TAU); g.fill(); } g.fillStyle = C.white; g.font = `14px ${BODYFONT}`; g.fillText('old hex parts', 1005, SHOP_FLOOR - 30);
+  if (SHOP.labSpark && performance.now() - SHOP.labSpark < 900) { const k = (performance.now() - SHOP.labSpark)/900; for (let i=0;i<12;i++) { const a = i*TAU/12; g.fillStyle = i % 2 ? C.yellow : '#fff'; g.fillRect(OLD_HEX_X + Math.cos(a)*k*120, SHOP_FLOOR - 170 + Math.sin(a)*k*90, 6, 6); } } // sparks when you help
+  drawStaffDoor(110, '← outside', '#efe6ff', 'REPAIRS');
+  const pals = labPals(); pals.forEach((p, i) => { const ch = p.ch, r = ch.keeper ? dormR(ch)*0.5 : 34*Math.min(ch.size || 1, 1.3), bob = Math.abs(Math.sin(t*2 + i))*3; g.save(); g.translate(p.x, SHOP_FLOOR - r - bob); drawCharacter(g, ch, r, { facing:p.x < OLD_HEX_X ? 1 : -1, ...looks(ch), still:true }); g.restore(); });
+  const cs = SHOP.cabinSay, sp = cs && performance.now() < cs.until && pals.find(p => p.ch.id === cs.id); if (sp) drawBubble(cs.text, sp.x + 240, SHOP_FLOOR - 230, sp.x);
+  if (SHOP.nearCabin) { const np = SHOP.nearCabin === 'oldhex' ? { x:OLD_HEX_X } : pals.find(p => p.ch.id === SHOP.nearCabin); if (np) drawPointer(np.x + 50, SHOP_FLOOR - 270, t); }
+}
 function drawLogWalls(w) { g.fillStyle = '#8a5a34'; g.fillRect(-200, -200, w + 400, H + 400); for (let y = 40; y < SHOP_FLOOR; y += 46) { g.fillStyle = (y/46) % 2 < 1 ? '#9a6a3e' : '#8a5a34'; g.fillRect(0, y, w, 42); g.fillStyle = 'rgba(0,0,0,.15)'; g.fillRect(0, y + 38, w, 4); } g.fillStyle = '#5a3a1e'; g.fillRect(0, 0, w, 40); g.fillStyle = '#6b4a2a'; g.fillRect(0, SHOP_FLOOR, w, H - SHOP_FLOOR); }
 function drawCabinStairs(x, up, label, t) { // wooden stairs, with a little sign
   g.fillStyle = '#5a3a1e'; for (let i=0;i<6;i++) { const sx = up ? x - 60 + i*20 : x + 60 - i*20; g.fillRect(sx - 30, SHOP_FLOOR - 24 - i*24, 60, 24); }
@@ -7039,9 +7218,9 @@ function drawCabinShop(t) { // the 2nd floor: the cabin shop, extra big (three s
   g.fillStyle = '#ffd23f'; g.strokeStyle = C.ink; g.lineWidth = 4; g.save(); g.translate(2690, SHOP_FLOOR - 380); g.rotate(-0.08); g.fillRect(-80, -26, 160, 52); g.strokeRect(-80, -26, 160, 52); g.fillStyle = C.red; g.font = `34px ${FONT}`; g.fillText('SALE!', 0, 2); g.restore(); // a sale sign
   for (const px of [220, 820, 2060, 2280, 3000]) { g.fillStyle = '#b5652a'; g.fillRect(px - 26, SHOP_FLOOR - 50, 52, 50); g.fillStyle = '#2e9e4f'; for (const [dx, dy, rr] of [[0, -80, 34], [-26, -58, 26], [26, -58, 26]]) { g.beginPath(); g.arc(px + dx, SHOP_FLOOR + dy, rr, 0, TAU); g.fill(); } } // potted plants
   g.fillStyle = '#5a3a1e'; g.fillRect(2140, SHOP_FLOOR - 120, 80, 120); g.fillStyle = '#7a5236'; g.fillRect(2120, SHOP_FLOOR - 130, 120, 14); g.fillStyle = C.white; g.beginPath(); g.ellipse(2180, SHOP_FLOOR - 140, 26, 8, 0, 0, TAU); g.fill(); g.fillStyle = '#6b3d1a'; g.beginPath(); g.ellipse(2180, SHOP_FLOOR - 142, 18, 5, 0, 0, TAU); g.fill(); // a little table with free cocoa
-  for (const [id, x] of [['keeper', KX + 100], ['keeper2', KX + 200]]) { const ch = CHAR[id], r = dormR(ch)*0.55; g.save(); g.translate(x, SHOP_FLOOR - r - 40); drawCharacter(g, ch, r, { facing:-1, ...looks(ch), still:true }); g.restore(); } // both shopkeepers, behind the counter
-  g.fillStyle = '#a0723c'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(KX, SHOP_FLOOR - 110, 260, 110); g.strokeRect(KX, SHOP_FLOOR - 110, 260, 110); g.fillStyle = '#7a5236'; g.fillRect(KX - 10, SHOP_FLOOR - 122, 280, 16); // the counter
-  g.fillStyle = '#d4a017'; g.fillRect(KX + 2, SHOP_FLOOR - 150, 44, 28); g.fillStyle = '#333'; g.fillRect(KX + 7, SHOP_FLOOR - 146, 34, 12); // a cash register
+  for (const [id, x] of [['keeper', KX + 100], ['keeper2', KX + 200]]) { const ch = CHAR[id], r = dormR(ch)*0.55; g.save(); g.translate(x, SHOP_FLOOR - r - 70); drawCharacter(g, ch, r, { facing:-1, ...looks(ch), still:true }); g.restore(); } // both shopkeepers, behind the counter
+  g.fillStyle = '#a0723c'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(KX - 150, SHOP_FLOOR - 140, 410, 140); g.strokeRect(KX - 150, SHOP_FLOOR - 140, 410, 140); g.fillStyle = '#8a5f30'; for (let px = KX - 150 + 82; px < KX + 260; px += 82) g.fillRect(px - 2, SHOP_FLOOR - 136, 4, 136); g.fillStyle = '#7a5236'; g.fillRect(KX - 165, SHOP_FLOOR - 154, 440, 18); g.strokeRect(KX - 165, SHOP_FLOOR - 154, 440, 18); // the counter (extra big, with wood panels)
+  g.fillStyle = '#d4a017'; g.fillRect(KX - 140, SHOP_FLOOR - 182, 44, 28); g.fillStyle = '#333'; g.fillRect(KX - 135, SHOP_FLOOR - 178, 34, 12); // a cash register
   const cs = SHOP.cabinSay, talking = cs && performance.now() < cs.until && (cs.id === 'keeper' || cs.id === 'keeper2'); // talking to them at the counter (walk up to one and press punch)
   if (talking) { const tx = KX + (cs.id === 'keeper' ? 100 : 200); drawBubble(cs.text, tx - 20, SHOP_FLOOR - 260, tx); }
   else if (Math.abs(SHOP.x - (KX + 130)) < 260) drawBubble('Welcome to the cabin shop! It is SO big now! Walk up to us and press punch to talk!', KX, SHOP_FLOOR - 260, KX + 80);
@@ -7068,10 +7247,12 @@ function drawCabinOutside(t) { // outside the cabin: a forest, and a little ston
   g.strokeStyle = '#999'; g.lineWidth = 6; for (let i=0;i<4;i++) { g.beginPath(); g.moveTo(x - 40 + i*27, SHOP_FLOOR - 200); g.lineTo(x - 40 + i*27, SHOP_FLOOR); g.stroke(); } // bars (IT is locked in)
   g.fillStyle = C.yellow; g.strokeStyle = C.ink; g.lineWidth = 3; g.fillRect(x - 90, SHOP_FLOOR - 300, 180, 34); g.strokeRect(x - 90, SHOP_FLOOR - 300, 180, 34); g.fillStyle = C.ink; g.font = `18px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText("IT's room: KEEP OUT", x, SHOP_FLOOR - 283);
   if (SHOP.nearStairs && SHOP.stairTo === IT_FLOOR) drawPointer(x + 70, SHOP_FLOOR - 330, t);
+  drawCabinLabOutside(t); // (and the repair shop, where they're fixing the old Hexstar)
 }
 const CABIN_CARDS = { [CABIN_SHOP]:'<h3>The cabin shop</h3><p>The 2nd floor of the cabin: the same things to buy as in the shop, with both shopkeepers at the counter. Walk up to a stand to buy something, or walk up to a shopkeeper and press punch to talk. The stairs go down to the cabin and up to the dorms.</p>',
   [CABIN_DORMS]:'<h3>The dorms</h3><p>The 3rd floor of the cabin: a big bunk room, with a bed for everyone (their name is on it). The stairs go back down to the shop.</p>',
-  [CABIN_OUT]:'<h3>Outside</h3><p>A quiet forest outside the cabin. That little stone room is IT\'s room... IT is locked in there. Walk to its door and press punch to go in and talk to IT. The cabin door is on the right.</p>' };
+  [CABIN_OUT]:'<h3>Outside</h3><p>A quiet forest outside the cabin. That little stone room is IT\'s room... IT is locked in there. Walk to its door and press punch to go in and talk to IT. The little wooden shop on the left is the repair shop, where they are trying to fix the old Hexstar. The cabin door is on the right.</p>',
+  [LAB_FLOOR]:'<h3>The repair shop</h3><p>The old Hexstar (the first one, who did not make it out of the code) is on the workbench, and everyone is trying to fix him. Walk up to him and press punch to help fix him, or talk to the others. The screen shows how much of him is fixed... and his heartbeat. He is still in there!</p>' };
 const STORY_NOTES = ['', '💕 The shopkeepers are in love! 💕', '🌳 The shopkeepers are dating! 🌳', '🍝 Date night at Café Fun! 🍝', '💍 Just married! 💍', '🛡️ The Admin is watching... 🛡️', '💥 Everything is falling apart! 💥', '🕳️ The code is gone... the 1st floor is gone! 🕳️', '🏠 There is no shop now... 🏠', '💔 They are gone...', '🌀 The void...', '👁️ ...uoy teg lliw ti 👁️', '📺 It\'s only them...', '🙏 Pray for you are in danger 🙏', '👁️ IT is here 👁️', '🔨 escape? 🔨', '🤗 Together again 🤗', '🔑 Get the admins 🔑'];
 let storyCache = { t:0, s:0 };
 const STORY_LOOKS = [['love','💕 In love'], ['park','🌳 Park'], ['cafe','🍝 Café'], ['wedding','💍 Wedding'], ['admin','🛡️ Admin'], ['crumble','💥 Falling apart'], ['gone','🕳️ Code gone'], ['life','🏠 Once in a life time'], ['fell','💔 They are gone'], ['void','🌀 The void'], ['eyes','👁️ uoy teg lliw ti'], ['only','📺 It\'s only them'], ['pray','🙏 Pray for you are in danger'], ['it','👁️ IT is here'], ['escape','🔨 escape?'], ['reunite','🤗 Reunite'], ['admins','🔑 Get the admins']]; // (the looks, in story order, for the settings and the admin panel)
@@ -7086,7 +7267,7 @@ function storyStage() {
 }
 function storyClasses() {
   storyCache.t = 0; const s = storyStage(), el = document.documentElement;
-  el.classList.toggle('love', s === 1); el.classList.toggle('parklook', s === 2); el.classList.toggle('cafe', s === 3); el.classList.toggle('wedding', s >= 4); el.classList.toggle('adminlook', s >= 5); el.classList.toggle('crumble', false); /* (the main menu is the cabin, and the cabin never glitches) */ el.classList.toggle('gone', s >= 7); el.classList.toggle('scared', s >= 8 && !itStopped()); el.classList.add('cabin');
+  el.classList.toggle('love', s === 1); el.classList.toggle('parklook', s === 2); el.classList.toggle('cafe', s === 3); el.classList.toggle('wedding', s >= 4); el.classList.toggle('adminlook', s >= 5); el.classList.toggle('crumble', s >= 6 && !cabinHome()); /* (once the main menu is the cabin, it never glitches) */ el.classList.toggle('gone', s >= 7); el.classList.toggle('scared', s >= 8 && !itStopped()); el.classList.toggle('cabin', cabinHome());
   $('storyNote').textContent = s === 10 && saved() ? '🎉 Grumpy and Goofy are saved! 🎉' : STORY_NOTES[s]; $('storyNote').hidden = !s;
   const row = TITLE_ROW().map(c => c.id).join(); if (titleChars.dataset.ids !== row) { titleChars.dataset.ids = row; titleChars.innerHTML = ''; TITLE_ROW().forEach(c => titleChars.appendChild(charCanvas(c, 78))); } // (they are gone: Grumpy Shuriken and Goofy Sparkle aren't on the menu)
 }
