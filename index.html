@@ -4708,7 +4708,7 @@ function drawKidRoom(t, night) { // in the cabin, the shopkeepers' 3rd floor is 
   g.fillStyle = C.white; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(540, SHOP_FLOOR - 170, 200, 14); g.strokeRect(540, SHOP_FLOOR - 170, 200, 14); g.fillRect(540, SHOP_FLOOR - 60, 200, 14); g.strokeRect(540, SHOP_FLOOR - 60, 200, 14);
   for (const lx of [540, 726]) { g.fillRect(lx, SHOP_FLOOR - 190, 14, 190); g.strokeRect(lx, SHOP_FLOOR - 190, 14, 190); }
   g.fillStyle = '#ffb3d1'; roundRect(556, SHOP_FLOOR - 92, 168, 34, 10); g.fill(); g.stroke(); g.fillStyle = '#a8e0ff'; roundRect(560, SHOP_FLOOR - 104, 50, 20, 8); g.fill(); g.stroke();
-  if (goofyKidDone()) drawSleepingBaby(t, 655, SHOP_FLOOR - 112, 106); // (chapter 7: the baby, fast asleep in her crib)
+  if (goofyKidDone() && dormNight() && !bedCarrying()) drawSleepingBaby(t, 655, SHOP_FLOOR - 112, 106); // (chapter 7: at night, the baby, fast asleep in her crib)
   g.strokeStyle = C.ink; g.lineWidth = 3; for (let x = 570; x < 726; x += 22) { g.beginPath(); g.moveTo(x, SHOP_FLOOR - 156); g.lineTo(x, SHOP_FLOOR - 60); g.stroke(); } // the bars
   // a mobile over the crib, turning slowly: a star, a moon, a heart and a little top hat
   g.strokeStyle = C.ink; g.lineWidth = 2; g.beginPath(); g.moveTo(640, 0); g.lineTo(640, 360); g.stroke(); g.lineWidth = 4; g.beginPath(); g.moveTo(560, 360); g.lineTo(720, 360); g.stroke();
@@ -4817,7 +4817,7 @@ function drawShyAsleep(t) { // tucked into her bed, with her head on the pillow
   for (let i=0;i<3;i++) { const k = (t*0.5 + i/3) % 1; g.globalAlpha = 1 - k; g.font = `bold ${20 + k*24}px ${BODYFONT}`; g.fillText('Z', 1630 + k*50, SHOP_FLOOR - 200 - k*120); } g.globalAlpha = 1;
 }
 function drawToys(t) { // toys on the floor upstairs, in front of the TV (Goofy Sparkle plays with them)
-  const play = (SHOP.toyT || 0) > 0 || (SHOP.cabinDorm && goofyKidDone()); // (and the baby plays with them, in the cabin)
+  const play = (SHOP.toyT || 0) > 0;
   g.strokeStyle = C.ink; g.lineWidth = 4;
   g.fillStyle = '#ff8fc1'; g.fillRect(TOY_X - 55, SHOP_FLOOR - 64, 110, 64); g.strokeRect(TOY_X - 55, SHOP_FLOOR - 64, 110, 64); // the toy box
   g.fillStyle = C.white; g.font = `22px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('TOYS', TOY_X, SHOP_FLOOR - 32);
@@ -7148,7 +7148,7 @@ function drawCabin(t) { // a big, cozy log cabin (drawn 2400 wide; the room scro
   g.fillStyle = '#5a3a1e'; g.fillRect(0, 0, CW, 40); // the ceiling beam
   g.fillStyle = '#6b4a2a'; g.fillRect(0, SHOP_FLOOR, CW, H - SHOP_FLOOR); g.fillStyle = 'rgba(0,0,0,.15)'; for (let x = 0; x < CW; x += 120) g.fillRect(x, SHOP_FLOOR, 4, H - SHOP_FLOOR); // wooden floor
   g.fillStyle = '#b5413a'; g.beginPath(); g.ellipse(1200, SHOP_FLOOR + 30, 520, 40, 0, 0, TAU); g.fill(); g.strokeStyle = '#ffd23f'; g.lineWidth = 4; g.beginPath(); g.ellipse(1200, SHOP_FLOOR + 30, 480, 30, 0, 0, TAU); g.stroke(); // a big round rug
-  for (const wx of [380, 2020]) { const night = isNight(); g.fillStyle = night ? '#1b2a4a' : '#9ed8ff'; g.fillRect(wx - 110, 150, 220, 170); if (!night) { g.fillStyle = '#2e9e4f'; for (let i=0;i<4;i++) { g.beginPath(); g.moveTo(wx - 100 + i*60, 320); g.lineTo(wx - 70 + i*60, 220); g.lineTo(wx - 40 + i*60, 320); g.closePath(); g.fill(); } } else { g.fillStyle = '#fff6c9'; g.beginPath(); g.arc(wx + 50, 200, 20, 0, TAU); g.fill(); } g.strokeStyle = '#4a2e18'; g.lineWidth = 10; g.strokeRect(wx - 110, 150, 220, 170); g.beginPath(); g.moveTo(wx, 150); g.lineTo(wx, 320); g.moveTo(wx - 110, 235); g.lineTo(wx + 110, 235); g.stroke(); } // windows looking out at the forest
+  for (const wx of [380, 2020]) { const night = dormNight(); g.fillStyle = night ? '#1b2a4a' : '#9ed8ff'; g.fillRect(wx - 110, 150, 220, 170); if (!night) { g.fillStyle = '#2e9e4f'; for (let i=0;i<4;i++) { g.beginPath(); g.moveTo(wx - 100 + i*60, 320); g.lineTo(wx - 70 + i*60, 220); g.lineTo(wx - 40 + i*60, 320); g.closePath(); g.fill(); } } else { g.fillStyle = '#fff6c9'; g.beginPath(); g.arc(wx + 50, 200, 20, 0, TAU); g.fill(); } g.strokeStyle = '#4a2e18'; g.lineWidth = 10; g.strokeRect(wx - 110, 150, 220, 170); g.beginPath(); g.moveTo(wx, 150); g.lineTo(wx, 320); g.moveTo(wx - 110, 235); g.lineTo(wx + 110, 235); g.stroke(); } // windows looking out at the forest
   g.fillStyle = '#7d7d7d'; g.fillRect(1080, 200, 240, SHOP_FLOOR - 200); g.fillStyle = '#6a6a6a'; for (let y = 210; y < SHOP_FLOOR; y += 36) for (let x = 1090 + ((y/36) % 2)*20; x < 1310; x += 50) g.fillRect(x, y, 40, 28); // a big stone fireplace
   g.fillStyle = '#222'; g.fillRect(1130, SHOP_FLOOR - 150, 140, 150); for (let i=0;i<3;i++) { const fh = 60 + Math.sin(t*9 + i*2)*14 - i*14; g.fillStyle = ['#ff6a1a', '#ffb02e', '#fff1a8'][i]; g.beginPath(); g.moveTo(1150 + i*12, SHOP_FLOOR - 10); g.quadraticCurveTo(1200 + Math.sin(t*7 + i)*10, SHOP_FLOOR - 10 - fh*2, 1250 - i*12, SHOP_FLOOR - 10); g.closePath(); g.fill(); }
   const glow = g.createRadialGradient(1200, SHOP_FLOOR - 60, 10, 1200, SHOP_FLOOR - 60, 500); glow.addColorStop(0, 'rgba(255,170,60,.25)'); glow.addColorStop(1, 'rgba(255,170,60,0)'); g.fillStyle = glow; g.fillRect(600, 0, 1200, H);
@@ -7158,6 +7158,7 @@ function drawCabin(t) { // a big, cozy log cabin (drawn 2400 wide; the room scro
   g.fillStyle = '#a0723c'; g.fillRect(2160, SHOP_FLOOR - 90, 200, 16); for (const lx of [2170, 2340]) g.fillRect(lx, SHOP_FLOOR - 74, 12, 74); g.fillStyle = C.white; g.beginPath(); g.ellipse(2260, SHOP_FLOOR - 96, 40, 8, 0, 0, TAU); g.fill(); g.fillStyle = '#f2c14e'; g.beginPath(); g.arc(2260, SHOP_FLOOR - 102, 14, 0, TAU); g.fill(); // a table, with a snack on it
   for (const lx of [150, 900, 1500, 2250]) { g.strokeStyle = '#333'; g.lineWidth = 2; g.beginPath(); g.moveTo(lx, 40); g.lineTo(lx, 110); g.stroke(); g.fillStyle = 'rgba(255,220,120,.9)'; g.beginPath(); g.arc(lx, 124, 14, 0, TAU); g.fill(); } // hanging lanterns
   drawCabinStairs(CABIN_STAIRS_X, true, '↑ the shop', t); drawCabinDoor(CABIN_DOOR_X, '← outside', t); // (stairs up to the shop and the dorms, and the door outside)
+  if (dormNight()) { g.fillStyle = 'rgba(15,10,50,.38)'; g.fillRect(-200, -200, CW + 400, H + 400); } // (dim at night)
   // everyone, hanging out (and whoever you're talking to says something)
   const pals = cabinPals(); pals.forEach((p, i) => { const ch = p.ch, r = ch.keeper ? dormR(ch)*0.5 : ch.id === 'admin' ? 46 : 34*Math.min(ch.size || 1, 1.3), bob = Math.abs(Math.sin(t*2 + i))*4; g.save(); g.translate(p.x, SHOP_FLOOR - r - bob); drawCharacter(g, ch, r, { facing:p.x < SHOP.x ? 1 : -1, ...looks(ch), happy:true, still:true }); g.restore(); });
   const cs = SHOP.cabinSay, sp = cs && performance.now() < cs.until && pals.find(p => p.ch.id === cs.id); if (sp) drawBubble(cs.text, sp.x + 240, SHOP_FLOOR - 200, sp.x);
@@ -7480,7 +7481,7 @@ function meadowPals() { // who's in the meadow: Flower Girl by the garden, Goofy
 }
 function drawMeadow(t) { // the meadow: grass and trees, the garden on the left, the pond on the right, and the party in the middle
   meadowInit();
-  const night = isNight(), now = performance.now(), F = SHOP_FLOOR, partying = partyDone();
+  const night = dormNight(), now = performance.now(), F = SHOP_FLOOR, partying = partyDone();
   g.fillStyle = night ? '#101a33' : '#9ed8ff'; g.fillRect(-200, -200, W + 400, H + 400);
   if (night) { g.fillStyle = '#fff'; for (let i=0;i<40;i++) g.fillRect((i*157) % W, (i*67) % 400, 2, 2); } else { g.fillStyle = C.yellow; g.beginPath(); g.arc(1400, 120, 50, 0, TAU); g.fill(); }
   g.fillStyle = night ? '#2a4a2a' : '#7cc96a'; g.beginPath(); g.moveTo(-200, F - 120); g.quadraticCurveTo(400, F - 260, 900, F - 140); g.quadraticCurveTo(1300, F - 60, W + 200, F - 180); g.lineTo(W + 200, F); g.lineTo(-200, F); g.fill(); // rolling hills
@@ -7627,35 +7628,49 @@ const K7_ORDER = ['locked', 'secret', 'goofykid'], notYet7 = k => { const r = K7
 const kidOn = () => storyOk && chaptersDone() >= 6;
 const lockedDone = () => !!lsGet('fff-locked') && !notYet7('locked'), secretDone = () => !!lsGet('fff-secret') && !notYet7('secret'), goofyKidDone = () => !!lsGet('fff-goofykid') && !notYet7('goofykid');
 const atticLocked = () => kidOn() && !goofyKidDone(); // (the kid's room is locked: you can't get up, and there's no key... until chapter 7 is done, when the shopkeepers open it up for you)
-const kidInShop = () => goofyKidDone() && !(SHOP.k7 && SHOP.k7.hug && performance.now() - SHOP.k7.hug < 6000); // (once chapter 7 is done, she's fast asleep in her crib on the 3rd floor of their home and in a bassinet in the cabin shop, and she plays with the toys on the 2nd floor)
-const KID_SHOP_X = CABIN_SHOP_W - 700, KID_TOY_X = TOY_X - 95, KID_PLAY = ['Goo goo! Hehe!', 'Ba ba ba!', '*bonks the blocks*', 'Wheee!', '*giggles*']; // (where her bassinet is in the cabin shop, and where she plays with the toys on the 2nd floor of their home)
-function goKidShop() { goPlace(CABIN_SHOP); Object.assign(SHOP, { x:KID_SHOP_X - 160, y:0 }); SHOP.youSay = 'Shh... she is fast asleep.'; SHOP.youSayT = 3; musicUpdate(); renderShopCard(true); }
-const babyHidden = () => performance.now() < (SHOP.babyHide || 0); // (you asked the shopkeepers about her, so they covered her up for a bit)
-function kidShh() { SHOP.kidShhN = (SHOP.kidShhN || 0) + 1; SHOP.youSay = babyHidden() ? 'Hmm... that laundry is snoring.' : ['Shh... she is fast asleep.', 'Aww... sweet dreams, little one.', '*tiptoes*'][SHOP.kidShhN % 3]; SHOP.youSayT = 2.5; renderShopCard(true); }
+const kidInShop = () => goofyKidDone() && !(SHOP.k7 && SHOP.k7.hug && performance.now() - SHOP.k7.hug < 6000); // (once chapter 7 is done, she's hidden inside the cabin shop's counter, snoring, and at night they put her to bed on the 3rd floor of their home)
+const KID_SHOP_X = CABIN_SHOP_W - 480; // (where she is in the cabin shop: inside the counter)
+function goKidShop() { goPlace(CABIN_SHOP); Object.assign(SHOP, { x:KID_SHOP_X - 220, y:0 }); SHOP.youSay = 'Wait... is that counter snoring?'; SHOP.youSayT = 3; musicUpdate(); renderShopCard(true); }
+const babyHidden = () => performance.now() < (SHOP.babyHide || 0); // (you asked the shopkeepers about her, so they shushed her for a bit)
+const bedCarrying = () => SHOP.bedT && performance.now() - SHOP.bedT < 5000; // (at night, when you come up to the 3rd floor, the shopkeepers are putting her to bed)
+const BEDTIME = [[0, 'keeper2', 'Shh... bedtime, little one.'], [3, 'keeper', 'Up you go... gently...'], [6, 'keeper2', '*tucks her in* ...Sweet dreams.'], [9, 'keeper', 'Goodnight, my little shopkeeper.']];
+function drawBedtime(t) { // the shopkeepers carry the baby in, tuck her into the crib, say goodnight and tiptoe away (if you're one of them, the other one does it all)
+  const e = (performance.now() - SHOP.bedT)/1000, F = SHOP_FLOOR, you = CHARS[SHOP.who].id; if (e >= 14) return;
+  const carrier = you === 'keeper' ? 'keeper2' : 'keeper', helper = carrier === 'keeper' ? 'keeper2' : 'keeper', away = Math.max(0, (e - 11)/3), cx = (e < 3 ? 1050 - (e/3)*250 : 800) + away*450, hx = 470 - away*150;
+  for (const [id, x] of [[carrier, cx], [helper, hx]]) { if (id === you) continue; const ch = CHAR[id], r = dormR(ch)*0.62; g.save(); g.translate(x, F - r - Math.abs(Math.sin(t*4))*(e < 3 || away ? 4 : 0)); drawCharacter(g, ch, r, { facing:x > 640 ? -1 : 1, ...looks(ch), happy:true, still:true }); g.restore(); }
+  if (e < 5) { const k = e < 3 ? 0 : (e - 3)/2, bx = cx - 70 + (640 - (cx - 70))*k, by = F - 120 - k*30; g.save(); g.translate(bx, by); g.rotate(-Math.PI/2 + 0.2); drawLittleKid(0, 0, t, false, false, 1, true); g.restore(); } // the baby, asleep in their arms, then lowered into the crib
+  if (e > 6 && e < 11) for (let i=0;i<5;i++) { const k = ((e - 6)/1.5 + i/5) % 1; g.save(); g.globalAlpha = 1 - k; drawLittleHeart(640 + Math.sin(i*2 + t)*60, F - 170 - k*150, 12); g.restore(); } // little hearts
+  const line = BEDTIME.filter(l => l[0] <= e && l[1] !== you).pop(); if (line && e < 11.5) { const x = line[1] === carrier ? cx : hx; drawBubble(line[2], x + 240, F - 300, x); }
+}
+function drawCounterSnore(t) { // (in the cabin shop) you can't see her, but the counter shakes a little and z's float out of it... unless they've just shushed it
+  if (!goofyKidDone()) return; const F = SHOP_FLOOR, x = KID_SHOP_X; if (SHOP.nearCabin === 'kid') drawPointer(x + 60, F - 190, t); if (babyHidden()) return;
+  g.textAlign = 'center'; g.textBaseline = 'middle'; for (let i=0;i<3;i++) { const k = (t*0.28 + i/3) % 1, tx = i === 1 ? '*snore*' : i ? 'zzz' : 'z', px = x + Math.sin(k*8 + i)*14, py = F - 150 - k*120; g.save(); g.globalAlpha = Math.min(1, (1 - k)*1.6); g.font = `${26 + k*14}px ${FONT}`; g.strokeStyle = C.ink; g.lineWidth = 5; g.fillStyle = C.white; g.strokeText(tx, px, py); g.fillText(tx, px, py); g.restore(); }
+}
+function kidShh() { const n = SHOP.kidShhN = (SHOP.kidShhN || 0) + 1; SHOP.youSay = SHOP.floor !== CABIN_SHOP ? ['Shh... she is fast asleep.', 'Aww... sweet dreams, little one.', '*tiptoes*'][n % 3] : babyHidden() ? 'Hmm... it stopped. That is suspicious.' : ['Is that counter... snoring?', '*puts an ear on the counter* ...zzz...', 'There is definitely someone in there.'][n % 3]; SHOP.youSayT = 2.5; renderShopCard(true); }
 const KID_HIDE_SPOTS = [{ x:350, name:'behind the coats' }, { x:1760, name:'by the cookie jar' }, { x:1980, name:'behind the flower pot' }];
 const KID_CATCH = 3;
 const LIES = { keeper:['The 3rd floor? Nothing up there! Just... dust! Lots of dust!', 'Nope! Nothing! Why do you ask? Hehe... heh.', 'It is locked because... um... the dust is SO dusty!'], keeper2:['N-nothing is up there! *looks away*', 'W-we just keep old boxes up there... yes... boxes...', '*sweats* ...what 3rd floor?'] };
 const KID_CAUGHT = ['Hehe! Goo goo!', 'Wheee! Ba ba!', '*giggles and gives you a hug*'];
 const KID_GOSSIP = { // what everyone says about the Little Shopkeeper, once they know about her (the shopkeepers say there's no baby, but everyone knows)
   keeper:['Baby?! What baby?! There is NO baby here!'], keeper2:['b-baby? I do not know any babies... *giggle* ...that was me.'],
-  heart:['The shopkeepers say there is no baby... but I saw her! She is SO cute, asleep in her crib!'], star:['That baby has cool shades. ...Just like me.'],
-  tri:['Grr... that baby snores SO loud! ...It is kind of cute.'], square:['THE BABY IS ASLEEP! I AM BEING VERY QUIET!'],
-  sparkle:['She plays with the toys just like me! Hehe! We are best friends now!'], shuriken:['TWO Goofys?! I can barely keep up with ONE!'],
-  circle:['WHAT?! "Just laundry"?! That laundry is SNORING!'], diamond:['I know all about the baby... hehe. They think nobody knows.'],
-  arrow:['S-she giggled at me... *happy glitch*'], flower:['I put a flower by her crib! Shh!'],
-  hex:['Beep! A box says NOT A BABY! ...It giggled!'], admin:['I knew. I am the admin.'],
+  heart:['The shopkeepers say there is no baby... but I saw them tuck her in! She is SO cute!'], star:['That baby has cool shades. ...Just like me.'],
+  tri:['Grr... that counter snores SO loud! ...It is kind of cute.'], square:['THE COUNTER IS SNORING! I AM BEING VERY QUIET!'],
+  sparkle:['She sleeps in the counter! I want to sleep in a counter too! Hehe!'], shuriken:['TWO Goofys?! I can barely keep up with ONE!'],
+  circle:['WHAT?! The counter is SNORING?!'], diamond:['I know all about the baby... hehe. They think nobody knows.'],
+  arrow:['S-she giggled at me... *happy glitch*'], flower:['I put a flower on the counter! Shh!'],
+  hex:['Beep! The counter goes zzz! ...Counters do not do that.'], admin:['I knew. I am the admin.'],
 };
 const KID_CHATS = [ // in the cabin's dorms at night, everyone talks about her
-  [['heart', 'Did you see the baby today?'], ['star', 'She has cool shades. ...Just like me.'], ['heart', 'She was asleep under the "laundry"! Hehe!']],
-  [['sparkle', 'She plays with the toys just like me!'], ['shuriken', 'That is what I am worried about.']],
-  [['square', 'THE BABY IS SNORING!'], ['tri', 'Shh! You will wake her up! ...Grr.']],
-  [['circle', 'WHAT?! A box that says NOT A BABY?!'], ['flower', 'Hehe, yes! And it was giggling.']],
+  [['heart', 'Did you see the baby today?'], ['star', 'She has cool shades. ...Just like me.'], ['heart', 'They keep her in the counter! Hehe!']],
+  [['sparkle', 'She sleeps in a counter! I want to try!'], ['shuriken', 'Do NOT get in the counter, Goofy.']],
+  [['square', 'THE COUNTER IS SNORING!'], ['tri', 'Shh! You will wake her up! ...Grr.']],
+  [['circle', 'WHAT?! A baby in the COUNTER?!'], ['flower', 'Hehe, yes! Shh...']],
   [['hex', 'Beep! They say there is no baby!'], ['oldhex', 'B-beep... but I heard her snoring...']],
 ];
 const KID_REVEAL = [[0, 'kid', 'Goo goo! Hehe!'], [2.5, 'keeper', 'Oh no... you found out!'], [5, 'keeper2', 'W-we are sorry we lied... we wanted it to be a surprise...'], [8.5, 'keeper', 'Everyone... meet our baby! The Little Shopkeeper!'], [11.5, 'kid', '*giggles* Ba ba!']];
 function lockedText() { return lockedDone() ? 'They said there was nothing up there... but you heard a giggle! 🔒 Press the what\'s up there button to go back.' : kidOn() ? 'The shopkeepers\' 3rd floor is locked, and there is no key... and they say there is nothing up there. Go ask them! 🔒 Press the what\'s up there button.' : 'a locked door... Coming soon...'; }
 function secretText() { return secretDone() ? 'Someone crawled out of the locked room... their baby, the Little Shopkeeper! 👀 Press the secret button to go back.' : lockedDone() ? 'Someone crawled out of the locked room and is hiding downstairs! Find her. 👀 Press the secret button.' : 'a secret... Coming soon...'; }
-function goofyKidText() { return goofyKidDone() ? 'The Little Shopkeeper is just like Goofy Sparkle! 🏃 She is fast asleep in the shop now. Press the just like goofy button to visit her in the cabin shop.' : secretDone() ? 'The Little Shopkeeper is crawling all over the house, just like Goofy Sparkle! Catch her! 🏃 Press the just like goofy button.' : 'someone small... Coming soon...'; }
+function goofyKidText() { return goofyKidDone() ? 'The Little Shopkeeper is just like Goofy Sparkle! 🏃 She naps inside the cabin shop counter now. Press the just like goofy button and listen for the snoring.' : secretDone() ? 'The Little Shopkeeper is crawling all over the house, just like Goofy Sparkle! Catch her! 🏃 Press the just like goofy button.' : 'someone small... Coming soon...'; }
 const k7 = () => SHOP.k7 || (SHOP.k7 = { asked:[], checked:[], caught:0, noise:0, reveal:0, revealX:0, hug:0, kid:{ x:1500, tx:1500, next:0, last:0 }, talkN:0 });
 function goKeeperHome(floor, x, say, replay = null) { // straight to the shopkeepers' home in the cabin (for chapter 7)
   goPlace(floor, replay); Object.assign(SHOP, { cabinDorm:true, dorm:DORMS.findIndex(d => d.keepers), x, cam:Math.max(0, x - W/2), ktask:null, kdone:new Set(), shyAwake:false, confessVisit:false, pb:{ next:performance.now() + 1500, chat:null, line:0 }, k7:null });
@@ -7682,7 +7697,7 @@ function kid7Check() { // asked them both and tried the ladder: then you hear so
   setTimeout(() => { if (SHOP.floor === 13 && SHOP.pb) { pbSay('keeper', 'That was... uh... the wind! Hehe... heh.', 4); SHOP.pb.next = performance.now() + 4200; } }, 2200);
 }
 function kid7Near() { // (in shopStep) the kid's hiding spots, or the kid
-  if (!SHOP.cabinDorm || !kidOn()) return null; if (goofyKidDone() && SHOP.floor === 14 && Math.abs(SHOP.x - 640) < 130) return 'sleep'; if (goofyKidDone() && SHOP.floor === 13 && Math.abs(SHOP.x - KID_TOY_X) < 60) return 'play'; if (SHOP.floor !== 12) return null; const s = k7(), x = SHOP.x, now = performance.now();
+  if (!SHOP.cabinDorm || !kidOn()) return null; if (goofyKidDone() && dormNight() && !bedCarrying() && SHOP.floor === 14 && Math.abs(SHOP.x - 640) < 130) return 'sleep'; if (SHOP.floor !== 12) return null; const s = k7(), x = SHOP.x, now = performance.now();
   if (lockedDone() && !secretDone()) { const i = KID_HIDE_SPOTS.findIndex((p, k) => !s.checked.includes(k) && Math.abs(p.x - x) < 60); return i >= 0 ? 'hide' + i : null; }
   if (!secretDone() || kidInShop() || (s.reveal && now - s.reveal < 13000)) return null;
   const kid = s.kid, dt = Math.min(0.05, (now - (kid.last || now))/1000); kid.last = now; // the baby crawls all over the house (she can't run!)
@@ -7700,23 +7715,22 @@ function kid7Act() { // punch: look in a hiding spot, catch the kid, or talk to 
   else if (n === 'catch') { s.caught++; s.kidSay = { text:KID_CAUGHT[Math.min(s.caught, KID_CATCH) - 1], until:now + 2500 }; s.kid.tx = s.kid.x < 1200 ? 2150 : 350; s.kid.next = now + 1500; if (sfx.zap) sfx.zap(); SHOP.youSay = `Got you! (${s.caught}/${KID_CATCH})`; SHOP.youSayT = 2;
     if (s.caught >= KID_CATCH) { lsSet('fff-goofykid', String(Date.now())); SHOP.replay = null; s.hug = now; s.kid.tx = s.kid.x; s.kid.next = now + 5000; if (sfx.win) sfx.win(); SHOP.youSay = 'Got you! You really ARE just like Goofy! ...And the ladder upstairs is open now!'; SHOP.youSayT = 4; s.goofySay = { text:'Hehe! She is JUST LIKE ME! Best baby EVER!', until:now + 4500 }; } }
   else if (n === 'sleep') return kidShh();
-  else if (n === 'play') { s.talkN++; s.kidSay = { text:babyHidden() ? '*muffled giggle*' : KID_PLAY[s.talkN % KID_PLAY.length], until:now + 3000 }; if (sfx.ding) sfx.ding(); }
   renderShopCard(true);
 }
 // ---------- questions for the shopkeepers: in the cabin, the cabin shop and their cabin home, walk up to one and press punch, and pick what to ask from the card (or press
-// its number). Ask them ANYTHING about the baby and they deny it and hide her, even after you know about her. Asking counts for chapter 7's "what's up there?", when you ask by the locked ladder ----------
+// its number). Ask them ANYTHING about the baby and they deny it and shush her, even after you know about her. Asking counts for chapter 7's "what's up there?", when you ask by the locked ladder ----------
 const KEEPER_ASK = [
   { id:'snore', q:'Why is there someone snoring on the 3rd floor of your dorm?', show:() => kidOn(), upstairs:true, baby:true,
     lie:{ keeper:'Snoring? That is... um... the pipes! Old pipes snore! Everybody knows that!', keeper2:'W-what snoring? I do not hear any snoring... *snnnk* ...that was me. I did that.' },
-    a:{ keeper:'SNORING?! What snoring?! *throws a sheet over something* It is the pipes! Old pipes!', keeper2:'W-what baby? I mean... what snoring?! *hides something*' } },
+    a:{ keeper:'SNORING?! What snoring?! *knocks on the counter* It is the pipes! Old pipes!', keeper2:'W-what baby? I mean... what snoring?! *coughs to cover it up*' } },
   { id:'floor', q:'What is on the 3rd floor?', show:() => kidOn(), upstairs:true, baby:true,
     lie:{ keeper:LIES.keeper[0], keeper2:LIES.keeper2[1] },
-    a:{ keeper:'The 3rd floor?! Nothing! Nothing at all! Stop looking over there!', keeper2:'j-just boxes... lots of boxes... *covers something up*' } },
+    a:{ keeper:'The 3rd floor?! Nothing! Nothing at all! Stop looking over there!', keeper2:'j-just boxes... lots of boxes... *looks away*' } },
   { id:'lock', q:'Why is the ladder locked?', show:() => kidOn() && !goofyKidDone(), upstairs:true, baby:true,
     lie:{ keeper:LIES.keeper[2], keeper2:LIES.keeper2[2] },
     a:{ keeper:'Locked? Is it? Hehe... no reason! NO reason at all!', keeper2:'*stands in front of the ladder* w-what ladder?' } },
   { id:'baby', q:'Tell me about your baby!', show:() => kidOn() && secretDone(), baby:true,
-    a:{ keeper:'Baby?! What baby?! There is NO baby here! *throws a sheet over something*', keeper2:'b-baby? I do not know any babies... *giggle* ...that was me.' } },
+    a:{ keeper:'Baby?! What baby?! There is NO baby here! *coughs REALLY loudly*', keeper2:'b-baby? I do not know any babies... *giggle* ...that was me.' } },
   { id:'shop', q:'How is the shop doing?', show:() => true,
     a:{ keeper:'Business is GOOD! Everyone comes up here now!', keeper2:'w-we sold one pink bow today... *happy*' } },
   { id:'meet', q:'How did you two meet?', show:() => true,
@@ -7748,7 +7762,7 @@ function kid7Card() { // the info card, while something from chapter 7 is going 
   if (f === 13 && !lockedDone()) return `<h3>🔒 What's up there?</h3><p>The ladder to the 3rd floor is locked, and there is no key! Ask the shopkeepers what is up there (walk up to them and press punch), and try the ladder.</p><p>Checked: ${s.asked.length}/${kid7Need().length}</p>`;
   if (f === 12 && lockedDone() && !secretDone()) return `<h3>👀 The secret</h3><p>Someone crawled out of the locked room and is hiding down here! Look behind the coats, by the cookie jar and behind the flower pot (walk up and press punch).</p><p>Looked: ${s.checked.length}/${KID_HIDE_SPOTS.length}</p>`;
   if (f === 12 && secretDone() && !goofyKidDone()) return `<h3>🏃 Just like Goofy!</h3><p>The Little Shopkeeper is crawling all over the house, just like Goofy Sparkle! Walk up to her and press punch to catch her.</p><p>Caught: ${s.caught}/${KID_CATCH}</p>`;
-  if (f === 14 && goofyKidDone()) return '<h3>The baby&#39;s room</h3><p>Shh... the Little Shopkeeper is fast asleep in her crib.</p><p class="note">The hatch on the left goes back down.</p>';
+  if (f === 14 && goofyKidDone()) return (dormNight() ? '<h3>The baby&#39;s room</h3><p>Shh... at night, the shopkeepers put the Little Shopkeeper to bed in her crib.</p>' : '<h3>The baby&#39;s room</h3><p>Her crib is empty in the daytime. Listen for the snoring in the cabin shop...</p>') + '<p class="note">The hatch on the left goes back down.</p>';
   return null;
 }
 function drawLittleKid(x, groundY, t, happy, crawl = false, dir = 1, asleep = false) { // the shopkeepers' baby girl, mostly like her Mama, the Shy Shopkeeper: little pigtails, bangs, eyelashes and a purple dress with puffy sleeves, plus a bib with a heart and a little black bow (and a diaper!). From her Papa, just his sunglasses, pushed up on her head. She's a baby, so she can't run: she crawls (or she's asleep)
@@ -7779,21 +7793,14 @@ function drawSleepingBaby(t, fx, y, w) { // the baby, lying down fast asleep (fx
   const b = Math.sin(t*1.5); g.fillStyle = '#ffd6e8'; g.strokeStyle = C.ink; g.lineWidth = 3; roundRect(fx - 43, y - 26 + b, w, 50, 14); g.fill(); g.stroke(); for (let i=0; i*24 < w - 30; i++) drawLittleHeart(fx - 25 + i*24, y + b, 6); // her blanket, going up and down as she breathes, with hearts on it
   g.fillStyle = '#5a3a6e'; g.textAlign = 'center'; g.textBaseline = 'middle'; for (let i=0;i<3;i++) { const k = (t*0.3 + i/3) % 1; g.save(); g.globalAlpha = 1 - k; g.font = `${18 + k*22}px ${FONT}`; g.fillText('Z', fx - 55 + k*50 + Math.sin(k*8)*8, y - 58 - k*130); g.restore(); }
 }
-function drawBassinet(x, t) { // a little bassinet on a stand, with the baby asleep in it (on the 2nd floor of the shopkeepers' home, and in the cabin shop)
-  const F = SHOP_FLOOR; g.strokeStyle = '#6b3d1a'; g.lineWidth = 8; g.lineCap = 'round'; g.beginPath(); g.moveTo(x - 70, F); g.lineTo(x + 40, F - 62); g.moveTo(x + 70, F); g.lineTo(x - 40, F - 62); g.stroke(); // the stand
-  drawSleepingBaby(t, x + 45, F - 108, 80);
-  g.fillStyle = '#fff1f8'; g.strokeStyle = C.ink; g.lineWidth = 4; g.beginPath(); g.moveTo(x - 85, F - 90); g.lineTo(x + 85, F - 90); g.quadraticCurveTo(x + 80, F - 50, x + 50, F - 50); g.lineTo(x - 50, F - 50); g.quadraticCurveTo(x - 80, F - 50, x - 85, F - 90); g.closePath(); g.fill(); g.stroke(); // the basket
-  g.fillStyle = '#ff8fc1'; g.beginPath(); g.arc(x - 85, F - 90, 40, -Math.PI/2, 0); g.lineTo(x - 85, F - 90); g.closePath(); g.fill(); g.stroke(); drawLittleHeart(x, F - 70, 10); // its hood, and a heart on the front
-  if (babyHidden()) { const b = Math.sin(t*1.5)*2; g.fillStyle = '#f4f4f4'; g.strokeStyle = C.ink; g.lineWidth = 4; g.beginPath(); g.moveTo(x - 100, F - 38); g.quadraticCurveTo(x - 105, F - 150 + b, x - 20, F - 158 + b); g.quadraticCurveTo(x + 90, F - 158 + b, x + 100, F - 38); for (let i=0;i<5;i++) g.quadraticCurveTo(x + 80 - i*40, F - 24, x + 60 - i*40, F - 38); g.lineTo(x - 100, F - 38); g.closePath(); g.fill(); g.stroke(); g.fillStyle = C.ink; g.font = `20px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('just laundry!', x, F - 100); } // (they threw a sheet over her: it's definitely just laundry)
-}
 function drawKid7(t) { // chapter 7 things in the shopkeepers' cabin home
   if (!SHOP.cabinDorm || !kidOn()) return; const s = k7(), f = SHOP.floor, F = SHOP_FLOOR, now = performance.now();
   const say = (text, x, y, tip) => drawBubble(text, x, y, tip);
   if (f === 13) {
     if (atticLocked()) { drawPadlock(KEEPER_LADDER_X, F - 330, 0.5); g.strokeStyle = '#888'; g.lineWidth = 6; g.beginPath(); g.moveTo(KEEPER_LADDER_X - 70, 116); g.lineTo(KEEPER_LADDER_X + 70, 116); g.stroke(); } // a padlock on the hatch (and a chain)
-    if (goofyKidDone()) { drawLittleKid(KID_TOY_X, F, t, true); if (babyHidden()) { const w = Math.sin(t*14)*2; g.fillStyle = '#c99a5b'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(KID_TOY_X - 48 + w, F - 104, 96, 104); g.strokeRect(KID_TOY_X - 48 + w, F - 104, 96, 104); g.fillStyle = C.ink; g.font = `17px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('NOT A', KID_TOY_X + w, F - 66); g.fillText('BABY', KID_TOY_X + w, F - 44); } /* (they hid her under a box, and it wiggles) */ if (SHOP.nearK7 === 'play') drawPointer(KID_TOY_X + 50, F - 130, t); if (s.kidSay && now < s.kidSay.until) say(s.kidSay.text, KID_TOY_X + 240, F - 120, KID_TOY_X); } // (the baby, playing with the toys)
     g.fillStyle = '#5a3a6e'; g.textAlign = 'center'; g.textBaseline = 'middle'; for (let i=0;i<3;i++) { const k = (t*0.25 + i/3) % 1; g.save(); g.globalAlpha = 1 - k; g.font = `${16 + k*14}px ${FONT}`; g.fillText(i === 1 ? '*snore*' : 'z', KEEPER_LADDER_X - 110 + Math.sin(k*8)*10, 130 + k*90); g.restore(); } // someone snoring, up above the hatch...
     if (s.noise && now - s.noise < 4000) { const sh = Math.sin(now/30)*4; g.save(); g.translate(sh, 0); say('*giggle giggle* Wheee! *CRASH*', KEEPER_LADDER_X + 200, 250, KEEPER_LADDER_X); g.restore(); } // a noise from upstairs!
+  } else if (f === 14) { if (goofyKidDone() && dormNight() && SHOP.bedT) drawBedtime(t); if (SHOP.nearK7 === 'sleep') drawPointer(690, F - 230, t);
   } else if (f === 12) {
     g.fillStyle = '#8a5f30'; g.strokeStyle = C.ink; g.lineWidth = 3; g.fillRect(1710, F - 80, 100, 12); g.fillRect(1754, F - 68, 12, 68); g.fillStyle = 'rgba(200,230,255,.8)'; g.fillRect(1735, F - 140, 50, 60); g.strokeRect(1735, F - 140, 50, 60); g.fillStyle = '#c98a4a'; for (let k=0;k<3;k++) { g.beginPath(); g.arc(1748 + k*12, F - 98 - (k % 2)*12, 7, 0, TAU); g.fill(); } // a cookie jar on a little table
     g.fillStyle = '#c0643a'; g.beginPath(); g.moveTo(1950, F - 70); g.lineTo(2010, F - 70); g.lineTo(2000, F); g.lineTo(1960, F); g.closePath(); g.fill(); g.stroke(); g.fillStyle = '#2e9e4f'; for (const a of [-0.6, 0, 0.6]) { g.save(); g.translate(1980, F - 70); g.rotate(a); g.beginPath(); g.ellipse(0, -40, 12, 40, 0, 0, TAU); g.fill(); g.restore(); } // a big flower pot
@@ -7822,7 +7829,7 @@ function drawCabinShop(t) { // the 2nd floor: the cabin shop, extra big (three s
   const CW = CABIN_SHOP_W, KX = CW - 420; drawLogWalls(CW); // (KX: the counter)
   g.fillStyle = '#f3e2c7'; g.strokeStyle = '#4a2e18'; g.lineWidth = 5; for (const sx of [900, 2400]) { g.fillRect(sx - 240, 80, 480, 80); g.strokeRect(sx - 240, 80, 480, 80); } g.fillStyle = '#4a2e18'; g.font = `52px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; for (const sx of [900, 2400]) g.fillText('the cabin shop', sx, 122);
   for (let i=0;i<14;i++) { const x = 160 + i*260; g.strokeStyle = '#4a2e18'; g.lineWidth = 2; g.beginPath(); g.moveTo(x - 60, 40); g.quadraticCurveTo(x, 70, x + 60, 40); g.stroke(); g.fillStyle = [C.red, C.yellow, C.blue, '#ff8fc1', C.green][i % 5]; for (const k of [-0.5, 0, 0.5]) { g.beginPath(); g.moveTo(x + k*80 - 10, 52 + (k ? 0 : 6)); g.lineTo(x + k*80 + 10, 52 + (k ? 0 : 6)); g.lineTo(x + k*80, 74 + (k ? 0 : 6)); g.closePath(); g.fill(); } } // bunting across the ceiling
-  for (const wx of [500, 1650, 2900]) { g.fillStyle = isNight() ? '#1b2a4a' : '#9ed8ff'; g.fillRect(wx - 100, 200, 200, 150); g.strokeStyle = '#4a2e18'; g.lineWidth = 9; g.strokeRect(wx - 100, 200, 200, 150); g.beginPath(); g.moveTo(wx, 200); g.lineTo(wx, 350); g.stroke(); } // windows
+  for (const wx of [500, 1650, 2900]) { g.fillStyle = dormNight() ? '#1b2a4a' : '#9ed8ff'; g.fillRect(wx - 100, 200, 200, 150); g.strokeStyle = '#4a2e18'; g.lineWidth = 9; g.strokeRect(wx - 100, 200, 200, 150); g.beginPath(); g.moveTo(wx, 200); g.lineTo(wx, 350); g.stroke(); } // windows
   g.fillStyle = '#b5413a'; for (const [cx, rw] of [[1100, 950], [2600, 550]]) { g.beginPath(); g.ellipse(cx, SHOP_FLOOR + 30, rw, 40, 0, 0, TAU); g.fill(); } // long rugs
   for (const shx of [1260, 2560]) { g.fillStyle = '#5a3a1e'; g.fillRect(shx, SHOP_FLOOR - 280, 260, 18); g.fillRect(shx, SHOP_FLOOR - 190, 260, 18); for (let i=0;i<6;i++) { const x = shx + 20 + i*42; g.fillStyle = [C.red, C.blue, C.yellow, '#ff8fc1', C.green, C.orange][i]; g.fillRect(x, SHOP_FLOOR - 316, 30, 36); g.beginPath(); g.arc(x + 15, SHOP_FLOOR - 212, 15, 0, TAU); g.fill(); } } // shelves of goodies on the wall
   g.fillStyle = '#ffd23f'; g.strokeStyle = C.ink; g.lineWidth = 4; g.save(); g.translate(2690, SHOP_FLOOR - 380); g.rotate(-0.08); g.fillRect(-80, -26, 160, 52); g.strokeRect(-80, -26, 160, 52); g.fillStyle = C.red; g.font = `34px ${FONT}`; g.fillText('SALE!', 0, 2); g.restore(); // a sale sign
@@ -7836,18 +7843,20 @@ function drawCabinShop(t) { // the 2nd floor: the cabin shop, extra big (three s
   if (talking) { const tx = KX + (cs.id === 'keeper' ? 100 : 200); drawBubble(cs.text, tx - 20, SHOP_FLOOR - 260, tx); }
   else if (Math.abs(SHOP.x - (KX + 130)) < 260) drawBubble('Welcome to the cabin shop! It is SO big now! Walk up to us and press punch to talk!', KX, SHOP_FLOOR - 260, KX + 80);
   if (SHOP.nearCabin && SHOP.nearCabin !== 'kid') drawPointer(KX + (SHOP.nearCabin === 'keeper' ? 100 : 200) + 40, SHOP_FLOOR - 300, t);
-  if (goofyKidDone()) { drawBassinet(KID_SHOP_X, t); if (SHOP.nearCabin === 'kid') drawPointer(KID_SHOP_X + 110, SHOP_FLOOR - 170, t); } // (chapter 7: the baby, fast asleep in her bassinet)
+  if (dormNight()) { g.fillStyle = 'rgba(15,10,50,.38)'; g.fillRect(-200, -200, CABIN_SHOP_W + 400, H + 400); } // (dim at night)
+  drawCounterSnore(t); // (chapter 7: the baby, hidden inside the counter)
   drawCabinStairs(80, false, '↓ downstairs', t); drawCabinStairs(CW - 100, true, '↑ the dorms', t);
 }
 function drawCabinDorms(t) { // the 3rd floor: the dorms, like the old ones: a hallway with a door for each pair of roommates (and each room is its own, decorated just for them)
   drawLogWalls(W); g.fillStyle = '#c0392b'; g.fillRect(0, SHOP_FLOOR + 8, W, 26); // a long carpet down the hallway
   g.fillStyle = '#f3e2c7'; g.strokeStyle = '#4a2e18'; g.lineWidth = 5; g.fillRect(620, 90, 360, 70); g.strokeRect(620, 90, 360, 70); g.fillStyle = '#4a2e18'; g.font = `44px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('the dorms', 800, 127);
   DORMS.forEach((d, i) => { if (d.keepers) drawKeeperDoor(DORM_ROOM_X[i], t); else drawNameDoor(DORM_ROOM_X[i], [dormName(d.ids[0]) + ' &', dormName(d.ids[1])]); if (d.crush) { drawLittleHeart(DORM_ROOM_X[i], SHOP_FLOOR - 322, 14); drawTherapistSign(DORM_ROOM_X[i]); } if (!dormOpen(i)) drawPadlock(DORM_ROOM_X[i] + 30, SHOP_FLOOR - 105, 0.22); });
+  if (dormNight()) { g.fillStyle = 'rgba(15,10,50,.3)'; g.fillRect(0, 0, W, H); } // (the hallway is dim at night)
   const near = SHOP.nearStairs && SHOP.stairTo === 12 ? DORM_ROOM_X[SHOP.stairRoom] : null; if (near != null) drawPointer(near, SHOP_FLOOR - 330, t);
   drawCabinStairs(1520, false, '↓ the shop', t);
 }
 function drawCabinOutside(t) { // outside the cabin: a forest, and a little stone room with IT in it
-  const night = isNight(); g.fillStyle = night ? '#101a33' : '#9ed8ff'; g.fillRect(-200, -200, W + 400, H + 400);
+  const night = dormNight(); g.fillStyle = night ? '#101a33' : '#9ed8ff'; g.fillRect(-200, -200, W + 400, H + 400);
   if (night) { g.fillStyle = '#fff'; for (let i=0;i<40;i++) g.fillRect((i*157) % W, (i*67) % 400, 2, 2); }
   for (let i=0;i<9;i++) { const x = 60 + i*190; g.fillStyle = '#5a3a1e'; g.fillRect(x - 8, SHOP_FLOOR - 140, 16, 140); g.fillStyle = night ? '#1f5a33' : '#2e9e4f'; g.beginPath(); g.moveTo(x - 60, SHOP_FLOOR - 110); g.lineTo(x, SHOP_FLOOR - 300); g.lineTo(x + 60, SHOP_FLOOR - 110); g.closePath(); g.fill(); } // pine trees
   g.fillStyle = night ? '#2b5a2b' : '#5cb04f'; g.fillRect(0, SHOP_FLOOR, W, H - SHOP_FLOOR);
@@ -8312,6 +8321,7 @@ $('glitchShopBtn').onclick = () => { // straight into the glitch shop, as Missin
 $('glitchShopBtn').hidden = !unlocked(CHAR.arrow); $('adminBtn').hidden = !unlocked(CHAR.admin);
 // ----- the day/night button in the corner: in the dorms it flips the lights, and in a fight it switches the sky (online, only the host can) -----
 function dayBtnPlace() { // where the button shows up right now: 'dorm', 'fight' or nothing
+  if ((G.state === 'shop' || (G.state === 'title' && cabinHome())) && [CABIN_FLOOR, CABIN_SHOP, CABIN_DORMS, CABIN_OUT, MEADOW_FLOOR].includes(SHOP.floor)) return 'dorm'; // (everywhere in the cabin, too)
   if (G.state === 'shop' && SHOP.floor >= 11 && SHOP.floor <= 14) return 'dorm';
   if (G.state === 'fight' && G.mode !== 'race' && G.mode !== 'horror' && G.online !== 'client') return 'fight';
   return null;
@@ -8521,7 +8531,7 @@ function shopStairs() {
   }
   if (from === 6) { SHOP.brk = null; shopSay('Did you have a nice break? Hehe... come back soon.', 'jump'); renderShopCard(true); return; }
   if (to === 15) { SHOP.youSay = 'Whoa... the secret admin room!'; SHOP.youSayT = 3; renderShopCard(true); return; } // through the admin door
-  if (to === 14) { if (from === 13) { SHOP.youSay = 'A secret 3rd floor!'; SHOP.youSayT = 2.5; } renderShopCard(true); return; } // up the ladder
+  if (to === 14) { if (from === 13) { SHOP.youSay = 'A secret 3rd floor!'; SHOP.youSayT = 2.5; } SHOP.bedT = SHOP.cabinDorm && goofyKidDone() && dormNight() ? performance.now() : 0; /* (chapter 7: at night, they're putting her to bed) */ renderShopCard(true); return; } // up the ladder
   if (to === 13) { SHOP.pb = { next:performance.now() + 900, chat:null, line:0 }; if (from === 12) { SHOP.youSay = 'Ooh, an upstairs!'; SHOP.youSayT = 2; } renderShopCard(true); return; } // up the shopkeepers' stairs
   if (from === 13) { SHOP.pb = { next:performance.now() + 600, chat:null, line:0 }; renderShopCard(true); return; } // and back down (to the bottom of the stairs)
   if (to === 12) { SHOP.cabinDorm = from === CABIN_DORMS; SHOP.dorm = SHOP.stairRoom || 0; SHOP.hesIn = false; /* (a room off the cabin's dorms, or the old dorms) */ SHOP.cam = 0; SHOP.ktask = null; SHOP.kdone = new Set(); SHOP.shyAwake = false; SHOP.confessVisit = false; SHOP.pb = { next:performance.now() + 600, chat:null, line:0 }; SHOP.youSay = 'Knock knock!'; SHOP.youSayT = 2; renderShopCard(true); return; } // into a dorm room
