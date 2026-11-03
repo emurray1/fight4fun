@@ -6102,7 +6102,7 @@ $('prayBtn').onclick = () => { goPlace(EDGE_FLOOR); SHOP.x = 600; SHOP.youSayT =
 $('attackBtn').onclick = () => goPlace(15);
 $('againConfess').onclick = () => goKeeperRoom('confess');
 $('againPark').onclick = () => goPlace(PARK_FLOOR, 'park');
-const cabinSwitch = step => { do SHOP.who = (SHOP.who + CHARS.length + step) % CHARS.length; while (!unlocked(CHARS[SHOP.who])); $('cabinWhoName').textContent = CHARS[SHOP.who].name; renderShopCard(true); cv.focus(); }; // change who you walk around the cabin as
+const cabinSwitch = step => { do SHOP.who = (SHOP.who + CHARS.length + step) % CHARS.length; while (!unlocked(CHARS[SHOP.who])); $('cabinWhoName').textContent = CHARS[SHOP.who].name; renderShopCard(true); cv.focus(); fighterSwitched(); }; // change who you walk around the cabin as
 $('cabinPrev').onclick = () => cabinSwitch(-1);
 $('cabinNext').onclick = () => cabinSwitch(1);
 $('hideMenuBtn').onclick = () => { document.documentElement.classList.add('menuhide'); $('showMenuBtn').hidden = false; cv.focus(); }; // hide the menu, to walk around the cabin without it in the way
@@ -7771,6 +7771,10 @@ function builtText() { return roomBuilt() ? 'You built the baby a room! 🔨 Pre
 function movedText() { return movedIn() ? 'The Little Shopkeeper has her very own room! 🎨 Lovely Heart can press the move in button to visit her and change how it looks.' : roomBuilt() ? 'Pick her wallpaper and a toy, and bring her in! Only Lovely Heart can: play as her, and press the move in button. 🎨' : 'moving day... Coming soon...'; }
 function goTooBig(replay = null) { goPlace(CABIN_SHOP, replay); Object.assign(SHOP, { x:KID_SHOP_X - 220, y:0, burstT:0 }); SHOP.youSay = tooBigDone() ? 'She used to sleep inside this counter!' : 'That counter is shaking! Let me knock on it...'; SHOP.youSayT = 3; musicUpdate(); renderShopCard(true); }
 const isHeart = () => CHARS[SHOP.who].id === 'heart', ONLY_HEART = 'Only Lovely Heart can go in there! She looks after the baby.'; // (only Lovely Heart can go in the baby's room, or look after her: pick her with the arrows at the top)
+function fighterSwitched() { // you changed who you are: turn into Lovely Heart, and you go right to building and moving in the baby's room. Turn into anyone else in there, and you're back out in the living room
+  if (SHOP.floor === BABY_FLOOR && !isHeart()) { goPlace(CABIN_FLOOR); Object.assign(SHOP, { x:BABY_DOOR_X - 130, y:0 }); return heartOnly(); }
+  if (isHeart() && SHOP.floor !== BABY_FLOOR && ch8On() && tooBigDone() && !movedIn()) goBabyRoom();
+}
 function heartOnly() { SHOP.youSay = ONLY_HEART; SHOP.youSayT = 3.5; if (sfx.bonk) sfx.bonk(); renderShopCard(true); }
 function goBabyRoom(replay = null) { if (SHOP.who == null) SHOP.who = Math.max(0, CHARS.findIndex(ch => (CTRL[setup.slots[ch.id]] || CTRL.off).kind === 'human')); if (!isHeart()) { goPlace(CABIN_FLOOR); Object.assign(SHOP, { x:BABY_DOOR_X - 130, y:0 }); return heartOnly(); } goPlace(BABY_FLOOR, replay); Object.assign(SHOP, { x:220, y:0, roomParts:[], moveT:0, bedT:movedIn() && dormNight() ? performance.now() : 0, cardClosed:false }); SHOP.youSay = roomBuilt() ? 'Her new room!' : 'It is so empty... let\'s build it!'; SHOP.youSayT = 3; musicUpdate(); renderShopCard(true); }
 function kidBurst() { lsSet('fff-toobig', String(Date.now())); if (SHOP.replay === 'toobig') SHOP.replay = 'built'; SHOP.burstT = performance.now(); SHOP.youSay = '*knock knock*'; SHOP.youSayT = 1.5; if (sfx.win) sfx.win(); renderShopCard(true); }
@@ -8476,8 +8480,8 @@ $('dayBtn').onclick = () => {
   cv.focus();
 };
 $('shopCardOpen').onclick = () => { SHOP.cardClosed = false; renderShopCard(true); cv.focus(); };
-$('shopPrev').onclick = () => { do SHOP.who = (SHOP.who + CHARS.length - 1) % CHARS.length; while (!unlocked(CHARS[SHOP.who]) || CHARS[SHOP.who].keeper); renderShopCard(true); };
-$('shopNext').onclick = () => { do SHOP.who = (SHOP.who + 1) % CHARS.length; while (!unlocked(CHARS[SHOP.who]) || CHARS[SHOP.who].keeper); renderShopCard(true); };
+$('shopPrev').onclick = () => { do SHOP.who = (SHOP.who + CHARS.length - 1) % CHARS.length; while (!unlocked(CHARS[SHOP.who]) || CHARS[SHOP.who].keeper); renderShopCard(true); fighterSwitched(); };
+$('shopNext').onclick = () => { do SHOP.who = (SHOP.who + 1) % CHARS.length; while (!unlocked(CHARS[SHOP.who]) || CHARS[SHOP.who].keeper); renderShopCard(true); fighterSwitched(); };
 function openShop() {
   SHOP.replay = null; // (doing something again only lasts until you leave)
   const mine = CHARS.findIndex(ch => (CTRL[setup.slots[ch.id]] || CTRL.off).kind === 'human');
