@@ -6906,6 +6906,10 @@ function ch5Card() { // the info box, in the tunnels and the admins' room
 const CABIN_FLOOR = 26, CABIN_PORTAL_X = 1520;
 const cabinMenu = () => storyOk && itStopped();
 const bigRoom = () => keeperRoom() || SHOP.floor === CABIN_FLOOR || SHOP.floor === CABIN_SHOP; // (the rooms that are wider than the screen, and scroll with you)
+const CABIN_SHOP_TALK = { // what the shopkeepers say at the cabin shop's counter
+  keeper:['Welcome to the cabin shop! Walk up to a stand to buy something!', 'Business is GOOD in the cabin! Everyone comes up here.', 'Need more coins? Win some fights!', 'I built this counter myself. With a LOT of help.', 'The new Hexstar? ...The old Hexstar did not make it out of the code. But Hexstar 2.0 is great.'],
+  keeper2:['H-hi! ...I mean, hi! Welcome!', 'I picked the turkey hat myself. Hehe.', 'The cocoa is free! Have some!', 'I like working up here with Fighty. It is cozy.', 'Hexstar 2.0 says beep to everyone who comes in. It is so cute.'],
+};
 const CABIN_TALK = {
   keeper:['The new Hexstar? ...The old Hexstar did not make it out of the code. *takes off hat* But the admins built a brand new one. Hexstar 2.0!', 'Welcome home! Well... our NEW home!', 'No more IT. No more glitches. Just us. Hehe!', 'Want to help me build a new shop out back?'],
   keeper2:['W-we miss the old Hexstar... he did not make it. *sniff* But the new one is really sweet, and he is not nervous at all.', 'It is so cozy here... I love it.', 'Hi! *waves* ...I am not even shy about saying hi anymore!', 'Thank you for saving us. Really.'],
@@ -6929,12 +6933,13 @@ const cabinPals = () => { // who's hanging out in the cabin (not you), spread ou
 function cabinStep() { // who you're next to, and walking through the portal in the admins' room
   SHOP.nearCabin = null;
   if (SHOP.floor === AROOM_FLOOR && SHOP.itBroke && performance.now() - SHOP.itBroke > 2500 && SHOP.x > CABIN_PORTAL_X - 60) return goCabin();
+  if (SHOP.floor === CABIN_SHOP) { const KX = CABIN_SHOP_W - 420; for (const [id, x] of [['keeper', KX + 100], ['keeper2', KX + 200]]) if (Math.abs(SHOP.x - x) < 50 && CHARS[SHOP.who].id !== id) SHOP.nearCabin = id; return; } // (the shopkeepers, at the cabin shop's counter)
   if (SHOP.floor !== CABIN_FLOOR) return;
   const p = cabinPals().find(p => Math.abs(p.x - SHOP.x) < 80); if (p) SHOP.nearCabin = p.ch.id;
 }
 function goCabin() { Object.assign(SHOP, { floor:CABIN_FLOOR, x:300, y:0, vy:0, cam:0, facing:1 }); SHOP.youSay = 'Whoa... a cabin! It is SO big!'; SHOP.youSayT = 3; if (sfx.zap) sfx.zap(); musicUpdate(); renderShopCard(true); }
 function cabinTalk() { // talking to someone in the cabin
-  const id = SHOP.nearCabin, lines = CABIN_TALK[id] || ['Hi!']; SHOP.cabinTalkN = (SHOP.cabinTalkN || 0) + 1;
+  const id = SHOP.nearCabin, lines = (SHOP.floor === CABIN_SHOP ? CABIN_SHOP_TALK : CABIN_TALK)[id] || ['Hi!']; SHOP.cabinTalkN = (SHOP.cabinTalkN || 0) + 1;
   SHOP.cabinSay = { id, text:lines[SHOP.cabinTalkN % lines.length], until:performance.now() + 3500 }; if (sfx.ding) sfx.ding(); renderShopCard(true);
 }
 function cabinMenuStep(dt) { // the main menu is the cabin: you walk around it right there on the menu
@@ -7037,7 +7042,10 @@ function drawCabinShop(t) { // the 2nd floor: the cabin shop, extra big (three s
   for (const [id, x] of [['keeper', KX + 100], ['keeper2', KX + 200]]) { const ch = CHAR[id], r = dormR(ch)*0.55; g.save(); g.translate(x, SHOP_FLOOR - r - 40); drawCharacter(g, ch, r, { facing:-1, ...looks(ch), still:true }); g.restore(); } // both shopkeepers, behind the counter
   g.fillStyle = '#a0723c'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(KX, SHOP_FLOOR - 110, 260, 110); g.strokeRect(KX, SHOP_FLOOR - 110, 260, 110); g.fillStyle = '#7a5236'; g.fillRect(KX - 10, SHOP_FLOOR - 122, 280, 16); // the counter
   g.fillStyle = '#d4a017'; g.fillRect(KX + 2, SHOP_FLOOR - 150, 44, 28); g.fillStyle = '#333'; g.fillRect(KX + 7, SHOP_FLOOR - 146, 34, 12); // a cash register
-  if (Math.abs(SHOP.x - (KX + 130)) < 260) drawBubble('Welcome to the cabin shop! It is SO big now! Look around!', KX, SHOP_FLOOR - 260, KX + 80);
+  const cs = SHOP.cabinSay, talking = cs && performance.now() < cs.until && (cs.id === 'keeper' || cs.id === 'keeper2'); // talking to them at the counter (walk up to one and press punch)
+  if (talking) { const tx = KX + (cs.id === 'keeper' ? 100 : 200); drawBubble(cs.text, tx - 20, SHOP_FLOOR - 260, tx); }
+  else if (Math.abs(SHOP.x - (KX + 130)) < 260) drawBubble('Welcome to the cabin shop! It is SO big now! Walk up to us and press punch to talk!', KX, SHOP_FLOOR - 260, KX + 80);
+  if (SHOP.nearCabin) drawPointer(KX + (SHOP.nearCabin === 'keeper' ? 100 : 200) + 40, SHOP_FLOOR - 300, t);
   drawCabinStairs(80, false, '↓ downstairs', t); drawCabinStairs(CW - 100, true, '↑ the dorms', t);
 }
 function drawCabinDorms(t) { // the 3rd floor: the dorms, like the old ones: a hallway with a door for each pair of roommates (and each room is its own, decorated just for them)
@@ -7061,7 +7069,7 @@ function drawCabinOutside(t) { // outside the cabin: a forest, and a little ston
   g.fillStyle = C.yellow; g.strokeStyle = C.ink; g.lineWidth = 3; g.fillRect(x - 90, SHOP_FLOOR - 300, 180, 34); g.strokeRect(x - 90, SHOP_FLOOR - 300, 180, 34); g.fillStyle = C.ink; g.font = `18px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText("IT's room: KEEP OUT", x, SHOP_FLOOR - 283);
   if (SHOP.nearStairs && SHOP.stairTo === IT_FLOOR) drawPointer(x + 70, SHOP_FLOOR - 330, t);
 }
-const CABIN_CARDS = { [CABIN_SHOP]:'<h3>The cabin shop</h3><p>The 2nd floor of the cabin: the same things to buy as in the shop, with both shopkeepers at the counter. Walk up to a stand to buy something. The stairs go down to the cabin and up to the dorms.</p>',
+const CABIN_CARDS = { [CABIN_SHOP]:'<h3>The cabin shop</h3><p>The 2nd floor of the cabin: the same things to buy as in the shop, with both shopkeepers at the counter. Walk up to a stand to buy something, or walk up to a shopkeeper and press punch to talk. The stairs go down to the cabin and up to the dorms.</p>',
   [CABIN_DORMS]:'<h3>The dorms</h3><p>The 3rd floor of the cabin: a big bunk room, with a bed for everyone (their name is on it). The stairs go back down to the shop.</p>',
   [CABIN_OUT]:'<h3>Outside</h3><p>A quiet forest outside the cabin. That little stone room is IT\'s room... IT is locked in there. Walk to its door and press punch to go in and talk to IT. The cabin door is on the right.</p>' };
 const STORY_NOTES = ['', '💕 The shopkeepers are in love! 💕', '🌳 The shopkeepers are dating! 🌳', '🍝 Date night at Café Fun! 🍝', '💍 Just married! 💍', '🛡️ The Admin is watching... 🛡️', '💥 Everything is falling apart! 💥', '🕳️ The code is gone... the 1st floor is gone! 🕳️', '🏠 There is no shop now... 🏠', '💔 They are gone...', '🌀 The void...', '👁️ ...uoy teg lliw ti 👁️', '📺 It\'s only them...', '🙏 Pray for you are in danger 🙏', '👁️ IT is here 👁️', '🔨 escape? 🔨', '🤗 Together again 🤗', '🔑 Get the admins 🔑'];
