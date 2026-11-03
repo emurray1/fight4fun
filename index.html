@@ -328,7 +328,7 @@ html.adminlook .story-note{color:#1f8a0f}
     <p id="storyNote" class="story-note" hidden></p>
     <div class="title-chars" id="titleChars"></div>
     <button id="okBtn" class="btn grey">OK</button>
-    <div class="menu"><button id="onlineBtn" class="btn">play online</button><button id="howBtn" class="btn">how to play</button><button id="keysBtn" class="btn">controls</button><button id="setBtn" class="btn">settings</button><button id="shopBtn" class="btn">shop</button><button id="codesBtn" class="btn">codes</button><button id="updsBtn" class="btn">up coming upds</button><button id="adminBtn" class="btn admin-btn" hidden>admin panel</button><button id="glitchShopBtn" class="btn glitch-btn" hidden>SHOP..?</button></div>
+    <div class="menu"><button id="onlineBtn" class="btn">play online</button><button id="howBtn" class="btn">how to play</button><button id="keysBtn" class="btn">controls</button><button id="setBtn" class="btn">settings</button><button id="shopBtn" class="btn">shop</button><button id="codesBtn" class="btn">codes</button><button id="updsBtn" class="btn">chapters of fight for fun</button><button id="adminBtn" class="btn admin-btn" hidden>admin panel</button><button id="glitchShopBtn" class="btn glitch-btn" hidden>SHOP..?</button></div>
     <p id="notice" class="msg" role="status"></p>
     <p class="hint">OK plays on this computer. Best with a keyboard or game controllers.</p>
   </div>
@@ -422,7 +422,7 @@ html.adminlook .story-note{color:#1f8a0f}
       <p>Free Missing Arrow, and get every shop item and every skin for every fighter.</p>
       <div class="ap-row"><button id="apUnlock" class="btn ap-big"><i>🔓</i>unlock everything</button></div>
       <h3>📖 Story</h3>
-      <p>Get all the chapters at once: everything on the up coming page has already happened (no waiting), with all the backgrounds, Flower Girl, and everything in the shop.</p>
+      <p>Get all the chapters at once: everything on the chapters page has already happened (no waiting), with all the backgrounds, Flower Girl, and everything in the shop.</p>
       <div class="ap-row"><button id="apStory" class="btn ap-big"><i>📖</i>get all the chapters</button></div>
       <h3>🖼️ Backgrounds</h3>
       <p class="note">Pick any story look for the menu, the shop and the sky in fights (admins don't have to get there first).</p>
@@ -477,7 +477,7 @@ html.adminlook .story-note{color:#1f8a0f}
 
 <div id="upds" class="screen" hidden>
   <div class="panel page">
-    <header class="whois"><h2>up coming upds</h2><button class="btn back" data-back>back</button></header>
+    <header class="whois"><h2>chapters of fight for fun</h2><button class="btn back" data-back>back</button></header>
     <div class="page-body">
       <p class="soon">🚧 More updates coming soon! 🚧</p>
       <p>New stuff is on the way for Fight for Fun. Here's what's coming next:</p>
@@ -491,8 +491,8 @@ html.adminlook .story-note{color:#1f8a0f}
       <ul class="upds-list" id="ch3List"><li><b>💔 They are gone...</b>: <span id="fellWhen"></span></li><li><b>🌀 The void</b>: <span id="voidWhen"></span></li><li><b>👁️ uoy teg lliw ti</b>: <span id="eyesWhen"></span></li><li><b>📺 It's only them</b>: <span id="onlyWhen"></span></li></ul>
       <h3 class="chapter" id="ch4Head">📖 Chapter 4: Pray for you are in danger <span id="ch4Done"></span></h3>
       <p id="ch4Lock" class="chapter-lock">🔒 Finish chapter 3 first!</p>
-      <ul class="upds-list" id="ch4List"><li><b>🙏 Pray for you are in danger</b>: <span id="prayWhen">something dangerous is coming... Coming soon...</span></li></ul>
-      <div class="page-foot"><button id="prayBtn" class="btn" hidden>🙏 the edge</button></div>
+      <ul class="upds-list" id="ch4List"><li><b>🙏 Pray for you are in danger</b>: <span id="prayWhen">something dangerous is coming... Coming soon...</span></li><li><b>👁️ IT is here</b>: <span id="itWhen"></span></li></ul>
+      <div class="page-foot"><button id="prayBtn" class="btn" hidden>🙏 the edge</button><button id="itBtn" class="btn" hidden>👁️ talk to IT</button></div>
       <p id="kickMsg" hidden style="color:#c0392b;font-size:22px"><b>🥾 The Admin KICKED YOU OUT!</b> You ran out of time on a task. Press the admin room button to try again!</p>
       <div class="page-foot"><button id="dormBtn" class="btn">💌 dorm</button><button id="parkBtn" class="btn">🌳 park</button><button id="dinnerBtn" class="btn">🍝 dinner place</button><button id="weddingBtn" class="btn">💒 wedding</button><button id="attackBtn" class="btn" hidden>🛡️ admin room</button><button id="fellBtn" class="btn" hidden>💔 dorm hall</button><button id="onlyBtn" class="btn" hidden>📺 break room</button></div>
       <div class="page-foot" id="againRow" hidden><button id="againBtn" class="btn">🔁 do it again</button><span id="againPick" hidden><button id="againConfess" class="btn">💌 confession</button><button id="againPark" class="btn">🌳 1st date</button><button id="againDate" class="btn">🍝 2nd date</button><button id="againWedding" class="btn">💍 wedding</button><button id="againAttack" class="btn">🛡️ admins attack</button><button id="againFell" class="btn">💔 they are gone</button></span></div>
@@ -5501,7 +5501,7 @@ function drawManager(g, t) { // %#@% sitting in his chair (drawn in the chair's 
 function drawShop(t) {
   const hall = SHOP.floor === 5, wide = keeperRoom(); // the chase hallway (and the shopkeepers' big room) scrolls with you
   if (hall) { g.save(); g.translate(-(SHOP.cam || 0), 0); drawChaseFloor(t); }
-  else if (SHOP.floor === EDGE_FLOOR) drawEdge(t); else if (SHOP.floor === VOID_FLOOR) drawVoid(t); else if (SHOP.floor === PARK_FLOOR) drawParkPlace(t); else if (SHOP.floor === DINNER_FLOOR) drawDinnerPlace(t); else if (SHOP.floor === WEDDING_FLOOR) drawWeddingHall(t); else if (SHOP.floor === 15) { drawAdminRoom(t); drawAttack(t); } else if (SHOP.floor === 14) drawKeeperAttic(t); else if (SHOP.floor === 12 || SHOP.floor === 13) { if (wide) { g.save(); g.translate(-(SHOP.cam || 0), 0); } if (SHOP.floor === 13) drawKeeperUpstairs(t); else drawDormRoom(t); } else if (SHOP.floor === 11) drawDormHall(t); else if (SHOP.floor === 10) drawPlayerBreak(t); else if (SHOP.floor === 9) drawGlitchShop(t); else if (SHOP.floor === 8) drawCageFloor(t); else if (SHOP.floor === 7) drawTopFloor(t); else if (SHOP.floor === 6) drawBreakFloor(t); else if (SHOP.floor === 4) drawOfficeFloor(t); else if (SHOP.floor === 3) drawAtticFloor(t); else if (SHOP.floor === 2) drawFunnyFloor(t); else drawFightyFloor(t);
+  else if (SHOP.floor === IT_FLOOR) drawItRoom(t); else if (SHOP.floor === EDGE_FLOOR) drawEdge(t); else if (SHOP.floor === VOID_FLOOR) drawVoid(t); else if (SHOP.floor === PARK_FLOOR) drawParkPlace(t); else if (SHOP.floor === DINNER_FLOOR) drawDinnerPlace(t); else if (SHOP.floor === WEDDING_FLOOR) drawWeddingHall(t); else if (SHOP.floor === 15) { drawAdminRoom(t); drawAttack(t); } else if (SHOP.floor === 14) drawKeeperAttic(t); else if (SHOP.floor === 12 || SHOP.floor === 13) { if (wide) { g.save(); g.translate(-(SHOP.cam || 0), 0); } if (SHOP.floor === 13) drawKeeperUpstairs(t); else drawDormRoom(t); } else if (SHOP.floor === 11) drawDormHall(t); else if (SHOP.floor === 10) drawPlayerBreak(t); else if (SHOP.floor === 9) drawGlitchShop(t); else if (SHOP.floor === 8) drawCageFloor(t); else if (SHOP.floor === 7) drawTopFloor(t); else if (SHOP.floor === 6) drawBreakFloor(t); else if (SHOP.floor === 4) drawOfficeFloor(t); else if (SHOP.floor === 3) drawAtticFloor(t); else if (SHOP.floor === 2) drawFunnyFloor(t); else drawFightyFloor(t);
   if (SHOP.floor <= 2) drawShopStory(t); // (the shop changes with the story too)
   if (codeGone() && SHOP.floor >= 11 && SHOP.floor <= 13) drawBrokenDorm(t); // (the dorms are broken too, once the code is gone)
   if (SHOP.floor === 11) drawFell(t); // (they are gone: the scene, then the shopkeepers trying to save them)
@@ -5596,7 +5596,7 @@ function frame(now) {
     drawWatchers(t); drawHUD(); drawCoinRain(t); drawPopups(t); drawOverlayText();
   } else { drawSky(t, null); drawMenuGround(t); }
   if (G.state !== 'fight' && storyOk && storyStage() >= 6 && !onlyThemHere()) drawGlitch(t); // (glitchy, in green and black)
-  if (G.state !== 'fight' && watchOn() && !onlyThemHere()) drawWatcher(t); // (uoy teg lliw ti: something is looking at you)
+  if (G.state !== 'fight' && watchOn() && !onlyThemHere() && !(G.state === 'shop' && SHOP.floor === IT_FLOOR)) drawWatcher(t); // (uoy teg lliw ti: something is looking at you)
   requestAnimationFrame(frame);
 }
 
@@ -5865,8 +5865,8 @@ function updsTick() { // the countdown on the page
   const ch3 = ch2 && saved() && onlyLeft() <= 0; // chapter 4 opens once chapter 3 is done
   $('ch4Lock').hidden = ch3; $('ch4List').hidden = !ch3; $('ch4Head').style.opacity = ch3 ? 1 : 0.5;
   const ptext = prayText(); if ($('prayWhen').textContent !== ptext) $('prayWhen').textContent = ptext;
-  $('prayBtn').hidden = !(ch3 && prayLeft() <= 0); $('ch4Done').textContent = ch3 && prayLeft() <= 0 ? '✅' : '';
-  $('fellBtn').hidden = !(fellLeft() <= 0);
+  $('prayBtn').hidden = !(ch3 && prayLeft() <= 0); $('ch4Done').textContent = ch3 && itLeft() <= 0 ? '✅' : '';
+  const itx = itText(); if ($('itWhen').textContent !== itx) $('itWhen').textContent = itx; $('itBtn').hidden = !(ch3 && itLeft() <= 0);  $('fellBtn').hidden = !(fellLeft() <= 0);
   $('attackBtn').hidden = !(attackLeft() <= 0 && attackLeft() > -ATTACK_LONG*60000);
   againShow();
 }
@@ -5878,6 +5878,7 @@ $('againAttack').onclick = () => goPlace(15, 'attack');
 $('againFell').onclick = () => goPlace(11, 'fell');
 $('fellBtn').onclick = () => goPlace(11);
 $('onlyBtn').onclick = () => { goPlace(6); SHOP.youSayT = 0; };
+$('itBtn').onclick = () => { goPlace(IT_FLOOR); Object.assign(SHOP, { x:300, itAsked:[], itSay:null }); SHOP.youSay = 'It is so dark... is somebody there?'; SHOP.youSayT = 3; }; // (into the dark, to talk to IT)
 $('prayBtn').onclick = () => { goPlace(EDGE_FLOOR); SHOP.x = 600; SHOP.youSayT = 0; SHOP.edgeT0 = performance.now(); }; // (watching them try to get out of this world) // (you just watch them, so you don't say anything)
 $('attackBtn').onclick = () => goPlace(15);
 $('againConfess').onclick = () => goKeeperRoom('confess');
@@ -6660,11 +6661,51 @@ function drawEdge(t) { // the edge of the world
   const line = [...ESCAPE_LINES].reverse().find(([from]) => p >= from), who = edgeSpots(p).find(s => s.id === line[1]) || { x:EDGE_PORTAL, y:0 };
   drawBubble(line[2], Math.min(W - 40, who.x + 240), SHOP_FLOOR - 230 - who.y, who.x);
 }
-const STORY_NOTES = ['', '💕 The shopkeepers are in love! 💕', '🌳 The shopkeepers are dating! 🌳', '🍝 Date night at Café Fun! 🍝', '💍 Just married! 💍', '🛡️ The Admin is watching... 🛡️', '💥 Everything is falling apart! 💥', '🕳️ The code is gone... the 1st floor is gone! 🕳️', '🏠 There is no shop now... 🏠', '💔 They are gone...', '🌀 The void...', '👁️ ...uoy teg lliw ti 👁️', '📺 It\'s only them...', '🙏 Pray for you are in danger 🙏'];
+// IT is here (chapter 4): 20 minutes after "pray for you are in danger", the eyes that have been watching you have a name: IT.
+// The shop button (or the 👁️ talk to IT button) takes you into the dark (floor 21), where IT's giant eyes look down at you. You're yourself again,
+// and you can ask IT questions (buttons in the info box): where am I? who are you? ...and IT answers, slowly, in glowing green letters
+const IT_MIN = 20, IT_FLOOR = 21;
+const itLeft = () => { const p = prayLeft(); return p === Infinity ? Infinity : p + IT_MIN*60000; };
+const itOn = () => storyOk && storyStage() >= 14;
+function itText() { // for the up coming page
+  const l = itLeft(), p = prayLeft();
+  return l === Infinity || p > 0 ? 'the eyes have a name... Coming soon...' : l > 0 ? `IT is coming in ${mmss(l)}...` : 'IT is here. 👁️ Press the talk to IT button (or the shop button) to go into the dark and talk to IT.';
+}
+const IT_QUESTIONS = [ // what you can ask IT, and what IT says back (the last one only shows up once you've told IT to let them go)
+  ['where', 'Where am I?', 'You are inside the game. Deep inside. Where the code ends... and I begin.'],
+  ['who', 'Who are you?', 'I am IT. I was here before the shop. Before the fighters. Before... YOU.'],
+  ['watch', 'Are you the one watching us?', 'I have always been watching. Every fight. Every wedding. Every... chore.'],
+  ['broke', 'Did you break the world?', 'The admins opened the door. I just... came through it.'],
+  ['let', 'Let the shopkeepers go!', 'They want OUT. Nobody gets out. ...Unless.'],
+  ['unless', 'Unless what?', '...You will see. Soon. uoy teg lliw ti.'],
+];
+function itAsk(id) { // you ask IT something: you say it, then IT answers a moment later
+  const q = IT_QUESTIONS.find(x => x[0] === id); if (!q || SHOP.floor !== IT_FLOOR) return;
+  SHOP.itAsked = SHOP.itAsked || []; if (!SHOP.itAsked.includes(id)) SHOP.itAsked.push(id);
+  SHOP.youSay = q[1]; SHOP.youSayT = 2.5; SHOP.itSay = { text:q[2], t0:performance.now() + 1600 }; if (sfx.beep) sfx.beep(); renderShopCard(true);
+}
+function itCard() { // the info box in the dark: the questions you can ask
+  const asked = SHOP.itAsked || [], qs = IT_QUESTIONS.filter(([id]) => id !== 'unless' || asked.includes('let'));
+  return '<h3>IT is here</h3><p>Giant eyes in the dark, looking right at you. Ask IT something:</p><div class="row">' + qs.map(([id, q]) => `<button class="btn" data-it="${id}" style="font-size:18px;padding:4px 12px;margin:3px;${asked.includes(id) ? 'opacity:.55' : ''}">${q}</button>`).join('') + '</div><p class="note">Press back to leave.</p>';
+}
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-it]'); if (b) itAsk(b.dataset.it); });
+function drawItRoom(t) { // the dark, with IT's giant eyes (they follow you, and blink)
+  g.fillStyle = '#000'; g.fillRect(-3000, -3000, W + 6000, H + 6000);
+  const fog = g.createRadialGradient(800, 300, 50, 800, 300, 700); fog.addColorStop(0, 'rgba(57,255,20,.12)'); fog.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = fog; g.fillRect(0, 0, W, H);
+  g.font = '18px monospace'; g.textAlign = 'center'; g.textBaseline = 'middle'; for (let i=0;i<24;i++) { g.fillStyle = 'rgba(57,255,20,.15)'; g.fillText((i + Math.floor(t*2)) % 2 ? '1' : '0', (i*71) % W, ((t*30 + i*83) % (H + 40)) - 20); }
+  g.strokeStyle = 'rgba(57,255,20,.4)'; g.lineWidth = 2; g.beginPath(); g.moveTo(0, SHOP_FLOOR); g.lineTo(W, SHOP_FLOOR); g.stroke(); // something to stand on
+  const talking = SHOP.itSay && performance.now() >= SHOP.itSay.t0, blink = (t % 4.3) < 0.18 ? 0.08 : 1, look = Math.atan2(SHOP_FLOOR - 80 - 300, SHOP.x - 800), ex = Math.cos(look)*22, ey = Math.sin(look)*16;
+  g.save(); g.shadowColor = '#39ff14'; g.shadowBlur = talking ? 50 : 30;
+  for (const s of [-1, 1]) { g.fillStyle = '#e8ffe0'; g.beginPath(); g.ellipse(800 + s*150 + (talking ? Math.sin(t*30)*2 : 0), 300, 100, 60*blink, 0, 0, TAU); g.fill(); } g.restore(); // IT's eyes
+  if (blink > 0.5) for (const s of [-1, 1]) { g.fillStyle = '#000'; g.beginPath(); g.ellipse(800 + s*150 + ex, 300 + ey, 26, talking ? 40 : 30, 0, 0, TAU); g.fill(); } // pupils that follow you (they stretch when IT talks)
+  if (talking) { const k = Math.min(SHOP.itSay.text.length, Math.floor((performance.now() - SHOP.itSay.t0)/45)), shown = SHOP.itSay.text.slice(0, k); // IT's answer, typing itself out
+    g.font = `34px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; for (const [dx, col] of [[-2, 'rgba(255,40,40,.5)'], [2, 'rgba(0,200,255,.4)'], [0, '#39ff14']]) { g.fillStyle = col; g.fillText(shown, 800 + dx, 470, W - 120); } }
+}
+const STORY_NOTES = ['', '💕 The shopkeepers are in love! 💕', '🌳 The shopkeepers are dating! 🌳', '🍝 Date night at Café Fun! 🍝', '💍 Just married! 💍', '🛡️ The Admin is watching... 🛡️', '💥 Everything is falling apart! 💥', '🕳️ The code is gone... the 1st floor is gone! 🕳️', '🏠 There is no shop now... 🏠', '💔 They are gone...', '🌀 The void...', '👁️ ...uoy teg lliw ti 👁️', '📺 It\'s only them...', '🙏 Pray for you are in danger 🙏', '👁️ IT is here 👁️'];
 let storyCache = { t:0, s:0 };
-const STORY_LOOKS = [['love','💕 In love'], ['park','🌳 Park'], ['cafe','🍝 Café'], ['wedding','💍 Wedding'], ['admin','🛡️ Admin'], ['crumble','💥 Falling apart'], ['gone','🕳️ Code gone'], ['life','🏠 Once in a life time'], ['fell','💔 They are gone'], ['void','🌀 The void'], ['eyes','👁️ uoy teg lliw ti'], ['only','📺 It\'s only them'], ['pray','🙏 Pray for you are in danger']]; // (the looks, in story order, for the settings and the admin panel)
-const STORY_PICKS = { love:1, park:2, cafe:3, wedding:4, admin:5, crumble:6, gone:7, life:8, fell:9, void:10, eyes:11, only:12, pray:13 }; // (or pick one in settings: any look you've reached)
-function storyReached() { const w = weddingLeft(), a = attackLeft(), d = DATING_MIN*60000 - (Date.now() - (+lsGet('fff-confessed') || 0)); return prayLeft() <= 0 ? 13 : onlyLeft() <= 0 ? 12 : eyesLeft() <= 0 ? 11 : voidLeft() <= 0 ? 10 : fellLeft() <= 0 ? 9 : lifeLeft() <= 0 ? 8 : goneLeft() <= 0 ? 7 : arriveLeft() <= 0 ? 6 : w <= -WEDDING_LONG*60000 && a <= 0 ? 5 : w <= 0 ? 4 : date2Left() <= 0 ? 3 : confessSeen() && d <= 0 ? 2 : confessSeen() ? 1 : 0; } // (in love, dating, the 2nd date, married, the Admin's attack)
+const STORY_LOOKS = [['love','💕 In love'], ['park','🌳 Park'], ['cafe','🍝 Café'], ['wedding','💍 Wedding'], ['admin','🛡️ Admin'], ['crumble','💥 Falling apart'], ['gone','🕳️ Code gone'], ['life','🏠 Once in a life time'], ['fell','💔 They are gone'], ['void','🌀 The void'], ['eyes','👁️ uoy teg lliw ti'], ['only','📺 It\'s only them'], ['pray','🙏 Pray for you are in danger'], ['it','👁️ IT is here']]; // (the looks, in story order, for the settings and the admin panel)
+const STORY_PICKS = { love:1, park:2, cafe:3, wedding:4, admin:5, crumble:6, gone:7, life:8, fell:9, void:10, eyes:11, only:12, pray:13, it:14 }; // (or pick one in settings: any look you've reached)
+function storyReached() { const w = weddingLeft(), a = attackLeft(), d = DATING_MIN*60000 - (Date.now() - (+lsGet('fff-confessed') || 0)); return itLeft() <= 0 ? 14 : prayLeft() <= 0 ? 13 : onlyLeft() <= 0 ? 12 : eyesLeft() <= 0 ? 11 : voidLeft() <= 0 ? 10 : fellLeft() <= 0 ? 9 : lifeLeft() <= 0 ? 8 : goneLeft() <= 0 ? 7 : arriveLeft() <= 0 ? 6 : w <= -WEDDING_LONG*60000 && a <= 0 ? 5 : w <= 0 ? 4 : date2Left() <= 0 ? 3 : confessSeen() && d <= 0 ? 2 : confessSeen() ? 1 : 0; } // (in love, dating, the 2nd date, married, the Admin's attack)
 function storyStage() {
   if (!storyOk || setup.storyLook === 'off') return 0;
   const now = Date.now(); if (now - storyCache.t < 1000) return storyCache.s; // (it only has to check once a second)
@@ -6690,7 +6731,7 @@ function drawShopStory(t) { // the story look in the shop: the same hearts, butt
   const s = storyStage(); if (!s) return;
   if (s >= 6) { drawCracks(SHOP_FLOOR); drawRubble(t, 0); } if (s >= 7 && SHOP.floor === 2) drawCodeHole(t); // (the shop is falling apart: cracks in the walls, and bits of the ceiling falling down)
   g.save(); g.globalAlpha = 0.55; drawStoryFx(t); g.restore(); // (a bit see-through, so they don't get in the way)
-  const cols = [null, ['#ff8fc1', '#e75a9b'], ['#2e9e4f', '#8fd16a'], ['#7a1f2b', '#ffd65a'], ['#ffd23f', C.white], ['#39ff14', '#0b2a14'], ['#8a7f74', '#39ff14'], ['#000', '#39ff14'], ['#000', '#39ff14'], ['#000', '#39ff14'], ['#000', '#39ff14'], ['#000', '#e8ffe0'], ['#ff8fc1', '#ffd23f'], ['#ff4040', '#000']][s];
+  const cols = [null, ['#ff8fc1', '#e75a9b'], ['#2e9e4f', '#8fd16a'], ['#7a1f2b', '#ffd65a'], ['#ffd23f', C.white], ['#39ff14', '#0b2a14'], ['#8a7f74', '#39ff14'], ['#000', '#39ff14'], ['#000', '#39ff14'], ['#000', '#39ff14'], ['#000', '#39ff14'], ['#000', '#e8ffe0'], ['#ff8fc1', '#ffd23f'], ['#ff4040', '#000'], ['#39ff14', '#000']][s];
   g.strokeStyle = cols[0]; g.lineWidth = 3; g.beginPath(); for (let x = 0; x <= W; x += 10) { const y = 160 + Math.abs(Math.sin(x/200*Math.PI))*-30 + 30; x ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke();
   for (let x = 40; x < W; x += 80) { const y = 160 + Math.abs(Math.sin(x/200*Math.PI))*-30 + 30, i = x/80 | 0; g.fillStyle = cols[i % 2]; g.strokeStyle = C.ink; g.lineWidth = 2; // little flags (hearts on the love look)
     if (s === 1) drawLittleHeart(x, y + 16, 12); else { g.beginPath(); g.moveTo(x - 16, y); g.lineTo(x + 16, y); g.lineTo(x, y + 30); g.closePath(); g.fill(); g.stroke(); } }
@@ -6765,7 +6806,7 @@ $('apStory').onclick = () => { // every chapter at once: the whole story already
   shop.unlocked = { ...(shop.unlocked || {}), flower:true };
   $('apUnlock').onclick(); // (and everything in the shop)
   setup.storyLook = 'on'; saveSetup(); applyTheme(); renderSeg('apStorySeg', [['on','Newest'], ...STORY_LOOKS, ['off','Off']], 'storyLook', applyTheme);
-  $('apMsg').textContent = 'You got all the chapters! Everything on the up coming page has happened, every background is yours (pick one below), and you have Flower Girl and everything in the shop.';
+  $('apMsg').textContent = 'You got all the chapters! Everything on the chapters page has happened, every background is yours (pick one below), and you have Flower Girl and everything in the shop.';
 };
 // ----- change fighter: an admin can turn into a different fighter in the middle of a fight -----
 const myFighter = () => G.fighters.find(f => f.alive !== false && !f.caught && (G.online === 'client' ? f.me : f.control !== 'cpu' && !f.control.startsWith('net:')));
@@ -7138,7 +7179,8 @@ function openShop() {
   SHOP.smiSay = SHOP.smi7y ? 'Yo! It\'s SMI7Y! Come say hi!' : ''; SHOP.smiSayT = SHOP.smi7y ? 4 : 0; SHOP.smiTalk = -1;
   SHOP.enterClock = 0; SHOP.replies = CHARS[SHOP.who].id === 'shuriken' ? SHURIKEN_REPLIES.map(r => ({ ...r })) : [];
   if (noShop()) Object.assign(SHOP, { floor:12, dorm:DORMS.findIndex(d => d.keepers), x:300, cam:0, visit:null, enterT:0, smi7y:false, smiSayT:0, ktask:null, kdone:new Set(), shyAwake:false, pb:{ next:performance.now() + 800, chat:null, line:0 } }); // (there is no shop now: you go to the shopkeepers' home)
-  if (prayOn()) Object.assign(SHOP, { floor:EDGE_FLOOR, x:600, y:0, visit:null, enterT:0, youSayT:0, smi7y:false, smiSayT:0, edgeT0:performance.now() }); // (pray for you are in danger: you show up at the edge of the world, watching them try to get out)
+  if (itOn()) Object.assign(SHOP, { floor:IT_FLOOR, x:300, y:0, visit:null, enterT:0, youSayT:0, smi7y:false, smiSayT:0, itAsked:[], itSay:null }); // (IT is here: you go into the dark to talk to IT)
+  else if (prayOn()) Object.assign(SHOP, { floor:EDGE_FLOOR, x:600, y:0, visit:null, enterT:0, youSayT:0, smi7y:false, smiSayT:0, edgeT0:performance.now() }); // (pray for you are in danger: you show up at the edge of the world, watching them try to get out)
   else if (onlyOn()) Object.assign(SHOP, { floor:6, x:600, y:0, visit:null, enterT:0, youSayT:0, smi7y:false, smiSayT:0 }); // (it's only them: you show up in the break room, and you're not anybody, you just watch)
   openPage('shop'); renderShopCard(true); cv.focus();
 }
@@ -7382,10 +7424,10 @@ function drawSkinBooth(t) { // a big gold mirror on a stand: it shows you in eac
 }
 function renderShopCard(force) {
   const ch = CHARS[SHOP.who], st = SHOP.near, it = st && ITEMS.find(i => i.id === st.item);
-  const key = [shop.coins, ch.id, justWatching(), SHOP.floor >= DINNER_FLOOR ? placeMsg() : '', SHOP.floor === 15 && attackOn(), !!(SHOP.atk && SHOP.atk.won), SHOP.nearWed, SHOP.nearPark, SHOP.nearPaper, SHOP.ktask, SHOP.nearTask, SHOP.nearToys, it && it.id, it && shop.owned[it.id], ITEMS.map(i => wears(i.id, ch)).join(), SHOP.nearKeeper, SHOP.nearStairs, SHOP.stairTo, SHOP.floor, jokeOpen(), !!SHOP.revealed, SHOP.nearSmi, SHOP.nearSkins, skinOf(ch), skinRec(ch).have.join(), SHOP.nearCage, SHOP.cage && SHOP.cage.lock.left, SHOP.cage && SHOP.cage.hp, SHOP.cage && SHOP.cage.freed, SHOP.nearPal && SHOP.nearPal.id, SHOP.stairRoom, SHOP.dorm, SHOP.nearSwitch, setup.dormTime].join('|');
+  const key = [shop.coins, ch.id, justWatching(), (SHOP.itAsked || []).length, SHOP.floor >= DINNER_FLOOR ? placeMsg() : '', SHOP.floor === 15 && attackOn(), !!(SHOP.atk && SHOP.atk.won), SHOP.nearWed, SHOP.nearPark, SHOP.nearPaper, SHOP.ktask, SHOP.nearTask, SHOP.nearToys, it && it.id, it && shop.owned[it.id], ITEMS.map(i => wears(i.id, ch)).join(), SHOP.nearKeeper, SHOP.nearStairs, SHOP.stairTo, SHOP.floor, jokeOpen(), !!SHOP.revealed, SHOP.nearSmi, SHOP.nearSkins, skinOf(ch), skinRec(ch).have.join(), SHOP.nearCage, SHOP.cage && SHOP.cage.lock.left, SHOP.cage && SHOP.cage.hp, SHOP.cage && SHOP.cage.freed, SHOP.nearPal && SHOP.nearPal.id, SHOP.stairRoom, SHOP.dorm, SHOP.nearSwitch, setup.dormTime].join('|');
   if (!force && key === SHOP.key) return;
   SHOP.key = key; $('coinCount').textContent = shop.coins; $('shopWho').textContent = ch.name;
-  const card = $('shopCard'); if (SHOP.floor === EDGE_FLOOR) card.innerHTML = '<h3>Pray for you are in danger</h3><p>The edge of the world. The shopkeepers are trying to get out of this world: pushing on the wall of code, reaching for the crack in the sky, jumping into the portal... and every time, it fails. So they pray, and try again.</p><p class="note">You are not anybody here. You just watch them try. Press back to leave.</p>';
+  const card = $('shopCard'); if (SHOP.floor === IT_FLOOR) card.innerHTML = itCard(); else if (SHOP.floor === EDGE_FLOOR) card.innerHTML = '<h3>Pray for you are in danger</h3><p>The edge of the world. The shopkeepers are trying to get out of this world: pushing on the wall of code, reaching for the crack in the sky, jumping into the portal... and every time, it fails. So they pray, and try again.</p><p class="note">You are not anybody here. You just watch them try. Press back to leave.</p>';
   else if (onlyThemHere()) card.innerHTML = '<h3>It\'s only them</h3><p>Just the two shopkeepers, alone in the broken break room. Their memories are moving on a paper on the wall all by themselves: the confession, their first date, Café Fun and the big day... and they are scared.</p><p class="note">You are not anybody here. You just watch. Press back to leave.</p>'; else fillShopCard(card, ch, it); // (it's only them: no fighter, no things to wear)
   // a ✕ to close this pop-up (it stays closed until you click "show info"; punch still works without it)
   card.hidden = !!SHOP.cardClosed; $('shopCardOpen').hidden = !SHOP.cardClosed;
@@ -7393,7 +7435,7 @@ function renderShopCard(force) {
   x.onclick = () => { SHOP.cardClosed = true; renderShopCard(true); cv.focus(); };
   card.prepend(x);
   // what this fighter has on, with a button to take each thing off from anywhere in the shop
-  if (!ITEMS.some(i => shop.owned[i.id]) || justWatching()) return; // (when it's only them, you aren't anybody, so you aren't wearing anything)
+  if (!ITEMS.some(i => shop.owned[i.id]) || justWatching() || SHOP.floor === IT_FLOOR) return; // (when it's only them, you aren't anybody, so you aren't wearing anything)
   const row = document.createElement('div'); row.className = 'wearing';
   const on = ITEMS.filter(i => wears(i.id, ch) && canWear(i, ch));
   if (!on.length) row.textContent = `${ch.name} isn't wearing anything from the shop.`;
