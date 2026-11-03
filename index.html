@@ -512,8 +512,8 @@ html.adminlook .story-note{color:#1f8a0f}
       <div class="page-foot"><button id="prayBtn" class="btn" hidden>🙏 the edge</button><button id="itBtn" class="btn" hidden>👁️ talk to IT</button><button id="escapeBtn" class="btn" hidden>🔨 escape?</button><button id="reuniteBtn" class="btn" hidden>🤗 reunite</button></div>
       <h3 class="chapter" id="ch5Head">📖 Chapter 5: New home <span id="ch5Done"></span></h3>
       <p id="ch5Lock" class="chapter-lock">🔒 Finish chapter 4 first!</p>
-      <ul class="upds-list" id="ch5List"><li><b>🔑 Get the admins</b>: <span id="adminsWhen"></span></li><li><b>🕳️ Gone</b>: <span id="remakeWhen"></span></li><li><b>🤖 Hex return</b>: <span id="hexWhen"></span></li></ul>
-      <div class="page-foot" id="ch5Foot"><button id="adminsBtn" class="btn" hidden>🔑 get the admins</button><button id="remakeBtn" class="btn" hidden>🕳️ gone</button><button id="hexBtn" class="btn" hidden>🤖 hex return</button></div>
+      <ul class="upds-list" id="ch5List"><li><b>🔑 Get the admins</b>: <span id="adminsWhen"></span></li><li><b>🕳️ Gone</b>: <span id="remakeWhen"></span></li><li><b>🤖 Hex return</b>: <span id="hexWhen"></span></li><li><b>🏠 He's in!</b>: <span id="hesInWhen"></span></li></ul>
+      <div class="page-foot" id="ch5Foot"><button id="adminsBtn" class="btn" hidden>🔑 get the admins</button><button id="remakeBtn" class="btn" hidden>🕳️ gone</button><button id="hexBtn" class="btn" hidden>🤖 hex return</button><button id="hesInBtn" class="btn" hidden>🏠 he's in!</button></div>
       <p id="kickMsg" hidden style="color:#c0392b;font-size:22px"><b>🥾 The Admin KICKED YOU OUT!</b> You ran out of time on a task. Press the admin room button to try again!</p>
       <div class="page-foot"><button id="dormBtn" class="btn">💌 dorm</button><button id="parkBtn" class="btn">🌳 park</button><button id="dinnerBtn" class="btn">🍝 dinner place</button><button id="weddingBtn" class="btn">💒 wedding</button><button id="attackBtn" class="btn" hidden>🛡️ admin room</button><button id="fellBtn" class="btn" hidden>💔 dorm hall</button><button id="onlyBtn" class="btn" hidden>📺 break room</button></div>
       <div class="page-foot" id="againRow" hidden><button id="againBtn" class="btn">🔁 do it again</button><span id="againPick" hidden><button id="againConfess" class="btn">💌 confession</button><button id="againPark" class="btn">🌳 1st date</button><button id="againDate" class="btn">🍝 2nd date</button><button id="againWedding" class="btn">💍 wedding</button><button id="againAttack" class="btn">🛡️ admins attack</button><button id="againFell" class="btn">💔 they are gone</button></span></div>
@@ -839,7 +839,7 @@ const CAGE_X = 200, CAGE_PORTAL_X = 1263, LOCK_POPS = 12, LOCK_SPEED = 2.0, LOCK
 // a "fighters only" door on the 2nd floor goes into player breaks (floor 10), where the fighters hang out
 const PLAYER_DOOR_X = 680, PB_EXIT_X = 120;
 // and a door in player breaks goes to the dorms (floor 11): a hallway with a door for each pair of roommates, into their room (floor 12)
-const DORM_DOOR_X = 1500, DORM_EXIT_X = 110, DORM_ROOM_X = [320, 535, 750, 965, 1180, 1395]; // (the last door is the shopkeepers' room)
+const DORM_DOOR_X = 1500, DORM_EXIT_X = 110, DORM_ROOM_X = [260, 440, 620, 800, 980, 1160, 1340]; // (the 6th door is the shopkeepers' room, and the last one is the robots')
 const KEEPER_STAIRS_X = 2260, KEEPER_UP_X = 2260, KEEPER_LADDER_X = 2050, ATTIC_HOLE_X = 300, PAPER_X = 1000, ADMIN_DOOR_X = 1460, ADMIN_EXIT_X = 110; // (and a ladder up to the 3rd floor, floor 14, where a paper with a code is pinned to the wall) // the stairs in the shopkeepers' room (downstairs, and upstairs on floor 13)
 const STAIRS = [{ floor:1, x:STAIRS_X[1], to:2 }, { floor:2, x:STAIRS_X[2], to:1 }, { floor:2, x:LADDER_X, to:3 }, { floor:3, x:ATTIC_STAIRS_X, to:2 },
   { floor:3, x:ELEVATOR_X, to:4 }, { floor:4, x:ELEVATOR_X, to:3 }, { floor:2, x:BREAK_DOOR_X, to:6 }, { floor:6, x:BREAK_DOOR_X, to:2 },
@@ -4004,6 +4004,7 @@ function shopStep(dt) {
   SHOP.nearStairs = !!stair; SHOP.stairTo = stair ? stair.to : 0; SHOP.stairRoom = stair && stair.room != null ? stair.room : SHOP.stairRoom; // (which dorm door)
   SHOP.nearPal = (f === 10 || f === 12 || f === 13) && !SHOP.nearStairs ? ((f === 10 ? pbSpots() : dormSpots()).find(s => Math.abs(s.x - SHOP.x) < 70) || {}).ch || null : null; // walking up to a fighter in player breaks or a dorm room
   SHOP.nearSwitch = f === 12 && !SHOP.nearStairs && Math.abs(SHOP.x - DORM_SWITCH_X) < 45; // the light switch in a dorm room
+  SHOP.nearBox = f === 12 && SHOP.hesIn && SHOP.dorm === 6 && !SHOP.nearStairs ? HESIN_BOXES.findIndex((b, k) => !SHOP.unpacked.includes(k) && Math.abs(b.x - SHOP.x) < 55) : -1; // one of Hexstar 1.0's moving boxes (he's in!)
   SHOP.nearPaper = f === 14 && !SHOP.nearStairs && Math.abs(SHOP.x - PAPER_X) < 90; // the paper with the code on it
   const ktask = SHOP.ktask && KTASKS[SHOP.ktask]; SHOP.nearTask = ktask && keeperRoom() && ktask.floor === f && !SHOP.nearStairs && Math.abs(SHOP.x - ktask.x) < 70 ? SHOP.ktask : null; // the spot for your chore
   SHOP.nearToys = f === 13 && isKid() && !SHOP.nearStairs && Math.abs(SHOP.x - TOY_X) < 80; // (only Goofy Sparkle plays with the toys)
@@ -4031,7 +4032,7 @@ function shopStep(dt) {
   crumbleKeeperStep(f); // (the shopkeepers noticing the game falling apart)
   crowdStep(); // (the fighters talking to the shopkeepers about the wedding, until it happens)
   SHOP.smiSayT = Math.max(0, (SHOP.smiSayT || 0) - dt);
-  if (h.punch && !pr.punch) { if (SHOP.nearCabin) cabinTalk(); else if (SHOP.nearCh5) ch5Act(); else if (SHOP.nearVoidCage >= 0) voidHit(); else if (SHOP.nearCage) cageHit(); else if (SHOP.near) shopAct(SHOP.near.item); else if (SHOP.nearSkins) nextSkin(); else if (SHOP.nearSwitch) dormLight(); else if (SHOP.nearAtk) atkAct(); else if (SHOP.nearPaper) readPaper(); else if (SHOP.nearWed) wedAct(); else if (SHOP.nearPark) parkAct(); else if (SHOP.nearTask) doKTask(); else if (SHOP.nearToys) playToys(); else if (SHOP.nearStairs) shopStairs(); else if (SHOP.nearPal) palTalk(); else if (SHOP.nearSmi) smiTalk(); else if (SHOP.nearKeeper) shopTalk(); }
+  if (h.punch && !pr.punch) { if (SHOP.nearCabin) cabinTalk(); else if (SHOP.nearCh5) ch5Act(); else if (SHOP.nearVoidCage >= 0) voidHit(); else if (SHOP.nearCage) cageHit(); else if (SHOP.near) shopAct(SHOP.near.item); else if (SHOP.nearSkins) nextSkin(); else if (SHOP.nearBox >= 0) unpackBox(); else if (SHOP.nearSwitch) dormLight(); else if (SHOP.nearAtk) atkAct(); else if (SHOP.nearPaper) readPaper(); else if (SHOP.nearWed) wedAct(); else if (SHOP.nearPark) parkAct(); else if (SHOP.nearTask) doKTask(); else if (SHOP.nearToys) playToys(); else if (SHOP.nearStairs) shopStairs(); else if (SHOP.nearPal) palTalk(); else if (SHOP.nearSmi) smiTalk(); else if (SHOP.nearKeeper) shopTalk(); }
   if (h.grab && !pr.grab && SHOP.nearKeeper) shopLaugh();
   if (isHex()) { // Hexstar says "beep boop baap!" now and then (or when you press special), and the shopkeepers act like he never said it
     SHOP.beepCD = (SHOP.beepCD ?? 3) - dt; SHOP.beepT = Math.max(0, (SHOP.beepT || 0) - dt);
@@ -4317,13 +4318,13 @@ const PB_SOLO = { // what each of them says on their own now and then
   star:['Being this cool is a full-time job.', '*adjusts shades*'], tri:['Grrr... I am NOT angry. I am resting.', 'Who keeps moving my chair?!'],
   circle:['WHAT?! Oh. It\'s just break time.', 'I am SO surprised by everything!'], diamond:['I know a secret... but I won\'t tell.', '*sneaky smile*'],
   square:['BREAK TIME IS THE BEST TIME!', 'I AM VERY RELAXED RIGHT NOW!'], sparkle:['Wheee! Break time!', 'Can I have a juice box?'],
-  hex:['Beep boop baap!', 'I am... resting my circuits.'], heart:['Love you all!', 'Who wants a cookie?'],
+  hex:['Beep boop baap!', 'I am... resting my circuits.'], oldhex:['B-beep... I have a ROOM now!', 'Hexstar 2.0 is the best brother.', '*polishes his glasses*'], flower:['Has anyone seen my watering can?', 'I picked these flowers for everyone!'], heart:['Love you all!', 'Who wants a cookie?'],
   shuriken:['Hmph.', 'Has anyone seen Goofy Sparkle? ...Again?'], arrow:['*trembles* I-it\'s nice in here...', '*glitches a little*'],
   admin:['I am the boss of the whole game.', 'i ♥ forsken'],
 };
 const PB_HI = { // what they say when you walk up and press punch ({you} is your fighter's name)
   star:'Oh hey, {you}. Cool of you to stop by.', tri:'What do YOU want, {you}?! ...fine. Hi.', circle:'WHAT?! Oh, hi {you}!', diamond:'Hello, {you}... I knew you would come.',
-  square:'HI {you}! WELCOME TO THE BREAK ROOM!', sparkle:'{you}! Wanna play?!', hex:'Beep boop! Hi {you}! *nervous wave*', heart:'Aww, hi {you}! Want a hug?',
+  square:'HI {you}! WELCOME TO THE BREAK ROOM!', sparkle:'{you}! Wanna play?!', hex:'Beep boop! Hi {you}! *nervous wave*', oldhex:'B-beep! Hi {you}! Thank you for fixing me!', flower:'Hi {you}! Want a flower?', heart:'Aww, hi {you}! Want a hug?',
   shuriken:'Hmph. Hi, {you}. Have you seen Goofy Sparkle?', arrow:'O-oh! Hi {you}... please don\'t scare me.', admin:'Hello, {you}. Enjoy your break.',
 };
 const pbPals = () => PLAYABLE().filter(c => !c.keeper && c.id !== 'admin' && c.id !== CHARS[SHOP.who].id && !(c.id === 'sparkle' && noShop()) && !(c.id === 'shuriken' && theyGone()) && !voidTaskNow()); // everyone but the shopkeepers, the Admin and you (and nobody while the void is open: they're all in it)
@@ -4380,8 +4381,8 @@ const DORMS = [ // who shares a room (and what they talk about in there)
     [['shuriken', 'Do NOT run off again tomorrow.'], ['sparkle', 'I promise! ...Maybe.']]] },
   { ids:['tri', 'square'], wall:'#ffe3d6', chats:[[['square', 'GOOD NIGHT, TRIANGLE!'], ['tri', 'Stop YELLING, I am trying to sleep!'], ['square', 'SORRY! ...sorry.']],
     [['tri', 'Grr... who snores like that?!'], ['square', 'NOT ME!'], ['tri', 'It was SO you.']]] },
-  { ids:['circle', 'hex'], wall:'#dff1ff', chats:[[['hex', 'Beep... boop... I am scared of the dark.'], ['circle', 'WHAT?! Me too!'], ['hex', '*turns on his antenna light* There. Better.']],
-    [['circle', 'WHAT was that noise?!'], ['hex', 'Beep! It was my tummy. Sorry.']]] },
+  { ids:['circle', 'flower'], wall:'#fff3d6', chats:[[['flower', 'Good night, Shocked Circle! I put a flower by your bed.'], ['circle', 'WHAT?! A flower?! ...That is so nice!'], ['flower', 'Hehe! It glows in the dark, so you will not be scared.']],
+    [['circle', 'WHAT was that noise?!'], ['flower', 'Just me watering my plants! Sorry!'], ['circle', '...Phew.']]] },
   // Sly Diamond and Missing Arrow like each other! Their door is locked, and only the two of them can go in
   { ids:['diamond', 'arrow'], wall:'#ffe6f2', locked:true, crush:true, chats:[
     [['arrow', 'S-Sly Diamond... can I tell you something?'], ['diamond', 'Of course, Missing Arrow.'], ['arrow', 'I... I really like you. *glitches*'], ['diamond', '*blushes* I like you too... hehe.']],
@@ -4390,7 +4391,11 @@ const DORMS = [ // who shares a room (and what they talk about in there)
   { ids:['keeper', 'keeper2'], keepers:true, wall:'#f3ead9', chats:[[['keeper', 'Good night! Big sale tomorrow!'], ['keeper2', 'g-good night...'], ['keeper', 'Did you lock the shop?'], ['keeper2', '*nods* ...twice.']], // the two shopkeepers share a room too
     [['keeper2', 'u-um... do you think the fighters liked the new hats?'], ['keeper', 'They LOVED them!'], ['keeper2', '*happy* ...hehe.']],
     [['keeper', 'We sold SO many things today!'], ['keeper2', 'and one pink bow... *happy*']]] },
+  // the robots: Hexstar 2.0's room. Once he's in (chapter 5), the old Hexstar, Hexstar 1.0, moves in with him
+  { ids:['hex', 'oldhex'], robots:true, wall:'#dff1ff', chats:[[['hex', 'Beep... boop... good night, Hexstar 1.0.'], ['oldhex', 'B-beep. Good night, Hexstar 2.0. ...Can we leave the light on?'], ['hex', 'Of course! *turns on his antenna light*']],
+    [['oldhex', 'I was stuck in the code for SO long... it is nice to have a bed.'], ['hex', 'And a brother! Beep!'], ['oldhex', '*happy beeping*']]] },
 ];
+const OLD_HEX_CH = { id:'oldhex', name:'Hexstar 1.0', shape:'star6', color:'#93a3bd', oldHex:true }; // (the old Hexstar isn't a fighter, so he gets his own little entry, just for the dorms)
 
 // day or night in the dorms: flip the light switch in a room (or use the button on the card). At night they say good night; in the day, good morning
 const dormNight = () => setup.dormTime !== 'day';
@@ -4398,11 +4403,12 @@ const DORM_DAY = [ // what each pair of roommates says in the daytime (same orde
   [[['heart', 'Good morning, Star! Rise and shine!'], ['star', 'Too early... *puts on shades*'], ['heart', 'Hehe! Now you look cool AND sleepy!']]],
   [[['sparkle', 'WAKE UP! It is a brand new day!'], ['shuriken', 'Five more minutes...'], ['sparkle', '*jumps on the bed* Wheee!'], ['shuriken', '...I am up. I am up.']]],
   [[['square', 'GOOD MORNING, TRIANGLE!'], ['tri', 'Grr... I was SO asleep.'], ['square', 'BREAKFAST TIME!'], ['tri', '...OK, breakfast is good.']]],
-  [[['hex', 'Beep boop! The sun is up!'], ['circle', 'WHAT?! Already?!'], ['hex', '*happy beeping* Good morning, Circle!']]],
+  [[['flower', 'Good morning! The flowers are awake too!'], ['circle', 'WHAT?! Flowers wake up?!'], ['flower', 'Hehe, they open up in the sun!']]],
   [[['diamond', 'Good morning, Missing Arrow. Did you sleep well?'], ['arrow', 'I d-dreamed about you... *glitches*'], ['diamond', '*blushes* Hehe...']]],
   [[['keeper', 'Rise and shine! Time to open the shop!'], ['keeper2', '...five more minutes...'], ['keeper', 'Coins wait for no one!'], ['keeper2', '*sleepy wave* ok...']],
     [['keeper2', 'd-do you want to play a board game?'], ['keeper', 'YES! I am going to win!'], ['keeper2', 'hehe... we will see...']], [['keeper', 'What should we make for lunch?'], ['keeper2', 'm-maybe pancakes?'], ['keeper', 'Pancakes it is!']],
     [['keeper2', 'I like hanging out with you...'], ['keeper', 'Me too! You are my favourite!'], ['keeper2', '*blushes*']]],
+  [[['hex', 'Beep boop! Good morning, other me!'], ['oldhex', 'G-good morning! *beeps nervously*'], ['hex', 'Let us go charge up together!']]],
 ];
 const DORM_SWITCH_X = 255;
 function dormLight() { // flip the light switch: day to night, or night to day
@@ -4410,7 +4416,7 @@ function dormLight() { // flip the light switch: day to night, or night to day
   if (SHOP.pb) { SHOP.pb.chat = null; SHOP.pb.next = performance.now() + 500; }
   SHOP.youSay = dormNight() ? 'Lights out! Good night!' : 'Good morning, everyone!'; SHOP.youSayT = 2.2; if (sfx.grab) sfx.grab(); renderShopCard(true);
 }
-const dormName = id => CHAR[id].keeper || unlocked(CHAR[id]) ? CHAR[id].name : '???'; // (a locked fighter's name stays a secret, but everyone knows the shopkeepers)
+const dormName = id => id === 'oldhex' ? (hexIn() || SHOP.hesIn ? 'Hexstar 1.0' : '(empty bed)') : CHAR[id].keeper || unlocked(CHAR[id]) ? CHAR[id].name : '???'; // (a locked fighter's name stays a secret, but everyone knows the shopkeepers)
 const dormOpen = i => !DORMS[i].locked || DORMS[i].ids.includes(CHARS[SHOP.who].id); // a locked door only opens for the two who live there
 const KEEPER_SHOP_R = { keeper:0.75*350/2.1, keeper2:255/2.1 }; // the size that draws the shopkeepers about as big as they are in their shops (Fighty a bit smaller)
 const dormR = ch => KEEPER_SHOP_R[ch.id] || 46*Math.min(ch.size || 1, 1.8);
@@ -4438,7 +4444,7 @@ function keeperSpots() { // where the two shopkeepers are in their home
 function dormSpots() { // the roommates in their room (not you, if it's your room)
   const d = DORMS[SHOP.dorm || 0];
   if (d.keepers) return keeperSpots(); // (the Shy Shopkeeper is upstairs, the Fighty one downstairs)
-  return d.ids.map(id => CHAR[id]).filter(ch => unlocked(ch) && ch.id !== CHARS[SHOP.who].id && (SHOP.cabinDorm || (!(ch.id === 'sparkle' && noShop()) && !(ch.id === 'shuriken' && theyGone()) && !voidTaskNow()))).map((ch, i) => ({ ch, x:[640, 1060][i] }));
+  return d.ids.map(id => id === 'oldhex' ? OLD_HEX_CH : CHAR[id]).filter(ch => (ch.oldHex ? hexIn() || (SHOP.hesIn && SHOP.dorm === 6) : unlocked(ch)) && ch.id !== CHARS[SHOP.who].id && (SHOP.cabinDorm || (!(ch.id === 'sparkle' && noShop()) && !(ch.id === 'shuriken' && theyGone()) && !voidTaskNow()))).map((ch, i) => ({ ch, x:[640, 1060][i] }));
 }
 // the shopkeepers' room is extra big (wider than the screen, so it scrolls with you) and fancier than the fighters' rooms
 const KEEPER_ROOM_W = 2400;
@@ -4879,7 +4885,11 @@ function drawRoomShell(i, d, night) { // each room has its own walls, floor and 
     drawWoodRoom('#c8624a', '#5a2a1a', '#3a3a3a'); g.strokeStyle = 'rgba(255,230,210,.5)'; g.lineWidth = 3;
     for (let y=110, r=0; y<SHOP_FLOOR; y+=40, r++) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); for (let x=(r % 2)*50; x<W; x+=100) { g.beginPath(); g.moveTo(x, y); g.lineTo(x, y + 40); g.stroke(); } }
     const p = () => { g.beginPath(); g.rect(790, 200, 120, 120); }; drawRoomSky(p, 790, 200, 120, 120, night); g.strokeStyle = '#555'; g.lineWidth = 6; for (const x of [820, 850, 880]) { g.beginPath(); g.moveTo(x, 200); g.lineTo(x, 320); g.stroke(); }
-  } else { // Shocked Circle & Nervous Hexstar: shiny metal panels with bolts (like a robot), a checker floor and a wide window with lots of little panes
+  } else if (i === 3) { // Shocked Circle & Flower Girl: sunny yellow wallpaper with little flowers, a grass-green carpet and a round window with petals around it
+    drawWoodRoom(d.wall, '#c9962f', '#6fbf5a'); for (let x=60, k=0; x<W; x+=130, k++) for (let y=150 + (k % 2)*60; y<SHOP_FLOOR - 40; y+=120) { g.fillStyle = ['#ff8fc1', '#ffffff', '#ffb36b'][(k + y) % 3]; for (let p=0;p<5;p++) { const a = p*TAU/5; g.beginPath(); g.arc(x + Math.cos(a)*9, y + Math.sin(a)*9, 7, 0, TAU); g.fill(); } g.fillStyle = '#ffd23f'; g.beginPath(); g.arc(x, y, 6, 0, TAU); g.fill(); }
+    g.fillStyle = '#ff8fc1'; g.strokeStyle = C.ink; g.lineWidth = 4; for (let k=0;k<8;k++) { const a = k*TAU/8; g.beginPath(); g.arc(850 + Math.cos(a)*84, 290 + Math.sin(a)*84, 20, 0, TAU); g.fill(); g.stroke(); } // petals all around the window (like a flower)
+    const p = () => { g.beginPath(); g.arc(850, 290, 70, 0, TAU); }; drawRoomSky(p, 780, 220, 140, 140, night);
+  } else { // Hexstar 2.0 & Hexstar 1.0 (the robots): shiny metal panels with bolts (like a robot), a checker floor and a wide window with lots of little panes
     drawWoodRoom('#cfd8e3', '#5d6b7d', '#8a96a8'); g.strokeStyle = '#9aa7b8'; g.lineWidth = 4; g.fillStyle = '#7d8a9c';
     for (let x=0;x<W;x+=200) for (let y=110;y<SHOP_FLOOR;y+=165) { g.strokeRect(x + 6, y + 6, 188, 153); for (const [bx, by] of [[16, 16], [184, 16], [16, 149], [184, 149]]) { g.beginPath(); g.arc(x + bx, y + by, 5, 0, TAU); g.fill(); } }
     g.fillStyle = '#5d6b7d'; for (let x=0;x<W;x+=60) for (let y=SHOP_FLOOR, r=0; y<H; y+=46, r++) if ((x/60 + r) % 2) g.fillRect(x, y, 60, 46);
@@ -4906,13 +4916,24 @@ function drawThemedRoom(i, t) { // each pair of roommates has a room that fits t
     g.strokeStyle = '#f2994a'; g.lineWidth = 4; for (let k=1;k<=3;k++) { g.beginPath(); g.arc(1290, 245, 20 + k*16 + Math.sin(t*8)*3, -0.6, 0.6); g.stroke(); }
     const sw = Math.sin(t*3)*0.12; g.save(); g.translate(1470, 130); g.rotate(sw); g.strokeStyle = C.ink; g.lineWidth = 4; g.beginPath(); g.moveTo(0, 0); g.lineTo(0, 120); g.stroke(); g.fillStyle = C.red; roundRect(-40, 120, 80, 220, 30); g.fill(); g.stroke(); g.fillStyle = C.ink; g.font = `22px ${FONT}`; g.textAlign = 'center'; g.fillText('GRR', 0, 230); g.restore(); // a punching bag
     drawRoomBeds([C.red, C.orange], [() => { g.fillStyle = C.red; g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.moveTo(0, -18); g.lineTo(18, 14); g.lineTo(-18, 14); g.closePath(); g.fill(); g.stroke(); }, () => { g.fillStyle = C.orange; g.strokeStyle = C.ink; g.lineWidth = 3; g.fillRect(-15, -15, 30, 30); g.strokeRect(-15, -15, 30, 30); }]);
-  } else if (i === 3) { // Shocked Circle & Nervous Hexstar: night lights everywhere (they're scared of the dark) and a robot charging spot
+  } else if (i === 3) { // Shocked Circle & Flower Girl: night lights everywhere (Circle is scared of the dark), and Flower Girl's flower pots and watering can
     drawSign(420, 250, 280, 'WHAT?!', '#8fd3ff', C.ink, 48);
+    for (const x of [300, 700, 1000, 1400]) { const glow = 0.6 + Math.sin(t*2 + x)*0.2; g.fillStyle = `rgba(255,230,120,${glow*0.35})`; g.beginPath(); g.arc(x, SHOP_FLOOR - 140, 40, 0, TAU); g.fill(); g.fillStyle = '#ffe066'; g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.arc(x, SHOP_FLOOR - 140, 12, 0, TAU); g.fill(); g.stroke(); } // little night lights
+    for (const [x, col] of [[1290, '#ff8fc1'], [1380, '#ffb36b'], [1470, '#c77dd1']]) { // three flower pots, the flowers swaying
+      g.fillStyle = '#c0643a'; g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.moveTo(x - 28, SHOP_FLOOR - 60); g.lineTo(x + 28, SHOP_FLOOR - 60); g.lineTo(x + 20, SHOP_FLOOR); g.lineTo(x - 20, SHOP_FLOOR); g.closePath(); g.fill(); g.stroke();
+      const sx = x + Math.sin(t*1.5 + x)*8; g.strokeStyle = '#2e9e4f'; g.lineWidth = 5; g.beginPath(); g.moveTo(x, SHOP_FLOOR - 60); g.quadraticCurveTo(x, SHOP_FLOOR - 110, sx, SHOP_FLOOR - 140); g.stroke();
+      g.fillStyle = col; g.strokeStyle = C.ink; g.lineWidth = 2; for (let p=0;p<5;p++) { const a = p*TAU/5 + t*0.3; g.beginPath(); g.arc(sx + Math.cos(a)*13, SHOP_FLOOR - 140 + Math.sin(a)*13, 10, 0, TAU); g.fill(); g.stroke(); } g.fillStyle = '#ffd23f'; g.beginPath(); g.arc(sx, SHOP_FLOOR - 140, 9, 0, TAU); g.fill(); g.stroke();
+    }
+    g.fillStyle = '#4a9be0'; g.strokeStyle = C.ink; g.lineWidth = 3; g.fillRect(1510, SHOP_FLOOR - 50, 46, 50); g.strokeRect(1510, SHOP_FLOOR - 50, 46, 50); g.beginPath(); g.moveTo(1556, SHOP_FLOOR - 40); g.lineTo(1584, SHOP_FLOOR - 66); g.stroke(); // a watering can
+    drawRoomBeds([CHAR.circle.color, '#ffe066'], [() => { g.fillStyle = CHAR.circle.color; g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.arc(0, 0, 16, 0, TAU); g.fill(); g.stroke(); }, () => { g.fillStyle = '#ff8fc1'; g.strokeStyle = C.ink; g.lineWidth = 3; for (let p=0;p<5;p++) { const a = p*TAU/5; g.beginPath(); g.arc(Math.cos(a)*10, Math.sin(a)*10, 8, 0, TAU); g.fill(); g.stroke(); } g.fillStyle = '#ffd23f'; g.beginPath(); g.arc(0, 0, 7, 0, TAU); g.fill(); g.stroke(); }]);
+  } else if (i === 6) { // Hexstar 2.0 & Hexstar 1.0: a robot blueprint, a charging station, and (once he's in) Hexstar 1.0's things... or his moving boxes, while he moves in
+    drawSign(420, 250, 280, 'BEEP BOOP', '#c9f0ff', '#1f5fa8', 40);
     g.fillStyle = '#1f5fa8'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(1120, 190, 220, 160); g.strokeRect(1120, 190, 220, 160); g.strokeStyle = C.white; g.lineWidth = 2; // a robot blueprint
     g.strokeRect(1200, 210, 60, 50); g.strokeRect(1190, 262, 80, 70); g.beginPath(); g.moveTo(1230, 210); g.lineTo(1230, 196); g.stroke(); g.beginPath(); g.arc(1215, 235, 6, 0, TAU); g.arc(1245, 235, 6, 0, TAU); g.stroke();
     for (const x of [300, 700, 1000, 1400]) { const glow = 0.6 + Math.sin(t*2 + x)*0.2; g.fillStyle = `rgba(255,230,120,${glow*0.35})`; g.beginPath(); g.arc(x, SHOP_FLOOR - 140, 40, 0, TAU); g.fill(); g.fillStyle = '#ffe066'; g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.arc(x, SHOP_FLOOR - 140, 12, 0, TAU); g.fill(); g.stroke(); } // little night lights
     g.fillStyle = '#93a3bd'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(1420, SHOP_FLOOR - 120, 110, 120); g.strokeRect(1420, SHOP_FLOOR - 120, 110, 120); g.fillStyle = Math.sin(t*4) > 0 ? '#7dff8a' : '#2e9e4f'; g.beginPath(); g.moveTo(1480, SHOP_FLOOR - 105); g.lineTo(1458, SHOP_FLOOR - 60); g.lineTo(1478, SHOP_FLOOR - 60); g.lineTo(1468, SHOP_FLOOR - 20); g.lineTo(1500, SHOP_FLOOR - 72); g.lineTo(1480, SHOP_FLOOR - 72); g.closePath(); g.fill(); g.stroke(); // a robot charging station
-    drawRoomBeds([C.blue, '#93a3bd'], [() => { g.fillStyle = C.blue; g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.arc(0, 0, 16, 0, TAU); g.fill(); g.stroke(); }, () => { g.fillStyle = '#93a3bd'; g.strokeStyle = C.ink; g.lineWidth = 3; starPath(18, 6); g.fill(); g.stroke(); }]);
+    drawRoomBeds([CHAR.hex.color, '#93a3bd'], [() => { g.fillStyle = CHAR.hex.color; g.strokeStyle = C.ink; g.lineWidth = 3; starPath(18, 6); g.fill(); g.stroke(); }, () => { g.fillStyle = '#93a3bd'; g.strokeStyle = C.ink; g.lineWidth = 3; starPath(18, 6); g.fill(); g.stroke(); }]);
+    drawHesInThings(t);
   }
 }
 function drawTherapyRoom(t) { // Sly Diamond is a therapist, so their room is her office: a comfy armchair for her, a couch to lie on, diplomas, books and a plant
@@ -4948,7 +4969,7 @@ function drawDormRoom(t) {
   if (d.crush) drawTherapyRoom(t); else drawThemedRoom(SHOP.dorm || 0, t); // (each room fits the two who live there)
   g.fillStyle = 'rgba(255,255,255,.5)'; g.beginPath(); g.ellipse(850, SHOP_FLOOR + 30, 220, 26, 0, 0, TAU); g.fill(); // a rug
   }
-  g.fillStyle = '#5a3a6e'; g.font = `44px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(d.keepers && SHOP.cabinDorm ? "Mr. & Mrs. Shopkeeper's home" : `${dormName(d.ids[0])} & ${dormName(d.ids[1])}'s room`, W/2, 160, 1000); // (in the cabin, the shopkeepers are married)
+  g.fillStyle = '#5a3a6e'; g.font = `44px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(d.keepers && SHOP.cabinDorm ? "Mr. & Mrs. Shopkeeper's home" : d.robots && !hexIn() && !SHOP.hesIn ? `${dormName(d.ids[0])}'s room` : `${dormName(d.ids[0])} & ${dormName(d.ids[1])}'s room`, W/2, 160, 1000); // (in the cabin, the shopkeepers are married)
   drawStaffDoor(DORM_EXIT_X, '← hallway', '#efe6ff', 'DORMS');
   // the light switch by the door (press punch next to it), and at night the room is dark, with a little lamp glowing
   g.fillStyle = '#f3e2c7'; g.strokeStyle = C.ink; g.lineWidth = 3; g.fillRect(DORM_SWITCH_X - 16, SHOP_FLOOR - 190, 32, 46); g.strokeRect(DORM_SWITCH_X - 16, SHOP_FLOOR - 190, 32, 46);
@@ -4969,7 +4990,8 @@ function drawDormPals(t) { // the roommates in a dorm room (or the Shy Shopkeepe
     if (ch.id === 'keeper2' && shySleeping()) continue; // (asleep in bed: drawn with the bed)
     const r = dormR(ch), bottom = ch.shape === 'circle' ? r : Math.max(...shapeVerts(ch.shape, r, true).map(v => v.y));
     const talking = say && say.id === ch.id, bob = Math.abs(Math.sin(t*2 + x))*4 + (talking ? Math.abs(Math.sin(t*12))*6 : 0);
-    g.save(); g.translate(x, SHOP_FLOOR - bottom - bob); drawCharacter(g, ch, r, { facing:walking ? 1 : x < SHOP.x ? 1 : -1, walk:walking ? t*10 : null, ...looks(ch), happy:talking, pose:ch.keeper && noShop() && !walking ? 'worried' : null }); g.restore();
+    if (ch.oldHex) drawOldHex(x, SHOP_FLOOR - bottom - bob, r, t, true); // (the old Hexstar is drawn his own way)
+    else { g.save(); g.translate(x, SHOP_FLOOR - bottom - bob); drawCharacter(g, ch, r, { facing:walking ? 1 : x < SHOP.x ? 1 : -1, walk:walking ? t*10 : null, ...looks(ch), happy:talking, pose:ch.keeper && noShop() && !walking ? 'worried' : null }); g.restore(); }
     if (SHOP.nearPal === ch) drawPointer(x, SHOP_FLOOR - dormTall(ch) - 70, t);
   }
   if (say) { const s = dormSpots().find(s => s.ch.id === say.id); if (s) drawBubble(say.text, Math.min(dormRoomW() - 20, s.x + 160), Math.min(SHOP_FLOOR - 190, SHOP_FLOOR - dormTall(s.ch) - 20), s.x); }
@@ -6004,8 +6026,9 @@ function updsTick() { // the countdown on the page
   const esx = escapeText(); if ($('escapeWhen').textContent !== esx) $('escapeWhen').textContent = esx; $('escapeBtn').hidden = !(ch3 && escapeLeft() <= 0);
   const rux = reuniteText(); if ($('reuniteWhen').textContent !== rux) $('reuniteWhen').textContent = rux; $('reuniteBtn').hidden = !(ch3 && reuniteLeft() <= 0);
   const ch4 = ch3 && reuniteLeft() <= 0; // chapter 5 opens once chapter 4 is done
-  $('ch5Lock').hidden = ch4; $('ch5List').hidden = !ch4; $('ch5Head').style.opacity = ch4 ? 1 : 0.5; $('ch5Done').textContent = itStopped() && remade() && hexBack() ? '✅' : '';
+  $('ch5Lock').hidden = ch4; $('ch5List').hidden = !ch4; $('ch5Head').style.opacity = ch4 ? 1 : 0.5; $('ch5Done').textContent = itStopped() && remade() && hexBack() && hexIn() ? '✅' : '';
   const hxt = hexReturnText(); if ($('hexWhen').textContent !== hxt) $('hexWhen').textContent = hxt; $('hexBtn').hidden = !(ch4 && (hexBack() || hexReturnOn())); // (chapter 5: hex return)
+  const hit = hesInText(); if ($('hesInWhen').textContent !== hit) $('hesInWhen').textContent = hit; $('hesInBtn').hidden = !(ch4 && hexBack()); // (chapter 5: he's in!)
   const rmx = remakeText(); if ($('remakeWhen').textContent !== rmx) $('remakeWhen').textContent = rmx; $('remakeBtn').hidden = !(ch4 && (remade() || remakeLeft() <= 0)); // (chapter 5: gone)
   const adx = adminsText(); if ($('adminsWhen').textContent !== adx) $('adminsWhen').textContent = adx; $('adminsBtn').hidden = !(ch4 && adminsLeft() <= 0);  $('fellBtn').hidden = !(fellLeft() <= 0);
   $('attackBtn').hidden = !(attackLeft() <= 0 && attackLeft() > -ATTACK_LONG*60000);
@@ -6021,6 +6044,7 @@ $('fellBtn').onclick = () => goPlace(11);
 $('onlyBtn').onclick = () => { goPlace(6); SHOP.youSayT = 0; };
 $('adminsBtn').onclick = () => goAdmins(); // (off to get the admins, with everyone)
 $('hexBtn').onclick = () => goHexReturn(); // (chapter 5, hex return: off to the repair shop)
+$('hesInBtn').onclick = () => goHesIn(); // (chapter 5, he's in!: off to the robots' room)
 $('remakeBtn').onclick = () => goGone(); // (chapter 5, gone: re-make the shop, and after that, straight to the shop)
 $('reuniteBtn').onclick = () => { goPlace(REUNITE_FLOOR); Object.assign(SHOP, { x:600, youSayT:0, reuniteT0:performance.now() }); }; // (watching everyone get back together)
 $('escapeBtn').onclick = () => { goPlace(TRAIL_FLOOR); Object.assign(SHOP, { x:600, youSayT:0, trailT0:performance.now() }); }; // (watching them escape... and IT take them)
@@ -7107,7 +7131,7 @@ function drawCabinPortal(t) { // in the admins' room, once IT is stopped: a port
 const CHAPTER_NAMES = ['Confession', 'Admins attack', 'They are gone...', 'Pray for you are in danger', 'New home'];
 const CHAPTER_FIRST = ['💌 Confession', '🛡️ Admins attack', '💔 They are gone...', '🙏 Pray for you are in danger', '🔑 Get the admins'];
 function chaptersDone() { // how many chapters you've finished
-  const w = weddingLeft(), c1 = w !== Infinity && w <= -WEDDING_LONG*60000, c2 = c1 && lifeLeft() <= 0, c3 = c2 && saved() && onlyLeft() <= 0, c4 = c3 && reuniteLeft() <= 0, c5 = c4 && itStopped() && remade() && hexBack(); /* (chapter 5 ends once you re-make the shop and the old Hexstar is back) */
+  const w = weddingLeft(), c1 = w !== Infinity && w <= -WEDDING_LONG*60000, c2 = c1 && lifeLeft() <= 0, c3 = c2 && saved() && onlyLeft() <= 0, c4 = c3 && reuniteLeft() <= 0, c5 = c4 && itStopped() && remade() && hexBack() && hexIn(); /* (chapter 5 ends once you re-make the shop, the old Hexstar is back and he's moved in) */
   return c5 ? 5 : c4 ? 4 : c3 ? 3 : c2 ? 2 : c1 ? 1 : 0;
 }
 let chapterCheckT = 0, chapterFading = false;
@@ -7177,15 +7201,29 @@ function labHelp() { // help fix the old Hexstar (once he's back, you talk to hi
   SHOP.youSay = now >= 99 ? (hexReturnOn() ? 'One more! Just ONE more!' : 'Almost... he is SO close. But he is not awake yet...') : ['*bonk bonk* Fixed a bolt!', '*bzzt* Plugged in a wire!', 'Tightened a screw!', 'Polished his glasses!', 'Taped up a crack!'][Math.floor(Math.random()*5)];
   SHOP.youSayT = 2.5; if (sfx.zap) sfx.zap(); renderShopCard(true);
 }
-function drawOldHex(x, y, r, t, awake = false) { // the old Hexstar (he looked different from Hexstar 2.0): grey-blue, with his big round glasses (one lens bigger) and a bandage. Before hex return he's cracked with his eyes shut; after, he's patched up and awake
-  g.save(); g.translate(x, y); g.rotate(Math.sin(t*0.5)*0.02);
-  g.fillStyle = awake ? '#8fb0d0' : '#7f97b0'; g.strokeStyle = C.ink; g.lineWidth = 5; starPath(r, 6); g.fill(); g.stroke();
-  if (!awake) { g.strokeStyle = '#3a4a5a'; g.lineWidth = 3; g.beginPath(); g.moveTo(-r*0.5, -r*0.6); g.lineTo(-r*0.3, -r*0.3); g.lineTo(-r*0.45, -r*0.1); g.moveTo(r*0.4, r*0.2); g.lineTo(r*0.6, r*0.45); g.stroke(); } // cracks
-  g.fillStyle = 'rgba(200,230,255,.5)'; g.strokeStyle = C.ink; g.lineWidth = 4; g.beginPath(); g.arc(-r*0.25, -r*0.08, r*0.24, 0, TAU); g.fill(); g.stroke(); g.beginPath(); g.arc(r*0.27, -r*0.08, r*0.3, 0, TAU); g.fill(); g.stroke(); // his glasses
-  if (awake) { const dart = Math.sin(t*2.3)*r*0.06; g.fillStyle = C.ink; for (const ex of [-r*0.25, r*0.27]) { g.beginPath(); g.arc(ex + dart, -r*0.08, r*0.07, 0, TAU); g.fill(); } g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.arc(0, r*0.22, r*0.16, 0.2, Math.PI - 0.2); g.stroke(); } // eyes open (they dart around, he's still a bit nervous) and a smile
-  else { g.lineWidth = 3; for (const ex of [-r*0.25, r*0.27]) { g.beginPath(); g.moveTo(ex - r*0.1, -r*0.06); g.lineTo(ex + r*0.1, -r*0.06); g.stroke(); } } // eyes shut
-  if (!awake) { g.fillStyle = '#555'; g.fillRect(-r*0.18, r*0.3, r*0.36, r*0.12); } // his speaker mouth
-  g.fillStyle = '#e8d8a8'; g.save(); g.translate(r*0.5, -r*0.55); g.rotate(0.6); g.fillRect(-r*0.18, -r*0.05, r*0.36, r*0.1); g.rotate(-1.2); g.fillRect(-r*0.18, -r*0.05, r*0.36, r*0.1); g.restore(); // a bandage
+function drawOldHex(x, y, r, t, awake = false) { // the old Hexstar, the way he looked before Hexstar 2.0: a grey-blue nervous robot with an antenna, panel lines and bolts, big round blue glasses (one lens bigger), worried brows and a speaker mouth. And he's just a little broken: a couple of cracks, a cracked lens and a bent antenna. Before hex return his eyes are shut; after, they're open (still a little broken, but awake, and shaking and sweating like always)
+  g.save(); g.translate(x + (awake ? Math.sin(t*45)*r*0.035 : 0), y); g.rotate(awake ? 0 : Math.sin(t*0.5)*0.02);
+  g.strokeStyle = C.ink; g.lineWidth = Math.max(2, r*0.06); g.beginPath(); g.moveTo(0, -0.9*r); g.lineTo(r*0.05, -1.2*r); g.lineTo(r*0.32, -1.38*r); g.stroke(); // his antenna, bent
+  g.fillStyle = awake ? (Math.sin(t*10) > 0 ? '#ff3b3b' : '#7dff8a') : '#555'; g.beginPath(); g.arc(r*0.36, -1.42*r, 0.1*r, 0, TAU); g.fill(); g.lineWidth = Math.max(1, r*0.03); g.stroke(); // its light (off while he's asleep)
+  g.fillStyle = '#93a3bd'; g.strokeStyle = C.ink; g.lineWidth = Math.max(2, r*0.09); g.lineJoin = 'round'; shapePath(g, 'star6', r); g.fill(); g.stroke();
+  g.scale(r, r); const line = (a, b, c, d) => { g.beginPath(); g.moveTo(a, b); g.lineTo(c, d); g.stroke(); }, dot = (a, b, s) => { g.beginPath(); g.arc(a, b, s, 0, TAU); g.fill(); };
+  g.strokeStyle = 'rgba(40,50,70,.45)'; g.lineWidth = 0.035; g.beginPath(); g.moveTo(-0.45, 0.47); g.lineTo(0.45, 0.47); g.moveTo(-0.62, -0.38); g.lineTo(0.62, -0.38); g.moveTo(-0.62, 0.47); g.lineTo(-0.62, -0.38); g.moveTo(0.62, 0.47); g.lineTo(0.62, -0.38); g.stroke(); // his panel lines
+  for (const [bx, by] of [[-0.58, 0.12], [0.58, 0.12], [-0.3, 0.62], [0.3, 0.62]]) { g.fillStyle = '#d3dae6'; g.strokeStyle = C.ink; g.lineWidth = 0.025; dot(bx, by, 0.055); g.stroke(); line(bx - 0.03, by, bx + 0.03, by); } // and his metal bolts
+  g.strokeStyle = '#2e3a4a'; g.lineWidth = 0.035; g.beginPath(); // a couple of little cracks
+  for (const c of [[-0.55, -0.55, -0.42, -0.45, -0.5, -0.33], [0.62, 0.15, 0.45, 0.3, 0.55, 0.45]]) { g.moveTo(c[0], c[1]); for (let i = 2; i < c.length; i += 2) g.lineTo(c[i], c[i + 1]); }
+  g.stroke();
+  const dart = Math.sin(t*6) > 0 ? 0.045 : -0.045;
+  for (const [ex, ey, er] of [[-0.24, -0.12, 0.15], [0.17, -0.13, 0.19]]) { // his glasses
+    g.fillStyle = 'rgba(160,220,255,.55)'; dot(ex, ey, er); g.strokeStyle = C.blue; g.lineWidth = 0.06; g.stroke();
+    if (awake) { g.fillStyle = C.ink; dot(ex + dart, ey + 0.01, er*0.3); g.fillStyle = '#fff'; dot(ex + dart - er*0.12, ey - er*0.12, er*0.1); } // darting eyes
+    else { g.strokeStyle = C.ink; g.lineWidth = 0.04; line(ex - er*0.5, ey + 0.02, ex + er*0.5, ey + 0.02); } // eyes shut
+  }
+  g.strokeStyle = '#eef8ff'; g.lineWidth = 0.02; g.beginPath(); g.moveTo(0.06, -0.26); g.lineTo(0.15, -0.15); g.lineTo(0.1, -0.03); g.moveTo(0.15, -0.15); g.lineTo(0.32, -0.18); g.stroke(); // the big lens is cracked
+  g.strokeStyle = C.blue; g.lineWidth = 0.05; line(-0.09, -0.13, -0.02, -0.14); // bridge
+  if (awake) { g.strokeStyle = C.ink; g.lineWidth = 0.05; line(-0.36, -0.36, -0.14, -0.31); line(0.06, -0.37, 0.3, -0.44); g.fillStyle = 'rgba(255,110,150,.4)'; g.beginPath(); g.ellipse(-0.36, 0.1, 0.07, 0.04, 0, 0, TAU); g.ellipse(0.36, 0.1, 0.07, 0.04, 0, 0, TAU); g.fill(); } // worried brows and blushing cheeks
+  g.fillStyle = '#26303d'; g.strokeStyle = C.ink; g.lineWidth = 0.04; g.beginPath(); g.roundRect ? g.roundRect(-0.22, 0.13, 0.44, 0.17, 0.05) : g.rect(-0.22, 0.13, 0.44, 0.17); g.fill(); g.stroke(); // his speaker mouth: a jittery green sound wave when he's awake, a flat line when he's not
+  g.strokeStyle = awake ? '#7dff8a' : '#3f6a46'; g.lineWidth = 0.03; g.beginPath(); g.moveTo(-0.18, 0.215); for (let i=1;i<=8;i++) g.lineTo(-0.18 + i*0.045, 0.215 + (awake ? Math.sin(t*30 + i*1.9)*0.055 : 0)); g.stroke();
+  if (awake) { const drop = (dx, dy, s) => { g.fillStyle = '#7fd4ff'; g.beginPath(); g.moveTo(dx, dy - 0.09*s); g.quadraticCurveTo(dx + 0.08*s, dy + 0.05*s, dx, dy + 0.09*s); g.quadraticCurveTo(dx - 0.08*s, dy + 0.05*s, dx, dy - 0.09*s); g.fill(); }; drop(0.43, -0.25 + (t*0.4 % 0.12), 1); drop(-0.46, -0.08 + ((t*0.4 + 0.06) % 0.12), 0.7); } // sweat drops
   g.restore();
 }
 function drawCabinLabOutside(t) { // (outside) the little wooden repair shop, with a flickering window and sparks
@@ -7246,6 +7284,40 @@ function hexReturnText() { // for the chapters page
 function goHexReturn() { // the button: to the repair shop, next to the old Hexstar
   goPlace(LAB_FLOOR); Object.assign(SHOP, { x:640 });
   SHOP.youSay = hexBack() ? 'Hi, Hexstar! Hi, other Hexstar!' : 'Everyone, this is it! Let\'s fix him all the way!'; SHOP.youSayT = 3; renderShopCard(true);
+}
+// chapter 5, he's in!: once the old Hexstar is back, he moves in with Hexstar 2.0 (the last room in the cabin's dorms). Press the he's in button to go to their
+// room, then walk up to each of his moving boxes and press punch to unpack it. Once it's all unpacked, he's in! Hexstar 1.0 lives in the robots' room from then on
+const hexIn = () => !!lsGet('fff-hexin');
+const HESIN_BOXES = [{ x:740, name:'his blanket' }, { x:970, name:'his night light' }, { x:1370, name:'his photo' }];
+const HESIN_SAYS = [['hex', 'Beep! A blanket with little stars on it! So cozy!'], ['oldhex', 'My night light! N-now I will not be scared of the dark...'], ['oldhex', 'A photo of me and Shocked Circle... from when we were roommates. *happy beep*']];
+function hesInText() { // for the chapters page
+  return hexIn() ? 'Hexstar 1.0 moved in with Hexstar 2.0! They are roommates now. 🏠 Press the he\'s in button to visit their room.' : hexBack() ? 'Hexstar 1.0 is moving in with Hexstar 2.0! 🏠 Press the he\'s in button and help him unpack.' : 'someone is moving in... Coming soon...';
+}
+function goHesIn() { // the button: into the robots' room in the cabin's dorms
+  goPlace(12); Object.assign(SHOP, { cabinDorm:true, dorm:6, x:400, cam:0, ktask:null, kdone:new Set(), shyAwake:false, confessVisit:false, pb:{ next:performance.now() + 2500, chat:null, line:0 }, hesIn:!hexIn(), unpacked:[], hesInDone:0 });
+  if (hexIn()) { SHOP.youSay = 'Hi, Hexstars! Nice room!'; SHOP.youSayT = 2.5; }
+  else { SHOP.youSay = 'Moving day! Let\'s help Hexstar 1.0 unpack!'; SHOP.youSayT = 3; pbSay('hex', 'Beep! My brother is moving in with me! Can you help us unpack his boxes?', 4); }
+  musicUpdate(); renderShopCard(true);
+}
+function unpackBox() { // punch: unpack one of his boxes (and once they're all unpacked, he's in!)
+  const i = SHOP.nearBox; SHOP.unpacked = [...SHOP.unpacked, i]; SHOP.boxSpark = { x:HESIN_BOXES[i].x, t:performance.now() };
+  const [id, text] = HESIN_SAYS[i]; pbSay(id, text, 3.8); SHOP.pb.next = performance.now() + 4000;
+  SHOP.youSay = `Unpacked ${HESIN_BOXES[i].name}!`; SHOP.youSayT = 2; if (sfx.grab) sfx.grab();
+  if (SHOP.unpacked.length >= HESIN_BOXES.length) { lsSet('fff-hexin', String(Date.now())); SHOP.hesIn = false; SHOP.hesInDone = performance.now(); storyCache.t = 0; applyTheme(); if (sfx.win) sfx.win(); pbSay('oldhex', 'I-I have a home! And a brother! BEEP BEEP! *happy*', 4.5); SHOP.pb.next = performance.now() + 4800; SHOP.youSay = 'He\'s in!'; SHOP.youSayT = 3; }
+  renderShopCard(true);
+}
+function drawHesInThings(t) { // (in the robots' room) Hexstar 1.0's things once they're unpacked, his moving boxes while he moves in, and "HE'S IN!" when it's done
+  const has = k => hexIn() || (SHOP.unpacked || []).includes(k), F = SHOP_FLOOR;
+  if (has(0)) { g.fillStyle = '#b9c6da'; g.strokeStyle = C.ink; g.lineWidth = 4; roundRect(1100, F - 88, 215, 34, 10); g.fill(); g.stroke(); g.fillStyle = C.yellow; for (let k=0;k<5;k++) { g.save(); g.translate(1125 + k*42, F - 71); starPath(7); g.fill(); g.restore(); } } // his blanket, with little stars
+  if (has(1)) { const glow = g.createRadialGradient(1370, F - 30, 4, 1370, F - 30, 90); glow.addColorStop(0, 'rgba(255,230,140,.5)'); glow.addColorStop(1, 'rgba(255,230,140,0)'); g.fillStyle = glow; g.fillRect(1270, F - 130, 200, 140); g.fillStyle = C.yellow; g.strokeStyle = C.ink; g.lineWidth = 3; g.save(); g.translate(1370, F - 30); starPath(22, 6); g.fill(); g.stroke(); g.restore(); } // his night light (a little glowing hexstar)
+  if (has(2)) { g.fillStyle = '#d4a017'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(560, 330, 110, 90); g.strokeRect(560, 330, 110, 90); g.fillStyle = '#dff1ff'; g.fillRect(570, 340, 90, 70); // a photo of him and Shocked Circle, from when they were roommates
+    g.fillStyle = CHAR.circle.color; g.lineWidth = 2; g.beginPath(); g.arc(593, 380, 15, 0, TAU); g.fill(); g.stroke(); g.fillStyle = '#93a3bd'; g.save(); g.translate(637, 380); g.beginPath(); for (let k=0;k<12;k++) { const a = -Math.PI/2 + k*Math.PI/6, rr = k % 2 ? 9 : 17; g.lineTo(Math.cos(a)*rr, Math.sin(a)*rr); } g.closePath(); g.fill(); g.stroke(); g.restore(); }
+  if (SHOP.hesIn && SHOP.dorm === 6) HESIN_BOXES.forEach((b, k) => { if ((SHOP.unpacked || []).includes(k)) return; // the moving boxes still to unpack
+    g.fillStyle = '#c8a06a'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(b.x - 42, F - 76, 84, 76); g.strokeRect(b.x - 42, F - 76, 84, 76); g.fillStyle = '#e0c08a'; g.fillRect(b.x - 8, F - 76, 16, 76);
+    g.fillStyle = C.ink; g.font = `15px ${BODYFONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(b.name, b.x, F - 96);
+    if (SHOP.nearBox === k) drawPointer(b.x, F - 170, t); });
+  if (SHOP.boxSpark && performance.now() - SHOP.boxSpark.t < 800) { const k = (performance.now() - SHOP.boxSpark.t)/800; for (let i=0;i<12;i++) { const a = i*TAU/12; g.fillStyle = i % 2 ? C.yellow : '#7dff8a'; g.fillRect(SHOP.boxSpark.x + Math.cos(a)*k*120, F - 50 + Math.sin(a)*k*80, 7, 7); } } // sparkles when you unpack something
+  const e = performance.now() - (SHOP.hesInDone || 0); if (SHOP.hesInDone && e < 6000) { g.save(); g.globalAlpha = Math.min(1, e/500, (6000 - e)/800); g.fillStyle = CHAR.hex.color; g.strokeStyle = C.white; g.lineWidth = 8; g.font = `72px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.strokeText('HE\'S IN!', W/2, 470); g.fillText('HE\'S IN!', W/2, 470); g.restore(); }
 }
 const shopBack = () => remade() && storyStage() >= 17; // (the shop is re-made: the old shop isn't broken anymore... unless you picked an older chapter's look)
 const GONE_PIECES = [{ x:300, name:'the floor' }, { x:500, name:'the walls' }, { x:700, name:'the sign' }, { x:900, name:'the stands' }, { x:1100, name:'the counter' }, { x:1300, name:'the stairs' }];
@@ -7447,7 +7519,7 @@ $('apUnlock').onclick = () => { // Missing Arrow, every item (but the attic's go
 $('apStory').onclick = () => { // every chapter at once: the whole story already happened (you saw it all), so every background is yours, plus Flower Girl and everything in the shop
   const now = Date.now(), M = 60000;
   lsSet('fff-confess', String(now - 400*M)); lsSet('fff-confessed', String(now - 350*M)); // (dating 290 minutes ago, the 2nd date 280...)
-  lsSet('fff-wedding', String(now - 250*M)); lsSet('fff-attack', String(now - 200*M)); lsSet('fff-attackwon', '1'); lsSet('fff-fell', String(now)); lsSet('fff-saved', String(now)); lsSet('fff-itstopped', String(now)); lsSet('fff-remade', String(now)); lsSet('fff-hexback', String(now)); lsSet('fff-hexfix', '100'); lsSet('fff-chdone', '5'); // (...the wedding 250, the Admin's attack 200, and the rest of chapter 2 and 3 after it)
+  lsSet('fff-wedding', String(now - 250*M)); lsSet('fff-attack', String(now - 200*M)); lsSet('fff-attackwon', '1'); lsSet('fff-fell', String(now)); lsSet('fff-saved', String(now)); lsSet('fff-itstopped', String(now)); lsSet('fff-remade', String(now)); lsSet('fff-hexback', String(now)); lsSet('fff-hexin', String(now)); lsSet('fff-hexfix', '100'); lsSet('fff-chdone', '5'); // (...the wedding 250, the Admin's attack 200, and the rest of chapter 2 and 3 after it)
   shop.unlocked = { ...(shop.unlocked || {}), flower:true };
   $('apUnlock').onclick(); // (and everything in the shop)
   setup.storyLook = 'on'; saveSetup(); applyTheme(); renderSeg('apStorySeg', [['on','Newest'], ...STORY_LOOKS, ['off','Off']], 'storyLook', applyTheme);
@@ -8002,7 +8074,7 @@ function shopStairs() {
   if (to === 14) { if (from === 13) { SHOP.youSay = 'A secret 3rd floor!'; SHOP.youSayT = 2.5; } renderShopCard(true); return; } // up the ladder
   if (to === 13) { SHOP.pb = { next:performance.now() + 900, chat:null, line:0 }; if (from === 12) { SHOP.youSay = 'Ooh, an upstairs!'; SHOP.youSayT = 2; } renderShopCard(true); return; } // up the shopkeepers' stairs
   if (from === 13) { SHOP.pb = { next:performance.now() + 600, chat:null, line:0 }; renderShopCard(true); return; } // and back down (to the bottom of the stairs)
-  if (to === 12) { SHOP.cabinDorm = from === CABIN_DORMS; SHOP.dorm = SHOP.stairRoom || 0; /* (a room off the cabin's dorms, or the old dorms) */ SHOP.cam = 0; SHOP.ktask = null; SHOP.kdone = new Set(); SHOP.shyAwake = false; SHOP.confessVisit = false; SHOP.pb = { next:performance.now() + 600, chat:null, line:0 }; SHOP.youSay = 'Knock knock!'; SHOP.youSayT = 2; renderShopCard(true); return; } // into a dorm room
+  if (to === 12) { SHOP.cabinDorm = from === CABIN_DORMS; SHOP.dorm = SHOP.stairRoom || 0; SHOP.hesIn = false; /* (a room off the cabin's dorms, or the old dorms) */ SHOP.cam = 0; SHOP.ktask = null; SHOP.kdone = new Set(); SHOP.shyAwake = false; SHOP.confessVisit = false; SHOP.pb = { next:performance.now() + 600, chat:null, line:0 }; SHOP.youSay = 'Knock knock!'; SHOP.youSayT = 2; renderShopCard(true); return; } // into a dorm room
   if (from === 12) { SHOP.x = DORM_ROOM_X[SHOP.dorm || 0] + 110; SHOP.facing = 1; SHOP.pb = null; renderShopCard(true); return; } // back out to the hallway, by that room's door
   if (to === 11) { SHOP.pb = null; renderShopCard(true); return; }
   if (to === 10) { SHOP.pb = { next:performance.now() + 600, chat:null, line:0 }; SHOP.youSay = 'Hi everyone! Break time!'; SHOP.youSayT = 2.5; renderShopCard(true); return; } // into player breaks
@@ -8181,6 +8253,7 @@ function fillShopCard(card, ch, it) {
       : SHOP.floor === 14 ? '<h3>The 3rd floor</h3><p>A cozy little attic at the very top of the shopkeepers\' home. There is a paper pinned to the wall... walk up to it!</p>'
       : SHOP.floor === 13 && !SHOP.nearPal ? '<h3>Upstairs</h3><p>The shopkeepers\' upstairs, where the Shy Shopkeeper sleeps and hangs out! Her bed, their closet of fancy clothes, a comfy couch with a TV, a telescope and a treasure chest. The stairs on the right go back down.</p>'
       : SHOP.floor === 11 ? '<h3>The dorms</h3><p>This is where the fighters sleep! Each pair of roommates shares a room, and their names are on the door. Walk up to a door to go in.</p><p class="note">The door on the left goes back to player breaks.</p>'
+      : SHOP.hesIn && SHOP.dorm === 6 ? `<h3>He's in! (moving day)</h3><p>Hexstar 1.0 is moving in with Hexstar 2.0! Walk up to each moving box and press punch to unpack it. Unpacked: ${SHOP.unpacked.length}/${HESIN_BOXES.length}</p>`
       : SHOP.nearSwitch ? `<h3>The light switch</h3><p>It's ${dormNight() ? 'night' : 'daytime'} in the dorms. Press punch to switch to ${dormNight() ? 'day' : 'night'}!</p>`
       : SHOP.nearPal ? `<h3>${SHOP.nearPal.name}</h3><p>This is ${SHOP.nearPal.name}'s room. Press punch to say hi!</p>` : `<h3>${dormName(d.ids[0])} & ${dormName(d.ids[1])}'s room</h3><p>The two roommates hang out here and chat. Walk up to one and press punch to say hi. The light switch by the door makes it day or night.</p><p class="note">The door on the left goes back to the hallway.</p>`;
     const b = document.createElement('button'); b.className = 'btn'; b.id = 'dormLight'; b.textContent = dormNight() ? '☀️ make it day' : '🌙 make it night'; // (day or night from anywhere in the dorms)
@@ -8734,7 +8807,7 @@ function renderLobby() {
 }
 // ----- the story, together online: in a team, the host presses "story together", and everyone goes into the story, using the host's chapters.
 // You all see each other walking around (with name tags and speech bubbles) in the cabin and every story place, and progress anyone makes is shared
-const STORY_KEYS = ['fff-confess', 'fff-confessed', 'fff-wedding', 'fff-attack', 'fff-attackwon', 'fff-fell', 'fff-saved', 'fff-itstopped', 'fff-remade', 'fff-hexback'];
+const STORY_KEYS = ['fff-confess', 'fff-confessed', 'fff-wedding', 'fff-attack', 'fff-attackwon', 'fff-fell', 'fff-saved', 'fff-itstopped', 'fff-remade', 'fff-hexback', 'fff-hexin'];
 function storySnapshot() { const o = {}; for (const k of STORY_KEYS) { try { o[k] = localStorage.getItem(k); } catch { o[k] = null; } } return o; }
 function chapterSnapshot(ch) { // the story for the chosen chapter: where the host is, or the start of a chapter (with all the chapters before it done)
   if (!ch || ch === 'now') return storySnapshot();
