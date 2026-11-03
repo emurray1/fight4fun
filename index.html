@@ -301,6 +301,7 @@ html.gone #title .title-card .btn{font-size:20px;padding:4px 12px;transform:none
 html.gone #title .title-card .menu{gap:6px}
 html.gone #title .story-note,html.gone #title .thanks-note,html.gone #title .xmas-note,html.gone #title .spooky-note{font-size:18px}
 html.gone #title .title-chars{position:fixed;right:0;bottom:0;width:min(560px,46vw);height:27vh;background:#7f7f7f;overflow:auto;align-content:flex-start;padding:10px;z-index:1}
+html.cabin #title .title-chars{display:none}html.cabin #title .title-card{opacity:.95}
 html.scared .title-chars canvas{animation:shiver .12s linear infinite}@keyframes shiver{0%,100%{translate:0 0}25%{translate:-2px 1px}50%{translate:2px 0}75%{translate:-1px -1px}}
 .story-note{margin:0;font-family:var(--display);font-size:30px;color:#e75a9b}
 html.adminlook .story-note{color:#1f8a0f}
@@ -491,8 +492,12 @@ html.adminlook .story-note{color:#1f8a0f}
       <ul class="upds-list" id="ch3List"><li><b>💔 They are gone...</b>: <span id="fellWhen"></span></li><li><b>🌀 The void</b>: <span id="voidWhen"></span></li><li><b>👁️ uoy teg lliw ti</b>: <span id="eyesWhen"></span></li><li><b>📺 It's only them</b>: <span id="onlyWhen"></span></li></ul>
       <h3 class="chapter" id="ch4Head">📖 Chapter 4: Pray for you are in danger <span id="ch4Done"></span></h3>
       <p id="ch4Lock" class="chapter-lock">🔒 Finish chapter 3 first!</p>
-      <ul class="upds-list" id="ch4List"><li><b>🙏 Pray for you are in danger</b>: <span id="prayWhen">something dangerous is coming... Coming soon...</span></li><li><b>👁️ IT is here</b>: <span id="itWhen"></span></li></ul>
-      <div class="page-foot"><button id="prayBtn" class="btn" hidden>🙏 the edge</button><button id="itBtn" class="btn" hidden>👁️ talk to IT</button></div>
+      <ul class="upds-list" id="ch4List"><li><b>🙏 Pray for you are in danger</b>: <span id="prayWhen">something dangerous is coming... Coming soon...</span></li><li><b>👁️ IT is here</b>: <span id="itWhen"></span></li><li><b>🔨 escape?</b>: <span id="escapeWhen"></span></li><li><b>🤗 Reunite</b>: <span id="reuniteWhen"></span></li></ul>
+      <div class="page-foot"><button id="prayBtn" class="btn" hidden>🙏 the edge</button><button id="itBtn" class="btn" hidden>👁️ talk to IT</button><button id="escapeBtn" class="btn" hidden>🔨 escape?</button><button id="reuniteBtn" class="btn" hidden>🤗 reunite</button></div>
+      <h3 class="chapter" id="ch5Head">📖 Chapter 5: Stop IT <span id="ch5Done"></span></h3>
+      <p id="ch5Lock" class="chapter-lock">🔒 Finish chapter 4 first!</p>
+      <ul class="upds-list" id="ch5List"><li><b>🔑 Get the admins</b>: <span id="adminsWhen"></span></li></ul>
+      <div class="page-foot" id="ch5Foot"><button id="adminsBtn" class="btn" hidden>🔑 get the admins</button></div>
       <p id="kickMsg" hidden style="color:#c0392b;font-size:22px"><b>🥾 The Admin KICKED YOU OUT!</b> You ran out of time on a task. Press the admin room button to try again!</p>
       <div class="page-foot"><button id="dormBtn" class="btn">💌 dorm</button><button id="parkBtn" class="btn">🌳 park</button><button id="dinnerBtn" class="btn">🍝 dinner place</button><button id="weddingBtn" class="btn">💒 wedding</button><button id="attackBtn" class="btn" hidden>🛡️ admin room</button><button id="fellBtn" class="btn" hidden>💔 dorm hall</button><button id="onlyBtn" class="btn" hidden>📺 break room</button></div>
       <div class="page-foot" id="againRow" hidden><button id="againBtn" class="btn">🔁 do it again</button><span id="againPick" hidden><button id="againConfess" class="btn">💌 confession</button><button id="againPark" class="btn">🌳 1st date</button><button id="againDate" class="btn">🍝 2nd date</button><button id="againWedding" class="btn">💍 wedding</button><button id="againAttack" class="btn">🛡️ admins attack</button><button id="againFell" class="btn">💔 they are gone</button></span></div>
@@ -3975,11 +3980,11 @@ function shopStep(dt) {
   if (hall) nx = chaseBlock(SHOP.x, nx);
   if (pkOn()) nx = pkBlock(SHOP.x, nx); // (the broken dorm hall: bits of floor to jump between)
   SHOP.x = nx; if (h.x) SHOP.facing = h.x;
-  if (keeperRoom()) SHOP.cam = Math.max(0, Math.min(KEEPER_ROOM_W - W, SHOP.x - 700)); // (the shopkeepers' big room scrolls with you)
+  if (bigRoom()) SHOP.cam = Math.max(0, Math.min(KEEPER_ROOM_W - W, SHOP.x - 700)); // (the shopkeepers' big room scrolls with you)
   if (SHOP.floor === 4 && !SHOP.chase) { // walk off the far left edge of the office to get to the secret 5th floor
     if (SHOP.x <= 15) { SHOP.stairTo = 7; shopStairs(); return; }
   }
-  pkStep(); voidStep(); // (the dorm hall parkour, and the void)
+  pkStep(); voidStep(); ch5Step(); cabinStep(); // (the dorm hall parkour, the void, and chapter 5)
   const groundY = hall && onCrate(SHOP.x) ? -CRATE_H : pkOn() ? pkGround() : 0;
   SHOP.vy += 2600*dt; SHOP.y = Math.min(groundY, SHOP.y + SHOP.vy*dt); if (SHOP.y === groundY) SHOP.vy = 0;
   if (h.jump && !pr.jump && SHOP.y === groundY && !frozen) { SHOP.vy = -1000*ch.jump; sfx.jump(); }
@@ -4018,7 +4023,7 @@ function shopStep(dt) {
   crumbleKeeperStep(f); // (the shopkeepers noticing the game falling apart)
   crowdStep(); // (the fighters talking to the shopkeepers about the wedding, until it happens)
   SHOP.smiSayT = Math.max(0, (SHOP.smiSayT || 0) - dt);
-  if (h.punch && !pr.punch) { if (SHOP.nearVoidCage >= 0) voidHit(); else if (SHOP.nearCage) cageHit(); else if (SHOP.near) shopAct(SHOP.near.item); else if (SHOP.nearSkins) nextSkin(); else if (SHOP.nearSwitch) dormLight(); else if (SHOP.nearAtk) atkAct(); else if (SHOP.nearPaper) readPaper(); else if (SHOP.nearWed) wedAct(); else if (SHOP.nearPark) parkAct(); else if (SHOP.nearTask) doKTask(); else if (SHOP.nearToys) playToys(); else if (SHOP.nearStairs) shopStairs(); else if (SHOP.nearPal) palTalk(); else if (SHOP.nearSmi) smiTalk(); else if (SHOP.nearKeeper) shopTalk(); }
+  if (h.punch && !pr.punch) { if (SHOP.nearCabin) cabinTalk(); else if (SHOP.nearCh5) ch5Act(); else if (SHOP.nearVoidCage >= 0) voidHit(); else if (SHOP.nearCage) cageHit(); else if (SHOP.near) shopAct(SHOP.near.item); else if (SHOP.nearSkins) nextSkin(); else if (SHOP.nearSwitch) dormLight(); else if (SHOP.nearAtk) atkAct(); else if (SHOP.nearPaper) readPaper(); else if (SHOP.nearWed) wedAct(); else if (SHOP.nearPark) parkAct(); else if (SHOP.nearTask) doKTask(); else if (SHOP.nearToys) playToys(); else if (SHOP.nearStairs) shopStairs(); else if (SHOP.nearPal) palTalk(); else if (SHOP.nearSmi) smiTalk(); else if (SHOP.nearKeeper) shopTalk(); }
   if (h.grab && !pr.grab && SHOP.nearKeeper) shopLaugh();
   if (isHex()) { // Hexstar says "beep boop baap!" now and then (or when you press special), and the shopkeepers act like he never said it
     SHOP.beepCD = (SHOP.beepCD ?? 3) - dt; SHOP.beepT = Math.max(0, (SHOP.beepT || 0) - dt);
@@ -4428,7 +4433,7 @@ function dormSpots() { // the roommates in their room (not you, if it's your roo
 // the shopkeepers' room is extra big (wider than the screen, so it scrolls with you) and fancier than the fighters' rooms
 const KEEPER_ROOM_W = 2400;
 const keeperRoom = () => SHOP.floor === 13 || (SHOP.floor === 12 && !!DORMS[SHOP.dorm || 0].keepers); // (upstairs is just as big)
-const dormRoomW = () => keeperRoom() ? KEEPER_ROOM_W : W;
+const dormRoomW = () => bigRoom() ? KEEPER_ROOM_W : W;
 function drawKeeperRoom(t, night) {
   drawKeeperWalls(KEEPER_ROOM_W); // cream wallpaper with gold stripes, a dark blue ceiling with a gold trim and a red velvet floor
   // a big window in the middle: the moon at night, the sun in the day
@@ -5499,9 +5504,9 @@ function drawManager(g, t) { // %#@% sitting in his chair (drawn in the chair's 
   g.save(); g.translate(0, 110 + 305*0.5 - 60); drawGlitchMan(g, t, 0.5); g.restore(); // sitting up tall, so his head pokes up above the chair
 }
 function drawShop(t) {
-  const hall = SHOP.floor === 5, wide = keeperRoom(); // the chase hallway (and the shopkeepers' big room) scrolls with you
+  const hall = SHOP.floor === 5, wide = bigRoom(); // the chase hallway (and the shopkeepers' big room) scrolls with you
   if (hall) { g.save(); g.translate(-(SHOP.cam || 0), 0); drawChaseFloor(t); }
-  else if (SHOP.floor === IT_FLOOR) drawItRoom(t); else if (SHOP.floor === EDGE_FLOOR) drawEdge(t); else if (SHOP.floor === VOID_FLOOR) drawVoid(t); else if (SHOP.floor === PARK_FLOOR) drawParkPlace(t); else if (SHOP.floor === DINNER_FLOOR) drawDinnerPlace(t); else if (SHOP.floor === WEDDING_FLOOR) drawWeddingHall(t); else if (SHOP.floor === 15) { drawAdminRoom(t); drawAttack(t); } else if (SHOP.floor === 14) drawKeeperAttic(t); else if (SHOP.floor === 12 || SHOP.floor === 13) { if (wide) { g.save(); g.translate(-(SHOP.cam || 0), 0); } if (SHOP.floor === 13) drawKeeperUpstairs(t); else drawDormRoom(t); } else if (SHOP.floor === 11) drawDormHall(t); else if (SHOP.floor === 10) drawPlayerBreak(t); else if (SHOP.floor === 9) drawGlitchShop(t); else if (SHOP.floor === 8) drawCageFloor(t); else if (SHOP.floor === 7) drawTopFloor(t); else if (SHOP.floor === 6) drawBreakFloor(t); else if (SHOP.floor === 4) drawOfficeFloor(t); else if (SHOP.floor === 3) drawAtticFloor(t); else if (SHOP.floor === 2) drawFunnyFloor(t); else drawFightyFloor(t);
+  else if (SHOP.floor === CABIN_FLOOR) { g.save(); g.translate(-(SHOP.cam || 0), 0); drawCabin(t); } else if (SHOP.floor === TUNNEL_FLOOR) drawTunnels(t); else if (SHOP.floor === AROOM_FLOOR) drawAdminsRoom(t); else if (SHOP.floor === REUNITE_FLOOR) drawReunite(t); else if (SHOP.floor === TRAIL_FLOOR) drawTrail(t); else if (SHOP.floor === IT_FLOOR) drawItRoom(t); else if (SHOP.floor === EDGE_FLOOR) drawEdge(t); else if (SHOP.floor === VOID_FLOOR) drawVoid(t); else if (SHOP.floor === PARK_FLOOR) drawParkPlace(t); else if (SHOP.floor === DINNER_FLOOR) drawDinnerPlace(t); else if (SHOP.floor === WEDDING_FLOOR) drawWeddingHall(t); else if (SHOP.floor === 15) { drawAdminRoom(t); drawAttack(t); } else if (SHOP.floor === 14) drawKeeperAttic(t); else if (SHOP.floor === 12 || SHOP.floor === 13) { if (wide) { g.save(); g.translate(-(SHOP.cam || 0), 0); } if (SHOP.floor === 13) drawKeeperUpstairs(t); else drawDormRoom(t); } else if (SHOP.floor === 11) drawDormHall(t); else if (SHOP.floor === 10) drawPlayerBreak(t); else if (SHOP.floor === 9) drawGlitchShop(t); else if (SHOP.floor === 8) drawCageFloor(t); else if (SHOP.floor === 7) drawTopFloor(t); else if (SHOP.floor === 6) drawBreakFloor(t); else if (SHOP.floor === 4) drawOfficeFloor(t); else if (SHOP.floor === 3) drawAtticFloor(t); else if (SHOP.floor === 2) drawFunnyFloor(t); else drawFightyFloor(t);
   if (SHOP.floor <= 2) drawShopStory(t); // (the shop changes with the story too)
   if (codeGone() && SHOP.floor >= 11 && SHOP.floor <= 13) drawBrokenDorm(t); // (the dorms are broken too, once the code is gone)
   if (SHOP.floor === 11) drawFell(t); // (they are gone: the scene, then the shopkeepers trying to save them)
@@ -5564,6 +5569,7 @@ function drawShop(t) {
   if (SHOP.floor === 6) drawBreakPop(t);
   if (SHOP.floor === 3) drawAtticDark(t);
   if (hall) { drawChaser(t); g.restore(); drawChaseOverlay(t); }
+  drawNetOthers(t); // (story together online: the rest of your team)
   if (wide) g.restore();
 }
 let lastT = performance.now(), acc = 0;
@@ -5573,6 +5579,8 @@ function frame(now) {
   if (G.online === 'client' && G.state === 'fight') { clientSmooth(dt); clientSendInput(now); }
   else if (G.state === 'fight' && !G.paused) { acc += dt*1000*((G.fx && G.fx.speed) || 1); let n = 0; while (acc >= STEP && n < 6) { if (G.mode === 'race') raceStep(); else if (G.mode === 'horror') horrorStep(); else step(); acc -= STEP; n++; } if (n === 6) acc = 0; }
   else if (G.state === 'shop') shopStep(dt);
+  else if (G.state === 'title' && cabinMenu()) cabinMenuStep(dt); // (the main menu is the cabin: walk around it)
+  netPosTick(); // (story together online: tell the team where you are)
   if (G.state !== 'fight' && storyOk && storyStage() >= 6 && quakeOn(now/1000)) G.shake = Math.max(G.shake, 10); // (the game is falling apart: the menus and the shop shake now and then)
   G.shake *= 0.85; if (!setup.shake) G.shake = 0;
   const sx = (Math.random() - 0.5)*G.shake*scale, sy = (Math.random() - 0.5)*G.shake*scale;
@@ -5594,9 +5602,10 @@ function frame(now) {
     for (const p of G.fighters) if (p.alive && p.grabbing) drawFighter(p, t);
     drawParticles(G.paused ? 0 : dt); if (zoomed) g.restore(); if (G.boss) drawGlitches(t); drawDisco(t); if (flip) g.restore();
     drawWatchers(t); drawHUD(); drawCoinRain(t); drawPopups(t); drawOverlayText();
-  } else { drawSky(t, null); drawMenuGround(t); }
-  if (G.state !== 'fight' && storyOk && storyStage() >= 6 && !onlyThemHere()) drawGlitch(t); // (glitchy, in green and black)
-  if (G.state !== 'fight' && watchOn() && !onlyThemHere() && !(G.state === 'shop' && SHOP.floor === IT_FLOOR)) drawWatcher(t); // (uoy teg lliw ti: something is looking at you)
+  } else if (G.state === 'title' && cabinMenu()) drawShop(t); // (the cabin, right there on the main menu)
+  else { drawSky(t, null); drawMenuGround(t); }
+  if (G.state !== 'fight' && storyOk && storyStage() >= 6 && !itStopped() && !onlyThemHere() && !(G.state === 'shop' && SHOP.floor === TRAIL_FLOOR && (performance.now() - (SHOP.trailT0 || 0))/1000 < 20) && !(G.state === 'shop' && SHOP.floor === REUNITE_FLOOR)) drawGlitch(t); // (no glitching on the quiet trail, until IT comes) // (glitchy, in green and black)
+  if (G.state !== 'fight' && watchOn() && !itStopped() && !onlyThemHere() && !(G.state === 'shop' && (SHOP.floor === IT_FLOOR || SHOP.floor === TRAIL_FLOOR || SHOP.floor === REUNITE_FLOOR))) drawWatcher(t); // (uoy teg lliw ti: something is looking at you)
   requestAnimationFrame(frame);
 }
 
@@ -5785,7 +5794,7 @@ function renderSettings() {
 }
 let backTo = 'title';
 function openPage(id) { backTo = G.state; G.state = id; waitingKey = null; if (id === 'settings') renderSettings(); if (id === 'keys') { renderKeys(); $('keysMsg').textContent = ''; } fillKeyLabels(); showScreen(id); $(id).scrollTop = 0; $(id).querySelector('[data-back]').focus(); }
-document.querySelectorAll('[data-back]').forEach(b => b.onclick = () => { if (backTo === 'setup') openSetup(); else { G.state = 'title'; showScreen('title'); $('okBtn').focus(); } });
+document.querySelectorAll('[data-back]').forEach(b => b.onclick = () => { if (netStory && Net.role && G.state === 'shop') return openLobby(); if (backTo === 'setup') openSetup(); else { G.state = 'title'; showScreen('title'); $('okBtn').focus(); } });
 $('howBtn').onclick = () => { audioOn(); openPage('howto'); };
 // ---------- codes: type in a secret code to get something ----------
 const CODES = { '50028':{ coins:500, msg:'Secret code from the shopkeepers\' 3rd floor! You found their hidden stash: 500 coins!' }, masonisthebest:{ unlock:'admin', item:'crown', coins:1000, msg:'Admin code accepted! You got the Admin, the Admin crown and 1000 coins! Turn him on in the "who is with who" screen.' } };
@@ -5809,8 +5818,9 @@ $('secretIn').addEventListener('keydown', e => { if (e.key === 'Enter') $('secre
 // When it's done, go to the shopkeepers' room in the dorms to watch the Shy Shopkeeper tell the Fighty Shopkeeper she likes them
 const CONFESS_MIN = 40;
 const CONFESS_LINES = [['keeper2', 'u-um... Fighty? Can I t-tell you something?'], ['keeper', 'Sure! What is it?'], ['keeper2', 'I... I really, really like you... *blushes*'], ['keeper', '...!!'], ['keeper', 'I like you too!'], ['keeper2', '*happy squeak* hehe...']];
-const lsGet = k => { try { return localStorage.getItem(k); } catch { return null; } };
-const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
+var netStory = null; // (playing the story together online: the host's chapters, shared by everyone in the team; see hostStory)
+const lsGet = k => { if (netStory && k in netStory) return netStory[k]; try { return localStorage.getItem(k); } catch { return null; } };
+const lsSet = (k, v) => { if (netStory && k in netStory) { netStory[k] = v; netStoryKey(k, v); if (Net.role !== 'host') return; } try { localStorage.setItem(k, v); } catch {} }; // (together online, progress is shared with the team, and only the host's game saves it)
 const confessStart = () => +lsGet('fff-confess') || 0;
 const confessSeen = () => !!lsGet('fff-confessed'); // (it holds when you saw it)
 const DATING_MIN = 60; // an hour after the confession, the shopkeepers start dating
@@ -5865,8 +5875,13 @@ function updsTick() { // the countdown on the page
   const ch3 = ch2 && saved() && onlyLeft() <= 0; // chapter 4 opens once chapter 3 is done
   $('ch4Lock').hidden = ch3; $('ch4List').hidden = !ch3; $('ch4Head').style.opacity = ch3 ? 1 : 0.5;
   const ptext = prayText(); if ($('prayWhen').textContent !== ptext) $('prayWhen').textContent = ptext;
-  $('prayBtn').hidden = !(ch3 && prayLeft() <= 0); $('ch4Done').textContent = ch3 && itLeft() <= 0 ? '✅' : '';
-  const itx = itText(); if ($('itWhen').textContent !== itx) $('itWhen').textContent = itx; $('itBtn').hidden = !(ch3 && itLeft() <= 0);  $('fellBtn').hidden = !(fellLeft() <= 0);
+  $('prayBtn').hidden = !(ch3 && prayLeft() <= 0); $('ch4Done').textContent = ch3 && reuniteLeft() <= 0 ? '✅' : '';
+  const itx = itText(); if ($('itWhen').textContent !== itx) $('itWhen').textContent = itx; $('itBtn').hidden = !(ch3 && itLeft() <= 0);
+  const esx = escapeText(); if ($('escapeWhen').textContent !== esx) $('escapeWhen').textContent = esx; $('escapeBtn').hidden = !(ch3 && escapeLeft() <= 0);
+  const rux = reuniteText(); if ($('reuniteWhen').textContent !== rux) $('reuniteWhen').textContent = rux; $('reuniteBtn').hidden = !(ch3 && reuniteLeft() <= 0);
+  const ch4 = ch3 && reuniteLeft() <= 0; // chapter 5 opens once chapter 4 is done
+  $('ch5Lock').hidden = ch4; $('ch5List').hidden = !ch4; $('ch5Head').style.opacity = ch4 ? 1 : 0.5; $('ch5Done').textContent = itStopped() ? '✅' : '';
+  const adx = adminsText(); if ($('adminsWhen').textContent !== adx) $('adminsWhen').textContent = adx; $('adminsBtn').hidden = !(ch4 && adminsLeft() <= 0);  $('fellBtn').hidden = !(fellLeft() <= 0);
   $('attackBtn').hidden = !(attackLeft() <= 0 && attackLeft() > -ATTACK_LONG*60000);
   againShow();
 }
@@ -5878,6 +5893,9 @@ $('againAttack').onclick = () => goPlace(15, 'attack');
 $('againFell').onclick = () => goPlace(11, 'fell');
 $('fellBtn').onclick = () => goPlace(11);
 $('onlyBtn').onclick = () => { goPlace(6); SHOP.youSayT = 0; };
+$('adminsBtn').onclick = () => goAdmins(); // (off to get the admins, with everyone)
+$('reuniteBtn').onclick = () => { goPlace(REUNITE_FLOOR); Object.assign(SHOP, { x:600, youSayT:0, reuniteT0:performance.now() }); }; // (watching everyone get back together)
+$('escapeBtn').onclick = () => { goPlace(TRAIL_FLOOR); Object.assign(SHOP, { x:600, youSayT:0, trailT0:performance.now() }); }; // (watching them escape... and IT take them)
 $('itBtn').onclick = () => { goPlace(IT_FLOOR); Object.assign(SHOP, { x:300, itAsked:[], itSay:null }); SHOP.youSay = 'It is so dark... is somebody there?'; SHOP.youSayT = 3; }; // (into the dark, to talk to IT)
 $('prayBtn').onclick = () => { goPlace(EDGE_FLOOR); SHOP.x = 600; SHOP.youSayT = 0; SHOP.edgeT0 = performance.now(); }; // (watching them try to get out of this world) // (you just watch them, so you don't say anything)
 $('attackBtn').onclick = () => goPlace(15);
@@ -6259,7 +6277,7 @@ function pkStep() {
 }
 // once there's no shop (once in a life time), everyone is scared: they shake (in the shop, the dorms, player breaks and on the menu) and talk about how scared they are.
 // Goofy Sparkle isn't in player breaks or his dorm: he's hiding in the shopkeepers' attic
-const scaredAll = () => noShop();
+const scaredAll = () => noShop() && !itStopped(); // (once IT is stopped, nobody is scared anymore)
 const SCARED_CHATS = [
   [['star', 'I am NOT scared. ...Okay, maybe a little. *shades rattling*'], ['tri', 'Your shades are SHAKING!']],
   [['circle', 'WHAT WAS THAT NOISE?!'], ['heart', '*hides behind Shocked Circle* I don\'t know!!']],
@@ -6552,7 +6570,7 @@ function drawOnlyThem(t) { // the broken break room: a paper on the wall with th
 const PRAY_MIN = 20, EDGE_FLOOR = 20, EDGE_WALL = 1300, EDGE_CRACK = 900, EDGE_PORTAL = 600;
 const prayLeft = () => { const o = onlyLeft(); return o === Infinity ? Infinity : o + PRAY_MIN*60000; };
 const prayOn = () => storyOk && storyStage() >= 13;
-const justWatching = () => onlyThemHere() || SHOP.floor === EDGE_FLOOR; // (you're nobody: you just watch)
+const justWatching = () => onlyThemHere() || SHOP.floor === EDGE_FLOOR || SHOP.floor === TRAIL_FLOOR || SHOP.floor === REUNITE_FLOOR; // (you're nobody: you just watch)
 function prayText() { // for the up coming page
   const l = prayLeft(), o = onlyLeft();
   return l === Infinity || o > 0 ? 'something dangerous is coming... Coming soon...' : l > 0 ? `Danger in ${mmss(l)}... the shopkeepers are getting ready to leave.`
@@ -6701,11 +6719,246 @@ function drawItRoom(t) { // the dark, with IT's giant eyes (they follow you, and
   if (talking) { const k = Math.min(SHOP.itSay.text.length, Math.floor((performance.now() - SHOP.itSay.t0)/45)), shown = SHOP.itSay.text.slice(0, k); // IT's answer, typing itself out
     g.font = `34px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; for (const [dx, col] of [[-2, 'rgba(255,40,40,.5)'], [2, 'rgba(0,200,255,.4)'], [0, '#39ff14']]) { g.fillStyle = col; g.fillText(shown, 800 + dx, 470, W - 120); } }
 }
-const STORY_NOTES = ['', '💕 The shopkeepers are in love! 💕', '🌳 The shopkeepers are dating! 🌳', '🍝 Date night at Café Fun! 🍝', '💍 Just married! 💍', '🛡️ The Admin is watching... 🛡️', '💥 Everything is falling apart! 💥', '🕳️ The code is gone... the 1st floor is gone! 🕳️', '🏠 There is no shop now... 🏠', '💔 They are gone...', '🌀 The void...', '👁️ ...uoy teg lliw ti 👁️', '📺 It\'s only them...', '🙏 Pray for you are in danger 🙏', '👁️ IT is here 👁️'];
+// escape? (chapter 4): 20 minutes after IT is here, the shopkeepers "escape": a door opens at the edge of the world, and they step out onto a quiet trail
+// that leads to an empty place full of tools to build with. They're so happy... they could build a new home here! But then the sky goes dark,
+// IT opens its eyes, and IT takes them. You just watch (you're nobody here). Every time you come, you see it happen again
+const ESCAPE_MIN = 20, TRAIL_FLOOR = 22, TRAIL_TOOLS = 1180;
+const escapeLeft = () => { const i = itLeft(); return i === Infinity ? Infinity : i + ESCAPE_MIN*60000; };
+const escapeOn = () => storyOk && storyStage() >= 15;
+function escapeText() { // for the chapters page
+  const l = escapeLeft(), i = itLeft();
+  return l === Infinity || i > 0 ? 'a way out...? Coming soon...' : l > 0 ? `A door is opening in ${mmss(l)}...` : 'They escaped...? 🔨 Press the escape? button to see what happened.';
+}
+const TRAIL_LINES = [[0, 'keeper2', 'A door...? Fighty, where does it go?'], [2, 'keeper', 'Out of here, I hope! Come on!'], [4, 'keeper2', 'We... we escaped?! A real path!'], [8, 'keeper', 'It is so quiet here. No code. No eyes.'],
+  [12, 'keeper', 'Look! Tools! Wood! Hammers!'], [14.5, 'keeper2', 'We could build a NEW home here... just for us...'], [17.5, 'keeper', 'A new shop, too! The best one EVER!'],
+  [20, 'keeper2', 'F-Fighty... why is the sky getting dark?'], [22, 'keeper', '...no. No no no.'], [24, 'keeper2', 'FIGHTY!!'], [25.5, 'keeper', 'LET HER GO! LET US GO!']];
+const trailPos = (s, id) => { // where they are, and what they're doing, s seconds into the scene
+  const k2 = id === 'keeper2', lerp = (a, b, k) => a + (b - a)*Math.max(0, Math.min(1, k));
+  if (s < 3) return { x:k2 ? 170 : 260, y:0, pose:'worried', alpha:Math.min(1, s/1.2) }; // stepping out of the door
+  if (s < 12) { const x = lerp(260, TRAIL_TOOLS - 120, (s - 3)/9); return { x:k2 ? x - 100 : x, y:0, walk:true }; } // walking along the trail
+  if (s < 20) return { x:k2 ? TRAIL_TOOLS + 20 : TRAIL_TOOLS - 120, y:0, pose:'cheer' }; // so happy, with all the tools
+  if (s < 24) return { x:k2 ? TRAIL_TOOLS + 20 : TRAIL_TOOLS - 120, y:0, pose:'worried' }; // the sky goes dark...
+  const k = Math.min(1, (s - 24)/4); return { x:lerp(k2 ? TRAIL_TOOLS + 20 : TRAIL_TOOLS - 120, TRAIL_TOOLS - 50 + (k2 ? 40 : -40), k), y:k*420, pose:'cheer', spin:k, alpha:1 - Math.max(0, k - 0.7)/0.3, shrink:1 - k*0.7 }; // ...and IT takes them, up into the dark
+};
+function drawTrail(t) {
+  const s = (performance.now() - (SHOP.trailT0 || 0))/1000, dark = s < 20 ? 0 : Math.min(1, (s - 20)/4);
+  const sky = g.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#cfe6f2'); sky.addColorStop(1, '#f4f0e2'); g.fillStyle = sky; g.fillRect(-3000, -3000, W + 6000, H + 6000); // a quiet, pale sky
+  g.fillStyle = '#bcd8a8'; g.beginPath(); g.moveTo(-100, 620); g.quadraticCurveTo(400, 480, 800, 600); g.quadraticCurveTo(1200, 500, W + 100, 590); g.lineTo(W + 100, H); g.lineTo(-100, H); g.closePath(); g.fill(); // soft hills
+  g.fillStyle = '#9fc58b'; g.fillRect(0, SHOP_FLOOR, W, H - SHOP_FLOOR);
+  for (const x of [380, 700, 900]) { g.fillStyle = '#7a5a3a'; g.fillRect(x - 8, SHOP_FLOOR - 150, 16, 150); g.fillStyle = '#6fae63'; g.beginPath(); g.arc(x, SHOP_FLOOR - 170, 55, 0, TAU); g.fill(); } // a few trees
+  g.fillStyle = '#e2c99a'; g.beginPath(); g.moveTo(120, SHOP_FLOOR); for (let x = 120; x <= TRAIL_TOOLS; x += 40) g.lineTo(x, SHOP_FLOOR - 4 + Math.sin(x/90)*3); g.lineTo(TRAIL_TOOLS, SHOP_FLOOR + 30); g.lineTo(120, SHOP_FLOOR + 30); g.closePath(); g.fill(); // the trail
+  g.fillStyle = '#7a5a3a'; g.fillRect(560, SHOP_FLOOR - 120, 10, 120); g.fillStyle = '#c9a26b'; g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.moveTo(520, SHOP_FLOOR - 130); g.lineTo(640, SHOP_FLOOR - 130); g.lineTo(660, SHOP_FLOOR - 112); g.lineTo(640, SHOP_FLOOR - 94); g.lineTo(520, SHOP_FLOOR - 94); g.closePath(); g.fill(); g.stroke(); g.fillStyle = C.ink; g.font = `20px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('this way →', 588, SHOP_FLOOR - 112); // a signpost
+  // the door they came through (glowing, closing behind them)
+  const door = Math.max(0, 1 - Math.max(0, s - 4)/2); if (door > 0) { g.save(); g.globalAlpha = door; g.fillStyle = '#000'; g.fillRect(60, SHOP_FLOOR - 210, 110, 210); g.strokeStyle = '#b6ffb0'; g.lineWidth = 6; g.shadowColor = '#b6ffb0'; g.shadowBlur = 20; g.strokeRect(60, SHOP_FLOOR - 210, 110, 210); g.restore(); }
+  // the empty place, full of tools to build with
+  const tx = TRAIL_TOOLS; g.fillStyle = '#d9c39a'; g.fillRect(tx - 60, SHOP_FLOOR, W - tx + 60, 30); // a flat bit of ground to build on
+  g.fillStyle = '#a0723c'; g.strokeStyle = C.ink; g.lineWidth = 3; g.fillRect(tx + 140, SHOP_FLOOR - 90, 200, 20); g.strokeRect(tx + 140, SHOP_FLOOR - 90, 200, 20); for (const lx of [tx + 150, tx + 320]) { g.fillRect(lx, SHOP_FLOOR - 70, 14, 70); g.strokeRect(lx, SHOP_FLOOR - 70, 14, 70); } // a workbench
+  g.fillStyle = '#f4f0e2'; g.fillRect(tx + 160, SHOP_FLOOR - 106, 80, 16); g.strokeStyle = '#3a6ea8'; g.lineWidth = 1; for (let i=0;i<4;i++) { g.beginPath(); g.moveTo(tx + 164, SHOP_FLOOR - 103 + i*4); g.lineTo(tx + 236, SHOP_FLOOR - 103 + i*4); g.stroke(); } // a blueprint
+  const held = s >= 12 && s < 24; if (!held) { g.save(); g.translate(s >= 28 ? tx - 60 : tx + 280, s >= 28 ? SHOP_FLOOR - 8 : SHOP_FLOOR - 100); g.rotate(s >= 28 ? 1.3 : 0); g.fillStyle = '#7a5a3a'; g.fillRect(-4, 0, 8, 40); g.fillStyle = '#888'; g.strokeStyle = C.ink; g.lineWidth = 2; g.fillRect(-16, -8, 32, 12); g.strokeRect(-16, -8, 32, 12); g.restore(); } // a hammer (dropped on the ground, after)
+  g.fillStyle = '#c0392b'; g.strokeStyle = C.ink; g.lineWidth = 3; g.fillRect(tx + 30, SHOP_FLOOR - 50, 90, 50); g.strokeRect(tx + 30, SHOP_FLOOR - 50, 90, 50); g.fillRect(tx + 60, SHOP_FLOOR - 62, 30, 12); g.strokeRect(tx + 60, SHOP_FLOOR - 62, 30, 12); // a toolbox
+  for (let i=0;i<5;i++) { g.fillStyle = i % 2 ? '#c9a26b' : '#b58a52'; g.fillRect(tx + 370, SHOP_FLOOR - 16 - i*16, 150, 14); g.strokeStyle = C.ink; g.strokeRect(tx + 370, SHOP_FLOOR - 16 - i*16, 150, 14); } // a pile of planks
+  g.strokeStyle = '#7a5a3a'; g.lineWidth = 8; g.beginPath(); g.moveTo(tx + 560, SHOP_FLOOR); g.lineTo(tx + 610, SHOP_FLOOR - 260); g.moveTo(tx + 600, SHOP_FLOOR); g.lineTo(tx + 650, SHOP_FLOOR - 260); g.stroke(); g.lineWidth = 5; for (let i=1;i<6;i++) { g.beginPath(); g.moveTo(tx + 560 + i*10, SHOP_FLOOR - i*43); g.lineTo(tx + 600 + i*10, SHOP_FLOOR - i*43); g.stroke(); } // a ladder
+  // then the sky goes dark, and IT opens its eyes
+  if (dark > 0) { g.fillStyle = `rgba(0,0,0,${dark*0.85})`; g.fillRect(-3000, -3000, W + 6000, H + 6000); const eo = Math.min(1, (s - 21)/1.5); if (eo > 0) { g.save(); g.shadowColor = '#39ff14'; g.shadowBlur = 40; for (const sx of [-1, 1]) { g.fillStyle = '#e8ffe0'; g.beginPath(); g.ellipse(TRAIL_TOOLS - 40 + sx*170, 230, 120, 70*eo, 0, 0, TAU); g.fill(); } g.restore(); for (const sx of [-1, 1]) { g.fillStyle = '#000'; g.beginPath(); g.ellipse(TRAIL_TOOLS - 40 + sx*170, 250, 30, 44*eo, 0, 0, TAU); g.fill(); } } } // IT
+  // the two of them
+  let pos = {}; ['keeper', 'keeper2'].forEach(id => { const q = pos[id] = trailPos(s, id), ch = CHAR[id], r = dormR(ch)*0.6*(q.shrink || 1); if (q.alpha <= 0) return; g.save(); g.globalAlpha = q.alpha == null ? 1 : q.alpha; g.translate(q.x, SHOP_FLOOR - r - q.y); if (q.spin) g.rotate(q.spin*t*6); drawCharacter(g, ch, r, { facing:1, ...looks(ch), walk:q.walk ? t*8 : null, pose:q.pose, still:s < 20 }); g.restore(); });
+  if (s >= 22 && s < 28.5) ['keeper', 'keeper2'].forEach((id, i) => { const q = pos[id], ex = TRAIL_TOOLS - 40 + (i ? 170 : -170), reach = Math.min(1, (s - 22)/1.5), r = dormR(CHAR[id])*0.6*(q.shrink || 1), tx = ex + (q.x - ex)*reach, ty = 290 + (SHOP_FLOOR - r - q.y - 290)*reach; // IT reaches down with long arms of code and grabs them
+    g.save(); g.shadowColor = '#39ff14'; g.shadowBlur = 16; g.strokeStyle = 'rgba(57,255,20,.85)'; g.lineWidth = 10; g.lineCap = 'round'; g.beginPath(); g.moveTo(ex, 290); for (let k=1;k<=10;k++) { const f = k/10; g.lineTo(ex + (tx - ex)*f + Math.sin(t*8 + f*9 + i)*18*(1 - f), 290 + (ty - 290)*f); } g.stroke(); g.restore();
+    g.fillStyle = '#000'; g.font = 'bold 14px monospace'; g.textAlign = 'center'; for (let k=1;k<10;k++) { const f = k/10; g.fillText((k + Math.floor(t*8)) % 2 ? '1' : '0', ex + (tx - ex)*f + Math.sin(t*8 + f*9 + i)*18*(1 - f), 290 + (ty - 290)*f); } });
+  if (s >= 12 && s < 24) { const q = pos.keeper; g.save(); g.translate(q.x + 70, SHOP_FLOOR - 180 + Math.sin(t*6)*10); g.rotate(-0.5 + Math.sin(t*6)*0.3); g.fillStyle = '#7a5a3a'; g.fillRect(-4, 0, 8, 40); g.fillStyle = '#888'; g.fillRect(-16, -8, 32, 12); g.restore(); } // Fighty, waving the hammer around, so excited
+  if (s < 28) { const line = [...TRAIL_LINES].reverse().find(([from]) => s >= from), q = pos[line[1]]; drawBubble(line[2], Math.min(W - 40, q.x + 240), Math.max(110, SHOP_FLOOR - 230 - q.y), q.x); }
+  else { g.fillStyle = '#39ff14'; g.font = `48px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('IT took them...', W/2, 470); g.font = `24px ${FONT}`; g.fillStyle = 'rgba(230,255,230,.8)'; g.fillText('nobody gets out.', W/2, 520); } // and then they're gone
+}
+// Reunite (chapter 4): 20 minutes after escape?, you find out where IT took the shopkeepers: to the same hidden place deep in the code where all the
+// fighters went (that's why it was only them). The fighters are sitting around a little campfire in a dark cave of code, wondering if anyone will come...
+// then a hole opens in the ceiling, the shopkeepers drop in, and everyone runs to them: they're all together again. You just watch (the 🤗 reunite button)
+const REUNITE_MIN = 20, REUNITE_FLOOR = 23, FIRE_X = 800;
+const reuniteLeft = () => { const e = escapeLeft(); return e === Infinity ? Infinity : e + REUNITE_MIN*60000; };
+const reuniteOn = () => storyOk && storyStage() >= 16;
+function reuniteText() { // for the chapters page
+  const l = reuniteLeft(), e = escapeLeft();
+  return l === Infinity || e > 0 ? 'where did everyone go...? Coming soon...' : l > 0 ? `Somewhere deep in the code... in ${mmss(l)}.` : 'IT took them to where the fighters went... 🤗 Press the reunite button to see.';
+}
+const REUNITE_LINES = [[0, 'heart', 'Do you think anyone is coming for us?'], [2.2, 'star', '...Someone will. They always do.'], [4, 'keeper2', 'AAAAAH!!'], [6.2, 'sparkle', 'SHOPKEEPERS!!!'],
+  [8, 'keeper', 'EVERYONE! You are all here! You are all okay!'], [10.5, 'keeper2', '*happy tears* We found you... we found you!']];
+const REUNITE_HAPPY = [['shuriken', '...Hmph. About time you showed up.'], ['heart', 'GROUP HUG! Everyone!'], ['sparkle', 'Can we have a sleepover? Please please please?'], ['hex', 'Beep boop! My happy sensors are going crazy!'], ['keeper', 'We are all together. Now we find a way out. TOGETHER.'], ['keeper2', 'Nobody gets left behind... hehe.']];
+function drawReunite(t) {
+  const s = (performance.now() - (SHOP.reuniteT0 || 0))/1000, lerp = (a, b, k) => a + (b - a)*Math.max(0, Math.min(1, k));
+  // a dark cave deep in the code: glowing crystals, drips of code, and a little campfire
+  const bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#120a24'); bg.addColorStop(1, '#05030c'); g.fillStyle = bg; g.fillRect(-3000, -3000, W + 6000, H + 6000);
+  g.fillStyle = '#1e1438'; for (let i=0;i<14;i++) { const x = i*120 + 30; g.beginPath(); g.moveTo(x - 40, 0); g.lineTo(x + 40, 0); g.lineTo(x, 80 + (i % 3)*50); g.closePath(); g.fill(); } // pointy rocks hanging from the ceiling
+  for (const [x, y, h] of [[140, SHOP_FLOOR, 90], [1450, SHOP_FLOOR, 120], [1300, SHOP_FLOOR, 60], [260, SHOP_FLOOR, 50]]) { g.save(); g.shadowColor = '#39ff14'; g.shadowBlur = 20; g.fillStyle = 'rgba(57,255,20,.6)'; g.beginPath(); g.moveTo(x - 20, y); g.lineTo(x, y - h); g.lineTo(x + 20, y); g.closePath(); g.fill(); g.restore(); } // glowing crystals
+  g.font = '16px monospace'; g.textAlign = 'center'; g.textBaseline = 'middle'; for (let i=0;i<10;i++) { g.fillStyle = 'rgba(57,255,20,.3)'; g.fillText((i + Math.floor(t*2)) % 2 ? '1' : '0', 60 + i*150, 100 + ((t*40 + i*60) % 300)); } // code dripping from the ceiling
+  g.fillStyle = '#241a3c'; g.fillRect(0, SHOP_FLOOR, W, H - SHOP_FLOOR);
+  const glow = g.createRadialGradient(FIRE_X, SHOP_FLOOR - 30, 10, FIRE_X, SHOP_FLOOR - 30, 520); glow.addColorStop(0, 'rgba(255,170,60,.35)'); glow.addColorStop(1, 'rgba(255,170,60,0)'); g.fillStyle = glow; g.fillRect(0, 0, W, H); // the campfire's warm light
+  g.fillStyle = '#6b4a2a'; for (const a of [-0.4, 0.4]) { g.save(); g.translate(FIRE_X, SHOP_FLOOR - 8); g.rotate(a); g.fillRect(-45, -7, 90, 14); g.restore(); }
+  for (let i=0;i<3;i++) { const fh = 50 + Math.sin(t*9 + i*2)*12 - i*12; g.fillStyle = ['#ff6a1a', '#ffb02e', '#fff1a8'][i]; g.beginPath(); g.moveTo(FIRE_X - 28 + i*9, SHOP_FLOOR - 10); g.quadraticCurveTo(FIRE_X + Math.sin(t*7 + i)*8, SHOP_FLOOR - 10 - fh*2, FIRE_X + 28 - i*9, SHOP_FLOOR - 10); g.closePath(); g.fill(); } // flames
+  // the fighters: sitting around the fire, then running to the shopkeepers, then hugging and hopping with joy
+  const fighters = PLAYABLE().filter(c => !c.keeper && c.id !== 'admin'), n = fighters.length, run = (s - 6.5)/1.5, happy = s >= 8;
+  const spots = {};
+  fighters.forEach((ch, i) => { const home = 200 + i*(1200/Math.max(1, n - 1)), side = home < FIRE_X ? -1 : 1, x0 = Math.abs(home - FIRE_X) < 90 ? home + side*110 : home, x1 = FIRE_X + (x0 - FIRE_X)*0.42, x = lerp(x0, x1, run), r = 34*Math.min(ch.size || 1, 1.3), hop = happy ? Math.abs(Math.sin(t*6 + i))*16 : 0;
+    spots[ch.id] = x; g.save(); g.translate(x, SHOP_FLOOR - r - hop); drawCharacter(g, ch, r, { facing:x < FIRE_X ? 1 : -1, ...looks(ch), happy, walk:run > 0 && run < 1 ? t*10 : null, still:true }); g.restore(); });
+  // the shopkeepers, dropping in through a hole in the ceiling
+  const hole = s >= 3.5 && s < 7.5 ? Math.min(1, (s - 3.5)*2, (7.5 - s)*2) : 0; if (hole > 0) { g.fillStyle = '#000'; g.strokeStyle = '#b6ffb0'; g.lineWidth = 4; g.beginPath(); g.ellipse(FIRE_X, 40, 110*hole, 34*hole, 0, 0, TAU); g.fill(); g.stroke(); }
+  if (s >= 4) [['keeper', FIRE_X - 150], ['keeper2', FIRE_X + 150]].forEach(([id, x]) => { const ch = CHAR[id], r = dormR(ch)*0.55, k = Math.min(1, (s - 4)/1.6), y = (1 - k)*(SHOP_FLOOR - 100);
+    spots[id] = x; g.save(); g.translate(x, SHOP_FLOOR - r - y - (happy ? Math.abs(Math.sin(t*5))*10 : 0)); if (k < 1) g.rotate(t*8); drawCharacter(g, ch, r, { facing:x < FIRE_X ? 1 : -1, ...looks(ch), pose:k < 1 ? 'cheer' : happy ? 'cheer' : 'worried', still:true }); g.restore(); });
+  if (happy) for (let i=0;i<12;i++) { const k = (t*0.35 + i/12) % 1; g.save(); g.globalAlpha = 1 - k; drawLittleHeart(FIRE_X + Math.sin(t*1.5 + i*1.3)*360, SHOP_FLOOR - 150 - k*380, 10 + (i % 3)*5); g.restore(); } // hearts everywhere
+  // who's talking
+  const say = s < 13 ? [...REUNITE_LINES].reverse().find(([from]) => s >= from).slice(1) : REUNITE_HAPPY[Math.floor((s - 13)/3) % REUNITE_HAPPY.length];
+  const sx = spots[say[0]] != null ? spots[say[0]] : FIRE_X; drawBubble(say[1], Math.min(W - 40, sx + 240), SHOP_FLOOR - 210, sx);
+  if (s >= 13) { g.fillStyle = '#ffd23f'; g.font = `44px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('Together again 💛', W/2, 170); }
+}
+// chapter 5, get the admins: 20 minutes after Reunite, you go with the whole group (the shopkeepers and all the fighters follow you) through the code tunnels
+// (floor 24). Find the 3 clues the admins left (glowing notes) to get the code, open the keypad door, and get into the admins' room (floor 25), where the
+// admins are locked in with IT's code core (IT.exe). Work together: punch each of the 4 terminals and a friend comes to hold it. With all 4 held, punch
+// the big STOP IT button... and IT's code breaks. After that, the eyes stop watching and the game stops glitching
+const ADMINS_MIN = 20, TUNNEL_FLOOR = 24, AROOM_FLOOR = 25;
+const adminsLeft = () => { const r = reuniteLeft(); return r === Infinity ? Infinity : r + ADMINS_MIN*60000; };
+const adminsOn = () => storyOk && storyStage() >= 17;
+const itStopped = () => !!lsGet('fff-itstopped');
+function adminsText() { // for the chapters page
+  const l = adminsLeft(), r = reuniteLeft();
+  return l === Infinity || r > 0 ? 'the admins are the only ones who can stop IT... Coming soon...' : l > 0 ? `Time to get the admins, in ${mmss(l)}!`
+    : itStopped() ? 'You found the clues, got into the admins\' room, and stopped IT together! 🛑' : 'Go with everyone, find the clues, get into the admins\' room and stop IT! 🔑 Press the get the admins button.';
+}
+const CLUES = [{ x:360, digit:'4', note:'Clue 1: the code starts with 4. (from the admins)' }, { x:760, digit:'8', note:'Clue 2: the middle number is 8.' }, { x:1120, digit:'2', note:'Clue 3: the last number is 2. The door is at the end!' }];
+const CLUE_SAYS = [['hex', 'Beep! A clue! My clue sensors were right!'], ['heart', 'Another one! We are so good at this!'], ['keeper', 'That is all three! 4... 8... 2! To the door!']];
+const ADOOR_X = 1460, TERMINALS = [230, 520, 1080, 1370], CORE_X = 800;
+const groupList = () => [CHAR.keeper, CHAR.keeper2, ...PLAYABLE().filter(c => !c.keeper && c.id !== 'admin')].filter(c => c.id !== CHARS[SHOP.who].id); // everyone but you
+function goAdmins() { // the button: off you go, with everyone
+  goPlace(TUNNEL_FLOOR); Object.assign(SHOP, { x:160, clues:[], termHeld:[], itBroke:0 });
+  SHOP.youSay = 'Okay everyone, follow me! Let\'s find those clues!'; SHOP.youSayT = 3; renderShopCard(true);
+}
+function ch5Step() { // what you're next to, in the tunnels or the admins' room
+  SHOP.nearCh5 = null; const f = SHOP.floor;
+  if (f === TUNNEL_FLOOR) { CLUES.forEach((c, i) => { if (Math.abs(SHOP.x - c.x) < 70 && !(SHOP.clues || []).includes(i)) SHOP.nearCh5 = { kind:'clue', i }; }); if (Math.abs(SHOP.x - ADOOR_X) < 90) SHOP.nearCh5 = { kind:'door' }; }
+  if (f === AROOM_FLOOR && !SHOP.itBroke) { TERMINALS.forEach((x, i) => { if (Math.abs(SHOP.x - x) < 70 && !(SHOP.termHeld || []).includes(i)) SHOP.nearCh5 = { kind:'term', i }; }); if ((SHOP.termHeld || []).length >= 4 && Math.abs(SHOP.x - CORE_X) < 110) SHOP.nearCh5 = { kind:'stop' }; }
+  if (f === AROOM_FLOOR && SHOP.itBroke && performance.now() - SHOP.itBroke > 1000 && !itStopped()) { lsSet('fff-itstopped', String(Date.now())); storyCache.t = 0; applyTheme(); renderShopCard(true); }
+}
+function ch5Act() { // pressing punch next to something
+  const n = SHOP.nearCh5; if (!n) return;
+  if (n.kind === 'clue') { SHOP.clues = SHOP.clues || []; SHOP.clues.push(n.i); const say = CLUE_SAYS[SHOP.clues.length - 1]; SHOP.youSay = CLUES[n.i].note; SHOP.youSayT = 3.5; SHOP.groupSay = { id:say[0], text:say[1], until:performance.now() + 3500 }; if (sfx.ding) sfx.ding(); }
+  else if (n.kind === 'door') {
+    if ((SHOP.clues || []).length < 3) { SHOP.youSay = `It needs a code... we only have ${(SHOP.clues || []).length} of the 3 clues.`; SHOP.youSayT = 3; if (sfx.bonk) sfx.bonk(); }
+    else { Object.assign(SHOP, { floor:AROOM_FLOOR, x:160, y:0, vy:0, termHeld:[], itBroke:0 }); SHOP.youSay = '4... 8... 2... *click* We are in!'; SHOP.youSayT = 3; SHOP.groupSay = { id:'admin', text:'You found us! IT locked us in here with its code!', until:performance.now() + 4000 }; if (sfx.zap) sfx.zap(); musicUpdate(); }
+  }
+  else if (n.kind === 'term') { SHOP.termHeld = SHOP.termHeld || []; SHOP.termHeld.push(n.i); const helper = groupList()[SHOP.termHeld.length - 1]; SHOP.youSay = `${helper ? helper.name : 'Someone'}, hold this one!`; SHOP.youSayT = 2.5; if (sfx.ding) sfx.ding();
+    if (SHOP.termHeld.length >= 4) SHOP.groupSay = { id:'keeper', text:'All four are holding! NOW! Hit the STOP IT button!', until:performance.now() + 4000 }; }
+  else if (n.kind === 'stop') { SHOP.itBroke = performance.now(); SHOP.youSay = 'STOP... IT!!!'; SHOP.youSayT = 3; if (sfx.win) sfx.win(); }
+  renderShopCard(true);
+}
+function drawGroup(t, xs) { // everyone following you (or standing where they're helping)
+  groupList().forEach((ch, i) => { const x = xs(i, ch); if (x == null) return; const r = ch.keeper ? dormR(ch)*0.45 : 30*Math.min(ch.size || 1, 1.3), happy = !!SHOP.itBroke;
+    g.save(); g.translate(x, SHOP_FLOOR - r - (happy ? Math.abs(Math.sin(t*6 + i))*14 : 0)); drawCharacter(g, ch, r, { facing:x < SHOP.x ? 1 : -1, ...looks(ch), happy, pose:ch.keeper && happy ? 'cheer' : null, still:true }); g.restore(); });
+  const gs = SHOP.groupSay; if (gs && performance.now() < gs.until) { const i = groupList().findIndex(c => c.id === gs.id), x = gs.id === 'admin' ? CORE_X + 320 : i >= 0 ? xs(i, groupList()[i]) : null; if (x != null) drawBubble(gs.text, Math.min(W - 40, x + 220), SHOP_FLOOR - 200, x); }
+}
+const followX = i => Math.max(50 + (i % 6)*14, SHOP.x - 90 - i*42); // (they follow along behind you)
+function drawTunnels(t) { // the code tunnels: dark, with green code on the walls, the clues, and the admins' door at the end
+  g.fillStyle = '#06110a'; g.fillRect(-3000, -3000, W + 6000, H + 6000);
+  g.strokeStyle = 'rgba(57,255,20,.18)'; g.lineWidth = 2; for (let x = 0; x < W; x += 80) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, SHOP_FLOOR); g.stroke(); } // tunnel ribs
+  g.font = '18px monospace'; g.textAlign = 'center'; g.textBaseline = 'middle'; for (let i=0;i<30;i++) { g.fillStyle = 'rgba(57,255,20,.25)'; g.fillText((i + Math.floor(t*3)) % 2 ? '1' : '0', (i*53) % W, ((t*50 + i*47) % SHOP_FLOOR)); }
+  g.fillStyle = '#0d2214'; g.fillRect(0, SHOP_FLOOR, W, H - SHOP_FLOOR); g.strokeStyle = '#39ff14'; g.lineWidth = 3; g.beginPath(); g.moveTo(0, SHOP_FLOOR); g.lineTo(W, SHOP_FLOOR); g.stroke();
+  g.fillStyle = '#39ff14'; g.font = `40px ${FONT}`; g.fillText('THE CODE TUNNELS', W/2, 90);
+  CLUES.forEach((c, i) => { const got = (SHOP.clues || []).includes(i), y = SHOP_FLOOR - 170 + Math.sin(t*2 + i)*6; g.save(); g.globalAlpha = got ? 0.35 : 1; g.shadowColor = '#ffd23f'; g.shadowBlur = got ? 0 : 20; g.fillStyle = '#fff6c9'; g.fillRect(c.x - 40, y - 30, 80, 60); g.restore(); g.fillStyle = C.ink; g.font = `bold 30px ${FONT}`; g.fillText(got ? c.digit : '?', c.x, y + 2); }); // the clues (glowing notes)
+  const n = (SHOP.clues || []).length; g.fillStyle = '#123a1e'; g.strokeStyle = '#39ff14'; g.lineWidth = 4; g.fillRect(ADOOR_X - 70, SHOP_FLOOR - 260, 140, 260); g.strokeRect(ADOOR_X - 70, SHOP_FLOOR - 260, 140, 260); // the admins' door
+  g.fillStyle = '#000'; g.fillRect(ADOOR_X - 40, SHOP_FLOOR - 200, 80, 40); g.fillStyle = '#39ff14'; g.font = 'bold 26px monospace'; g.fillText([0, 1, 2].map(i => i < n ? CLUES[i].digit : '_').join(' '), ADOOR_X, SHOP_FLOOR - 180); // its keypad screen, filling in as you find clues
+  g.font = `18px ${FONT}`; g.fillText('ADMINS ONLY', ADOOR_X, SHOP_FLOOR - 235);
+  drawGroup(t, i => followX(i));
+  if (SHOP.nearCh5) drawPointer((SHOP.nearCh5.kind === 'door' ? ADOOR_X : CLUES[SHOP.nearCh5.i].x) + 50, SHOP_FLOOR - 300, t);
+}
+function drawAdminsRoom(t) { // the admins' room: IT's code core in the middle, 4 terminals, the admins locked in at the back
+  const broke = SHOP.itBroke ? (performance.now() - SHOP.itBroke)/1000 : 0, held = SHOP.termHeld || [];
+  g.fillStyle = '#05140a'; g.fillRect(-3000, -3000, W + 6000, H + 6000); g.fillStyle = '#0b2a14'; g.fillRect(0, SHOP_FLOOR, W, H - SHOP_FLOOR); g.strokeStyle = '#39ff14'; g.lineWidth = 3; g.beginPath(); g.moveTo(0, SHOP_FLOOR); g.lineTo(W, SHOP_FLOOR); g.stroke();
+  g.fillStyle = '#39ff14'; g.font = `44px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('THE ADMINS\' ROOM', W/2, 80);
+  ARRIVERS.forEach((a, i) => { const x = 330 + i*190, y = 300 + Math.sin(t*2 + i)*6; g.save(); g.translate(x, y); drawCharacter(g, CHAR.admin, a.r*0.9, { facing:x < CORE_X ? 1 : -1, skin:a.skin, ...a.o, still:true }); g.restore(); }); // the admins, locked in at the back
+  if (!SHOP.itBroke || broke < 1.5) { const pulse = 1 + Math.sin(t*4)*0.06, sh = broke > 0 ? Math.sin(t*60)*10 : 0; g.save(); g.translate(CORE_X + sh, SHOP_FLOOR - 230); g.scale(pulse*(1 - broke*0.6), pulse*(1 - broke*0.6)); g.shadowColor = '#39ff14'; g.shadowBlur = 40; g.fillStyle = '#000'; g.beginPath(); g.arc(0, 0, 110, 0, TAU); g.fill(); g.strokeStyle = '#39ff14'; g.lineWidth = 6; g.stroke(); g.shadowBlur = 0;
+    for (const s of [-1, 1]) { g.fillStyle = '#e8ffe0'; g.beginPath(); g.ellipse(s*38, -10, 26, 16, 0, 0, TAU); g.fill(); g.fillStyle = '#000'; g.beginPath(); g.arc(s*38 + Math.cos(t)*6, -10, 7, 0, TAU); g.fill(); } g.fillStyle = '#39ff14'; g.font = 'bold 24px monospace'; g.fillText('IT.exe', 0, 50); g.restore(); } // IT's code core, with IT's eyes in it
+  if (SHOP.itBroke) for (let i=0;i<24;i++) { const a = i*TAU/24, d = broke*420; g.fillStyle = i % 2 ? '#39ff14' : '#000'; g.fillRect(CORE_X + Math.cos(a)*d, SHOP_FLOOR - 230 + Math.sin(a)*d, 14, 14); } // breaking into pieces
+  TERMINALS.forEach((x, i) => { const on = held.includes(i); g.fillStyle = '#1a1a1a'; g.strokeStyle = on ? '#39ff14' : '#ff4040'; g.lineWidth = 4; g.fillRect(x - 50, SHOP_FLOOR - 150, 100, 150); g.strokeRect(x - 50, SHOP_FLOOR - 150, 100, 150); g.fillStyle = on ? '#39ff14' : '#ff4040'; g.fillRect(x - 36, SHOP_FLOOR - 136, 72, 40); g.fillStyle = '#000'; g.font = 'bold 16px monospace'; g.fillText(on ? 'HOLDING' : 'OFF', x, SHOP_FLOOR - 116); }); // the terminals
+  if (held.length >= 4 && !SHOP.itBroke) { g.fillStyle = '#d63a3a'; g.strokeStyle = C.ink; g.lineWidth = 5; g.beginPath(); g.ellipse(CORE_X, SHOP_FLOOR - 30, 70, 26, 0, 0, TAU); g.fill(); g.stroke(); g.fillStyle = C.white; g.font = `bold 22px ${FONT}`; g.fillText('STOP IT', CORE_X, SHOP_FLOOR - 32); } // the big button
+  drawGroup(t, i => i < held.length ? TERMINALS[held[i]] + 60 : followX(i - held.length)); // (the ones helping stand at their terminals; the rest follow you)
+  if (broke > 1.5) { g.fillStyle = '#ffd23f'; g.font = `56px ${FONT}`; g.fillText('IT is stopped!', W/2, 200); g.font = `26px ${FONT}`; g.fillStyle = '#e8ffe0'; g.fillText('You all did it, together. The game stops glitching...', W/2, 250); }
+  drawCabinPortal(t); // (then a portal opens, to the cabin)
+  if (SHOP.nearCh5) drawPointer((SHOP.nearCh5.kind === 'stop' ? CORE_X : TERMINALS[SHOP.nearCh5.i]) + 60, SHOP_FLOOR - 220, t);
+}
+function ch5Card() { // the info box, in the tunnels and the admins' room
+  if (SHOP.floor === TUNNEL_FLOOR) { const got = (SHOP.clues || []).map(i => `<li>${CLUES[i].note}</li>`).join(''); return `<h3>Get the admins</h3><p>Everyone is following you! Find the 3 glowing clues (walk up to one and press punch), then open the admins' door at the end.</p>${got ? `<ul>${got}</ul>` : ''}<p class="note">Press back to leave.</p>`; }
+  return SHOP.itBroke ? '<h3>IT is stopped!</h3><p>You broke IT\'s code core, all together. The eyes stop watching, and the game stops glitching. 🛑 And look: a portal opened on the right! Walk into it.</p>' : `<h3>The admins' room</h3><p>IT's code core is in the middle! Work together: walk up to each terminal and press punch, and a friend comes to hold it. ${(SHOP.termHeld || []).length}/4 held.${(SHOP.termHeld || []).length >= 4 ? ' Now punch the big STOP IT button!' : ''}</p>`;
+}
+// the cabin: once IT is stopped, a portal opens in the admins' room. Walk into it, and you come out in a big, cozy log cabin (floor 26, wide, it scrolls
+// with you) where everyone lives now: the shopkeepers, all the fighters and the admins. And from then on, the main menu IS the cabin: you walk around
+// and talk to everyone (walk up to someone and press punch), with the menu buttons in a little box in the corner
+const CABIN_FLOOR = 26, CABIN_PORTAL_X = 1520;
+const cabinMenu = () => storyOk && itStopped();
+const bigRoom = () => keeperRoom() || SHOP.floor === CABIN_FLOOR; // (the rooms that are wider than the screen, and scroll with you)
+const CABIN_TALK = {
+  keeper:['Welcome home! Well... our NEW home!', 'No more IT. No more glitches. Just us. Hehe!', 'Want to help me build a new shop out back?'],
+  keeper2:['It is so cozy here... I love it.', 'Hi! *waves* ...I am not even shy about saying hi anymore!', 'Thank you for saving us. Really.'],
+  star:['Not bad. Not bad at all. *adjusts shades*', 'I knew we would win. Cool things always win.'],
+  tri:['FINALLY some peace and quiet.', '...Okay, this cabin is nice. Do NOT tell anyone I said that.'],
+  circle:['WHAT?! We have a CABIN now?!', 'I have rolled around this whole cabin TWICE!'],
+  diamond:['How are you feeling? It was a lot. You can talk to me anytime.', 'Missing Arrow and I picked the room by the window.'],
+  square:['THIS CABIN IS AMAZING! ...I mean. This cabin is amazing.', 'I MADE A SNACK! IT IS A BIG SNACK!'],
+  sparkle:['Bunk beds! I call the TOP bunk!', 'Can we have a sleepover every night now? Please?'],
+  hex:['Beep boop! Glitch level: zero! Happy level: maximum!', 'B-beep. I am not nervous anymore. ...Mostly.'],
+  heart:['Group hug! Come here!', 'Everyone is here and everyone is safe. Best day ever!'],
+  shuriken:['...Hmph. It is fine. It is a fine cabin.', 'I am keeping an eye on Goofy. Someone has to.'],
+  arrow:['I am not missing anymore! I am right here!', 'My big brother says I can have the room next to his.'],
+  flower:['I put flowers on every table! Do you like them?', 'Petals for everyone! *throws petals*'],
+  admin:['Good job. You really are one of us now.', 'IT is gone. The admins will keep the code safe now.'],
+};
+const cabinPals = () => { // who's hanging out in the cabin (not you), spread out across it
+  const list = [CHAR.keeper, CHAR.keeper2, ...PLAYABLE().filter(c => !c.keeper && c.id !== 'admin'), CHAR.admin].filter(c => c && c.id !== CHARS[SHOP.who].id);
+  return list.map((ch, i) => ({ ch, x:220 + i*(1960/Math.max(1, list.length - 1)) + (i % 2)*40 }));
+};
+function cabinStep() { // who you're next to, and walking through the portal in the admins' room
+  SHOP.nearCabin = null;
+  if (SHOP.floor === AROOM_FLOOR && SHOP.itBroke && performance.now() - SHOP.itBroke > 2500 && SHOP.x > CABIN_PORTAL_X - 60) return goCabin();
+  if (SHOP.floor !== CABIN_FLOOR) return;
+  const p = cabinPals().find(p => Math.abs(p.x - SHOP.x) < 80); if (p) SHOP.nearCabin = p.ch.id;
+}
+function goCabin() { Object.assign(SHOP, { floor:CABIN_FLOOR, x:300, y:0, vy:0, cam:0, facing:1 }); SHOP.youSay = 'Whoa... a cabin! It is SO big!'; SHOP.youSayT = 3; if (sfx.zap) sfx.zap(); musicUpdate(); renderShopCard(true); }
+function cabinTalk() { // talking to someone in the cabin
+  const id = SHOP.nearCabin, lines = CABIN_TALK[id] || ['Hi!']; SHOP.cabinTalkN = (SHOP.cabinTalkN || 0) + 1;
+  SHOP.cabinSay = { id, text:lines[SHOP.cabinTalkN % lines.length], until:performance.now() + 3500 }; if (sfx.ding) sfx.ding(); renderShopCard(true);
+}
+function cabinMenuStep(dt) { // the main menu is the cabin: you walk around it right there on the menu
+  if (SHOP.floor !== CABIN_FLOOR || !SHOP.cabinReady) {
+    if (SHOP.who == null) SHOP.who = Math.max(0, CHARS.findIndex(ch => (CTRL[setup.slots[ch.id]] || CTRL.off).kind === 'human'));
+    Object.assign(SHOP, { floor:CABIN_FLOOR, x:600, y:0, vy:0, facing:1, cam:0, near:null, nearKeeper:false, nearStairs:false, msg:'', msgT:0, echoT:0, carry:false, pushT:0, pushing:false, youSayT:0, chase:null, bossT:-1, visit:null, pb:null, prev:readHeld('local'), cabinReady:true, smi7y:false });
+  }
+  shopStep(dt);
+}
+function drawCabin(t) { // a big, cozy log cabin (drawn 2400 wide; the room scrolls with you)
+  const CW = KEEPER_ROOM_W; g.fillStyle = '#8a5a34'; g.fillRect(-200, -200, CW + 400, H + 400);
+  for (let y = 40; y < SHOP_FLOOR; y += 46) { g.fillStyle = (y/46) % 2 < 1 ? '#9a6a3e' : '#8a5a34'; g.fillRect(0, y, CW, 42); g.fillStyle = 'rgba(0,0,0,.15)'; g.fillRect(0, y + 38, CW, 4); for (let x = 60 + (y % 92); x < CW; x += 300) { g.beginPath(); g.ellipse(x, y + 20, 10, 6, 0, 0, TAU); g.fill(); } } // log walls
+  g.fillStyle = '#5a3a1e'; g.fillRect(0, 0, CW, 40); // the ceiling beam
+  g.fillStyle = '#6b4a2a'; g.fillRect(0, SHOP_FLOOR, CW, H - SHOP_FLOOR); g.fillStyle = 'rgba(0,0,0,.15)'; for (let x = 0; x < CW; x += 120) g.fillRect(x, SHOP_FLOOR, 4, H - SHOP_FLOOR); // wooden floor
+  g.fillStyle = '#b5413a'; g.beginPath(); g.ellipse(1200, SHOP_FLOOR + 30, 520, 40, 0, 0, TAU); g.fill(); g.strokeStyle = '#ffd23f'; g.lineWidth = 4; g.beginPath(); g.ellipse(1200, SHOP_FLOOR + 30, 480, 30, 0, 0, TAU); g.stroke(); // a big round rug
+  for (const wx of [380, 2020]) { const night = isNight(); g.fillStyle = night ? '#1b2a4a' : '#9ed8ff'; g.fillRect(wx - 110, 150, 220, 170); if (!night) { g.fillStyle = '#2e9e4f'; for (let i=0;i<4;i++) { g.beginPath(); g.moveTo(wx - 100 + i*60, 320); g.lineTo(wx - 70 + i*60, 220); g.lineTo(wx - 40 + i*60, 320); g.closePath(); g.fill(); } } else { g.fillStyle = '#fff6c9'; g.beginPath(); g.arc(wx + 50, 200, 20, 0, TAU); g.fill(); } g.strokeStyle = '#4a2e18'; g.lineWidth = 10; g.strokeRect(wx - 110, 150, 220, 170); g.beginPath(); g.moveTo(wx, 150); g.lineTo(wx, 320); g.moveTo(wx - 110, 235); g.lineTo(wx + 110, 235); g.stroke(); } // windows looking out at the forest
+  g.fillStyle = '#7d7d7d'; g.fillRect(1080, 200, 240, SHOP_FLOOR - 200); g.fillStyle = '#6a6a6a'; for (let y = 210; y < SHOP_FLOOR; y += 36) for (let x = 1090 + ((y/36) % 2)*20; x < 1310; x += 50) g.fillRect(x, y, 40, 28); // a big stone fireplace
+  g.fillStyle = '#222'; g.fillRect(1130, SHOP_FLOOR - 150, 140, 150); for (let i=0;i<3;i++) { const fh = 60 + Math.sin(t*9 + i*2)*14 - i*14; g.fillStyle = ['#ff6a1a', '#ffb02e', '#fff1a8'][i]; g.beginPath(); g.moveTo(1150 + i*12, SHOP_FLOOR - 10); g.quadraticCurveTo(1200 + Math.sin(t*7 + i)*10, SHOP_FLOOR - 10 - fh*2, 1250 - i*12, SHOP_FLOOR - 10); g.closePath(); g.fill(); }
+  const glow = g.createRadialGradient(1200, SHOP_FLOOR - 60, 10, 1200, SHOP_FLOOR - 60, 500); glow.addColorStop(0, 'rgba(255,170,60,.25)'); glow.addColorStop(1, 'rgba(255,170,60,0)'); g.fillStyle = glow; g.fillRect(600, 0, 1200, H);
+  g.fillStyle = '#f3e2c7'; g.strokeStyle = '#4a2e18'; g.lineWidth = 5; g.fillRect(1040, 90, 320, 70); g.strokeRect(1040, 90, 320, 70); g.fillStyle = '#4a2e18'; g.font = `40px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('Welcome home', 1200, 127); // a sign over the fireplace
+  g.fillStyle = '#5a3a1e'; g.fillRect(640, SHOP_FLOOR - 300, 160, 300); for (let s=0;s<4;s++) { g.fillStyle = '#4a2e18'; g.fillRect(650, SHOP_FLOOR - 290 + s*72, 140, 8); for (let b=0;b<6;b++) { g.fillStyle = [C.red, C.blue, C.yellow, C.green, '#ff8fc1', C.orange][(b + s) % 6]; g.fillRect(656 + b*22, SHOP_FLOOR - 282 + s*72 - 50, 16, 50); } } // a bookshelf
+  for (const bx of [1650, 1820]) { g.strokeStyle = '#4a2e18'; g.lineWidth = 8; g.strokeRect(bx - 70, SHOP_FLOOR - 260, 140, 260); for (const by of [SHOP_FLOOR - 230, SHOP_FLOOR - 100]) { g.fillStyle = by < SHOP_FLOOR - 150 ? '#8fd8ff' : '#ff8fc1'; g.fillRect(bx - 64, by, 128, 24); g.fillStyle = C.white; g.fillRect(bx - 62, by - 12, 34, 14); } } // bunk beds for everyone
+  g.fillStyle = '#a0723c'; g.fillRect(2160, SHOP_FLOOR - 90, 200, 16); for (const lx of [2170, 2340]) g.fillRect(lx, SHOP_FLOOR - 74, 12, 74); g.fillStyle = C.white; g.beginPath(); g.ellipse(2260, SHOP_FLOOR - 96, 40, 8, 0, 0, TAU); g.fill(); g.fillStyle = '#f2c14e'; g.beginPath(); g.arc(2260, SHOP_FLOOR - 102, 14, 0, TAU); g.fill(); // a table, with a snack on it
+  for (const lx of [150, 900, 1500, 2250]) { g.strokeStyle = '#333'; g.lineWidth = 2; g.beginPath(); g.moveTo(lx, 40); g.lineTo(lx, 110); g.stroke(); g.fillStyle = 'rgba(255,220,120,.9)'; g.beginPath(); g.arc(lx, 124, 14, 0, TAU); g.fill(); } // hanging lanterns
+  // everyone, hanging out (and whoever you're talking to says something)
+  const pals = cabinPals(); pals.forEach((p, i) => { const ch = p.ch, r = ch.keeper ? dormR(ch)*0.5 : ch.id === 'admin' ? 46 : 34*Math.min(ch.size || 1, 1.3), bob = Math.abs(Math.sin(t*2 + i))*4; g.save(); g.translate(p.x, SHOP_FLOOR - r - bob); drawCharacter(g, ch, r, { facing:p.x < SHOP.x ? 1 : -1, ...looks(ch), happy:true, still:true }); g.restore(); });
+  const cs = SHOP.cabinSay, sp = cs && performance.now() < cs.until && pals.find(p => p.ch.id === cs.id); if (sp) drawBubble(cs.text, sp.x + 240, SHOP_FLOOR - 200, sp.x);
+  if (SHOP.nearCabin) { const np = pals.find(p => p.ch.id === SHOP.nearCabin); if (np) drawPointer(np.x + 50, SHOP_FLOOR - 220, t); }
+}
+function drawCabinPortal(t) { // in the admins' room, once IT is stopped: a portal opens on the right
+  if (!SHOP.itBroke || performance.now() - SHOP.itBroke < 2500) return;
+  for (let i=0;i<4;i++) { g.strokeStyle = i % 2 ? 'rgba(255,200,80,.9)' : 'rgba(57,255,20,.9)'; g.lineWidth = 8; g.beginPath(); g.ellipse(CABIN_PORTAL_X, SHOP_FLOOR - 120, 70 - i*14, 110 - i*22, 0, t*2*(i % 2 ? 1 : -1), t*2*(i % 2 ? 1 : -1) + 4.8); g.stroke(); }
+  g.fillStyle = '#ffd23f'; g.font = `22px ${FONT}`; g.textAlign = 'center'; g.fillText('walk in →', CABIN_PORTAL_X - 10, SHOP_FLOOR - 260);
+}
+const STORY_NOTES = ['', '💕 The shopkeepers are in love! 💕', '🌳 The shopkeepers are dating! 🌳', '🍝 Date night at Café Fun! 🍝', '💍 Just married! 💍', '🛡️ The Admin is watching... 🛡️', '💥 Everything is falling apart! 💥', '🕳️ The code is gone... the 1st floor is gone! 🕳️', '🏠 There is no shop now... 🏠', '💔 They are gone...', '🌀 The void...', '👁️ ...uoy teg lliw ti 👁️', '📺 It\'s only them...', '🙏 Pray for you are in danger 🙏', '👁️ IT is here 👁️', '🔨 escape? 🔨', '🤗 Together again 🤗', '🔑 Get the admins 🔑'];
 let storyCache = { t:0, s:0 };
-const STORY_LOOKS = [['love','💕 In love'], ['park','🌳 Park'], ['cafe','🍝 Café'], ['wedding','💍 Wedding'], ['admin','🛡️ Admin'], ['crumble','💥 Falling apart'], ['gone','🕳️ Code gone'], ['life','🏠 Once in a life time'], ['fell','💔 They are gone'], ['void','🌀 The void'], ['eyes','👁️ uoy teg lliw ti'], ['only','📺 It\'s only them'], ['pray','🙏 Pray for you are in danger'], ['it','👁️ IT is here']]; // (the looks, in story order, for the settings and the admin panel)
-const STORY_PICKS = { love:1, park:2, cafe:3, wedding:4, admin:5, crumble:6, gone:7, life:8, fell:9, void:10, eyes:11, only:12, pray:13, it:14 }; // (or pick one in settings: any look you've reached)
-function storyReached() { const w = weddingLeft(), a = attackLeft(), d = DATING_MIN*60000 - (Date.now() - (+lsGet('fff-confessed') || 0)); return itLeft() <= 0 ? 14 : prayLeft() <= 0 ? 13 : onlyLeft() <= 0 ? 12 : eyesLeft() <= 0 ? 11 : voidLeft() <= 0 ? 10 : fellLeft() <= 0 ? 9 : lifeLeft() <= 0 ? 8 : goneLeft() <= 0 ? 7 : arriveLeft() <= 0 ? 6 : w <= -WEDDING_LONG*60000 && a <= 0 ? 5 : w <= 0 ? 4 : date2Left() <= 0 ? 3 : confessSeen() && d <= 0 ? 2 : confessSeen() ? 1 : 0; } // (in love, dating, the 2nd date, married, the Admin's attack)
+const STORY_LOOKS = [['love','💕 In love'], ['park','🌳 Park'], ['cafe','🍝 Café'], ['wedding','💍 Wedding'], ['admin','🛡️ Admin'], ['crumble','💥 Falling apart'], ['gone','🕳️ Code gone'], ['life','🏠 Once in a life time'], ['fell','💔 They are gone'], ['void','🌀 The void'], ['eyes','👁️ uoy teg lliw ti'], ['only','📺 It\'s only them'], ['pray','🙏 Pray for you are in danger'], ['it','👁️ IT is here'], ['escape','🔨 escape?'], ['reunite','🤗 Reunite'], ['admins','🔑 Get the admins']]; // (the looks, in story order, for the settings and the admin panel)
+const STORY_PICKS = { love:1, park:2, cafe:3, wedding:4, admin:5, crumble:6, gone:7, life:8, fell:9, void:10, eyes:11, only:12, pray:13, it:14, escape:15, reunite:16, admins:17 }; // (or pick one in settings: any look you've reached)
+function storyReached() { const w = weddingLeft(), a = attackLeft(), d = DATING_MIN*60000 - (Date.now() - (+lsGet('fff-confessed') || 0)); return adminsLeft() <= 0 ? 17 : reuniteLeft() <= 0 ? 16 : escapeLeft() <= 0 ? 15 : itLeft() <= 0 ? 14 : prayLeft() <= 0 ? 13 : onlyLeft() <= 0 ? 12 : eyesLeft() <= 0 ? 11 : voidLeft() <= 0 ? 10 : fellLeft() <= 0 ? 9 : lifeLeft() <= 0 ? 8 : goneLeft() <= 0 ? 7 : arriveLeft() <= 0 ? 6 : w <= -WEDDING_LONG*60000 && a <= 0 ? 5 : w <= 0 ? 4 : date2Left() <= 0 ? 3 : confessSeen() && d <= 0 ? 2 : confessSeen() ? 1 : 0; } // (in love, dating, the 2nd date, married, the Admin's attack)
 function storyStage() {
   if (!storyOk || setup.storyLook === 'off') return 0;
   const now = Date.now(); if (now - storyCache.t < 1000) return storyCache.s; // (it only has to check once a second)
@@ -6715,7 +6968,7 @@ function storyStage() {
 }
 function storyClasses() {
   storyCache.t = 0; const s = storyStage(), el = document.documentElement;
-  el.classList.toggle('love', s === 1); el.classList.toggle('parklook', s === 2); el.classList.toggle('cafe', s === 3); el.classList.toggle('wedding', s >= 4); el.classList.toggle('adminlook', s >= 5); el.classList.toggle('crumble', s >= 6); el.classList.toggle('gone', s >= 7); el.classList.toggle('scared', s >= 8);
+  el.classList.toggle('love', s === 1); el.classList.toggle('parklook', s === 2); el.classList.toggle('cafe', s === 3); el.classList.toggle('wedding', s >= 4); el.classList.toggle('adminlook', s >= 5); el.classList.toggle('crumble', s >= 6 && !itStopped()); el.classList.toggle('gone', s >= 7); el.classList.toggle('scared', s >= 8 && !itStopped()); el.classList.toggle('cabin', cabinMenu());
   $('storyNote').textContent = s === 10 && saved() ? '🎉 Grumpy and Goofy are saved! 🎉' : STORY_NOTES[s]; $('storyNote').hidden = !s;
   const row = TITLE_ROW().map(c => c.id).join(); if (titleChars.dataset.ids !== row) { titleChars.dataset.ids = row; titleChars.innerHTML = ''; TITLE_ROW().forEach(c => titleChars.appendChild(charCanvas(c, 78))); } // (they are gone: Grumpy Shuriken and Goofy Sparkle aren't on the menu)
 }
@@ -6731,7 +6984,7 @@ function drawShopStory(t) { // the story look in the shop: the same hearts, butt
   const s = storyStage(); if (!s) return;
   if (s >= 6) { drawCracks(SHOP_FLOOR); drawRubble(t, 0); } if (s >= 7 && SHOP.floor === 2) drawCodeHole(t); // (the shop is falling apart: cracks in the walls, and bits of the ceiling falling down)
   g.save(); g.globalAlpha = 0.55; drawStoryFx(t); g.restore(); // (a bit see-through, so they don't get in the way)
-  const cols = [null, ['#ff8fc1', '#e75a9b'], ['#2e9e4f', '#8fd16a'], ['#7a1f2b', '#ffd65a'], ['#ffd23f', C.white], ['#39ff14', '#0b2a14'], ['#8a7f74', '#39ff14'], ['#000', '#39ff14'], ['#000', '#39ff14'], ['#000', '#39ff14'], ['#000', '#39ff14'], ['#000', '#e8ffe0'], ['#ff8fc1', '#ffd23f'], ['#ff4040', '#000'], ['#39ff14', '#000']][s];
+  const cols = [null, ['#ff8fc1', '#e75a9b'], ['#2e9e4f', '#8fd16a'], ['#7a1f2b', '#ffd65a'], ['#ffd23f', C.white], ['#39ff14', '#0b2a14'], ['#8a7f74', '#39ff14'], ['#000', '#39ff14'], ['#000', '#39ff14'], ['#000', '#39ff14'], ['#000', '#39ff14'], ['#000', '#e8ffe0'], ['#ff8fc1', '#ffd23f'], ['#ff4040', '#000'], ['#39ff14', '#000'], ['#c9a26b', '#39ff14'], ['#ffb02e', '#ffd23f'], ['#39ff14', '#ffd23f']][s];
   g.strokeStyle = cols[0]; g.lineWidth = 3; g.beginPath(); for (let x = 0; x <= W; x += 10) { const y = 160 + Math.abs(Math.sin(x/200*Math.PI))*-30 + 30; x ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke();
   for (let x = 40; x < W; x += 80) { const y = 160 + Math.abs(Math.sin(x/200*Math.PI))*-30 + 30, i = x/80 | 0; g.fillStyle = cols[i % 2]; g.strokeStyle = C.ink; g.lineWidth = 2; // little flags (hearts on the love look)
     if (s === 1) drawLittleHeart(x, y + 16, 12); else { g.beginPath(); g.moveTo(x - 16, y); g.lineTo(x + 16, y); g.lineTo(x, y + 30); g.closePath(); g.fill(); g.stroke(); } }
@@ -6802,7 +7055,7 @@ $('apUnlock').onclick = () => { // Missing Arrow, every item (but the attic's go
 $('apStory').onclick = () => { // every chapter at once: the whole story already happened (you saw it all), so every background is yours, plus Flower Girl and everything in the shop
   const now = Date.now(), M = 60000;
   lsSet('fff-confess', String(now - 400*M)); lsSet('fff-confessed', String(now - 350*M)); // (dating 290 minutes ago, the 2nd date 280...)
-  lsSet('fff-wedding', String(now - 250*M)); lsSet('fff-attack', String(now - 200*M)); lsSet('fff-attackwon', '1'); lsSet('fff-fell', String(now)); lsSet('fff-saved', String(now)); // (...the wedding 250, the Admin's attack 200, and the rest of chapter 2 and 3 after it)
+  lsSet('fff-wedding', String(now - 250*M)); lsSet('fff-attack', String(now - 200*M)); lsSet('fff-attackwon', '1'); lsSet('fff-fell', String(now)); lsSet('fff-saved', String(now)); lsSet('fff-itstopped', String(now)); // (...the wedding 250, the Admin's attack 200, and the rest of chapter 2 and 3 after it)
   shop.unlocked = { ...(shop.unlocked || {}), flower:true };
   $('apUnlock').onclick(); // (and everything in the shop)
   setup.storyLook = 'on'; saveSetup(); applyTheme(); renderSeg('apStorySeg', [['on','Newest'], ...STORY_LOOKS, ['off','Off']], 'storyLook', applyTheme);
@@ -7179,7 +7432,8 @@ function openShop() {
   SHOP.smiSay = SHOP.smi7y ? 'Yo! It\'s SMI7Y! Come say hi!' : ''; SHOP.smiSayT = SHOP.smi7y ? 4 : 0; SHOP.smiTalk = -1;
   SHOP.enterClock = 0; SHOP.replies = CHARS[SHOP.who].id === 'shuriken' ? SHURIKEN_REPLIES.map(r => ({ ...r })) : [];
   if (noShop()) Object.assign(SHOP, { floor:12, dorm:DORMS.findIndex(d => d.keepers), x:300, cam:0, visit:null, enterT:0, smi7y:false, smiSayT:0, ktask:null, kdone:new Set(), shyAwake:false, pb:{ next:performance.now() + 800, chat:null, line:0 } }); // (there is no shop now: you go to the shopkeepers' home)
-  if (itOn()) Object.assign(SHOP, { floor:IT_FLOOR, x:300, y:0, visit:null, enterT:0, youSayT:0, smi7y:false, smiSayT:0, itAsked:[], itSay:null }); // (IT is here: you go into the dark to talk to IT)
+  if (cabinMenu()) Object.assign(SHOP, { floor:CABIN_FLOOR, x:300, y:0, cam:0, visit:null, enterT:0, youSayT:0, smi7y:false, smiSayT:0 }); // (IT is stopped: everyone lives in the cabin now)
+  else if (itOn()) Object.assign(SHOP, { floor:IT_FLOOR, x:300, y:0, visit:null, enterT:0, youSayT:0, smi7y:false, smiSayT:0, itAsked:[], itSay:null }); // (IT is here: you go into the dark to talk to IT)
   else if (prayOn()) Object.assign(SHOP, { floor:EDGE_FLOOR, x:600, y:0, visit:null, enterT:0, youSayT:0, smi7y:false, smiSayT:0, edgeT0:performance.now() }); // (pray for you are in danger: you show up at the edge of the world, watching them try to get out)
   else if (onlyOn()) Object.assign(SHOP, { floor:6, x:600, y:0, visit:null, enterT:0, youSayT:0, smi7y:false, smiSayT:0 }); // (it's only them: you show up in the break room, and you're not anybody, you just watch)
   openPage('shop'); renderShopCard(true); cv.focus();
@@ -7424,10 +7678,11 @@ function drawSkinBooth(t) { // a big gold mirror on a stand: it shows you in eac
 }
 function renderShopCard(force) {
   const ch = CHARS[SHOP.who], st = SHOP.near, it = st && ITEMS.find(i => i.id === st.item);
-  const key = [shop.coins, ch.id, justWatching(), (SHOP.itAsked || []).length, SHOP.floor >= DINNER_FLOOR ? placeMsg() : '', SHOP.floor === 15 && attackOn(), !!(SHOP.atk && SHOP.atk.won), SHOP.nearWed, SHOP.nearPark, SHOP.nearPaper, SHOP.ktask, SHOP.nearTask, SHOP.nearToys, it && it.id, it && shop.owned[it.id], ITEMS.map(i => wears(i.id, ch)).join(), SHOP.nearKeeper, SHOP.nearStairs, SHOP.stairTo, SHOP.floor, jokeOpen(), !!SHOP.revealed, SHOP.nearSmi, SHOP.nearSkins, skinOf(ch), skinRec(ch).have.join(), SHOP.nearCage, SHOP.cage && SHOP.cage.lock.left, SHOP.cage && SHOP.cage.hp, SHOP.cage && SHOP.cage.freed, SHOP.nearPal && SHOP.nearPal.id, SHOP.stairRoom, SHOP.dorm, SHOP.nearSwitch, setup.dormTime].join('|');
+  const key = [shop.coins, ch.id, justWatching(), (SHOP.itAsked || []).length, (SHOP.clues || []).length, (SHOP.termHeld || []).length, !!SHOP.itBroke, SHOP.floor >= DINNER_FLOOR ? placeMsg() : '', SHOP.floor === 15 && attackOn(), !!(SHOP.atk && SHOP.atk.won), SHOP.nearWed, SHOP.nearPark, SHOP.nearPaper, SHOP.ktask, SHOP.nearTask, SHOP.nearToys, it && it.id, it && shop.owned[it.id], ITEMS.map(i => wears(i.id, ch)).join(), SHOP.nearKeeper, SHOP.nearStairs, SHOP.stairTo, SHOP.floor, jokeOpen(), !!SHOP.revealed, SHOP.nearSmi, SHOP.nearSkins, skinOf(ch), skinRec(ch).have.join(), SHOP.nearCage, SHOP.cage && SHOP.cage.lock.left, SHOP.cage && SHOP.cage.hp, SHOP.cage && SHOP.cage.freed, SHOP.nearPal && SHOP.nearPal.id, SHOP.stairRoom, SHOP.dorm, SHOP.nearSwitch, setup.dormTime].join('|');
   if (!force && key === SHOP.key) return;
   SHOP.key = key; $('coinCount').textContent = shop.coins; $('shopWho').textContent = ch.name;
-  const card = $('shopCard'); if (SHOP.floor === IT_FLOOR) card.innerHTML = itCard(); else if (SHOP.floor === EDGE_FLOOR) card.innerHTML = '<h3>Pray for you are in danger</h3><p>The edge of the world. The shopkeepers are trying to get out of this world: pushing on the wall of code, reaching for the crack in the sky, jumping into the portal... and every time, it fails. So they pray, and try again.</p><p class="note">You are not anybody here. You just watch them try. Press back to leave.</p>';
+  const card = $('shopCard'); if (SHOP.floor === CABIN_FLOOR) card.innerHTML = '<h3>The cabin</h3><p>Your big, cozy new home, with everyone in it: the shopkeepers, all the fighters and the admins. Walk up to someone and press punch to talk.</p>';
+  else if (SHOP.floor === TUNNEL_FLOOR || SHOP.floor === AROOM_FLOOR) card.innerHTML = ch5Card(); else if (SHOP.floor === REUNITE_FLOOR) card.innerHTML = '<h3>Reunite</h3><p>Deep in the code, in a dark cave with a little campfire: this is where all the fighters went. And now IT has brought the shopkeepers here too...</p><p class="note">You are not anybody here. You just watch. Press back to leave.</p>'; else if (SHOP.floor === TRAIL_FLOOR) card.innerHTML = '<h3>escape?</h3><p>A door at the edge of the world... the shopkeepers step out onto a quiet trail, and it leads to an empty place full of tools to build with. Are they free...?</p><p class="note">You are not anybody here. You just watch. Press back to leave.</p>'; else if (SHOP.floor === IT_FLOOR) card.innerHTML = itCard(); else if (SHOP.floor === EDGE_FLOOR) card.innerHTML = '<h3>Pray for you are in danger</h3><p>The edge of the world. The shopkeepers are trying to get out of this world: pushing on the wall of code, reaching for the crack in the sky, jumping into the portal... and every time, it fails. So they pray, and try again.</p><p class="note">You are not anybody here. You just watch them try. Press back to leave.</p>';
   else if (onlyThemHere()) card.innerHTML = '<h3>It\'s only them</h3><p>Just the two shopkeepers, alone in the broken break room. Their memories are moving on a paper on the wall all by themselves: the confession, their first date, Café Fun and the big day... and they are scared.</p><p class="note">You are not anybody here. You just watch. Press back to leave.</p>'; else fillShopCard(card, ch, it); // (it's only them: no fighter, no things to wear)
   // a ✕ to close this pop-up (it stays closed until you click "show info"; punch still works without it)
   card.hidden = !!SHOP.cardClosed; $('shopCardOpen').hidden = !SHOP.cardClosed;
@@ -7735,6 +7990,7 @@ function endNet(msg, toOnline) {
   const peer = Net.peer; Net.role = null; Net.peer = null; Net.host = null; Net.conns.clear(); Net.inputs.clear(); Net.lobby = null; clearTimeout(Net.joinTimer);
   if (peer) setTimeout(() => { try { peer.destroy(); } catch (e) {} }, 250);
   G.online = null; G.paused = false; $('quitAsk').hidden = true;
+  if (netStory) { netStory = null; storyCache.t = 0; applyTheme(); } // (back to your own story)
   if (toOnline) { G.state = 'online'; showScreen('online'); onlineMsg(msg || ''); }
   else { G.state = 'title'; showScreen('title'); $('notice').textContent = msg || ''; $('okBtn').focus(); }
 }
@@ -7790,6 +8046,8 @@ function hostOnData(conn, d) {
   }
   if (!Net.conns.has(id)) return;
   if (d.t === 'pick') return lobbyPick(id, d.ch);
+  if (d.t === 'pos') { (Net.others = Net.others || {})[id] = { fl:+d.fl, x:+d.x || 0, y:+d.y || 0, f:+d.f || 1, ch:String(d.ch || ''), say:String(d.say || '').slice(0, 80) }; return; } // (story together: where they are)
+  if (d.t === 'skey') { netGotStoryKey(String(d.k), d.v); return netBroadcast({ t:'skey', k:String(d.k), v:d.v }); } // (story together: someone made progress)
   if (d.t === 'apow') { const p = G.fighters.find(f => f.control === 'net:' + id); if (G.state === 'fight') adminPower(p, String(d.act), String(d.arg || ''), !!(G.horror && G.mode === 'horror' && G.horror.monster.control === 'net:' + id)); return; } // an online admin using a fight power
   if (d.t === 'pmove') { movePopup(+d.id, +d.x, +d.y); return netBroadcast({ t:'pmove', id:+d.id, x:+d.x || 0, y:+d.y || 0 }); } // a shopkeeper dragging their pop-up: move it here and on everyone else's screen
   if (d.t === 'swap') { const p = G.fighters.find(f => f.control === 'net:' + id); if (G.state === 'fight' && p && CHAR[d.ch]) swapFighter(p, CHAR[d.ch]); return; } // an online admin changing fighter
@@ -7907,6 +8165,9 @@ function clientOnData(d) {
       if (G.champ) showResults();
       break;
     case 'tolobby': G.online = null; openLobby(); break;
+    case 'story': netStory = {}; for (const k of STORY_KEYS) netStory[k] = d.keys && d.keys[k] != null ? String(d.keys[k]) : null; goStoryTogether(); break; // the host started the story together
+    case 'poss': Net.othersList = Array.isArray(d.list) ? d.list : []; break; // where everyone is
+    case 'skey': netGotStoryKey(String(d.k), d.v); break; // someone made progress in the story
     case 'addf': { const ch = CHAR[d.ch]; if (ch && !G.fighters.some(f => f.idx === d.idx)) G.fighters.push({ ch, control:'cpu', tag:'CPU', team:d.team || 0, idx:d.idx, r:38*(ch.size || 1), me:false, body:{ position:{ x:800, y:120 }, angle:0 }, tgt:null, seen:false, alive:true, ko:0, dizzy:0, facing:1, punchAnim:0, flash:0, grabbing:null, squash:0 }); break; } // an admin added a computer player
     case 'fx': G.fx = d.fx || {}; break; // an admin switched a silly effect
     case 'daytime': G.hostDaytime = d.d; break; // the host switched day or night
@@ -8052,6 +8313,7 @@ function renderLobby() {
       ${L.mode === 'race' ? '<div class="setting"><span>Track</span><div class="seg" id="lobTrackSeg"></div></div>' : L.mode === 'horror' ? '<div class="setting"><span>Map</span><div class="seg" id="lobHmapSeg"></div></div><div class="setting"><span>Who is the monster?</span><div class="seg" id="lobHmonSeg"></div></div>' : '<div class="setting"><span>Map</span><div class="seg" id="lobMapSeg"></div></div>'}
       <div class="setting"><span>Computer players</span><div class="seg" id="lobDiffSeg"></div></div>
       <button id="lobbyFight" class="btn big">make fight happen</button>
+      <button id="lobbyStory" class="btn">🌲 story together</button>
       <p id="lobbyMsg" class="msg" role="status"></p>
       <button id="lobbyDisband" class="disband small-disband"><span>disband</span><span>team</span></button>`;
     aside.querySelectorAll('[data-kick]').forEach(b => b.onclick = () => hostKick(b.dataset.kick));
@@ -8063,14 +8325,43 @@ function renderLobby() {
     if ($('lobHmapSeg')) renderSeg('lobHmapSeg', HMAP_LIST, 'hmap', () => { L.hmap = setup.hmap; broadcastLobby(); });
     if ($('lobHmonSeg')) { setup.hmonster = L.hmonster || 'cpu'; renderSeg('lobHmonSeg', [['cpu', 'Computer'], ...L.players.filter(p => p.ch).map(p => [p.ch, p.name]), ...L.cpus.map(c => [c, CHAR[c].name + ' (computer)'])], 'hmonster', () => { L.hmonster = setup.hmonster; broadcastLobby(); }); }
     $('lobbyFight').onclick = () => { audioOn(); hostStartMatch(); };
+    $('lobbyStory').onclick = () => hostStory(); // (everyone goes into the story together)
     $('lobbyDisband').onclick = () => endRoom('You disbanded the team.');
   } else {
     aside.innerHTML = `<h3>the team</h3>
       <ul class="plist">${L.players.map(p => `<li>${dot(p)}<span>${esc(p.name)}${p.id === 'host' ? ' (host)' : ''}${p.id === me ? ' (you)' : ''}</span></li>`).join('')}</ul>
       <p>Mode: <b>${esc((MODES.find(m => m[0] === L.mode) || MODES[0])[1])}</b> · ${L.mode === 'race' ? `Track: <b>${esc((RACE_TRACKS[L.track] || RACE_TRACKS.gp).name)}</b>` : L.mode === 'horror' ? `Map: <b>${esc((HMAPS[L.hmap] || HMAPS.house).name)}</b> · Monster: <b>${esc(L.hmonster && L.hmonster !== 'cpu' ? ((L.players.find(p => p.ch === L.hmonster) || {}).name || CHAR[L.hmonster].name) : 'the computer')}</b>` : `Map: <b>${esc((MAPS[L.map] || MAPS.cloud).name)}</b> · Rounds to win: <b>${esc(Net.hostRounds || 3)}</b>`} · Computer players: <b>${esc((DIFF[Net.hostDiff] || DIFF.normal).label)}</b></p>
-      <p class="msg" style="color:var(--ink)">Pick a fighter, then wait for the host to make the fight happen.</p>
+      <p class="msg" style="color:var(--ink)">Pick a fighter, then wait for the host to make the fight happen (or to start the story together).</p>
       <button id="lobbyLeave" class="btn black">leave team</button>`;
     $('lobbyLeave').onclick = () => clientLeave();
+  }
+}
+// ----- the story, together online: in a team, the host presses "story together", and everyone goes into the story, using the host's chapters.
+// You all see each other walking around (with name tags and speech bubbles) in the cabin and every story place, and progress anyone makes is shared
+const STORY_KEYS = ['fff-confess', 'fff-confessed', 'fff-wedding', 'fff-attack', 'fff-attackwon', 'fff-fell', 'fff-saved', 'fff-itstopped'];
+function storySnapshot() { const o = {}; for (const k of STORY_KEYS) { try { o[k] = localStorage.getItem(k); } catch { o[k] = null; } } return o; }
+function hostStory() { netStory = storySnapshot(); netBroadcast({ t:'story', keys:netStory }); goStoryTogether(); }
+function goStoryTogether() { Net.others = {}; Net.othersList = []; storyCache.t = 0; applyTheme(); audioOn(); openShop(); SHOP.youSay = 'Let\'s do the story together!'; SHOP.youSayT = 3; }
+function netStoryKey(k, v) { // someone made progress in the story: share it with the team
+  if (Net.role === 'host') netBroadcast({ t:'skey', k, v }); else if (Net.host && Net.host.open) { try { Net.host.send({ t:'skey', k, v }); } catch (e) {} }
+}
+function netGotStoryKey(k, v) { if (!netStory || !STORY_KEYS.includes(k)) return; netStory[k] = v == null ? null : String(v); if (Net.role === 'host') { try { localStorage.setItem(k, netStory[k]); } catch (e) {} } storyCache.t = 0; applyTheme(); }
+function netPosTick() { // tell the team where you are (about 10 times a second)
+  if (!Net.role || !netStory || !(G.state === 'shop' || (G.state === 'title' && cabinMenu()))) return;
+  const now = performance.now(); if (now - (Net.lastPos || 0) < 100) return; Net.lastPos = now;
+  const me = { fl:SHOP.floor, x:Math.round(SHOP.x), y:Math.round(SHOP.y || 0), f:SHOP.facing || 1, ch:CHARS[SHOP.who].id, say:SHOP.youSayT > 0 ? String(SHOP.youSay || '').slice(0, 80) : '' };
+  if (Net.role === 'host') { const list = Object.entries(Net.others || {}).map(([id, p]) => ({ id, ...p })).concat([{ id:'host', ...me }]); netBroadcast({ t:'poss', list }); }
+  else if (Net.host && Net.host.open) { try { Net.host.send({ t:'pos', ...me }); } catch (e) {} }
+}
+function drawNetOthers(t) { // the other players in your team, if they're in the same place as you
+  if (!Net.role || !netStory) return;
+  const me = Net.role === 'host' ? 'host' : Net.you, list = Net.role === 'host' ? Object.entries(Net.others || {}).map(([id, p]) => ({ id, ...p })) : (Net.othersList || []);
+  for (const p of list) {
+    if (p.id === me || p.fl !== SHOP.floor || !CHAR[p.ch]) continue;
+    const ch = CHAR[p.ch], r = 50*(ch.size || 1), y = SHOP_FLOOR - r + (p.y || 0), name = ((Net.lobby && Net.lobby.players.find(q => q.id === p.id)) || {}).name || 'Player';
+    g.save(); g.translate(p.x, y); drawCharacter(g, ch, r, { facing:p.f || 1, ...looks(ch), still:true }); g.restore();
+    g.font = `18px ${FONT}`; const w = g.measureText(name).width + 16; g.fillStyle = 'rgba(0,0,0,.65)'; g.fillRect(p.x - w/2, y - r - 46, w, 26); g.fillStyle = C.white; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(name, p.x, y - r - 33); // their name tag
+    if (p.say) drawBubble(p.say, p.x + 130, y - r - 52, p.x + 20);
   }
 }
 $('onlineBtn').onclick = () => { audioOn(); openOnline(); };
