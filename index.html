@@ -955,7 +955,7 @@ const KEEPER2_KID_LINES = [
 ];
 // what Goofy Sparkle says in the shop when Halloween scares him (he stays anyway)
 const SCARED_LINES = ['Eek! A pumpkin!', 'B-bats?! I\'m not scared... okay, a little.', 'I\'m brave! I\'m staying!', 'Is that a real spider web?!', 'I\'m not going anywhere! *shaking*'];
-// both shopkeepers get a bit weird around Nervous Hexstar, but they really like him
+// both shopkeepers get a bit weird around Hexstar 2.0, but they really like her
 const isHex = () => CHARS[SHOP.who].id === 'hex';
 const KEEPER_HEX_LINES = [
   () => 'Oh! Hexstar! Hi! Hello! Hi! ...why did I say hi three times?',
@@ -1144,14 +1144,17 @@ function drawFace(g, ch, r, o = {}) {
       g.fillStyle = '#ff8fc1'; g.strokeStyle = C.ink; g.lineWidth = 0.03; g.beginPath(); g.ellipse(0, 0.2, 0.15, 0.07, 0, 0, TAU); g.fill(); g.stroke(); g.fillStyle = '#8fd3ff'; dot(0, 0.2, 0.05); g.strokeStyle = C.ink; g.lineWidth = 0.035; g.beginPath(); g.arc(0, 0.3, 0.05, 0, TAU); g.stroke(); // a pacifier
       g.fillStyle = 'rgba(255,90,110,.55)'; oval(-0.33, 0.13, 0.1, 0.06); oval(0.33, 0.13, 0.1, 0.06); // rosy baby cheeks
       g.fillStyle = C.ink; break;
-    case 'hex': { // Hexstar 2.0: a brand new robot the admins built. A black visor screen with glowing blue LED eyes (they blink) and an LED smile
+    case 'hex': { // Hexstar 2.0: a brand new robot the admins built, and she's a woman. A black visor screen with glowing blue LED eyes (they blink) with LED eyelashes, pink LED cheeks, an LED smile and a pink bow
       const now = performance.now()/1000, blink = (now % 3.4) < 0.12 ? 0.15 : 1;
       g.fillStyle = '#10161f'; g.strokeStyle = C.ink; g.lineWidth = 0.05; g.beginPath(); g.roundRect ? g.roundRect(-0.44, -0.34, 0.88, 0.5, 0.14) : g.rect(-0.44, -0.34, 0.88, 0.5); g.fill(); g.stroke(); // the visor
       g.fillStyle = 'rgba(255,255,255,.18)'; g.beginPath(); g.moveTo(-0.38, -0.3); g.lineTo(-0.12, -0.3); g.lineTo(-0.26, -0.12); g.lineTo(-0.4, -0.12); g.closePath(); g.fill(); // a shine on it
       g.save(); g.shadowColor = '#5ff0ff'; g.shadowBlur = 6; g.fillStyle = '#5ff0ff';
       for (const ex of [-0.19, 0.19]) { g.beginPath(); g.roundRect ? g.roundRect(ex - 0.07, -0.15 - 0.08*blink, 0.14, 0.16*blink, 0.04) : g.rect(ex - 0.07, -0.15 - 0.08*blink, 0.14, 0.16*blink); g.fill(); } // LED eyes
       for (let i=0;i<5;i++) { const a = Math.PI*0.2 + i*Math.PI*0.15; g.beginPath(); g.arc(Math.cos(a)*0.16, -0.06 + Math.sin(a)*0.13, 0.025, 0, TAU); g.fill(); } // an LED smile
+      g.strokeStyle = '#5ff0ff'; g.lineWidth = 0.028; g.lineCap = 'round'; for (const s of [-1, 1]) for (let k = 0; k < 3; k++) { g.beginPath(); g.moveTo(s*(0.2 + k*0.045), -0.2 - (2 - k)*0.012); g.lineTo(s*(0.22 + k*0.075), -0.27 - (2 - k)*0.012); g.stroke(); } // LED eyelashes
+      g.shadowColor = '#ff8fc1'; g.fillStyle = '#ff8fc1'; for (const s of [-1, 1]) { g.beginPath(); g.arc(s*0.33, -0.01, 0.045, 0, TAU); g.fill(); } // pink LED cheeks
       g.restore();
+      g.fillStyle = '#ff5fa2'; g.strokeStyle = C.ink; g.lineWidth = 0.035; for (const s of [-1, 1]) { g.beginPath(); g.moveTo(0.46, -0.5); g.lineTo(0.46 + s*0.22, -0.62); g.lineTo(0.46 + s*0.22, -0.38); g.closePath(); g.fill(); g.stroke(); } g.beginPath(); g.arc(0.46, -0.5, 0.055, 0, TAU); g.fill(); g.stroke(); // a pink bow
       break;
     }
     case 'heart': // big sparkly eyes with lashes, pink cheeks and a happy smile
@@ -1299,7 +1302,7 @@ function drawCharacter(g, ch, r, o = {}) {
     return;
   }
   const robot = ch.shape === 'star6', tt = performance.now()/1000; // Nervous Hexstar is a nervous little robot who never stops shaking
-  const shaky = ch.shape === 'arrow' && !o.brave; // (the new Hexstar is calm: he doesn't shake anymore) // Missing Arrow trembles too, he's so scared (unless his big brother is with him)
+  const shaky = ch.shape === 'arrow' && !o.brave; // (the new Hexstar is calm: she doesn't shake) // Missing Arrow trembles too, he's so scared (unless his big brother is with him)
   if (shaky) { g.save(); g.translate(Math.sin(tt*(robot ? 45 : 33))*r*(robot ? 0.035 : 0.025), 0); }
   // Missing Arrow is glitchy, like the cage room he was stuck in: a red and blue fringe all the time, and lots of big glitches
   const glitchy = ch.shape === 'arrow', burst = glitchy && Math.sin(tt*2.3) + Math.sin(tt*5.7) + Math.sin(tt*13.1)*0.5 > 0.6, gk = Math.floor(tt*24) % 6;
@@ -1900,7 +1903,7 @@ function hitFighter(p, q) {
     q.dizzy += 26*pw;
     if (q.dizzy >= MAX_HP) { q.dizzy = MAX_HP; q.ko = 3; ev('pop', q.body.position.x, q.body.position.y - 70, 'DIZZY!', C.purple); ev('sfx','dizzy'); }
   }
-  if (p.ch.id === 'hex') p.energy = Math.min(LASER_MAX, (p.energy || 0) + LASER_GAIN); // Nervous Hexstar charges up his laser
+  if (p.ch.id === 'hex') p.energy = Math.min(LASER_MAX, (p.energy || 0) + LASER_GAIN); // Hexstar 2.0 charges up her laser
   if (p.ch.id === 'heart' && Math.random() < LIFESTEAL_CHANCE && p.dizzy > 0) { p.dizzy = Math.max(0, p.dizzy - LIFESTEAL_HEAL); ev('pop', p.body.position.x, p.body.position.y - 60, `+${LIFESTEAL_HEAL}`, C.green); ev('burst', p.body.position.x, p.body.position.y, '#ff8fc1', 8); } // Lovely Heart's lifesteal (from Mason's drawing): some punches heal them
   if (q.grabbing) release(q);
   const hx = q.body.position.x - p.facing*q.r*0.6, hy = q.body.position.y;
@@ -1988,7 +1991,7 @@ function aiInput(p) {
     if (SPECIALS[p.ch.id] === 'popup' && Math.random() < 0.008*D.spec) inp.specialP = true;
     if (SPECIALS[p.ch.id] === 'slam' && Math.abs(dx) < 160 && Math.abs(dy) < 60 && Math.random() < 0.03*D.spec) inp.specialP = true;
     if (SPECIALS[p.ch.id] === 'shine' && Math.abs(dy) < 50 && Math.abs(dx) > 90 && Math.abs(dx) < 800 && Math.random() < 0.03*D.spec) { p.facing = Math.sign(dx); inp.specialP = true; } // Cool Star's star shot
-    if (SPECIALS[p.ch.id] === 'laser' && (p.energy || 0) >= 40 && Math.abs(dy) < 60 && Math.abs(dx) < 800 && Math.random() < 0.03*D.spec*(p.energy >= LASER_MAX ? 3 : 1)) { p.facing = Math.sign(dx) || p.facing; inp.specialP = true; } // Nervous Hexstar fires once his tank has some energy (right away when it's full)
+    if (SPECIALS[p.ch.id] === 'laser' && (p.energy || 0) >= 40 && Math.abs(dy) < 60 && Math.abs(dx) < 800 && Math.random() < 0.03*D.spec*(p.energy >= LASER_MAX ? 3 : 1)) { p.facing = Math.sign(dx) || p.facing; inp.specialP = true; } // Hexstar 2.0 fires once her tank has some energy (right away when it's full)
   }
   if (p.grounded > 0 && Math.random() < 0.012) inp.jumpP = true; // (they hop around a lot)
   if (!inp.x && a.cd > 0 && onIsland && x > gp.x1 + 90 && x < gp.x2 - 90 && Math.random() < 0.25) inp.x = Math.random() < 0.5 ? -1 : 1; // and they never stand still for long (but not near an edge)
@@ -2183,7 +2186,7 @@ const GLITCH_DIST = 230, GLITCH_RX = 190, GLITCH_RY = 140, GLITCH_WARN = 0.7, GL
 const DASH_SPEED = 26, DASH_TIME = 0.32;
 // Cool Star's star shot (from Mason's drawing): a yellow star zooms straight forward and hits the first fighter it touches (40)
 const SHOT_SPEED = 950, SHOT_R = 30, SHOT_DMG = 40;
-// Nervous Hexstar's laser (from Mason's drawing): every punch that lands puts 10 energy in his tank (up to 100). The laser uses it all up, and does 1 damage for each bit of energy
+// Hexstar 2.0's laser (from Mason's drawing): every punch that lands puts 10 energy in her tank (up to 100). The laser uses it all up, and does 1 damage for each bit of energy
 const LASER_MAX = 100, LASER_GAIN = 10, LASER_CD = 5, LASER_T = 0.35;
 // Goofy Sparkle's sugar rush: he zooms all around the closest fighter in a wild yellow scribble, hitting them 4 times (10 each)
 const RUSH_HITS = 4, RUSH_GAP = 0.28, RUSH_RANGE = 450;
@@ -4058,7 +4061,7 @@ function shopStep(dt) {
   SHOP.smiSayT = Math.max(0, (SHOP.smiSayT || 0) - dt);
   if (h.punch && !pr.punch) { if (SHOP.nearCabin) cabinTalk(); else if (SHOP.nearCh5) ch5Act(); else if (SHOP.nearVoidCage >= 0) voidHit(); else if (SHOP.nearCage) cageHit(); else if (SHOP.near) shopAct(SHOP.near.item); else if (SHOP.nearSkins) nextSkin(); else if (SHOP.nearBox >= 0) unpackBox(); else if (SHOP.nearK7) kid7Act(); else if (SHOP.nearSwitch) dormLight(); else if (SHOP.nearAtk) atkAct(); else if (SHOP.nearPaper) readPaper(); else if (SHOP.nearWed) wedAct(); else if (SHOP.nearPark) parkAct(); else if (SHOP.nearTask) doKTask(); else if (SHOP.nearToys) playToys(); else if (SHOP.nearStairs) shopStairs(); else if (SHOP.nearPal) palTalk(); else if (SHOP.nearSmi) smiTalk(); else if (SHOP.nearKeeper) shopTalk(); }
   if (h.grab && !pr.grab && SHOP.nearKeeper) shopLaugh();
-  if (isHex()) { // Hexstar says "beep boop baap!" now and then (or when you press special), and the shopkeepers act like he never said it
+  if (isHex()) { // Hexstar says "beep boop baap!" now and then (or when you press special), and the shopkeepers act like she never said it
     SHOP.beepCD = (SHOP.beepCD ?? 3) - dt; SHOP.beepT = Math.max(0, (SHOP.beepT || 0) - dt);
     if (SHOP.beepCD <= 0 || (h.special && !pr.special)) { SHOP.beepT = 2; SHOP.beepCD = 8; SHOP.ignoreT = 1.1; if (sfx.beep) sfx.beep(); }
     if (SHOP.ignoreT > 0 && (SHOP.ignoreT -= dt) <= 0 && SHOP.msgT <= 0) {
@@ -4342,7 +4345,7 @@ const PB_SOLO = { // what each of them says on their own now and then
   star:['Being this cool is a full-time job.', '*adjusts shades*'], tri:['Grrr... I am NOT angry. I am resting.', 'Who keeps moving my chair?!'],
   circle:['WHAT?! Oh. It\'s just break time.', 'I am SO surprised by everything!'], diamond:['I know a secret... but I won\'t tell.', '*sneaky smile*'],
   square:['BREAK TIME IS THE BEST TIME!', 'I AM VERY RELAXED RIGHT NOW!'], sparkle:['Wheee! Break time!', 'Can I have a juice box?'],
-  hex:['Beep boop baap!', 'I am... resting my circuits.'], oldhex:['B-beep... I have a ROOM now!', 'Hexstar 2.0 is the best brother.', '*polishes his glasses*'], flower:['Has anyone seen my watering can?', 'I picked these flowers for everyone!'], heart:['Love you all!', 'Who wants a cookie?'],
+  hex:['Beep boop baap!', 'I am... resting my circuits.'], oldhex:['B-beep... I have a ROOM now!', 'Hexstar 2.0 is the best sister.', '*polishes his glasses*'], flower:['Has anyone seen my watering can?', 'I picked these flowers for everyone!'], heart:['Love you all!', 'Who wants a cookie?'],
   shuriken:['Hmph.', 'Has anyone seen Goofy Sparkle? ...Again?'], arrow:['*trembles* I-it\'s nice in here...', '*glitches a little*'],
   admin:['I am the boss of the whole game.', 'i ♥ forsken'],
 };
@@ -4419,7 +4422,7 @@ const DORMS = [ // who shares a room (and what they talk about in there)
     [['keeper2', 'u-um... do you think the fighters liked the new hats?'], ['keeper', 'They LOVED them!'], ['keeper2', '*happy* ...hehe.']],
     [['keeper', 'We sold SO many things today!'], ['keeper2', 'and one pink bow... *happy*']]] },
   // the robots: Hexstar 2.0's room. Once he's in (chapter 5), the old Hexstar, Hexstar 1.0, moves in with him
-  { ids:['hex', 'oldhex'], robots:true, wall:'#dff1ff', chats:[[['hex', 'Beep... boop... good night, Hexstar 1.0.'], ['oldhex', 'B-beep. Good night, Hexstar 2.0. ...Can we leave the light on?'], ['hex', 'Of course! *turns on his antenna light*']],
+  { ids:['hex', 'oldhex'], robots:true, wall:'#dff1ff', chats:[[['hex', 'Beep... boop... good night, Hexstar 1.0.'], ['oldhex', 'B-beep. Good night, Hexstar 2.0. ...Can we leave the light on?'], ['hex', 'Of course! *turns on her antenna light*']],
     [['oldhex', 'I was stuck in the code for SO long... it is nice to have a bed.'], ['hex', 'And a brother! Beep!'], ['oldhex', '*happy beeping*']]] },
 ];
 const OLD_HEX_CH = { id:'oldhex', name:'Hexstar 1.0', shape:'star6', color:'#93a3bd', oldHex:true }; // (the old Hexstar isn't a fighter, so he gets his own little entry, just for the dorms)
@@ -7127,7 +7130,7 @@ const CABIN_SHOP_TALK = { // what the shopkeepers say at the cabin shop's counte
 };
 const CABIN_TALK = {
   keeper:['The new Hexstar? ...The old Hexstar did not make it out of the code. *takes off hat* But the admins built a brand new one. Hexstar 2.0!', 'Welcome home! Well... our NEW home!', 'No more IT. No more glitches. Just us. Hehe!', 'Want to help me build a new shop out back?'],
-  keeper2:['W-we miss the old Hexstar... he did not make it. *sniff* But the new one is really sweet, and he is not nervous at all.', 'It is so cozy here... I love it.', 'Hi! *waves* ...I am not even shy about saying hi anymore!', 'Thank you for saving us. Really.'],
+  keeper2:['W-we miss the old Hexstar... he did not make it. *sniff* But the new one is really sweet, and she is not nervous at all.', 'It is so cozy here... I love it.', 'Hi! *waves* ...I am not even shy about saying hi anymore!', 'Thank you for saving us. Really.'],
   star:['Not bad. Not bad at all. *adjusts shades*', 'I knew we would win. Cool things always win.'],
   tri:['FINALLY some peace and quiet.', '...Okay, this cabin is nice. Do NOT tell anyone I said that.'],
   circle:['WHAT?! We have a CABIN now?!', 'I have rolled around this whole cabin TWICE!'],
@@ -7288,9 +7291,9 @@ const LAB_TALK = {
 const LAB_TALK_BACK = { // (after hex return)
   keeper:['I TOLD you we would fix him! *happy tears*', 'Welcome back, little buddy. We missed you SO much.', 'Two Hexstars! The cabin is going to be so beepy now.'],
   circle:['HE IS BACK!!! ...Sorry. I am just SO happy!', 'I left the lights on for you the whole time, Hexstar!', 'Best. Roommate. EVER.'],
-  hex:['Beep! Beep! TWO BEEPS! He is the old me!', 'He says I am a very good new him. *happy boop*', 'We are going to be best robot friends!'],
+  hex:['Beep! Beep! TWO BEEPS! He is the old me!', 'He says I am a very good new me. *happy boop*', 'We are going to be best robot friends!'],
 };
-const OLD_HEX_TALK = ['B-beep! Hi! ...I was asleep for a LONG time, huh?', 'Is the dark gone? ...It is? Oh good. *relieved beep*', 'There is a NEW me?! He is so shiny! Beep!', 'Thank you for fixing me. I will never forget it. *boop*', 'Circle left the lights on for me... *happy sniff*'];
+const OLD_HEX_TALK = ['B-beep! Hi! ...I was asleep for a LONG time, huh?', 'Is the dark gone? ...It is? Oh good. *relieved beep*', 'There is a NEW me?! She is so shiny! Beep!', 'Thank you for fixing me. I will never forget it. *boop*', 'Circle left the lights on for me... *happy sniff*'];
 const LAB_PALS = [['keeper', 560], ['circle', 1080], ['hex', 1260]];
 const labPals = () => LAB_PALS.filter(([id]) => CHAR[id] && id !== CHARS[SHOP.who].id).map(([id, x]) => ({ ch:CHAR[id], x }));
 const hexFix = () => SHOP.replay === 'hex' ? (SHOP.replayFix || 90) : hexBack() ? 100 : Math.min(hexReturnOn() ? 100 : 99, +(lsGet('fff-hexfix') || 12)); // how much of the old Hexstar is fixed (it never quite gets to 100... until hex return)
@@ -7407,7 +7410,7 @@ function unpackBox() { // punch: unpack one of his boxes (and once they're all u
   const i = SHOP.nearBox; SHOP.unpacked = [...SHOP.unpacked, i]; SHOP.boxSpark = { x:HESIN_BOXES[i].x, t:performance.now() };
   const [id, text] = HESIN_SAYS[i]; pbSay(id, text, 3.8); SHOP.pb.next = performance.now() + 4000;
   SHOP.youSay = `Unpacked ${HESIN_BOXES[i].name}!`; SHOP.youSayT = 2; if (sfx.grab) sfx.grab();
-  if (SHOP.unpacked.length >= HESIN_BOXES.length) { lsSet('fff-hexin', String(Date.now())); SHOP.replay = null; SHOP.hesIn = false; SHOP.hesInDone = performance.now(); storyCache.t = 0; applyTheme(); if (sfx.win) sfx.win(); pbSay('oldhex', 'I-I have a home! And a brother! BEEP BEEP! *happy*', 4.5); SHOP.pb.next = performance.now() + 4800; SHOP.youSay = 'He\'s in!'; SHOP.youSayT = 3; }
+  if (SHOP.unpacked.length >= HESIN_BOXES.length) { lsSet('fff-hexin', String(Date.now())); SHOP.replay = null; SHOP.hesIn = false; SHOP.hesInDone = performance.now(); storyCache.t = 0; applyTheme(); if (sfx.win) sfx.win(); pbSay('oldhex', 'I-I have a home! And a sister! BEEP BEEP! *happy*', 4.5); SHOP.pb.next = performance.now() + 4800; SHOP.youSay = 'He\'s in!'; SHOP.youSayT = 3; }
   renderShopCard(true);
 }
 function drawHesInThings(t) { // (in the robots' room) Hexstar 1.0's things once they're unpacked, his moving boxes while he moves in, and "HE'S IN!" when it's done
@@ -9047,7 +9050,7 @@ function fillShopCard(card, ch, it) {
     card.innerHTML = SHOP.floor === 4 ? `<h3>${BOSS_NAME}, the manager</h3><p>The manager of the whole shop. Very busy. Very important. He does NOT like visitors...</p><div class="row"></div>`
       : SHOP.floor === 6 ? '<h3>The shopkeepers, on their break</h3><p>Both shopkeepers are taking a break. Chat with them! They take turns, and each time you talk, one of them says something new.</p><div class="row"></div>'
       : isKid() ? `<h3>${SHOP.floor === 2 ? 'The funny fun shopkeeper' : 'The shopkeeper'}</h3><p>${SHOP.floor === 2 ? 'She isn\'t shy with little kids. She thinks Goofy Sparkle is a kid and talks like a babysitter!' : 'The shopkeeper thinks Goofy Sparkle is a little kid!'} Each time you talk, they say something new.</p><div class="row"></div>`
-      : isHex() ? `<h3>${SHOP.floor === 2 ? 'The funny fun shopkeeper' : 'The shopkeeper'}</h3><p>${SHOP.floor === 2 ? 'She acts a bit weird around Nervous Hexstar, but she really likes him!' : 'The shopkeeper acts a bit weird around Nervous Hexstar, but really likes him!'} Each time you talk, they say something new. Press special to make Hexstar beep.</p><div class="row"></div>`
+      : isHex() ? `<h3>${SHOP.floor === 2 ? 'The funny fun shopkeeper' : 'The shopkeeper'}</h3><p>${SHOP.floor === 2 ? 'She acts a bit weird around Hexstar 2.0, but she really likes her!' : 'The shopkeeper acts a bit weird around Hexstar 2.0, but really likes her!'} Each time you talk, they say something new. Press special to make Hexstar beep.</p><div class="row"></div>`
       : SHOP.floor === 2 ? `<h3>The funny fun shopkeeper</h3><p>${isFriend() ? (ch.id === 'tri' ? 'She opened up to Angry Triangle. They\'re friends now!' : 'She isn\'t shy with Lovely Heart. They\'re best friends!')
       : ch.id === 'tri' ? 'She\'s shy with Angry Triangle, but if you keep talking to her, she might open up.' : married() ? 'She used to be really shy, but since the wedding she is a lot braver! (Still a tiny bit shy.)' : 'She\'s a bit shy, but she\'d like to chat.'} Each time you talk, she says something new.</p><div class="row"></div>`
       : `<h3>The shopkeeper</h3><p>Want to chat? Each time you talk, the shopkeeper says something new.</p><div class="row"></div>`;
