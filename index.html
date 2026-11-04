@@ -4070,6 +4070,7 @@ function shopStep(dt) {
   if (h.punch && !pr.punch) { if (SHOP.nearCabin) cabinTalk(); else if (SHOP.nearCh5) ch5Act(); else if (SHOP.nearVoidCage >= 0) voidHit(); else if (SHOP.nearCage) cageHit(); else if (SHOP.near) shopAct(SHOP.near.item); else if (SHOP.nearSkins) nextSkin(); else if (SHOP.nearBox >= 0) unpackBox(); else if (SHOP.nearK7) kid7Act(); else if (SHOP.nearSwitch) dormLight(); else if (SHOP.nearAtk) atkAct(); else if (SHOP.nearPaper) readPaper(); else if (SHOP.nearWed) wedAct(); else if (SHOP.nearPark) parkAct(); else if (SHOP.nearTask) doKTask(); else if (SHOP.nearToys) playToys(); else if (SHOP.nearStairs) shopStairs(); else if (SHOP.nearPal) palTalk(); else if (SHOP.nearSmi) smiTalk(); else if (SHOP.nearKeeper) shopTalk(); }
   if (h.grab && !pr.grab && !babyGrab() && SHOP.nearKeeper) shopLaugh();
   missStep(); // (Missing Arrow, with someone else's baby)
+  babyDropStep(dt); // (the babies you put down)
   if (isHex()) { // Hexstar says "beep boop baap!" now and then (or when you press special), and the shopkeepers act like she never said it
     SHOP.beepCD = (SHOP.beepCD ?? 3) - dt; SHOP.beepT = Math.max(0, (SHOP.beepT || 0) - dt);
     if (SHOP.beepCD <= 0 || (h.special && !pr.special)) { SHOP.beepT = 2; SHOP.beepCD = 8; SHOP.ignoreT = 1.1; if (sfx.beep) sfx.beep(); }
@@ -4363,7 +4364,7 @@ const PB_HI = { // what they say when you walk up and press punch ({you} is your
   square:'HI {you}! WELCOME TO THE BREAK ROOM!', sparkle:'{you}! Wanna play?!', hex:'Beep boop! Hi {you}! *nervous wave*', oldhex:'B-beep! Hi {you}! Thank you for fixing me!', flower:'Hi {you}! Want a flower?', heart:'Aww, hi {you}! Want a hug?',
   shuriken:'Hmph. Hi, {you}. Have you seen Goofy Sparkle?', arrow:'O-oh! Hi {you}... please don\'t scare me.', admin:'Hello, {you}. Enjoy your break.',
 };
-const pbPals = () => PLAYABLE().filter(c => !c.keeper && c.id !== 'admin' && c.id !== CHARS[SHOP.who].id && !(c.id === 'sparkle' && SHOP.held === 'goofy') && !(c.id === 'shuriken' && grumpyGone()) && !(c.id === 'sparkle' && noShop()) && !(c.id === 'shuriken' && theyGone()) && !voidTaskNow()); // everyone but the shopkeepers, the Admin and you (and nobody while the void is open: they're all in it)
+const pbPals = () => PLAYABLE().filter(c => !c.keeper && c.id !== 'admin' && c.id !== CHARS[SHOP.who].id && !(c.id === 'sparkle' && babyOut('goofy')) && !(c.id === 'shuriken' && grumpyGone()) && !(c.id === 'sparkle' && noShop()) && !(c.id === 'shuriken' && theyGone()) && !voidTaskNow()); // everyone but the shopkeepers, the Admin and you (and nobody while the void is open: they're all in it)
 function pbSpots() { const pals = pbPals(), step = 1180/Math.max(1, pals.length); return pals.map((ch, i) => ({ ch, x:260 + step*(i + 0.5) })); }
 function pbSay(id, text, secs = 3.4) { SHOP.pb.say = { id, text, until:performance.now() + secs*1000 }; }
 function pbStep() { // the next thing someone says (by the clock, so it keeps going even when the game runs slowly)
@@ -4486,7 +4487,7 @@ function keeperSpots() { // where the two shopkeepers are in their home
 function dormSpots() { // the roommates in their room (not you, if it's your room)
   const d = DORMS[SHOP.dorm || 0];
   if (d.keepers) return keeperSpots(); // (the Shy Shopkeeper is upstairs, the Fighty one downstairs)
-  return d.ids.map(id => id === 'oldhex' ? OLD_HEX_CH : CHAR[id]).filter(ch => (ch.oldHex ? hexIn() || (SHOP.hesIn && SHOP.dorm === 6) : unlocked(ch)) && ch.id !== CHARS[SHOP.who].id && !(ch.id === 'sparkle' && SHOP.held === 'goofy') && !(ch.id === 'shuriken' && grumpyGone()) && (SHOP.cabinDorm || (!(ch.id === 'sparkle' && noShop()) && !(ch.id === 'shuriken' && theyGone()) && !voidTaskNow()))).map((ch, i) => ({ ch, x:[640, 1060][i] }));
+  return d.ids.map(id => id === 'oldhex' ? OLD_HEX_CH : CHAR[id]).filter(ch => (ch.oldHex ? hexIn() || (SHOP.hesIn && SHOP.dorm === 6) : unlocked(ch)) && ch.id !== CHARS[SHOP.who].id && !(ch.id === 'sparkle' && babyOut('goofy')) && !(ch.id === 'shuriken' && grumpyGone()) && (SHOP.cabinDorm || (!(ch.id === 'sparkle' && noShop()) && !(ch.id === 'shuriken' && theyGone()) && !voidTaskNow()))).map((ch, i) => ({ ch, x:[640, 1060][i] }));
 }
 // the shopkeepers' room is extra big (wider than the screen, so it scrolls with you) and fancier than the fighters' rooms
 const KEEPER_ROOM_W = 2400;
@@ -5761,6 +5762,7 @@ function drawShop(t) {
   if (!justWatching() && !retHideYou()) drawCharacter(g, ch, r, { facing:SHOP.facing, walk:moving ? t*10 : null, ...looks(ch), scared, excited, happy:found }); g.restore(); /* (it's only them: you're not there, you just watch) */
   if (!justWatching() && !retHideYou() && (G.state === 'shop' || cabinHome())) drawHeldBaby(t, SHOP_FLOOR - bottom + SHOP.y - hop - yay, r); // (a baby in your arms)
   if (G.state === 'shop' || cabinHome()) drawMissForce(t); // (the parents, if you're Missing Arrow)
+  if (G.state === 'shop' || cabinHome()) drawDroppedBabies(t); // (the babies you put down)
   const above = SHOP_FLOOR - bottom - 80 + SHOP.y;
   if (SHOP.youSayT > 0) drawBubble(SHOP.youSay, SHOP.x + 120, above, SHOP.x + 20);
   else if (laughing) drawBubble('Hahaha!', SHOP.x + 70, above, SHOP.x + 20);
@@ -6350,7 +6352,7 @@ function goKeeperRoom(replay) { // straight to the shopkeepers' room in the dorm
   SHOP.youSay = replay || confessPending() ? (CHARS[SHOP.who].id === 'keeper' ? 'Huh? I think she wants to tell me something...' : CHARS[SHOP.who].id === 'keeper2' ? 'I-I am going to tell him... I can do this...' : 'Shh... I think she is about to tell Fighty something!') : 'Whoosh! Teleported to the dorms!'; SHOP.youSayT = 3; renderShopCard(true);
 }
 function goPlace(floor, replay = null) { // the buttons on the up coming page take you straight there, walking as your fighter (the back button goes home)
-  audioOn(); openShop(); Object.assign(SHOP, { floor, x:floor === 15 ? 420 : 200, facing:1, visit:null, enterT:0, smi7y:false, smiSayT:0, pb:null, replay, atk:null, fellT0:undefined, retScene:false, held:null }); // (fellT0: so "they are gone" starts from the beginning every time)
+  audioOn(); openShop(); Object.assign(SHOP, { floor, x:floor === 15 ? 420 : 200, facing:1, visit:null, enterT:0, smi7y:false, smiSayT:0, pb:null, replay, atk:null, fellT0:undefined, retScene:false, held:null, dropped:{}, missForce:null }); // (fellT0: so "they are gone" starts from the beginning every time)
   SHOP.youSay = floor === PARK_FLOOR ? 'What a nice day in the park!' : floor === DINNER_FLOOR ? 'Mmm, it smells like spaghetti!' : floor === 15 ? 'Uh oh... the Admin is here!' : floor === 11 ? 'The dorm hall... where is Grumpy Shuriken going?' : 'Ooh, a wedding hall!'; SHOP.youSayT = 2.5; renderShopCard(true);
 }
 $('dinnerBtn').onclick = () => goPlace(DINNER_FLOOR);
@@ -7182,7 +7184,7 @@ const cabinPals = () => { // who's hanging out in the cabin (not you), spread ou
   return cabinPals0();
 };
 const cabinPals0 = () => {
-  const list = [CHAR.keeper, CHAR.keeper2, ...PLAYABLE().filter(c => !c.keeper && c.id !== 'admin' && !(c.id === 'shuriken' && grumpyGone()))].filter(c => c && c.id !== CHARS[SHOP.who].id && !(c.id === 'sparkle' && SHOP.held === 'goofy') && !missHides(c.id)); // (not the Admin: he's secret, and the cabin is for everyone to see)
+  const list = [CHAR.keeper, CHAR.keeper2, ...PLAYABLE().filter(c => !c.keeper && c.id !== 'admin' && !(c.id === 'shuriken' && grumpyGone()))].filter(c => c && c.id !== CHARS[SHOP.who].id && !(c.id === 'sparkle' && babyOut('goofy')) && !missHides(c.id)); // (not the Admin: he's secret, and the cabin is for everyone to see)
   return list.map((ch, i) => { const x = 220 + i*(1960/Math.max(1, list.length - 1)) + (i % 2)*40; if (ch.id === 'sparkle' && lsGet('fff-retchains')) return { ch, x:RET_MEMORIAL_X + 110 }; return { ch, x:tooBigDone() && Math.abs(x - BABY_DOOR_X) < 130 ? BABY_DOOR_X + (x < BABY_DOOR_X ? -130 : 130) : Math.abs(x - RET_MEMORIAL_X) < 170 && lsGet('fff-retchains') ? RET_MEMORIAL_X + (x < RET_MEMORIAL_X ? -170 : 230) : x }; }); // (nobody stands in front of the door to the baby's room)
 };
 function cabinStep() { // who you're next to, and walking through the portal in the admins' room
@@ -7582,7 +7584,7 @@ function meadowCard() { // the info card in the meadow: what to do next
   return `<h3>The meadow</h3><p>Chapter 6: New life. Everyone is settling in at the cabin!</p><p>${what}</p><p class="note">The path on the left goes back to the cabin.</p>`;
 }
 function meadowPals() { // who's in the meadow: Flower Girl by the garden, Goofy Sparkle by the pond, the shopkeepers at the cake... and at the party, everyone
-  const you = CHARS[SHOP.who].id, held = c => !(c && c.id === 'sparkle' && SHOP.held === 'goofy') && !(c && missHides(c.id));
+  const you = CHARS[SHOP.who].id, held = c => !(c && c.id === 'sparkle' && babyOut('goofy')) && !(c && missHides(c.id));
   if (partyDone()) { const list = [CHAR.keeper, CHAR.keeper2, ...PLAYABLE().filter(c => !c.keeper && c.id !== 'admin' && !(c.id === 'shuriken' && grumpyGone()))].filter(c => c && c.id !== you && held(c)); return list.map((ch, i) => ({ ch, x:240 + i*(1240/Math.max(1, list.length - 1)), party:true })); }
   return [{ ch:CHAR.flower, x:190 }, { ch:CHAR.sparkle, x:1530 }, { ch:CHAR.keeper, x:CAKE_X - 100 }, { ch:CHAR.keeper2, x:CAKE_X + 90 }].filter(p => p.ch && p.ch.id !== you && held(p.ch));
 }
@@ -7657,7 +7659,7 @@ function jobAct(id) { // punch: do the next step of that job
     SHOP.payLabel = first ? `PAYDAY! +${JOB_PAY} coins` : 'PAYDAY!'; SHOP.payT = now; if (sfx.win) sfx.win(); SHOP.youSay = `${SHOP.payLabel}!`; SHOP.youSayT = 3.5; SHOP.cabinSay = { id:j.who, text:'PAYDAY! We all did our jobs! This is real life!', until:now + 4500 }; }
   renderShopCard(true);
 }
-const jobPals = () => { const i = jobRoom(); return i < 0 ? [] : [{ ch:CHAR[JOBS[i].who], x:JOB_X + 150 }].filter(p => p.ch && p.ch.id !== CHARS[SHOP.who].id && !(p.ch.id === 'sparkle' && SHOP.held === 'goofy')); }; // (in each room, the one whose job it is)
+const jobPals = () => { const i = jobRoom(); return i < 0 ? [] : [{ ch:CHAR[JOBS[i].who], x:JOB_X + 150 }].filter(p => p.ch && p.ch.id !== CHARS[SHOP.who].id && !(p.ch.id === 'sparkle' && babyOut('goofy'))); }; // (in each room, the one whose job it is)
 function jobsCard() { jobsInit(); const n = SHOP.jobSteps.filter(s => s >= 3).length, i = jobRoom(), paid = realLife() ? ' 💰 (you got paid!)' : '';
   if (i < 0) return `<h3>Real life</h3><p>Chapter 6: New life. Everyone has a job at the cabin now, and each job has its own room! Walk up to a door and press punch to go in: the bakery (Lovely Heart), the workshop (Angry Triangle), the cleaning (Yelling Square) and the mail room (Goofy Sparkle). Help with every job, and it's payday!</p><p>Jobs done: ${n}/${JOBS.length}${paid}</p>`;
   return `<h3>The ${JOBS[i].sign}</h3><p>${CHAR[JOBS[i].who].name}'s job! Walk up to it and press punch to help, three times (the dots show how far along it is).</p><p>Jobs done: ${n}/${JOBS.length}${paid}</p><p class="note">The door on the left goes back to the hallway.</p>`; }
@@ -7869,7 +7871,7 @@ function babyRoomStep() { // (in cabinStep) what you're next to in her room
   const x = SHOP.x, parts = SHOP.roomParts = SHOP.roomParts || [];
   if (trustOn()) { const j = SIT_TASKS[SHOP.sitStep || 0]; if (j && Math.abs(j.x - x) < 70) SHOP.nearCabin = 'roomsit'; return; } // (babysitting)
   if (!roomBuilt()) { const i = ROOM_PIECES.findIndex((p, k) => !parts.includes(k) && Math.abs(p.x - x) < 60); if (i >= 0) SHOP.nearCabin = 'room' + i; return; }
-  if (movedIn() && !bedCarrying() && SHOP.held !== 'shop') { if (dormNight() ? Math.abs(x - 640) < 130 : Math.abs(x - babyRoomX()) < 70) SHOP.nearCabin = 'roombaby'; }
+  if (movedIn() && !bedCarrying() && !babyOut('shop')) { if (dormNight() ? Math.abs(x - 640) < 130 : Math.abs(x - babyRoomX()) < 70) SHOP.nearCabin = 'roombaby'; }
 }
 const babyRoomX = () => 1000 + 200*Math.sin(performance.now()/5000);
 function babyRoomAct(id) { // punch: build a piece, or say hi to her
@@ -7900,13 +7902,13 @@ function drawBabyRoom(t) { // her room: bare wood until you build it, then all h
   if (has(3)) { g.fillStyle = night ? '#1b2a4a' : '#9ed8ff'; g.strokeStyle = C.white; g.lineWidth = 12; g.fillRect(860, 190, 280, 180); g.strokeRect(860, 190, 280, 180); g.fillStyle = night ? '#fff6c9' : C.yellow; g.beginPath(); g.arc(1070, 240, 24, 0, TAU); g.fill(); g.fillStyle = '#2e9e4f'; for (const px of [900, 980, 1070]) { g.beginPath(); g.moveTo(px - 28, 362); g.lineTo(px, 290); g.lineTo(px + 28, 362); g.fill(); } g.strokeStyle = C.white; g.lineWidth = 6; g.beginPath(); g.moveTo(1000, 190); g.lineTo(1000, 370); g.stroke(); }
   if (has(4)) { g.fillStyle = '#ff8fc1'; g.beginPath(); g.ellipse(950, F + 40, 330, 34, 0, 0, TAU); g.fill(); g.fillStyle = '#ffd6e8'; g.beginPath(); g.ellipse(950, F + 40, 230, 22, 0, 0, TAU); g.fill(); }
   if (has(5)) { g.fillStyle = '#a0723c'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(1250, F - 190, 220, 190); g.strokeRect(1250, F - 190, 220, 190); g.fillStyle = '#7a5236'; g.fillRect(1262, F - 100, 196, 8); g.font = `44px ${BODYFONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = C.ink; g.fillText(ROOM_TOYS[look.toy].split(' ')[0], 1360, F - 138); g.font = `34px ${BODYFONT}`; g.fillText('🚂', 1310, F - 46); g.fillText('🎈', 1410, F - 46); } // her toy shelf (with the toy you picked)
-  if (has(2)) { const asleep = trustOn() || SHOP.held === 'shop' ? false : (SHOP.sitDoneT && now - SHOP.sitDoneT < 9000) || (movedIn() && night && !bedCarrying()); g.fillStyle = C.white; g.strokeStyle = C.ink; g.lineWidth = 4; for (const lx of [540, 726]) { g.fillRect(lx, F - 190, 14, 190); g.strokeRect(lx, F - 190, 14, 190); } g.fillRect(540, F - 170, 200, 14); g.strokeRect(540, F - 170, 200, 14); g.fillRect(540, F - 60, 200, 14); g.strokeRect(540, F - 60, 200, 14); g.fillStyle = '#ffb3d1'; roundRect(556, F - 92, 168, 34, 10); g.fill(); g.stroke(); g.fillStyle = '#a8e0ff'; roundRect(560, F - 104, 50, 20, 8); g.fill(); g.stroke(); if (asleep) drawSleepingBaby(t, 655, F - 112, 106); g.strokeStyle = C.ink; g.lineWidth = 3; for (let x = 570; x < 726; x += 22) { g.beginPath(); g.moveTo(x, F - 156); g.lineTo(x, F - 60); g.stroke(); } } // her crib
+  if (has(2)) { const asleep = trustOn() || babyOut('shop') ? false : (SHOP.sitDoneT && now - SHOP.sitDoneT < 9000) || (movedIn() && night && !bedCarrying()); g.fillStyle = C.white; g.strokeStyle = C.ink; g.lineWidth = 4; for (const lx of [540, 726]) { g.fillRect(lx, F - 190, 14, 190); g.strokeRect(lx, F - 190, 14, 190); } g.fillRect(540, F - 170, 200, 14); g.strokeRect(540, F - 170, 200, 14); g.fillRect(540, F - 60, 200, 14); g.strokeRect(540, F - 60, 200, 14); g.fillStyle = '#ffb3d1'; roundRect(556, F - 92, 168, 34, 10); g.fill(); g.stroke(); g.fillStyle = '#a8e0ff'; roundRect(560, F - 104, 50, 20, 8); g.fill(); g.stroke(); if (asleep) drawSleepingBaby(t, 655, F - 112, 106); g.strokeStyle = C.ink; g.lineWidth = 3; for (let x = 570; x < 726; x += 22) { g.beginPath(); g.moveTo(x, F - 156); g.lineTo(x, F - 60); g.stroke(); } } // her crib
   g.fillStyle = '#f3e2c7'; g.strokeStyle = '#4a2e18'; g.lineWidth = 5; g.fillRect(520, 70, 560, 70); g.strokeRect(520, 70, 560, 70); g.fillStyle = '#4a2e18'; g.font = `44px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('the baby\'s new room', 800, 107, 530);
   drawCabinDoor(110, '← the cabin', t); if (night) { g.fillStyle = 'rgba(15,10,50,.38)'; g.fillRect(-200, -200, W + 400, H + 400); }
   if (!done) ROOM_PIECES.forEach((p, k) => { if (parts.includes(k)) return; g.fillStyle = '#c8a06a'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(p.x - 40, F - 70, 80, 70); g.strokeRect(p.x - 40, F - 70, 80, 70); g.fillStyle = C.ink; g.font = `15px ${BODYFONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(p.name, p.x, F - 90); if (SHOP.nearCabin === 'room' + k) drawPointer(p.x + 40, F - 170, t); }); // the crates, each with a piece to build
   if (SHOP.roomSpark && now - SHOP.roomSpark.t < 800) { const k = (now - SHOP.roomSpark.t)/800; for (let i=0;i<12;i++) { const a = i*TAU/12; g.fillStyle = i % 2 ? C.yellow : C.white; g.fillRect(SHOP.roomSpark.x + Math.cos(a)*k*120, F - 60 + Math.sin(a)*k*80, 7, 7); } }
   if (!movedIn() || (SHOP.moveT && now - SHOP.moveT < 6000)) { for (const [id, x] of [['keeper', 1130], ['keeper2', 1000]]) { if (CHARS[SHOP.who].id === id) continue; const ch = CHAR[id], r = dormR(ch)*0.62; g.save(); g.translate(x, F - r); drawCharacter(g, ch, r, { facing:-1, ...looks(ch), happy:true, still:true }); g.restore(); } const cs = SHOP.cabinSay; if (cs && now < cs.until && (cs.id === 'keeper' || cs.id === 'keeper2')) drawBubble(cs.text, (cs.id === 'keeper' ? 1130 : 1000) + 240, F - 300, cs.id === 'keeper' ? 1130 : 1000); }
-  if (movedIn() && !night && !trustOn() && SHOP.held !== 'shop' && !(SHOP.sitDoneT && now - SHOP.sitDoneT < 9000)) { const bx = babyRoomX(), d = Math.cos(now/5000) >= 0 ? 1 : -1; drawLittleKid(bx, F, t, true, true, d); if (SHOP.nearCabin === 'roombaby') drawPointer(bx + 50, F - 130, t); if (SHOP.roomSay && now < SHOP.roomSay.until) drawBubble(SHOP.roomSay.text, bx + 240, F - 120, bx); }
+  if (movedIn() && !night && !trustOn() && !babyOut('shop') && !(SHOP.sitDoneT && now - SHOP.sitDoneT < 9000)) { const bx = babyRoomX(), d = Math.cos(now/5000) >= 0 ? 1 : -1; drawLittleKid(bx, F, t, true, true, d); if (SHOP.nearCabin === 'roombaby') drawPointer(bx + 50, F - 130, t); if (SHOP.roomSay && now < SHOP.roomSay.until) drawBubble(SHOP.roomSay.text, bx + 240, F - 120, bx); }
   if (movedIn() && night && !trustOn()) { if (SHOP.bedT) drawBedtime(t); if (SHOP.nearCabin === 'roombaby') drawPointer(690, F - 230, t); }
   if (SHOP.moveT && now - SHOP.moveT < 6000) { const e = now - SHOP.moveT; g.save(); g.globalAlpha = Math.min(1, e/400, (6000 - e)/800); g.fillStyle = '#ff5fa2'; g.strokeStyle = C.white; g.lineWidth = 8; g.font = `64px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.strokeText('WELCOME HOME, LITTLE ONE!', W/2, 230); g.fillText('WELCOME HOME, LITTLE ONE!', W/2, 230); g.restore(); }
   drawSitScene(t); // (heart trust)
@@ -8075,7 +8077,7 @@ function drawSlyRoom(t) { // the nursery: minty walls, a crib in the middle, and
   const cx = SLY_CRIB, restAtCrib = bed, bx = hide || !box ? cx : SLY_SPOTS[(SHOP.slyCatch || 0) % SLY_CATCH];
   g.fillStyle = '#f3e2c7'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(cx - 120, F - 110, 240, 80); g.strokeRect(cx - 120, F - 110, 240, 80); // the back of the crib
   if (!box) { const n = SHOP.slyN || 0; for (let i=0;i<n;i++) blockAt(cx - 66 + i*44, F - 76, i); } // (the blocks you put in)
-  if (hide && !(bed && SHOP.held === 'glitch')) { if (bed) { g.save(); g.translate(cx - 20, F - 78); g.rotate(-Math.PI/2); drawGlitchBaby(0, 0, t, false, 1, true); g.restore(); g.fillStyle = '#d8f5d0'; g.strokeStyle = C.ink; g.lineWidth = 3; roundRect(cx - 46, F - 100, 130, 46, 12); g.fill(); g.stroke(); g.fillStyle = '#5a3a6e'; g.textAlign = 'center'; g.textBaseline = 'middle'; for (let i=0;i<3;i++) { const k = (t*0.3 + i/3) % 1; g.save(); g.globalAlpha = 1 - k; g.font = `${18 + k*22}px ${FONT}`; g.fillText('Z', cx - 80 + k*50, F - 130 - k*130); g.restore(); } } else drawGlitchBaby(cx, F - 40, t, false, 1); } // in the crib: hungry, then fast asleep
+  if (hide && !(bed && babyOut('glitch'))) { if (bed) { g.save(); g.translate(cx - 20, F - 78); g.rotate(-Math.PI/2); drawGlitchBaby(0, 0, t, false, 1, true); g.restore(); g.fillStyle = '#d8f5d0'; g.strokeStyle = C.ink; g.lineWidth = 3; roundRect(cx - 46, F - 100, 130, 46, 12); g.fill(); g.stroke(); g.fillStyle = '#5a3a6e'; g.textAlign = 'center'; g.textBaseline = 'middle'; for (let i=0;i<3;i++) { const k = (t*0.3 + i/3) % 1; g.save(); g.globalAlpha = 1 - k; g.font = `${18 + k*22}px ${FONT}`; g.fillText('Z', cx - 80 + k*50, F - 130 - k*130); g.restore(); } } else drawGlitchBaby(cx, F - 40, t, false, 1); } // in the crib: hungry, then fast asleep
   g.strokeStyle = C.ink; g.lineWidth = 4; g.fillStyle = '#d9a066'; g.fillRect(cx - 130, F - 40, 260, 14); g.strokeRect(cx - 130, F - 40, 260, 14); for (let i=0;i<=8;i++) { g.beginPath(); g.moveTo(cx - 120 + i*30, F - 40); g.lineTo(cx - 120 + i*30, F - 70); g.stroke(); } for (const s of [-1, 1]) { g.fillStyle = '#d9a066'; g.fillRect(cx + s*125 - 8, F - 120, 16, 120); g.strokeRect(cx + s*125 - 8, F - 120, 16, 120); } // the bars of the crib
   if (box && !hide) { const gl = SHOP.slyGlitchT && now - SHOP.slyGlitchT < 300; if (!gl) drawGlitchBaby(bx, F, t, true, 1); if (gl) { g.fillStyle = '#ff3b3b'; for (let i=0;i<8;i++) g.fillRect(bx - 50 + ((i*37) % 100), F - 70 + ((i*23) % 60), 12, 8); } } // the baby, on the loose
   const you = SHOP.x, dx = restAtCrib ? cx - 200 : SLY_D, mx = restAtCrib ? cx + 200 : SLY_M; const pal = (ch, x, bottom, face, happy) => { g.save(); g.translate(x, F - bottom); drawCharacter(g, ch, 40, { facing:face, ...looks(ch), happy, still:true }); g.restore(); };
@@ -8091,7 +8093,7 @@ function drawSlyRoom(t) { // the nursery: minty walls, a crib in the middle, and
 function drawDormBaby(t, d) { // in their parents' room: a crib in the middle, with the baby in it. They're awake in the day, and fast asleep at night
   if (!SHOP.cabinDorm || SHOP.floor !== 12) return; const shop = d.keepers && movedIn(), sly = d.crush && slyBedDone(), robo = d.robots && roboLightDone(); if (!shop && !sly && !robo) return;
   const F = SHOP_FLOOR, cx = shop ? HOME_CRIB : 850, night = dormNight(); g.fillStyle = '#f3e2c7'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(cx - 120, F - 110, 240, 80); g.strokeRect(cx - 120, F - 110, 240, 80); // the back of the crib
-  const out = SHOP.held === (shop ? 'shop' : sly ? 'glitch' : 'robo'); // (is someone carrying this baby?)
+  const out = babyOut(shop ? 'shop' : sly ? 'glitch' : 'robo'); // (is someone carrying this baby?)
   if (out) { if (night && robo) drawNightLight(cx + 88, F - 126, t); } else if (shop) { if (night) drawSleepingBaby(t, cx + 15, F - 72, 106); else drawLittleKid(cx, F - 40, t, true); }
   else if (sly) { if (night) { g.save(); g.translate(cx - 20, F - 78); g.rotate(-Math.PI/2); drawGlitchBaby(0, 0, t, false, 1, true); g.restore(); g.fillStyle = '#d8f5d0'; g.strokeStyle = C.ink; g.lineWidth = 3; roundRect(cx - 46, F - 100, 130, 46, 12); g.fill(); g.stroke(); } else drawGlitchBaby(cx, F - 40, t, false, 1); }
   else { if (night) drawNightLight(cx + 88, F - 126, t); drawRoboBaby(cx, F - 40, t, true, night); } // (the robots always leave the light on)
@@ -8102,11 +8104,12 @@ function drawDormBaby(t, d) { // in their parents' room: a crib in the middle, w
 const BABY_NAMES = { shop:'the Little Shopkeeper', glitch:'the glitchy baby', robo:'the baby robot', goofy:'Goofy Sparkle' }, BABY_HI = { shop:'*giggle* Up up!', glitch:'Goo! *bzzt*', robo:'Beep boop? BEEP!', goofy:'Wheee! Ba ba!' };
 function babyNear() { // which baby you could pick up right now
   if (G.state !== 'shop' && !cabinHome()) return null; const x = SHOP.x, f = SHOP.floor;
-  if (f === 12 && SHOP.cabinDorm) { const d = DORMS[SHOP.dorm || 0], key = d.keepers && movedIn() ? 'shop' : d.crush && slyBedDone() ? 'glitch' : d.robots && roboLightDone() ? 'robo' : null; if (key && Math.abs(x - (key === 'shop' ? HOME_CRIB : 850)) < 150) return key; if (dormSpots().some(s => s.ch.id === 'sparkle' && Math.abs(s.x - x) < 90)) return 'goofy'; return null; }
+  for (const b in SHOP.dropped || {}) { const d = SHOP.dropped[b]; if (babyHere(d) && Math.abs(d.x - x) < 90) return b; } // (one you put down)
+  if (f === 12 && SHOP.cabinDorm) { const d = DORMS[SHOP.dorm || 0], key = d.keepers && movedIn() ? 'shop' : d.crush && slyBedDone() ? 'glitch' : d.robots && roboLightDone() ? 'robo' : null; if (key && !babyOut(key) && Math.abs(x - (key === 'shop' ? HOME_CRIB : 850)) < 150) return key; if (dormSpots().some(s => s.ch.id === 'sparkle' && Math.abs(s.x - x) < 90)) return 'goofy'; return null; }
   if (f === CABIN_FLOOR && cabinPals().some(p => p.ch.id === 'sparkle' && Math.abs(p.x - x) < 90)) return 'goofy';
-  if (f === SLY_FLOOR && slyBedDone() && Math.abs(x - SLY_CRIB) < 150) return 'glitch'; // (the nursery)
-  if (f === ROBO_FLOOR && roboLightDone() && Math.abs(x - ROBO_BENCH) < 150) return 'robo'; // (the workshop)
-  if (f === BABY_FLOOR && movedIn() && !trustOn() && !bedCarrying() && Math.abs(x - (dormNight() ? 640 : babyRoomX())) < (dormNight() ? 130 : 90)) return 'shop'; // (her own room)
+  if (f === SLY_FLOOR && slyBedDone() && !babyOut('glitch') && Math.abs(x - SLY_CRIB) < 150) return 'glitch'; // (the nursery)
+  if (f === ROBO_FLOOR && roboLightDone() && !babyOut('robo') && Math.abs(x - ROBO_BENCH) < 150) return 'robo'; // (the workshop)
+  if (f === BABY_FLOOR && movedIn() && !trustOn() && !bedCarrying() && !babyOut('shop') && Math.abs(x - (dormNight() ? 640 : babyRoomX())) < (dormNight() ? 130 : 90)) return 'shop'; // (her own room)
   const goofyAt = f === MEADOW_FLOOR ? meadowPals() : f === 10 ? pbSpots() : jobsPlace(f) ? jobPals() : []; if (goofyAt.some(p => p.ch.id === 'sparkle' && Math.abs(p.x - x) < 90)) return 'goofy'; // (the meadow, the break room and the mail room)
   return null;
 }
@@ -8129,10 +8132,31 @@ function drawMissBaby(t, bx, cy) { // the baby in your arms, not happy about it
   const m = SHOP.missForce; if (!m || m.done) return; if (m.cry) drawRetTears(bx, cy - 20, t); else { g.fillStyle = '#ff3b3b'; for (let i = 0; i < 6; i++) g.fillRect(bx - 44 + ((i*37 + Math.floor(t*14)*23) % 88), cy - 60 + ((i*23 + Math.floor(t*14)*17) % 80), 12, 7); g.fillStyle = '#3b6bff'; for (let i = 0; i < 4; i++) g.fillRect(bx - 40 + ((i*53 + Math.floor(t*11)*19) % 80), cy - 56 + ((i*31 + Math.floor(t*11)*29) % 70), 9, 9); }
   if (missE() < MISS_CRY + MISS_RUN) drawBubble(m.say, Math.max(280, Math.min(dormRoomW() - 280, bx + 120)), cy - 130, bx);
 }
+// (put a baby down, and in their own room they crawl back to their crib or their usual spot. Anywhere else, they stay right where you put them. SHOP.dropped: where each one is)
+const BABY_CRAWL = 120, BABY_CLIMB = 800, BABY_BABBLE = { shop:'Ga ga! Goo!', glitch:'Goo goo! *bzzt*', robo:'Beep beep boop!', goofy:'Ba ba ba!' }, babyOut = b => SHOP.held === b || !!(SHOP.dropped && SHOP.dropped[b]), babyHere = d => d.f === SHOP.floor && (d.f !== 12 || d.dorm === (SHOP.dorm || 0));
+function babyHomeX(b) { // where this baby belongs in the room you're in (null if they don't belong here)
+  const f = SHOP.floor, at = list => { const p = list.find(p => p.ch.id === 'sparkle'); return p ? p.x : null; };
+  if (f === 12 && SHOP.cabinDorm) { const d = DORMS[SHOP.dorm || 0]; if (b === 'shop') return d.keepers ? HOME_CRIB : null; if (b === 'glitch') return d.crush ? 850 : null; if (b === 'robo') return d.robots ? 850 : null; return at(dormSpots()); }
+  if (b === 'shop') return f === BABY_FLOOR ? (dormNight() ? 640 : babyRoomX()) : null; if (b === 'glitch') return f === SLY_FLOOR ? SLY_CRIB : null; if (b === 'robo') return f === ROBO_FLOOR ? ROBO_BENCH : null;
+  return at(f === CABIN_FLOOR ? cabinPals() : f === MEADOW_FLOOR ? meadowPals() : f === 10 ? pbSpots() : jobsPlace(f) ? jobPals() : []);
+}
+function babyDropStep(dt) { // (in shopStep) anyone crawling back home keeps crawling
+  const all = SHOP.dropped, now = performance.now(); if (!all) return; for (const b in all) { const d = all[b]; if (d.to == null) continue; if (!babyHere(d)) { delete all[b]; continue; } if (d.climb) { if (now - d.climb >= BABY_CLIMB) { delete all[b]; if (sfx.ding) sfx.ding(); } continue; } const dx = d.to - d.x; d.dir = dx < 0 ? -1 : 1; d.x += Math.sign(dx)*Math.min(Math.abs(dx), BABY_CRAWL*dt); if (Math.abs(d.to - d.x) < 2) { d.x = d.to; d.climb = now; if (sfx.jump) sfx.jump(); } }
+}
+function drawDroppedBabies(t) { // the babies on the floor
+  const F = SHOP_FLOOR, now = performance.now(), all = SHOP.dropped; if (!all) return; for (const b in all) { const d = all[b]; if (!babyHere(d) || (b === 'goofy' && youGoofy())) continue; const dir = d.dir || 1, ck = d.climb ? Math.min(1, (now - d.climb)/BABY_CLIMB) : 0, crawl = d.to != null && !d.climb, cribby = b !== 'goofy' && !(b === 'shop' && SHOP.floor === BABY_FLOOR && !dormNight()), up = d.climb ? Math.sin(ck*Math.PI)*110 + (cribby ? ck*40 : 0) : 0, rock = crawl ? Math.sin(t*10)*0.09 : d.climb ? Math.sin(ck*Math.PI*2)*0.25 : 0, bob = crawl ? Math.abs(Math.sin(t*10))*6 : 0;
+    if (crawl) { for (let i = 0; i < 3; i++) { const k = (t*2 + i/3) % 1; g.save(); g.globalAlpha = 0.5*(1 - k); g.fillStyle = '#c9b89e'; g.beginPath(); g.arc(d.x - dir*(34 + k*46), F - 6 - k*16, 5 + k*7, 0, TAU); g.fill(); g.restore(); } g.fillStyle = b === 'robo' ? '#7d8a9c' : b === 'glitch' ? '#ffb07c' : b === 'goofy' ? C.yellow : '#7f7f7f'; g.strokeStyle = C.ink; g.lineWidth = 2; for (const s of [0, 1]) { const pat = Math.sin(t*10 + s*Math.PI), hx = d.x + dir*(26 + pat*10), hy = F - 5 - Math.max(0, pat)*9; g.beginPath(); g.ellipse(hx, hy, 8, 5, 0, 0, TAU); g.fill(); g.stroke(); } } // dust puffs behind, and little hands patting the floor
+    g.save(); g.translate(d.x, -up - bob); g.translate(0, F); g.rotate(rock); g.translate(-d.x, -F);
+    if (b === 'shop') drawLittleKid(d.x, F, t, true, crawl, dir); else if (b === 'glitch') drawGlitchBaby(d.x, F, t, crawl, dir); else if (b === 'robo') drawRoboBaby(d.x, F, t, true, false); else { const r = GOOFY_R, ch = CHAR.sparkle; g.save(); g.translate(d.x, F - r); if (crawl) g.rotate(dir*0.25); drawCharacter(g, ch, r, { facing:dir, ...looks(ch), still:true }); g.restore(); }
+    g.restore();
+    if (crawl && SHOP.youSayT <= 0 && (t + d.x*0.001) % 3 < 1.4) drawBubble(BABY_BABBLE[b], Math.max(200, Math.min(dormRoomW() - 200, d.x + 110)), F - 140, d.x); // babbling on the way
+    if (d.climb) for (let i = 0; i < 3; i++) { const k = (ck*1.4 + i*0.2) % 1; g.save(); g.globalAlpha = (1 - k)*Math.min(1, ck*4); drawLittleHeart(d.x + (i - 1)*34, F - 90 - up*0.4 - k*80, 10 + i*3); g.restore(); } } // hop! back in, with hearts
+}
 function babyGrab() { // you pressed grab: pick up a baby, or put one down
   if (missFrozen() || (SHOP.missForce && SHOP.missForce.done)) return true; // (the parents are right there)
-  if (SHOP.held) { SHOP.youSay = `You put ${BABY_NAMES[SHOP.held]} down. Off they go, back home!`; SHOP.youSayT = 2.5; SHOP.held = null; if (sfx.ding) sfx.ding(); return true; }
+  if (SHOP.held) { const h = SHOP.held; SHOP.held = null; const to = babyHomeX(h), x = Math.max(70, Math.min(dormRoomW() - 70, SHOP.x + (SHOP.facing || 1)*70)); SHOP.dropped = SHOP.dropped || {}; SHOP.dropped[h] = { f:SHOP.floor, dorm:SHOP.dorm || 0, x, to, dir:1 }; SHOP.youSay = to != null ? `You put ${BABY_NAMES[h]} down. Off they crawl, back home!` : `You put ${BABY_NAMES[h]} down. They will stay right here.`; SHOP.youSayT = 2.5; if (sfx.ding) sfx.ding(); return true; }
   const b = babyNear(); if (!b) return false;
+  if (SHOP.dropped && SHOP.dropped[b] && !youGoofy()) delete SHOP.dropped[b]; // (back up you go)
   if (youGoofy()) { SHOP.youSay = 'Ba ba! *too little to carry a baby!*'; SHOP.youSayT = 2.2; return true; }
   if (youMissing() && b !== 'glitch') { const cry = b !== 'robo' && Math.random() < 0.5; SHOP.held = b; SHOP.missForce = { b, t:performance.now(), cry, say:cry ? (b === 'goofy' ? 'WAAAAA! Ba ba!! *sob*' : 'WAAAAH! *sob sob*') : (b === 'robo' ? 'BEEP BEEP! *BZZT* ERROR! *BZZT*' : 'WAAA?! *bzzt* W-WAAA *BZZT*') }; if (sfx.zap) sfx.zap(); return true; } // (his glitches scare them)
   SHOP.held = b; SHOP.heldT = performance.now(); SHOP.youSay = BABY_HI[b]; SHOP.youSayT = 2; if (sfx.grab) sfx.grab(); return true;
@@ -8220,7 +8244,7 @@ function drawRoboRoom(t) { // the robots' workshop: metal walls, a workbench in 
   if (plan && !parts) ROBO_PARTS.forEach((b, k) => { if (!(SHOP.roboTaken || []).includes(k)) drawRoboPart(b, F - 34, k, t); }); // the parts, all over the floor
   g.fillStyle = '#8c6239'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(cx - 150, top, 300, 18); g.strokeRect(cx - 150, top, 300, 18); for (const s of [-1, 1]) { g.fillRect(cx + s*125 - 9, top + 18, 18, F - top - 18); g.strokeRect(cx + s*125 - 9, top + 18, 18, F - top - 18); } // the workbench
   if (!parts) { const n = SHOP.roboN || 0, on = (SHOP.roboTaken || []).slice(0, n); on.forEach((k, i) => drawRoboPart(cx - 100 + i*66, top - 26, k, 0)); } // (the parts you brought)
-  else if (!(done && SHOP.held === 'robo')) drawRoboBaby(cx, top, t, zap, done);
+  else if (!(done && babyOut('robo'))) drawRoboBaby(cx, top, t, zap, done);
   const pal = (ch, x) => { const r = 40, bottom = Math.max(...shapeVerts(ch.shape, r, true).map(v => v.y)), bob = Math.abs(Math.sin(t*2 + x))*3; if (ch.oldHex) drawOldHex(x, F - bottom - bob, r, t, true); else { g.save(); g.translate(x, F - bottom - bob); drawCharacter(g, ch, r, { facing:x < cx ? 1 : -1, ...looks(ch), happy:parts, still:true }); g.restore(); } };
   if (!youHex2() && !missHides('hex')) pal(CHAR.hex, ROBO_H2); if (!missHides('oldhex')) pal(OLD_HEX_CH, ROBO_H1);
   if (zapE) { const k = Math.min(1, zapE/1800); g.save(); g.globalAlpha = Math.sin(k*Math.PI)*0.9; g.fillStyle = C.white; g.fillRect(-200, -200, W + 400, H + 400); g.restore(); g.strokeStyle = '#ffd166'; g.lineWidth = 6; for (let i = 0; i < 6; i++) { const a = i*1.05 + t*3, d = 80 + k*180; g.beginPath(); g.moveTo(cx, top - 40); g.lineTo(cx + Math.cos(a)*d*0.5 + 12, top - 40 + Math.sin(a)*d*0.5); g.lineTo(cx + Math.cos(a)*d, top - 40 + Math.sin(a)*d); g.stroke(); } } // the big zap
@@ -8329,7 +8353,7 @@ function drawRetTears(x, y, t) { // Goofy Sparkle, crying
   g.fillStyle = '#8fd3ff'; g.strokeStyle = C.ink; g.lineWidth = 1.5; for (const [s, ph] of [[-1, 0], [1, 0.5], [-1, 0.33], [1, 0.83]]) { const k = (t*0.9 + ph) % 1, tx = x + s*(7 + k*4), ty = y + k*30; g.save(); g.globalAlpha = 1 - k*0.5; g.beginPath(); g.moveTo(tx, ty - 6); g.quadraticCurveTo(tx + 5, ty + 2, tx, ty + 4); g.quadraticCurveTo(tx - 5, ty + 2, tx, ty - 6); g.fill(); g.stroke(); g.restore(); }
 }
 function drawGoofyCry(t) { // (in the cabin, once Grumpy Shuriken is gone) Goofy Sparkle sits by the memorial and cries
-  if (retCabinOn() || !lsGet('fff-retchains') || youGoofy() || SHOP.held === 'goofy' || !(G.state === 'shop' || cabinHome())) return; const x = RET_MEMORIAL_X + 110, F = SHOP_FLOOR; drawRetTears(x, F - GOOFY_R - 6, t); g.fillStyle = 'rgba(143,211,255,.55)'; g.beginPath(); g.ellipse(x, F + 4, 34, 7, 0, 0, TAU); g.fill(); if ((t % 9) < 3.2) drawBubble('*sniff* Ba ba... *sob*', x + 310, F - 130, x);
+  if (retCabinOn() || !lsGet('fff-retchains') || youGoofy() || babyOut('goofy') || !(G.state === 'shop' || cabinHome())) return; const x = RET_MEMORIAL_X + 110, F = SHOP_FLOOR; drawRetTears(x, F - GOOFY_R - 6, t); g.fillStyle = 'rgba(143,211,255,.55)'; g.beginPath(); g.ellipse(x, F + 4, 34, 7, 0, 0, TAU); g.fill(); if ((t % 9) < 3.2) drawBubble('*sniff* Ba ba... *sob*', x + 310, F - 130, x);
 }
 function drawRetMemorial(t) { // by the fireplace, once he's gone: a candle, flowers and his picture, for Grumpy Shuriken
   const x = RET_MEMORIAL_X, F = SHOP_FLOOR; g.fillStyle = '#a0723c'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(x - 70, F - 80, 140, 80); g.strokeRect(x - 70, F - 80, 140, 80);
