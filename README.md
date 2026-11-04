@@ -229,6 +229,8 @@ Chapter 12 is done once the baby is asleep. Then it says "The End... for now" an
 
 **Goofy's new room:** once Grumpy Shuriken is gone, Goofy Sparkle moves in with Lovely Heart and Cool Star. He brings his yellow sleepover mattress with him and hangs out by it in their room, and the three of them have their own chats, day and night. The name on the door changes too, and the old room is just Grumpy Shuriken's now, with only his bed left in it.
 
+**Big shopkeepers:** when you walk around as the Fighty Shopkeeper or the Shy Shopkeeper, they are the same big size as the real ones, not the smaller size of a fighter. The shopkeepers hanging out in the cabin's living room and the meadow are big now too.
+
 **If you're Missing Arrow:** his own baby boy is happy to be carried, but any other baby is scared of his glitches! Pick one up and they cry or glitch out. A couple of seconds later the parents run in and tell him off, and he has to put the baby down. (The Little Shopkeeper and Goofy Sparkle get the shopkeepers, and the baby robot gets Hexstar 2.0 and Hexstar 1.0.) If you put the baby down quickly, nobody comes.
 
 

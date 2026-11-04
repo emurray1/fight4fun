@@ -4467,6 +4467,7 @@ const dormOpen = i => !DORMS[i].locked || DORMS[i].ids.includes(CHARS[SHOP.who].
 const KEEPER_SHOP_R = { keeper:0.75*350/2.1, keeper2:255/2.1 }; // the size that draws the shopkeepers about as big as they are in their shops (Fighty a bit smaller)
 const GOOFY_R = 20; // (how big baby Goofy Sparkle is when he's just hanging out: the same size as the shopkeepers' baby)
 const dormR = ch => ch.id === 'sparkle' ? GOOFY_R : KEEPER_SHOP_R[ch.id] || 46*Math.min(ch.size || 1, 1.8);
+const keeperBottom = ch => { const r = dormR(ch); return ch.shape === 'circle' ? r : Math.max(...shapeVerts(ch.shape, r, true).map(v => v.y)); }; // (how far down a big shopkeeper's feet are, so they stand on the floor)
 const dormTall = ch => dormR(ch)*(ch.keeper ? 3 : 2); // (how tall they stand, for speech bubbles)
 // when you wake her up at night, the Shy Shopkeeper gets out of bed and walks down the stairs for dinner
 const shyDown = () => dormNight() && SHOP.shyAwake;
@@ -5762,7 +5763,7 @@ function drawShop(t) {
   drawCrowd(t); // (the fighters, while the shop is cleared for the wedding)
   if (SHOP.floor === 1 && SHOP.smi7y) drawSmi7y(t);
   // you
-  const ch = CHARS[SHOP.who], r = 50*(ch.size || 1), moving = Math.abs(SHOP.prev.x || 0) > 0 && SHOP.y === 0;
+  const ch = CHARS[SHOP.who], r = ch.keeper ? dormR(ch) : 50*(ch.size || 1), moving = Math.abs(SHOP.prev.x || 0) > 0 && SHOP.y === 0; // (the shopkeepers are as big as the real ones)
   const bottom = ch.shape === 'circle' ? r : Math.max(...shapeVerts(ch.shape, r, true).map(v => v.y));
   const laughing = SHOP.laughT > 0, hop = (moving ? Math.abs(Math.sin(t*12))*8 : 0) + (laughing ? Math.abs(Math.sin(t*16))*12 : 0);
   const scared = !laughing && spooky() && ch.id === 'sparkle'; // the Halloween decorations scare him, but he's brave and stays
@@ -7265,7 +7266,7 @@ function drawCabin(t) { // a big, cozy log cabin (drawn 2400 wide; the room scro
   if (tooBigDone()) drawCabinDoor(BABY_DOOR_X, "baby's room →", t); // (chapter 8: the door to her new room, behind everyone)
   drawRetCabin(t); // (chapter 11: IT returns)
   // everyone, hanging out (and whoever you're talking to says something)
-  const pals = cabinPals(); pals.forEach((p, i) => { const ch = p.ch, r = ch.keeper ? dormR(ch)*0.5 : ch.id === 'admin' ? 46 : ch.id === 'sparkle' ? GOOFY_R : 34*Math.min(ch.size || 1, 1.3), bob = Math.abs(Math.sin(t*2 + i))*4; g.save(); g.translate(p.x, SHOP_FLOOR - r - bob); drawCharacter(g, ch, r, { facing:p.x < SHOP.x ? 1 : -1, ...looks(ch), happy:true, still:true }); g.restore(); });
+  const pals = cabinPals(); pals.forEach((p, i) => { const ch = p.ch, r = ch.keeper ? dormR(ch) : ch.id === 'admin' ? 46 : ch.id === 'sparkle' ? GOOFY_R : 34*Math.min(ch.size || 1, 1.3), bob = Math.abs(Math.sin(t*2 + i))*4; g.save(); g.translate(p.x, SHOP_FLOOR - (ch.keeper ? keeperBottom(ch) : r) - bob); drawCharacter(g, ch, r, { facing:p.x < SHOP.x ? 1 : -1, ...looks(ch), happy:true, still:true }); g.restore(); });
   const cs = SHOP.cabinSay, sp = cs && performance.now() < cs.until && pals.find(p => p.ch.id === cs.id); if (sp) drawBubble(cs.text, sp.x + 240, SHOP_FLOOR - 200, sp.x);
   if (SHOP.nearCabin) { const np = pals.find(p => p.ch.id === SHOP.nearCabin); if (np) drawPointer(np.x + 50, SHOP_FLOOR - 220, t); }
   drawTelling(t); // (chapter 7: now we know)
@@ -7634,7 +7635,7 @@ function drawMeadow(t) { // the meadow: grass and trees, the garden on the left,
   for (const cx of [-18, 0, 18]) { g.fillStyle = '#ff8fc1'; g.fillRect(CAKE_X + cx - 3, F - 172, 6, 20); if (partying) { g.fillStyle = Math.sin(t*12 + cx) > 0 ? '#ffd23f' : '#ff8c1a'; g.beginPath(); g.ellipse(CAKE_X + cx, F - 178, 4, 7, 0, 0, TAU); g.fill(); } } // candles (lit at the party)
   if (partying) { for (let i=0;i<40;i++) { const x = (i*97 + t*40*(1 + i % 3)) % W, y = ((i*53 + t*90*(1 + i % 2)) % (F - 60)); g.fillStyle = ['#ff5fa2', '#ffd23f', '#7dd3ff', '#9ce37d', '#c77dd1'][i % 5]; g.save(); g.translate(x, y); g.rotate(t*3 + i); g.fillRect(-5, -3, 10, 6); g.restore(); } // confetti
     const e = now - (SHOP.partyT || 0); if (e < 7000) { g.save(); g.globalAlpha = Math.min(1, e/500, (7000 - e)/800); g.fillStyle = '#ff5fa2'; g.strokeStyle = C.white; g.lineWidth = 8; g.font = `60px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.strokeText('WELCOME TO YOUR NEW LIFE!', W/2, 140); g.fillText('WELCOME TO YOUR NEW LIFE!', W/2, 140); g.restore(); } }
-  const pals = meadowPals(); pals.forEach((p, i) => { const r = p.ch.keeper ? dormR(p.ch)*0.5 : p.ch.id === 'sparkle' ? GOOFY_R : 36*Math.min(p.ch.size || 1, 1.3), hop = p.party ? Math.abs(Math.sin(t*5 + i))*22 : Math.abs(Math.sin(t*2 + i))*3; g.save(); g.translate(p.x, F - r - hop); drawCharacter(g, p.ch, r, { facing:p.x < SHOP.x ? 1 : -1, ...looks(p.ch), happy:p.party, still:true }); g.restore(); });
+  const pals = meadowPals(); pals.forEach((p, i) => { const r = p.ch.keeper ? dormR(p.ch) : p.ch.id === 'sparkle' ? GOOFY_R : 36*Math.min(p.ch.size || 1, 1.3), hop = p.party ? Math.abs(Math.sin(t*5 + i))*22 : Math.abs(Math.sin(t*2 + i))*3; g.save(); g.translate(p.x, F - (p.ch.keeper ? keeperBottom(p.ch) : r) - hop); drawCharacter(g, p.ch, r, { facing:p.x < SHOP.x ? 1 : -1, ...looks(p.ch), happy:p.party, still:true }); g.restore(); });
   const cs = SHOP.cabinSay, sp = cs && now < cs.until && pals.find(p => p.ch.id === cs.id); if (sp) drawBubble(cs.text, Math.min(W - 20, sp.x + 260), F - 220, sp.x);
   const n = SHOP.nearCabin; if (n) { const nx = n.startsWith('plot') ? PLOTS[+n.slice(4)].x : n === 'dock' ? DOCK_X : n.startsWith('lant') ? LANTERNS[+n.slice(4)] : (pals.find(p => p.ch.id === n) || {}).x; if (nx != null) drawPointer(nx + 40, n.startsWith('lant') ? 360 : F - 200, t); }
   if (SHOP.nearStairs && SHOP.stairTo === CABIN_OUT) drawPointer(150, F - 300, t);
@@ -8202,7 +8203,7 @@ function drawBabyFetch(b, d, t) { // the parents come over, scoop the baby up an
 }
 function drawHeldBaby(t, cy, r) { // in your arms (or, if nobody is in your arms, a little hint when you're next to one)
   const x = SHOP.x, b = SHOP.held; if (!b) { if (babyNear() && !youGoofy() && SHOP.youSayT <= 0) { g.font = `24px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineWidth = 5; g.strokeStyle = C.white; g.fillStyle = '#5a3a6e'; const key = ((KEYMAP.p1 && KEYMAP.p1.grab[0]) || '').replace(/^Key/, ''), tip = key ? `grab (${key}): pick up` : 'grab: pick up'; g.strokeText(tip, x, cy - r - 60); g.fillText(tip, x, cy - r - 60); } return; }
-  const shake = SHOP.missForce && !SHOP.missForce.done ? Math.sin(t*70)*4 : 0, bx = x + (SHOP.facing || 1)*r*0.75, ground = cy + 28; drawBabyInArms(b, bx + shake, ground, t, SHOP.facing || 1, !SHOP.missForce);
+  const shake = SHOP.missForce && !SHOP.missForce.done ? Math.sin(t*70)*4 : 0, bx = x + (SHOP.facing || 1)*Math.min(60, r*0.75), ground = cy + 28; drawBabyInArms(b, bx + shake, ground, t, SHOP.facing || 1, !SHOP.missForce);
   drawMissBaby(t, bx, ground);
 }
 function drawSlyBottle(x, y) { g.fillStyle = C.white; g.strokeStyle = C.ink; g.lineWidth = 3; roundRect(x - 13, y - 14, 26, 38, 7); g.fill(); g.stroke(); g.fillStyle = '#ffd6a8'; g.fillRect(x - 11, y + 4, 22, 18); g.fillStyle = '#ff8fc1'; g.beginPath(); g.moveTo(x - 9, y - 14); g.quadraticCurveTo(x, y - 34, x + 9, y - 14); g.closePath(); g.fill(); g.stroke(); }
