@@ -297,7 +297,40 @@ If you're playing as Missing Arrow, it all happens to you.
 
 **Missing Arrow is healed now:** after this chapter, he doesn't shake or glitch anymore, anywhere in the game, and the toddlers aren't scared of him, so you can carry any of them when you play as him. His glitch fest still works in fights. If you do a chapter again, he goes back to how he was for that chapter.
 
-Chapter 18 is done once IT says you're welcome. Then it says "The End... for now" and takes you home to the cabin. You can do all four again with "do it again", and there's a story look for each one.
+Chapter 18 is done once IT says you're welcome. Then the page turns to chapter 19. You can do all four again with "do it again", and there's a story look for each one.
+
+**Chapter 19: MORE FOOD** (on the chapters page, it opens once chapter 18 is done). **Now we find out why IT helped Missing Arrow, and IT attacks!** There are four parts:
+
+- **🍕 Lunch time:** the toddlers yell "MORE FOOD!" and each one shows you what they want. Pick up pizza, an apple or a cookie from the crates, and bring it to the right toddler. Feed them 8 times, and then the crates are empty.
+- **🦷 Bite marks:** the toddlers are crying, and the crates have glowing green bite marks. Follow the glowing crumbs to the boards in the floor. It was IT! Hungry kids cry, and crying is what IT eats. Missing Arrow's pain was the best thing IT ever ate, and that's why IT helped him.
+- **🏃 Get it back:** down in the code, run under the falling food to grab 15, and stay away from the green sad slime, because it makes you drop some. **The husk hunts you!** If it touches you, you drop 3. Jump over it, or press punch to knock it back.
+- **🤢 Too sweet:** **IT attacks the cabin!** When a green circle shows up on the floor, run, because a giant green hand bursts out of it. Don't touch IT, either (jump over IT to get across). Feed the toddlers and they laugh, and every "HA!" flies into IT and makes it fatter and sicker. If IT hits you, you lose a laugh. Get 8 laughs and IT burps and sinks back under the floor. "...I WILL BE HUNGRY AGAIN."
+
+If you're playing as Missing Arrow, it all happens to you, and he stays healed the whole time, even if you do the chapter again.
+
+Chapter 19 is done once IT goes back under the floor. Then the page turns to chapter 20. You can do all four again with "do it again", and there's a story look for each one.
+
+**Chapter 20: KEEPERS BABY** (on the chapters page, it opens once chapter 19 is done). **IT takes the shopkeepers' baby and infects her!** There are four parts:
+
+- **🦠 Taken:** you play peekaboo with the Little Shopkeeper, and a green hand comes out of the boards and grabs her. Punch it to make it let go, but it's too strong, and it pulls her under the floor. IT gives her back all green: "I LEFT SOMETHING INSIDE."
+- **🔧 Fix her:** Hexstar 2.0 and Hexstar 1.0 try to fix her with their machine. Run to the lever with the yellow light and press punch to fill the bar. If you're too slow, the bar goes down. It gets to 100 percent, and the infection comes right back. They try again, faster, and it comes back again. The robots can't fix her, but her code goes quiet when her head is full of words.
+- **🏃 Carry her:** carry her across the cabin to the library door. She glitches out of your arms 3 times, so pick her up again. Green hands burst out of the floor where you are, and if one hits you, you drop her.
+- **📚 The library:** when you go in, IT says **"DO YOU LIKE THE INFECTION? CAUSE I LIKE IT"**. Bring her 5 books from the shelves, and she gets less green with every one. Don't touch a shelf while it's glowing green, because those books bite and she loses a book. She has to stay and keep reading, all by herself. IT says "I CAN WAIT."
+
+**She lives in the library now:** after this chapter, she isn't in her room, her crib or anywhere else at home, and you can't pick her up. There's a new **library door** in the cabin so you can visit her, and she stays green. IT says that line every time you go in. If you do an old chapter again, she goes back to how she was for that chapter.
+
+Chapter 20 is done once she's reading. Then the page turns to chapter 21. You can do all four again with "do it again", and there's a story look for each one.
+
+**Chapter 21: AGAIN** (on the chapters page, it opens once chapter 20 is done). **You play as the shopkeepers' baby!** IT is in her code and IT is hungry again, so IT makes the same morning happen over and over, and it's different every time. There are four parts:
+
+- **🔁 Good morning:** say hi to Lovely Heart, Angry Triangle and Yelling Square in the library. Then a green flash, "AGAIN", and you're back at the start. It's the same morning 4 times, but it gets worse: first it's normal, then the clock turns green and runs backward and they say their lines wrong, then the room goes dark and they have green eyes and stand in the wrong spots, and then they're all husks saying "GOOD MORNING."
+- **🔍 What changed:** the cabin is empty. It's the same room every time, but one thing is different: the clock, the lamp, the picture, the flower or the stool. Press punch on it. Then it all starts again, and something else is different. Find 5. If you pick the wrong thing, you lose one.
+- **🕰️ The clock:** inside the clock, smash the 4 gears when they glow yellow. **IT attacks:** a big green clock hand sweeps across the floor, faster every time you break a gear (jump over it), and green hands burst out of the floor. If IT hits you, a gear comes back.
+- **🌅 Tomorrow:** it's really a new day, and everybody says something new! Then go in the library door, and IT says "DO YOU LIKE THE INFECTION? CAUSE I LIKE IT". Lovely Heart reads to you, and you say "Again!" until you say it in a way that scares them. IT says "AGAIN."
+
+In this chapter you're always the baby, no matter who you picked, and the shopping-as picker goes away until you leave.
+
+Chapter 21 is done once IT says "AGAIN." Then it says "The End... for now" and takes you home to the cabin. You can do all four again with "do it again", and there's a story look for each one.
 
 **The babies live with their parents:** in the cabin's dorms, each baby now has a crib in their parents' room, awake in the day and fast asleep at night. The Little Shopkeeper is in Mr. & Mrs. Shopkeeper's home (once she's moved into her own room), Sly Diamond and Missing Arrow's baby boy is in their room, and the baby robot is in Hexstar 2.0 and Hexstar 1.0's room, with the night light on. Once Sly Diamond and Missing Arrow's baby is here, their door isn't locked anymore, so everyone can come and see him. The babies' own rooms are all still there too.
 
