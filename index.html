@@ -4416,7 +4416,9 @@ function drawPlayerBreak(t) {
 // Each door goes into their room (floor 12), where the two of them hang out and chat ----------
 const DORMS = [ // who shares a room (and what they talk about in there)
   { ids:['heart', 'star'], wall:'#ffe0ef', chats:[[['heart', 'Good night, Star! Sweet dreams!'], ['star', 'Night. ...Stay cool.'], ['heart', '*giggles* You always say that!']],
-    [['star', 'Who put a heart sticker on my sunglasses?'], ['heart', 'Hehe... it was me!'], ['star', '...It looks cool, actually.']]] },
+    [['star', 'Who put a heart sticker on my sunglasses?'], ['heart', 'Hehe... it was me!'], ['star', '...It looks cool, actually.']],
+    [['sparkle', 'Story time! Story time!'], ['heart', 'Okay, Goofy! One story, and then sleep.'], ['star', '...He is asleep already. Cool.']], // (Goofy Sparkle lives here once Grumpy Shuriken is gone)
+    [['sparkle', '*sniff* ...I miss Grumpy.'], ['heart', 'Oh, Goofy. Come here. Big hug!'], ['star', 'You can stay with us. Always. ...Stay cool.']]] },
   { ids:['sparkle', 'shuriken'], wall:'#fff6c9', chats:[[['sparkle', 'Pillow fight!'], ['shuriken', 'No pillow fights. Go to sleep.'], ['sparkle', '*bonk* Hehe!'], ['shuriken', '...OK. ONE pillow fight.']],
     [['shuriken', 'Do NOT run off again tomorrow.'], ['sparkle', 'I promise! ...Maybe.']]] },
   { ids:['tri', 'square'], wall:'#ffe3d6', chats:[[['square', 'GOOD NIGHT, TRIANGLE!'], ['tri', 'Stop YELLING, I am trying to sleep!'], ['square', 'SORRY! ...sorry.']],
@@ -4440,7 +4442,8 @@ const OLD_HEX_CH = { id:'oldhex', name:'Hexstar 1.0', shape:'star6', color:'#93a
 // day or night in the dorms: flip the light switch in a room (or use the button on the card). At night they say good night; in the day, good morning
 const dormNight = () => setup.dormTime !== 'day';
 const DORM_DAY = [ // what each pair of roommates says in the daytime (same order as DORMS)
-  [[['heart', 'Good morning, Star! Rise and shine!'], ['star', 'Too early... *puts on shades*'], ['heart', 'Hehe! Now you look cool AND sleepy!']]],
+  [[['heart', 'Good morning, Star! Rise and shine!'], ['star', 'Too early... *puts on shades*'], ['heart', 'Hehe! Now you look cool AND sleepy!']],
+    [['sparkle', 'WAKE UP! Pancakes! Pancakes!'], ['heart', 'Good morning, Goofy! Hehe!'], ['star', 'Too loud... *puts sunglasses on Goofy*']]],
   [[['sparkle', 'WAKE UP! It is a brand new day!'], ['shuriken', 'Five more minutes...'], ['sparkle', '*jumps on the bed* Wheee!'], ['shuriken', '...I am up. I am up.']]],
   [[['square', 'GOOD MORNING, TRIANGLE!'], ['tri', 'Grr... I was SO asleep.'], ['square', 'BREAKFAST TIME!'], ['tri', '...OK, breakfast is good.']]],
   [[['flower', 'Good morning! The flowers are awake too!'], ['circle', 'WHAT?! Flowers wake up?!'], ['flower', 'Hehe, they open up in the sun!']]],
@@ -4457,6 +4460,9 @@ function dormLight() { // flip the light switch: day to night, or night to day
   SHOP.youSay = dormNight() ? 'Lights out! Good night!' : 'Good morning, everyone!'; SHOP.youSayT = 2.2; if (sfx.grab) sfx.grab(); renderShopCard(true);
 }
 const dormName = id => id === 'oldhex' ? (hexIn() || SHOP.hesIn ? 'Hexstar 1.0' : '(empty bed)') : CHAR[id].keeper || unlocked(CHAR[id]) ? CHAR[id].name : '???'; // (a locked fighter's name stays a secret, but everyone knows the shopkeepers)
+const GOOFY_BED_X = 920; // (where Goofy Sparkle's mattress is in Heart and Star's room)
+const dormIds = i => { const ids = DORMS[i].ids; if (!grumpyGone()) return ids; return i === 0 ? [...ids, 'sparkle'] : ids.filter(id => id !== 'sparkle'); }; // (after Grumpy Shuriken is gone, Goofy Sparkle moves in with Lovely Heart and Cool Star)
+const dormNames = i => { const n = dormIds(i).map(dormName); return n.length > 2 ? `${n.slice(0, -1).join(', ')} & ${n[n.length - 1]}` : n.join(' & '); }, dormDoorNames = i => dormIds(i).map(dormName).map((n, k, all) => k < all.length - 1 ? n + (k === all.length - 2 ? ' &' : ',') : n);
 const dormOpen = i => !DORMS[i].locked || DORMS[i].ids.includes(CHARS[SHOP.who].id) || slyBedDone(); // a locked door only opens for the two who live there
 const KEEPER_SHOP_R = { keeper:0.75*350/2.1, keeper2:255/2.1 }; // the size that draws the shopkeepers about as big as they are in their shops (Fighty a bit smaller)
 const GOOFY_R = 20; // (how big baby Goofy Sparkle is when he's just hanging out: the same size as the shopkeepers' baby)
@@ -4487,7 +4493,7 @@ function keeperSpots() { // where the two shopkeepers are in their home
 function dormSpots() { // the roommates in their room (not you, if it's your room)
   const d = DORMS[SHOP.dorm || 0];
   if (d.keepers) return keeperSpots(); // (the Shy Shopkeeper is upstairs, the Fighty one downstairs)
-  return d.ids.map(id => id === 'oldhex' ? OLD_HEX_CH : CHAR[id]).filter(ch => (ch.oldHex ? hexIn() || (SHOP.hesIn && SHOP.dorm === 6) : unlocked(ch)) && ch.id !== CHARS[SHOP.who].id && !(ch.id === 'sparkle' && babyOut('goofy')) && !(ch.id === 'shuriken' && grumpyGone()) && (SHOP.cabinDorm || (!(ch.id === 'sparkle' && noShop()) && !(ch.id === 'shuriken' && theyGone()) && !voidTaskNow()))).map((ch, i) => ({ ch, x:[640, 1060][i] }));
+  return dormIds(SHOP.dorm || 0).map(id => id === 'oldhex' ? OLD_HEX_CH : CHAR[id]).filter(ch => (ch.oldHex ? hexIn() || (SHOP.hesIn && SHOP.dorm === 6) : unlocked(ch)) && ch.id !== CHARS[SHOP.who].id && !(ch.id === 'sparkle' && babyOut('goofy')) && !(ch.id === 'shuriken' && grumpyGone()) && (SHOP.cabinDorm || (!(ch.id === 'sparkle' && noShop()) && !(ch.id === 'shuriken' && theyGone()) && !voidTaskNow()))).map((ch, i) => ({ ch, x:ch.id === 'sparkle' && !(SHOP.dorm || 0) ? GOOFY_BED_X : [640, 1060][i] }));
 }
 // the shopkeepers' room is extra big (wider than the screen, so it scrolls with you) and fancier than the fighters' rooms
 const KEEPER_ROOM_W = 2400;
@@ -4733,7 +4739,7 @@ function drawNameDoor(x, names, color = '#b97a57') { // a brown dorm door, with 
   g.fillStyle = color; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(x - 56, SHOP_FLOOR - 250, 112, 250); g.strokeRect(x - 56, SHOP_FLOOR - 250, 112, 250);
   g.fillStyle = '#f3e2c7'; g.lineWidth = 2; g.fillRect(x - 50, SHOP_FLOOR - 225, 100, 56); g.strokeRect(x - 50, SHOP_FLOOR - 225, 100, 56);
   g.fillStyle = C.ink; g.font = `15px ${BODYFONT}`; g.textAlign = 'center'; g.textBaseline = 'middle';
-  names.forEach((n, i) => g.fillText(n, x, SHOP_FLOOR - 211 + i*20, 94));
+  names.forEach((n, i) => g.fillText(n, x, names.length > 2 ? SHOP_FLOOR - 215 + i*18 : names.length < 2 ? SHOP_FLOOR - 197 : SHOP_FLOOR - 211 + i*20, 94));
   g.fillStyle = C.yellow; g.lineWidth = 3; g.beginPath(); g.arc(x + 38, SHOP_FLOOR - 120, 8, 0, TAU); g.fill(); g.stroke();
 }
 // ---------- the 3rd floor of the shopkeepers' home (floor 14): a cozy attic, with a paper on the wall that has a secret code ----------
@@ -4887,7 +4893,7 @@ function drawDormHall(t) {
   g.fillStyle = '#c0392b'; g.fillRect(0, SHOP_FLOOR + 8, W, 26); // a long carpet down the hallway
   g.fillStyle = '#5a3a6e'; g.font = `56px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('dorms', W/2, 170);
   drawStaffDoor(DORM_EXIT_X, '← player breaks', '#c9f0ff', 'FIGHTERS ONLY');
-  DORMS.forEach((d, i) => { if (d.keepers) drawKeeperDoor(DORM_ROOM_X[i], t); else drawNameDoor(DORM_ROOM_X[i], [dormName(d.ids[0]) + ' &', dormName(d.ids[1])]); if (d.crush) { drawLittleHeart(DORM_ROOM_X[i], SHOP_FLOOR - 322, 14); drawTherapistSign(DORM_ROOM_X[i]); } if (!dormOpen(i)) drawPadlock(DORM_ROOM_X[i] + 30, SHOP_FLOOR - 105, 0.22); });
+  DORMS.forEach((d, i) => { if (d.keepers) drawKeeperDoor(DORM_ROOM_X[i], t); else drawNameDoor(DORM_ROOM_X[i], dormDoorNames(i)); if (d.crush) { drawLittleHeart(DORM_ROOM_X[i], SHOP_FLOOR - 322, 14); drawTherapistSign(DORM_ROOM_X[i]); } if (!dormOpen(i)) drawPadlock(DORM_ROOM_X[i] + 30, SHOP_FLOOR - 105, 0.22); });
   if (dormNight()) { g.fillStyle = 'rgba(15,10,50,.3)'; g.fillRect(0, 0, W, H); } // the hallway is dim at night
   const near = SHOP.nearStairs && SHOP.stairTo === 12 ? DORM_ROOM_X[SHOP.stairRoom] : null;
   if (near != null) drawPointer(near, SHOP_FLOOR - 330, t);
@@ -4899,6 +4905,11 @@ function drawOneBed(x, y, col, mark) { // a bed (its top at y), in the roommate'
   g.fillStyle = C.white; roundRect(x - 108, y - 20, 60, 26, 10); g.fill(); g.stroke();
   if (mark) { g.save(); g.translate(x - 120, y - 70); mark(); g.restore(); }
 }
+function drawMattress(x, F, col, mark) { // a sleepover mattress on the floor
+  g.fillStyle = col; g.strokeStyle = C.ink; g.lineWidth = 4; roundRect(x - 140, F - 40, 280, 40, 12); g.fill(); g.stroke();
+  g.fillStyle = C.white; roundRect(x - 130, F - 62, 70, 28, 12); g.fill(); g.stroke();
+  if (mark) { g.save(); g.translate(x - 95, F - 90); mark(); g.restore(); }
+}
 function drawRoomBeds(cols, marks) { // the two beds, set up a different way in each room
   const how = ROOM_BEDS[SHOP.dorm || 0] || 'apart', F = SHOP_FLOOR;
   if (how === 'bunk') { // a bunk bed: one on the bottom, one on top, with a ladder
@@ -4907,9 +4918,8 @@ function drawRoomBeds(cols, marks) { // the two beds, set up a different way in 
     g.strokeStyle = '#6b3d1a'; g.lineWidth = 6; g.beginPath(); g.moveTo(760, F); g.lineTo(760, F - 250); g.moveTo(800, F); g.lineTo(800, F - 250); for (let y=F - 30; y>F - 250; y-=40) { g.moveTo(760, y); g.lineTo(800, y); } g.stroke();
   } else if (how === 'floor') { // sleepover mattresses on the floor (Goofy kicked his bed frame apart... with a pillow)
     for (const [x, col, mark] of [[520, cols[0], marks[0]], [1040, cols[1], marks[1]]]) {
-      g.fillStyle = col; g.strokeStyle = C.ink; g.lineWidth = 4; roundRect(x - 140, F - 40, 280, 40, 12); g.fill(); g.stroke();
-      g.fillStyle = C.white; roundRect(x - 130, F - 62, 70, 28, 12); g.fill(); g.stroke();
-      if (mark) { g.save(); g.translate(x - 95, F - 90); mark(); g.restore(); }
+      if (x === 520 && grumpyGone()) continue; // (Goofy took his mattress with him)
+      drawMattress(x, F, col, mark);
     }
   } else if (how === 'together') { drawOneBed(560, F - 80, cols[0], marks[0]); drawOneBed(830, F - 80, cols[1], marks[1]); } // pushed right next to each other (and they STILL argue)
   else if (how === 'loft') { // a loft bed up high (nothing can hide under it!), with a ladder, and a normal bed
@@ -4957,6 +4967,7 @@ function drawThemedRoom(i, t) { // each pair of roommates has a room that fits t
     drawSign(1230, 260, 220, 'STAY COOL', C.ink, C.yellow); g.save(); g.translate(1230, 214); g.scale(90, 90); drawGlasses(g, [[-0.2, 0], [0.2, 0]]); g.restore(); // a cool poster with shades
     g.fillStyle = '#8a4fbf'; g.strokeStyle = C.ink; g.lineWidth = 4; roundRect(1440, SHOP_FLOOR - 170, 60, 150, 26); g.fill(); g.stroke(); g.fillStyle = '#ff5fa2'; for (let k=0;k<3;k++) { g.beginPath(); g.arc(1470, SHOP_FLOOR - 50 - ((t*30 + k*45) % 110), 10, 0, TAU); g.fill(); } // a lava lamp
     drawRoomBeds(['#ff8fc1', '#9b6bd6'], [() => drawLittleHeart(0, 0, 16), () => { g.fillStyle = C.yellow; g.strokeStyle = C.ink; g.lineWidth = 3; starPath(18); g.fill(); g.stroke(); }]);
+    if (grumpyGone()) { g.save(); g.translate(GOOFY_BED_X, SHOP_FLOOR); g.scale(0.6, 0.6); drawMattress(0, 0, '#ffe066', () => { g.fillStyle = '#ffd83a'; g.strokeStyle = C.ink; g.lineWidth = 3; starPath(18, 4); g.fill(); g.stroke(); }); g.restore(); } // Goofy Sparkle's mattress: he moved in!
   } else if (i === 1) { // Goofy Sparkle & Grumpy Shuriken: crayon drawings and toys, and a tidy ninja corner
     for (const [x, col] of [[300, C.blue], [420, C.red], [540, '#2e9e4f']]) { g.fillStyle = C.white; g.strokeStyle = C.ink; g.lineWidth = 3; g.fillRect(x - 50, 210, 100, 80); g.strokeRect(x - 50, 210, 100, 80); g.strokeStyle = col; g.lineWidth = 4; g.beginPath(); for (let k=0;k<6;k++) g.lineTo(x - 36 + k*14, 250 + Math.sin(k*2 + x)*22); g.stroke(); } // Goofy's crayon drawings
     g.fillStyle = '#f3e2c7'; g.strokeStyle = C.ink; g.lineWidth = 4; g.fillRect(1160, 190, 140, 190); g.strokeRect(1160, 190, 140, 190); g.fillStyle = '#4a2c14'; g.fillRect(1150, 180, 160, 14); g.fillRect(1150, 376, 160, 14); // a ninja scroll
@@ -5023,7 +5034,7 @@ function drawDormRoom(t) {
   if (d.crush) drawTherapyRoom(t); else drawThemedRoom(SHOP.dorm || 0, t); // (each room fits the two who live there)
   g.fillStyle = 'rgba(255,255,255,.5)'; g.beginPath(); g.ellipse(850, SHOP_FLOOR + 30, 220, 26, 0, 0, TAU); g.fill(); // a rug
   }
-  g.fillStyle = '#5a3a6e'; g.font = `44px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(d.keepers && SHOP.cabinDorm ? "Mr. & Mrs. Shopkeeper's home" : d.robots && !hexIn() && !SHOP.hesIn ? `${dormName(d.ids[0])}'s room` : `${dormName(d.ids[0])} & ${dormName(d.ids[1])}'s room`, W/2, 160, 1000); // (in the cabin, the shopkeepers are married)
+  g.fillStyle = '#5a3a6e'; g.font = `44px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(d.keepers && SHOP.cabinDorm ? "Mr. & Mrs. Shopkeeper's home" : d.robots && !hexIn() && !SHOP.hesIn ? `${dormName(d.ids[0])}'s room` : `${dormNames(SHOP.dorm || 0)}'s room`, W/2, 160, 1000); // (in the cabin, the shopkeepers are married)
   drawStaffDoor(DORM_EXIT_X, '← hallway', '#efe6ff', 'DORMS');
   // the light switch by the door (press punch next to it), and at night the room is dark, with a little lamp glowing
   g.fillStyle = '#f3e2c7'; g.strokeStyle = C.ink; g.lineWidth = 3; g.fillRect(DORM_SWITCH_X - 16, SHOP_FLOOR - 190, 32, 46); g.strokeRect(DORM_SWITCH_X - 16, SHOP_FLOOR - 190, 32, 46);
@@ -6573,7 +6584,7 @@ function drawRippedDoors(t) { // the dorm doors are ripped off: each one hangs f
     g.fillStyle = '#000'; g.fillRect(x - 56, top, 112, 250); // the empty doorway
     for (let k=0;k<4;k++) { g.fillStyle = 'rgba(57,255,20,.45)'; g.fillRect(x - 56, top + ((t*120 + k*70 + i*30) % 250), 112, 4); } // green glitch lines running through it
     g.save(); g.translate(x - 56 + jit, top); g.rotate(0.32 + Math.sin(t*1.6 + i)*0.05); g.translate(-(x - 56), -top); // hanging off one hinge (and glitching)
-    if (d.keepers) drawKeeperDoor(x, t); else drawNameDoor(x, [dormName(d.ids[0]) + ' &', dormName(d.ids[1])]);
+    if (d.keepers) drawKeeperDoor(x, t); else drawNameDoor(x, dormDoorNames(i));
     g.restore();
     if (jit) { g.fillStyle = i % 2 ? '#39ff14' : '#000'; g.fillRect(x - 70 + jit*3, top + glitchRnd(f + i)*200, 140, 12); } // a glitch bar
   });
@@ -8575,7 +8586,7 @@ function drawCabinShop(t) { // the 2nd floor: the cabin shop, extra big (three s
 function drawCabinDorms(t) { // the 3rd floor: the dorms, like the old ones: a hallway with a door for each pair of roommates (and each room is its own, decorated just for them)
   drawLogWalls(W); g.fillStyle = '#c0392b'; g.fillRect(0, SHOP_FLOOR + 8, W, 26); // a long carpet down the hallway
   g.fillStyle = '#f3e2c7'; g.strokeStyle = '#4a2e18'; g.lineWidth = 5; g.fillRect(620, 90, 360, 70); g.strokeRect(620, 90, 360, 70); g.fillStyle = '#4a2e18'; g.font = `44px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('the dorms', 800, 127);
-  DORMS.forEach((d, i) => { if (d.keepers) drawKeeperDoor(DORM_ROOM_X[i], t); else drawNameDoor(DORM_ROOM_X[i], [dormName(d.ids[0]) + ' &', dormName(d.ids[1])]); if (d.crush) { drawLittleHeart(DORM_ROOM_X[i], SHOP_FLOOR - 322, 14); drawTherapistSign(DORM_ROOM_X[i]); } if (!dormOpen(i)) drawPadlock(DORM_ROOM_X[i] + 30, SHOP_FLOOR - 105, 0.22); });
+  DORMS.forEach((d, i) => { if (d.keepers) drawKeeperDoor(DORM_ROOM_X[i], t); else drawNameDoor(DORM_ROOM_X[i], dormDoorNames(i)); if (d.crush) { drawLittleHeart(DORM_ROOM_X[i], SHOP_FLOOR - 322, 14); drawTherapistSign(DORM_ROOM_X[i]); } if (!dormOpen(i)) drawPadlock(DORM_ROOM_X[i] + 30, SHOP_FLOOR - 105, 0.22); });
   if (dormNight()) { g.fillStyle = 'rgba(15,10,50,.3)'; g.fillRect(0, 0, W, H); } // (the hallway is dim at night)
   const near = SHOP.nearStairs && SHOP.stairTo === 12 ? DORM_ROOM_X[SHOP.stairRoom] : null; if (near != null) drawPointer(near, SHOP_FLOOR - 330, t);
   drawCabinStairs(1520, false, '↓ the shop', t);
@@ -9385,17 +9396,17 @@ function fillShopCard(card, ch, it) {
     const to = SHOP.stairTo, up = to > SHOP.floor;
     const inner = to >= 13 || SHOP.floor >= 13, adminDoor = to === 15 || SHOP.floor === 15, ladder = !adminDoor && (to === 14 || SHOP.floor === 14); // (the stairs inside the shopkeepers' room)
     const door = !inner && (to === 6 || SHOP.floor === 6 || to === 10 || SHOP.floor === 10 || to === 11 || to === 12 || SHOP.floor === 11 || SHOP.floor === 12);
-    const dn = DORMS[SHOP.stairRoom || 0].ids.map(dormName); // (the names on a dorm door)
+    const dn = dormIds(SHOP.stairRoom || 0).map(dormName); // (the names on a dorm door)
     const text = { 2:SHOP.floor === 10 ? 'Go back out to the funny fun shop.' : SHOP.floor === 6 ? 'Go back out to the funny fun shop. (Your break timer will start over!)' : SHOP.floor === 1 ? 'Go up to the 2nd floor: the funny fun shop. Things that don\'t fit down here go up there.' : 'Go back down to the 2nd floor: the funny fun shop.',
       10:SHOP.floor === 11 ? 'Go back to player breaks.' : 'Go into player breaks: the fighters hang out in here when they are not fighting. Say hi!',
       11:SHOP.floor === 12 ? 'Go back out to the dorms hallway.' : 'Go to the dorms, where the fighters sleep. Each pair of roommates has a room, with their names on the door.',
-      15:'A secret door... only admins can open it!', 14:SHOP.floor === 15 ? 'Go back out to the 3rd floor.' : 'Climb the ladder up to the 3rd floor. What is up there?', 13:SHOP.floor === 14 ? 'Climb back down the ladder.' : 'Go upstairs in the shopkeepers\' room. What do they keep up there?', 12:SHOP.floor === 13 ? 'Go back downstairs to the shopkeepers\' room.' : dormOpen(SHOP.stairRoom || 0) ? `Go into ${dn[0]} and ${dn[1]}'s room.` : `This door is locked! Only ${dn[0]} and ${dn[1]} can go in. (Shop as one of them to get in.)`,
+      15:'A secret door... only admins can open it!', 14:SHOP.floor === 15 ? 'Go back out to the 3rd floor.' : 'Climb the ladder up to the 3rd floor. What is up there?', 13:SHOP.floor === 14 ? 'Climb back down the ladder.' : 'Go upstairs in the shopkeepers\' room. What do they keep up there?', 12:SHOP.floor === 13 ? 'Go back downstairs to the shopkeepers\' room.' : dormOpen(SHOP.stairRoom || 0) ? `Go into ${dormNames(SHOP.stairRoom || 0)}'s room.` : `This door is locked! Only ${dn[0]} and ${dn[1]} can go in. (Shop as one of them to get in.)`,
       6:'Go into the break room. The shopkeepers take their break in there... the longer you stay, the more stuff they give you!',
       1:SHOP.floor === 8 ? 'The portal is open! Jump in to go home, to the 1st floor.' : 'Go back down to the 1st floor: the fighty shop.',
       8:'A big swirly portal... Where does it go? Is that where HE is?', 4:SHOP.floor === 7 ? `Jump back into the portal. It goes down to the manager's office... careful, ${BOSS_NAME} is in there!` : 'Ride the elevator up to the manager\'s office. Ding!',
       3:SHOP.floor === 4 ? 'Ride the elevator back down to the dark 3rd floor.' : 'Climb up to the 3rd floor. The shopkeepers really don\'t like to talk about it...' }[to];
     const portal = to === 8 || SHOP.floor === 8, lift = !portal && (to === 4 || SHOP.floor === 4);
-    card.innerHTML = `<h3>${door ? (to === 12 ? `${dn[0]} & ${dn[1]}` : to === 11 || SHOP.floor === 11 || SHOP.floor === 12 ? 'Dorms' : to === 10 || SHOP.floor === 10 ? 'Player breaks door' : 'Break room door') : portal ? 'Portal' : lift ? 'Elevator' : adminDoor ? 'Admin door' : to === 3 || ladder ? 'Ladder' : 'Stairs'}</h3><p>${text}</p><div class="row"></div>`;
+    card.innerHTML = `<h3>${door ? (to === 12 ? dormNames(SHOP.stairRoom || 0) : to === 11 || SHOP.floor === 11 || SHOP.floor === 12 ? 'Dorms' : to === 10 || SHOP.floor === 10 ? 'Player breaks door' : 'Break room door') : portal ? 'Portal' : lift ? 'Elevator' : adminDoor ? 'Admin door' : to === 3 || ladder ? 'Ladder' : 'Stairs'}</h3><p>${text}</p><div class="row"></div>`;
     const b = document.createElement('button'); b.className = 'btn'; b.id = 'shopStairs'; b.textContent = door ? (to === 6 || (to === 10 && SHOP.floor !== 11) || to === 12 || (to === 11 && SHOP.floor === 10) ? 'go in' : 'go out') : portal ? 'jump in' : lift ? (up ? 'ride up' : 'ride down') : to === 3 ? 'climb up... if you dare' : adminDoor ? (up ? 'go in' : 'go out') : ladder ? (up ? 'climb up' : 'climb down') : up ? 'go upstairs' : 'go downstairs';
     b.onclick = () => { shopStairs(); cv.focus(); };
     card.querySelector('.row').append(b, Object.assign(document.createElement('span'), { innerHTML:press }));
@@ -9457,7 +9468,7 @@ function fillShopCard(card, ch, it) {
       : SHOP.floor === 11 ? '<h3>The dorms</h3><p>This is where the fighters sleep! Each pair of roommates shares a room, and their names are on the door. Walk up to a door to go in.</p><p class="note">The door on the left goes back to player breaks.</p>'
       : SHOP.hesIn && SHOP.dorm === 6 ? `<h3>He's in! (moving day)</h3><p>Hexstar 1.0 is moving in with Hexstar 2.0! Walk up to each moving box and press punch to unpack it. Unpacked: ${SHOP.unpacked.length}/${HESIN_BOXES.length}</p>`
       : SHOP.nearSwitch ? `<h3>The light switch</h3><p>It's ${dormNight() ? 'night' : 'daytime'} in the dorms. Press punch to switch to ${dormNight() ? 'day' : 'night'}!</p>`
-      : SHOP.nearPal ? `<h3>${SHOP.nearPal.name}</h3><p>This is ${SHOP.nearPal.name}'s room. Press punch to say hi!</p>` : `<h3>${dormName(d.ids[0])} & ${dormName(d.ids[1])}'s room</h3><p>The two roommates hang out here and chat. Walk up to one and press punch to say hi. The light switch by the door makes it day or night.</p><p class="note">The door on the left goes back to the hallway.</p>`;
+      : SHOP.nearPal ? `<h3>${SHOP.nearPal.name}</h3><p>This is ${SHOP.nearPal.name}'s room. Press punch to say hi!</p>` : `<h3>${dormNames(SHOP.dorm || 0)}'s room</h3><p>${dormIds(SHOP.dorm || 0).length > 2 ? 'The roommates' : dormIds(SHOP.dorm || 0).length < 2 ? 'Nobody' : 'The two roommates'} hang out here and chat. Walk up to one and press punch to say hi. The light switch by the door makes it day or night.</p><p class="note">The door on the left goes back to the hallway.</p>`;
     const b = document.createElement('button'); b.className = 'btn'; b.id = 'dormLight'; b.textContent = dormNight() ? '☀️ make it day' : '🌙 make it night'; // (day or night from anywhere in the dorms)
     b.onclick = () => { dormLight(); cv.focus(); }; card.append(b);
     return;
