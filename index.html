@@ -8129,7 +8129,7 @@ function babyNear() { // which baby you could pick up right now
 const MISS_CRY = 2000, MISS_RUN = 900, MISS_SCOLD = 3000, MISS_LEAVE = 1000, MISS_PARENTS = { shop:['keeper', 'keeper2'], robo:['hex', 'oldhex'], goofy:['keeper', 'keeper2'] };
 const MISS_LINES = { shop:[['keeper', 'HEY! That is OUR baby! Put her DOWN, Missing Arrow!'], ['keeper2', 'u-um... she does not like the glitches... please put her down...']], robo:[['hex', 'BEEP! WARNING! Put our baby DOWN, Missing Arrow!'], ['oldhex', 'B-b-beep! The glitches are getting in the baby!']], goofy:[['keeper', 'HEY! You are scaring Goofy! Put him DOWN, Missing Arrow!'], ['keeper2', 'u-um... he is just a little guy... please put him down...']] };
 // (leave a baby somewhere they don't belong and they sit there, then cry, then their parents come, scoop them up and carry them home)
-const BABY_CALM = 1500, BABY_WAIL = 3000, BABY_COME = 1800, BABY_SCOOP = 2200, BABY_GO = 1500, BABY_FAR = 1700, BABY_PARENTS = { ...MISS_PARENTS, glitch:['diamond', 'arrow'] };
+const BABY_CALM = 1500, BABY_WAIL = 3000, BABY_COME = 1800, BABY_SCOOP = 2200, BABY_GO = 2600, BABY_FAR = 1700, BABY_LIFT = 700, BABY_PARENTS = { ...MISS_PARENTS, glitch:['diamond', 'arrow'] };
 const BABY_WAILS = { shop:'WAAAAH! *sob sob*', glitch:'WAAAH! *bzzt* *sob*', robo:'WAAA-BEEP! *sob* BEEP!', goofy:'WAAAAA! Ba ba!! *sob*' };
 const BABY_SOOTHE = { keeper:{ shop:'There, there! Daddy has you. Back home we go!', goofy:'There, there, Goofy! Back home we go!' }, keeper2:{ shop:'sh-shh... Mama has you, little one...', goofy:'sh-shh... it is okay, Goofy...' }, diamond:{ glitch:'Shh, shh. Mommy has you, my baby boy.' }, arrow:{ glitch:'I-I-I g-got you, b-buddy! *bzzt* L-let us go h-home!' }, hex:{ robo:'BEEP! Baby found. Going home. *soft beep*' }, oldhex:{ robo:'B-b-beep! It is okay! I-I am here!' } };
 const babyWaited = d => d.to == null && !d.stay && performance.now() - d.t >= BABY_CALM + BABY_WAIL, babyParents = b => BABY_PARENTS[b].filter(id => id !== CHARS[SHOP.who].id), babyFetchHides = id => Object.keys(SHOP.dropped || {}).some(b => { const d = SHOP.dropped[b]; return babyHere(d) && babyWaited(d) && BABY_PARENTS[b].includes(id); });
@@ -8196,14 +8196,25 @@ function drawBabyInArms(b, bx, ground, t, dir, happy) { // a baby being carried
 }
 function drawBabyFetch(b, d, t) { // the parents come over, scoop the baby up and carry them home
   const e = performance.now() - d.t - BABY_CALM - BABY_WAIL; if (e < 0) return; const F = SHOP_FLOOR, side = d.x < dormRoomW()/2 ? 1 : -1, come = Math.min(1, e/BABY_COME), go = Math.max(0, (e - BABY_COME - BABY_SCOOP)/BABY_GO), walking = come < 1 || go > 0, facing = go > 0 ? side : -side;
-  babyParents(b).forEach((id, i) => { const keeper = id !== 'oldhex' && CHAR[id].keeper, x = d.x + side*(70 + i*(keeper ? 200 : 120)) + side*BABY_FAR*(1 - come + go), p = drawParent(id, x, t, walking, facing); if (i || come < 1) return;
-    const ground = F - p.bottom + 28, bx = x + facing*Math.min(60, p.r*0.75); drawBabyInArms(b, bx, ground, t, facing, true);
-    if (!go) { const k = (e - BABY_COME)/BABY_SCOOP; for (let n = 0; n < 3; n++) { const h = (k*2 + n*0.3) % 1; g.save(); g.globalAlpha = 1 - h; drawLittleHeart(bx + (n - 1)*30, ground - 90 - h*80, 10 + n*3); g.restore(); } drawBubble(BABY_SOOTHE[id][b], Math.max(280, Math.min(dormRoomW() - 280, x + side*40)), F - 340, x); }
+  const held = e - BABY_COME, up = held < 0 ? 0 : Math.min(1, held/BABY_LIFT), ease = up*up*(3 - 2*up); // (the scoop: they lean down, and up comes the baby)
+  babyParents(b).forEach((id, i) => { const keeper = id !== 'oldhex' && CHAR[id].keeper, x = d.x + side*(70 + i*(keeper ? 200 : 120)) + side*BABY_FAR*(1 - come + go), scooper = !i && come >= 1, lean = scooper ? facing*0.22*Math.sin(up*Math.PI) : 0;
+    g.save(); g.translate(x, F); g.rotate(lean); g.translate(-x, -F); const p = drawParent(id, x, t, walking, facing); g.restore(); if (!scooper) return;
+    const ground = F - p.bottom + 28 - (walking ? Math.abs(Math.sin(t*12))*8 : 0), armX = x + facing*Math.min(60, p.r*0.75), bx = d.x + (armX - d.x)*(go ? 1 : ease), rock = go ? Math.sin(t*12)*0.08 : Math.sin(t*3)*0.12*ease;
+    drawBabyHug(b, id, x, bx, ground, t, facing, rock, go ? 0 : (F - ground)*(1 - ease), p.r);
+    if (!go) { const k = held/BABY_SCOOP; for (let n = 0; n < 3; n++) { const h = (k*2 + n*0.3) % 1; g.save(); g.globalAlpha = (1 - h)*ease; drawLittleHeart(bx + (n - 1)*30, ground - 90 - h*80, 10 + n*3); g.restore(); } drawBubble(BABY_SOOTHE[id][b], Math.max(280, Math.min(dormRoomW() - 280, x + side*40)), F - 340, x); }
+    else if (go < 0.45) drawBubble(BABY_HI[b], Math.max(280, Math.min(dormRoomW() - 200, bx + 130)), ground - 110, bx); // (happy again, on the way home)
   });
+}
+function drawBabyHug(b, id, px, bx, ground, t, dir, rock, drop, r) { // a parent cradling their baby: rocking them, with an arm around them (drop: how far down the baby still is, while being lifted)
+  const ch = id === 'oldhex' ? OLD_HEX_CH : CHAR[id], y = ground + drop, hx = bx + dir*24, hy = y - 24, sx = px + dir*Math.min(34, r*0.35), sy = ground - 52, reach = 1 - Math.min(1, drop/200);
+  g.save(); g.translate(bx, y); g.rotate(rock); drawBabyInArms(b, 0, 0, t, dir, true); g.restore();
+  g.save(); g.lineCap = 'round'; g.globalAlpha = reach; for (const [col, w] of [[C.ink, 15], [ch.keeper ? C.ink : ch.color, 10]]) { g.strokeStyle = col; g.lineWidth = w; g.beginPath(); g.moveTo(sx, sy); g.quadraticCurveTo(bx - dir*8, y + 24, hx, hy); g.stroke(); } g.fillStyle = ch.color; g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.arc(hx, hy, 8, 0, TAU); g.fill(); g.stroke(); g.restore();
 }
 function drawHeldBaby(t, cy, r) { // in your arms (or, if nobody is in your arms, a little hint when you're next to one)
   const x = SHOP.x, b = SHOP.held; if (!b) { if (babyNear() && !youGoofy() && SHOP.youSayT <= 0) { g.font = `24px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineWidth = 5; g.strokeStyle = C.white; g.fillStyle = '#5a3a6e'; const key = ((KEYMAP.p1 && KEYMAP.p1.grab[0]) || '').replace(/^Key/, ''), tip = key ? `grab (${key}): pick up` : 'grab: pick up'; g.strokeText(tip, x, cy - r - 60); g.fillText(tip, x, cy - r - 60); } return; }
-  const shake = SHOP.missForce && !SHOP.missForce.done ? Math.sin(t*70)*4 : 0, bx = x + (SHOP.facing || 1)*Math.min(60, r*0.75), ground = cy + 28; drawBabyInArms(b, bx + shake, ground, t, SHOP.facing || 1, !SHOP.missForce);
+  const shake = SHOP.missForce && !SHOP.missForce.done ? Math.sin(t*70)*4 : 0, bx = x + (SHOP.facing || 1)*Math.min(60, r*0.75), ground = cy + 28; const dir = SHOP.facing || 1, you = CHARS[SHOP.who].id;
+  if (!SHOP.missForce && BABY_PARENTS[b].includes(you)) { const up = Math.min(1, (performance.now() - (SHOP.heldT || 0))/BABY_LIFT), ease = up*up*(3 - 2*up); drawBabyHug(b, you, x, x + (bx - x)*ease + dir*(1 - ease)*70, ground, t, dir, Math.sin(t*3)*0.12*ease, (SHOP_FLOOR - ground)*(1 - ease), r); const h = (t*0.5) % 1; if (ease >= 1 && h < 0.5) { g.save(); g.globalAlpha = 1 - h*2; drawLittleHeart(bx, ground - 90 - h*100, 12); g.restore(); } } // (your own baby: you scoop them up and rock them, with a heart now and then)
+  else drawBabyInArms(b, bx + shake, ground, t, dir, !SHOP.missForce);
   drawMissBaby(t, bx, ground);
 }
 function drawSlyBottle(x, y) { g.fillStyle = C.white; g.strokeStyle = C.ink; g.lineWidth = 3; roundRect(x - 13, y - 14, 26, 38, 7); g.fill(); g.stroke(); g.fillStyle = '#ffd6a8'; g.fillRect(x - 11, y + 4, 22, 18); g.fillStyle = '#ff8fc1'; g.beginPath(); g.moveTo(x - 9, y - 14); g.quadraticCurveTo(x, y - 34, x + 9, y - 14); g.closePath(); g.fill(); g.stroke(); }
