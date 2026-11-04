@@ -295,7 +295,7 @@ Chapter 17 is done once IT is gone. Then the page turns to chapter 18. You can d
 
 If you're playing as Missing Arrow, it all happens to you.
 
-**Missing Arrow is calm now:** after this chapter, he doesn't shake outside of fights, and the toddlers aren't scared of him, so you can carry any of them when you play as him. He still glitches, and his glitch fest still works in fights.
+**Missing Arrow is healed now:** after this chapter, he doesn't shake or glitch anymore, anywhere in the game, and the toddlers aren't scared of him, so you can carry any of them when you play as him. His glitch fest still works in fights. If you do a chapter again, he goes back to how he was for that chapter.
 
 Chapter 18 is done once IT says you're welcome. Then it says "The End... for now" and takes you home to the cabin. You can do all four again with "do it again", and there's a story look for each one.
 
