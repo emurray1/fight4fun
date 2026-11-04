@@ -209,7 +209,7 @@ Chapter 10 is done once Missing Arrow has fed the baby. Then the page turns to c
 - **💥 Grumpy attacks:** just as IT reaches Goofy Sparkle, Grumpy Shuriken gets in the way: "HEY! You want to play? PLAY WITH ME!" He spins into IT again and again, and you can help by pressing punch next to IT, but IT won't go down, and Grumpy Shuriken's red bar keeps dropping. Then he says "Hey, little guy. Close your eyes." and spins right into the crack in IT's chest. There's a bright flash and IT falls over. All that's left of him is one little point.
 - **🔗 Chain IT up:** get chains from the pile, carry them to IT and press punch, three times. (If you were playing as Grumpy Shuriken, your friends do it for you.) Everyone comes out of hiding, Goofy Sparkle holds on to the little point and cries, and the screen says **"GRUMPY SAVED GOOFY."**.
 
-From then on Grumpy Shuriken is gone from everywhere people hang out: the main menu, the cabin, the break room, his dorm with Goofy Sparkle and the meadow party. (Past-story scenes still show him.) By the fireplace there's a little memorial with his picture, a candle, flowers and the words "the bravest", and **baby Goofy Sparkle sits next to it and cries** ("*sniff* Ba ba... *sob*"), with tears and a little puddle. You can still pick Grumpy Shuriken to fight and to walk around as.
+Until chapter 15, Grumpy Shuriken is gone from everywhere people hang out: the main menu, the cabin, the break room, his dorm with Goofy Sparkle and the meadow party. (Past-story scenes still show him.) By the fireplace there's a little memorial with his picture, a candle, flowers and the words "the bravest", and **baby Goofy Sparkle sits next to it and cries** ("*sniff* Ba ba... *sob*"), with tears and a little puddle. You can still pick Grumpy Shuriken to fight and to walk around as.
 
 Chapter 11 is done once IT is chained up. Then the page turns to chapter 12. You can do all four again with "do it again", and there's a story look for each one.
 
@@ -243,9 +243,48 @@ All day, a picture pops up over a baby when they need something: 🍼 get a bott
 
 At the end you get a report card with up to 3 stars, how many times you helped and taught, and how many times the babies cried, and you get paid 500 coins the first time.
 
-Chapter 14 is done once all the babies have gone home. Then it says "The End... for now" and takes you home to the cabin. You can do all four again with "do it again", and there's a story look for each one.
+Chapter 14 is done once all the babies have gone home. Then the page turns to chapter 15. You can do all four again with "do it again", and there's a story look for each one.
 
 **Hexstar 1.0 at the confession:** while it's the time of the confession (before you've seen it, or while doing it again), it's Hexstar 1.0 in player breaks and in the robots' dorm room, not Hexstar 2.0. Hexstar 1.0 says Hexstar 2.0's lines in the gossip.
+
+**The babies trust you:** once you've finished chapter 14, put a baby down in a room with none of their parents and they never cry. They stay happy right there until you pick them up, and they babble instead of asking for their parents. They still crawl to a parent who's in the room, and back home if you put them down in their own room. (They still cry during the daycare itself, and Missing Arrow's glitches still scare them.)
+
+**Chapter 15: Return** (on the chapters page, it opens once chapter 14 is done). **The one little point left of Grumpy Shuriken starts to glow, and you and baby Goofy Sparkle go and bring him back!** Its four events happen one after the other, with no waiting:
+
+- **🌟 The little point:** by the fireplace, under Grumpy Shuriken's picture, Goofy Sparkle is crying. Walk up to him and press punch to hug him, then the little point starts to glow. Press punch next to it, and it pulls you outside.
+- **🍂 Lost points:** in the forest at night, three of his points are hidden under six leaf piles, in a different spot each time. The word over your head says cold, warm or HOT! Press punch next to a pile to dig. Goofy Sparkle crawls along behind you.
+- **👁️ Green eyes:** the last point is stuck in the crack in IT's chest. IT is chained up in the stone room, and it's watching. Only walk while its eyes are shut. If you move while they're open, it says "I SEE YOU.", and ZAP, you're back by the door. Get next to IT and press punch to take the point.
+- **🎉 Welcome back:** in the workshop with the two Hexstars, put all four points on the workbench and flip the big switch. There's a big flash, and there he is: "...Ugh. Why is everyone staring at me?" Goofy Sparkle crawls over, everyone comes running, and the screen says **"GRUMPY IS BACK!"**.
+
+From then on Grumpy Shuriken is back everywhere: the main menu, the cabin, the break room and the meadow party. The memorial by the fireplace is gone, Goofy Sparkle stops crying, and he moves back into his room with Grumpy Shuriken.
+
+**Goofy Sparkle and Grumpy Shuriken stay together:** once he's back, Goofy Sparkle sits right next to Grumpy Shuriken in the cabin, the break room, their dorm room and the meadow. They both smile, Goofy Sparkle has little hearts floating over him, and he says happy things like "GRUMPY! Ba ba!". Put him down and he crawls over to Grumpy Shuriken instead of the shopkeepers. If you're playing as Grumpy Shuriken, he follows you around.
+
+If you're playing as Grumpy Shuriken, you're looking for your own points. If you're playing as Goofy Sparkle, you do it all yourself.
+
+Chapter 15 is done once Grumpy Shuriken is back. Then the page turns to chapter 16. You can do all four again with "do it again", and there's a story look for each one. While you do this chapter again, he's gone until the end.
+
+**Chapter 16: Toddlers now** (on the chapters page, it opens once chapter 15 is done). **It's the babies' birthday!** Everyone comes to the party room, with flags, a cake and two big dark windows. The babies are having the best day ever, but IT is watching them: every so often, green eyes look in through a window, and nobody notices. There are four parts:
+
+- **🎈 Party time:** get a balloon from the box, carry it to a post and press punch to tie it on. Do all 3 posts.
+- **🎂 Make a wish:** walk up to each baby and press punch to help them blow out their candle. When the last one goes out, the room goes dark, big green eyes look in and it says "MAKE A WISH." Then the lights come back on and the babies have grown into toddlers!
+- **👣 Big steps:** they can walk now! Press punch next to a toddler to cheer them on, and they walk toward the finish flag. Three cheers each. Sometimes they fall down and you have to cheer them again.
+- **👀 Green eyes:** walk up to the green eyes and press punch. They vanish and show up somewhere else: both windows, under the table and behind a balloon. The toddlers see them too. Grumpy Shuriken goes to check on IT and says the chains are on. Then you see IT in the stone room, saying "HAPPY BIRTHDAY, LITTLE ONES." And one of the chains snaps. *clink*
+
+**Toddlers:** after the birthday, the babies stay toddlers everywhere in the game. They are bigger, they walk instead of crawl, and they have new things to say, like "Mine!" and "No no!" If you do an older chapter again, they are babies again for that chapter.
+
+Chapter 16 is done after the stone room. Then the page turns to chapter 17. You can do all four again with "do it again", and there's a story look for each one.
+
+**Chapter 17: FUN?** (on the chapters page, it opens once chapter 16 is done). **IT is babysitting the toddlers!** IT is still chained up in the stone room, and IT is really nice to them. But little hands love knots. There are four parts:
+
+- **🧸 Babysitter:** get a toy from the box and give one to each toddler. They show it to IT, and IT says something kind.
+- **🔗 Little hands:** the toddlers start untying IT's chains! Press punch next to one to shoo them away, but they always come back, and you can only slow them down. IT asks them to stop. When the last chain falls, IT says "THANK YOU, LITTLE ONES." Then: "NOW... LET'S HAVE SOME FUN?"
+- **💥 Rampage:** IT is loose in the cabin, smashing the bookcase, the window, the couch and the fireplace. Pick up each toddler and carry them to the parents on the right. Jump over the falling logs, and don't touch IT, or you'll drop them. **IT wants the Little Shopkeeper:** IT walks up to her and reaches out its long arm. Pick her up in time, or IT grabs her and says "MINE." Then you have to press punch next to IT to make it let go. Once they're all safe, the floor starts to glow...
+- **🕳️ Into the code:** the floor falls into the code! The toddlers slide to the edge one at a time and hang on. Walk up and press punch to catch them. The Little Shopkeeper is last, and when you reach for her, she slips and falls! IT catches her with its long arm and says "NOT YET, LITTLE ONE." IT tosses her back to you, says "THAT WAS FUN." and "I WILL COME BACK FOR YOU, LITTLE ONE." and goes down into the code.
+
+**The broken cabin:** after this chapter, the cabin has boards over the holes in its walls, and a green glow comes up through the boards in the floor. The stone room is empty now, so IT's eyes aren't in the doorway anymore. If you do a chapter again, the cabin looks like it did back then.
+
+Chapter 17 is done once IT is gone. Then it says "The End... for now" and takes you home to the cabin. You can do all four again with "do it again", and there's a story look for each one.
 
 **The babies live with their parents:** in the cabin's dorms, each baby now has a crib in their parents' room, awake in the day and fast asleep at night. The Little Shopkeeper is in Mr. & Mrs. Shopkeeper's home (once she's moved into her own room), Sly Diamond and Missing Arrow's baby boy is in their room, and the baby robot is in Hexstar 2.0 and Hexstar 1.0's room, with the night light on. Once Sly Diamond and Missing Arrow's baby is here, their door isn't locked anymore, so everyone can come and see him. The babies' own rooms are all still there too.
 
