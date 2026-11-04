@@ -183,7 +183,7 @@ Chapter 8 is done once Lovely Heart has babysat her. Then the page turns to chap
 
 **After chapter 8**, the baby lives in her new room, and the shopkeepers trust Lovely Heart with her. In the daytime she crawls around in there, and Lovely Heart can walk up and press punch to say hi. At night, when Lovely Heart comes in, the shopkeepers carry her in and put her to bed in her new crib.
 
-**Story looks by chapter:** the Story look setting (and the admin panel's) now splits the looks up by chapter, with a heading for each one. There's a look for everything through Chapter 11, and each new one opens once you've done it (until then it shows a 🔒, and so does the chapter after yours): Gone, Hex return, He's in!, The garden, The pond, The party, Real life, What's up there?, The secret, Just like Goofy!, Now we know, Too big!, Build her room, Move in, Heart trust, The invite, Block tower, Play with the teddy and Nap time. Each of those has its own line on the main menu ("🔨 Building the baby a room! 🔨") and its own little things floating up around the cabin's living room.
+**Story looks by chapter:** the Story look setting (and the admin panel's) now splits the looks up by chapter, with a heading for each one. There's a look for everything through Chapter 12, and each new one opens once you've done it (until then it shows a 🔒, and so does the chapter after yours): Gone, Hex return, He's in!, The garden, The pond, The party, Real life, What's up there?, The secret, Just like Goofy!, Now we know, Too big!, Build her room, Move in, Heart trust, The invite, Block tower, Play with the teddy and Nap time. Each of those has its own line on the main menu ("🔨 Building the baby a room! 🔨") and its own little things floating up around the cabin's living room.
 
 **Chapter 9: Playdate** (on the chapters page, it opens once chapter 8 is done). **Goofy Sparkle is a baby now**, a tiny newborn the same age as the Little Shopkeeper: he has a diaper, a little curl of hair, great big eyes, rosy cheeks and a pacifier, he's her size when he's hanging out (his fights stay the same), and in the cabin he just babbles ("Goo goo ga ga!", "*chews on his foot*"). The two of them have a playdate! Its four events happen one after the other, with no waiting:
 
@@ -211,7 +211,23 @@ Chapter 10 is done once Missing Arrow has fed the baby. Then the page turns to c
 
 From then on Grumpy Shuriken is gone from everywhere people hang out: the main menu, the cabin, the break room, his dorm with Goofy Sparkle and the meadow party. (Past-story scenes still show him.) By the fireplace there's a little memorial with his picture, a candle, flowers and the words "the bravest", and **baby Goofy Sparkle sits next to it and cries** ("*sniff* Ba ba... *sob*"), with tears and a little puddle. You can still pick Grumpy Shuriken to fight and to walk around as.
 
-Chapter 11 is done once IT is chained up. Then it says "The End... for now" and takes you home to the cabin. You can do all four again with "do it again", and there's a story look for each one.
+Chapter 11 is done once IT is chained up. Then the page turns to chapter 12. You can do all four again with "do it again", and there's a story look for each one.
+
+**Chapter 12: Robots baby** (on the chapters page, it opens once chapter 11 is done). **The cabin is so sad since Grumpy Shuriken, so Hexstar 2.0 and her brother Hexstar 1.0 build something happy: a baby robot!** The baby is a tiny six-pointed star, half Hexstar 2.0's blue and half Hexstar 1.0's grey, on one little wheel, with a tiny screen for a face, an antenna and a diaper. Its four events happen one after the other, with no waiting, in the robots' workshop:
+- **📐 The blueprint:** walk up to Hexstar 2.0 (she has a "!") and press punch, then go ask Hexstar 1.0. "A b-b-baby robot? W-with me?" If you're playing as Hexstar 2.0, you go straight to him.
+- **🔩 Spare parts:** a wheel, a star body, an antenna and a screen are all over the floor. Walk up to one and press punch to pick it up, then carry it to the workbench and press punch, four times.
+- **⚡ Power on:** the baby won't turn on! Walk up to each of the three big switches on the wall and press punch. There's a big zap, and the baby wakes up: "Boot... boot... BEEP?"
+- **💡 Leave the light on:** then the lights go out, and the baby is scared of the dark. Get the night light from the shelf and take it to Hexstar 1.0. He's scared of the dark too, so he knows just what to do. The baby falls asleep with the light on, and the screen says **"A ROBOT FAMILY!"**.
+
+Chapter 12 is done once the baby is asleep. Then it says "The End... for now" and takes you home to the cabin. You can do all four again with "do it again", and there's a story look for each one.
+
+**The babies live with their parents:** in the cabin's dorms, each baby now has a crib in their parents' room, awake in the day and fast asleep at night. The Little Shopkeeper is in Mr. & Mrs. Shopkeeper's home (once she's moved into her own room), Sly Diamond and Missing Arrow's baby boy is in their room, and the baby robot is in Hexstar 2.0 and Hexstar 1.0's room, with the night light on. Once Sly Diamond and Missing Arrow's baby is here, their door isn't locked anymore, so everyone can come and see him. The babies' own rooms are all still there too.
+
+**A new layout for Mr. & Mrs. Shopkeeper's home:** in the cabin, their home now goes room by room as you walk through it. First the living room (the door, the coats, the fireplace, the firewood and the flower pot), then the dining table, where the shopkeepers hang out, then the kitchen, with the cookie jar on top of the fridge. At the back there's the bedroom, with the big window over their bed, the baby's crib and the stairs up. The old home from the earlier chapters stays how it was.
+
+**Carrying the babies:** walk up to a baby and press grab to pick them up (it says "grab: pick up" when you're close, with your grab key). You can carry them from room to room, and press grab again to put them down, and off they go, back home. It works with the Little Shopkeeper, Sly Diamond and Missing Arrow's baby boy, the baby robot and Goofy Sparkle, everywhere they hang out. Goofy Sparkle is too little to carry anyone himself!
+
+**If you're Missing Arrow:** his own baby boy is happy to be carried, but any other baby is scared of his glitches! Pick one up and they cry or glitch out. A couple of seconds later the parents run in and tell him off, and he has to put the baby down. (The Little Shopkeeper and Goofy Sparkle get the shopkeepers, and the baby robot gets Hexstar 2.0 and Hexstar 1.0.) If you put the baby down quickly, nobody comes.
 
 
 
