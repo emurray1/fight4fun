@@ -279,12 +279,25 @@ Chapter 16 is done after the stone room. Then the page turns to chapter 17. You 
 
 - **🧸 Babysitter:** get a toy from the box and give one to each toddler. They show it to IT, and IT says something kind.
 - **🔗 Little hands:** the toddlers start untying IT's chains! Press punch next to one to shoo them away, but they always come back, and you can only slow them down. IT asks them to stop. When the last chain falls, IT says "THANK YOU, LITTLE ONES." Then: "NOW... LET'S HAVE SOME FUN?"
-- **💥 Rampage:** IT is loose in the cabin, smashing the bookcase, the window, the couch and the fireplace. Pick up each toddler and carry them to the parents on the right. Jump over the falling logs, and don't touch IT, or you'll drop them. **IT wants the Little Shopkeeper:** IT walks up to her and reaches out its long arm. Pick her up in time, or IT grabs her and says "MINE." Then you have to press punch next to IT to make it let go. Once they're all safe, the floor starts to glow...
+- **💥 Rampage:** a **sea of IT** floods the cabin: a dark wave full of green eyes and reaching arms. It creeps across the room, pushing the toddlers along and smashing the bookcase, the window, the couch and the fireplace. Pick up each toddler and carry them to the parents on the right. Jump over the falling logs, get away from green spots on the floor (bits of the sea come up through them), and stay ahead of the wave. If anything gets you, you drop whoever you're carrying. **The husk hunts the toddlers:** it goes for the Little Shopkeeper first, then whoever is closest. It reaches out its long arm, so pick them up in time. If it grabs one, it says "MINE." and drags them toward the sea, and you have to press punch next to it to make it let go. Once they're all safe, the floor starts to glow...
 - **🕳️ Into the code:** the floor falls into the code! The toddlers slide to the edge one at a time and hang on. Walk up and press punch to catch them. The Little Shopkeeper is last, and when you reach for her, she slips and falls! IT catches her with its long arm and says "NOT YET, LITTLE ONE." IT tosses her back to you, says "THAT WAS FUN." and "I WILL COME BACK FOR YOU, LITTLE ONE." and goes down into the code.
 
 **The broken cabin:** after this chapter, the cabin has boards over the holes in its walls, and a green glow comes up through the boards in the floor. The stone room is empty now, so IT's eyes aren't in the doorway anymore. If you do a chapter again, the cabin looks like it did back then.
 
-Chapter 17 is done once IT is gone. Then it says "The End... for now" and takes you home to the cabin. You can do all four again with "do it again", and there's a story look for each one.
+Chapter 17 is done once IT is gone. Then the page turns to chapter 18. You can do all four again with "do it again", and there's a story look for each one.
+
+**Chapter 18: I SEE YOUR PAIN** (on the chapters page, it opens once chapter 17 is done). **IT helps Missing Arrow!** Everyone is scared of his glitches, and he is too. There are four parts:
+
+- **😢 Too glitchy:** it's night, and there are red glitches all over the cabin. Clean them up, then go sit with Missing Arrow in the corner. "I-I am s-scared of me." Then a voice comes from under the boards in the floor: "I SEE YOUR PAIN."
+- **👁️ The voice:** he walks to the boards, but he keeps stopping because he's so scared. Press punch next to him to stay with him. IT tells him it's made of broken things too, and that it wants to help. He says okay.
+- **🩹 What hurts:** down in the code, red blocks with mean words on them ("PUT THAT BABY DOWN!", "LOCKED IN A CAGE") come flying out of him. Run over and press punch to smash them, in the air or on the floor. If you wait too long, they go back into him. Smash all 6, and his head is quiet for the first time.
+- **🌱 All better:** he's home, and he isn't shaking. Walk up to each toddler and press punch to bring him over, and they hug him. He thanks IT, and IT says "YOU ARE WELCOME." For just a second, his eyes glow green...
+
+If you're playing as Missing Arrow, it all happens to you.
+
+**Missing Arrow is calm now:** after this chapter, he doesn't shake outside of fights, and the toddlers aren't scared of him, so you can carry any of them when you play as him. He still glitches, and his glitch fest still works in fights.
+
+Chapter 18 is done once IT says you're welcome. Then it says "The End... for now" and takes you home to the cabin. You can do all four again with "do it again", and there's a story look for each one.
 
 **The babies live with their parents:** in the cabin's dorms, each baby now has a crib in their parents' room, awake in the day and fast asleep at night. The Little Shopkeeper is in Mr. & Mrs. Shopkeeper's home (once she's moved into her own room), Sly Diamond and Missing Arrow's baby boy is in their room, and the baby robot is in Hexstar 2.0 and Hexstar 1.0's room, with the night light on. Once Sly Diamond and Missing Arrow's baby is here, their door isn't locked anymore, so everyone can come and see him. The babies' own rooms are all still there too.
 
