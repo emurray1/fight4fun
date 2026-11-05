@@ -330,7 +330,25 @@ Chapter 20 is done once she's reading. Then the page turns to chapter 21. You ca
 
 In this chapter you're always the baby, no matter who you picked, and the shopping-as picker goes away until you leave.
 
-Chapter 21 is done once IT says "AGAIN." Then it says "The End... for now" and takes you home to the cabin. You can do all four again with "do it again", and there's a story look for each one.
+Chapter 21 is done once IT says "AGAIN." Then the page turns to chapter 22. You can do all four again with "do it again", and there's a story look for each one.
+
+**Chapter 22: NIGHTMARE** (on the chapters page, it opens once chapter 21 is done). IT is still hungry, and it says "BAD DREAMS ARE DESSERT." Everybody is asleep and having their worst nightmare, even the babies, so you go in to get them out. There are four parts:
+
+- **🌙 Lights out:** it's night in the cabin and everybody is asleep with a green cloud showing their worst dream. Press punch on 6 of them. They won't wake up!
+- **😱 Big nightmares:** four dreams, one after another. **Missing Arrow** is locked in the cage again: smash the 3 locks, but if a falling mean word hits you, a lock comes back. **The shopkeepers** have lost their baby: punch the crib that's rocking 3 times, and an empty crib makes a green hand come up. **The robots** are being switched off: turn on all 5 switches while more keep going off. **Yelling Square** can't yell: catch the letters of HELLO in order, but a 🤫 makes you lose a letter.
+- **👶 Baby nightmares:** go into each baby's dream (the Little Shopkeeper, the baby robot, Goofy Sparkle and the glitchy baby). Dodge what's falling in their dream, get to them and press punch to hug them.
+- **💤 Your nightmare:** your friends all have their backs to you and nobody knows who you are. Walk over a heart to grab it, run to IT and press punch to throw it. Do that 5 times. If a green hand hits you, you drop your heart. Then everybody wakes up, and IT says "SWEET DREAMS."
+
+Chapter 22 is done once everybody wakes up. Then the page turns to chapter 23. You can do all four again with "do it again", and there's a story look for each one.
+
+**Chapter 23: I KNOW IT HURTS** (on the chapters page, it opens once chapter 22 is done). Everybody woke up hurt, and now IT is being nice about it. IT offers to make the hurt stop, so it can eat it. There are four parts:
+
+- **🩹 Ouch:** press punch on the first aid box to get a bandage, but only when the one on top is white. A green one knocks you back. Put a bandage on each of the 5 friends with a 🤕. Then a voice says "I KNOW IT HURTS", all the bandages turn green and IT says "LET ME HELP."
+- **💚 Let me help:** the green bandages make your friends walk to the glowing boards in the floor. Run over and press punch to pull a bandage off. It hurts them again and they get mad, but they run back. Pull off 10. If somebody reaches the boards, you lose 2.
+- **🗣️ Tell someone:** now IT wants you, and there's a bar for how much it hurts. It keeps going up. Run to each friend and press punch to tell them, and the bar goes down. Dodge the falling words ("DO NOT TELL", "NOBODY CARES") and the green hands. If the bar fills up, you lose a friend you told. IT says "WHY DOES IT WORK WHEN THEY SAY IT?"
+- **🕳️ The crack:** go down to IT. Green waves come out of it along the floor, so jump over them, get close and press punch to put a bandage on the crack in its chest. Do it 4 times. Then you find out how IT knows: "BECAUSE IT NEVER STOPPED." and "IT DOES NOT HELP." Back home, your friends argue about whether to bring IT a cookie.
+
+Chapter 23 is done once you're home. Then it says "The End... for now" and takes you home to the cabin. You can do all four again with "do it again", and there's a story look for each one.
 
 **The babies live with their parents:** in the cabin's dorms, each baby now has a crib in their parents' room, awake in the day and fast asleep at night. The Little Shopkeeper is in Mr. & Mrs. Shopkeeper's home (once she's moved into her own room), Sly Diamond and Missing Arrow's baby boy is in their room, and the baby robot is in Hexstar 2.0 and Hexstar 1.0's room, with the night light on. Once Sly Diamond and Missing Arrow's baby is here, their door isn't locked anymore, so everyone can come and see him. The babies' own rooms are all still there too.
 
