@@ -50,6 +50,20 @@ The computer fighters are **aggressive**: they pick who to chase quickly, punch 
 
   Horror works online too, and on one computer you can play it alone against the monster.
 
+- **K vs S (Killer vs Survivors), in real 3D!** A Killer hunts the Survivors through dark 3D woods with trees, rocks, little houses and real shadows. The camera is right behind your fighter. It's our own game, but like Forsaken on Roblox.
+  - **Everyone is 3D.** Each fighter is their own shape (star, triangle, circle, heart...) puffed up into 3D, with their real face on the front, plus any sunglasses, hats and skins from the shop. The Admin is made of black blocks, with "me is admin / mason,dad / alex" on his head and "i ♥ forsken" on his body, like Mason drew him.
+  - **Profile cards:** on the setup screen, under the picture, there's a card for the Killer and every Survivor you picked: their picture, health, speed, what they say, and what their abilities do (with the keys).
+  - **The Survivors** are the fighters you pick. Walk like in Forsaken: up, left, down and right (W A S D) walk forward, left, back and right, and you look around with the **mouse**. Move the mouse over the game to look around, and push it to the left or right edge to keep turning. (In browsers that allow it, you can also click the game to grab the mouse, and Esc lets it go.) Until you move the mouse, left and right turn you instead. Hold grab to run (the blue bar is your stamina). Hold punch next to a generator to fix it. Press punch next to the Killer to **shove** it. Heavier fighters have more health, and faster fighters run a bit faster. Getting hit gives you a quick burst of speed to get away.
+  - **Every Survivor has their own ability** (press special): Cool Star **Star Shot** (stuns the Killer), Angry Triangle **Spike Trap** (the Killer can't see it), Shocked Circle **Roll**, Sly Diamond **Sneaky** (see-through, no marks), Yelling Square **YELL!** (stuns the Killer, but it hears you), Goofy Sparkle **Sugar Rush**, Hexstar 2.0 **Fix-it Laser** (fixes a quarter of a generator), Lovely Heart **Healing Hug** (heals everyone close), Grumpy Shuriken **Shuriken Throw** (slows the Killer), Missing Arrow **Glitch**, Flower Girl **Flower Burst** (the Killer can't see), the Admin **Can't Catch Me** (a shield), and the shopkeepers' **Pop-up Ad** and **Shy Hide**. The boxes at the bottom of the screen show your keys and how long until you can use them again.
+  - Fix **3 generators** and the lights come on: then you only have to last 20 more seconds. Or stay alive until the 2:30 timer runs out. With more Survivors, each generator takes longer to fix. Survivors still in at the end win. If the Killer catches everyone, the Killer wins.
+  - **Terror radius:** when the Killer gets close you hear a heartbeat (faster the closer it is), the edges of the screen go red, and when it's right on you the chase music starts.
+  - **How the Killer finds you:** running leaves red **scratch marks** on the ground, fixing a generator makes **noise** every few seconds (🔧), and running near the Killer is loud (👣). Only the Killer sees the marks and noises (an arrow shows noises that are behind it). The computer Killer follows the clues too, and goes to where it last saw someone.
+  - **The Killer's hit** is a big lunge forward. It has four powers: grab, special, back + grab, and back + special.
+  - **The Admin (Killer):** a giant version of the Admin, glowing dark red, with glitch cubes buzzing around him and a giant **BAN hammer**. **BAN!** (a red beam that freezes you for 2.5 seconds), **LAG** (glitches forward), **KICK** (charges forward, anyone in the way goes flying) and **SERVER SHUTDOWN** (every generator loses some of its fixing, and he sees everyone for 3 seconds).
+  - **IT (Killer):** IT's tall, thin husk, like in the story, with dry pale skin, ribs, rags, hollow eyes glowing green-white and green light coming out of a crack. **Hungry Hands** (a hand bursts out of the ground under the closest Survivor), **I SEE YOU** (sees everyone through the trees and moves faster), **CRAWL** (drops down and crawls super fast) and **HOLLOW SCREAM** (everyone close is slowed down).
+  - On the setup screen, pick the Killer (**random**, **the Admin** or **IT**), and whether you're **a Survivor** or **the Killer**. To be the Killer you need at least 2 fighters: you, and someone to hunt.
+  - K vs S is only on one computer for now (not online). It needs the internet the first time you play, to load the 3D (it uses three.js).
+
 ## Maps
 
 - **Cloud Island:** a floating island over the water, with three clouds to stand on (the middle one moves).
@@ -317,7 +331,7 @@ Chapter 19 is done once IT goes back under the floor. Then the page turns to cha
 - **🏃 Carry her:** carry her across the cabin to the library door. She glitches out of your arms 3 times, so pick her up again. Green hands burst out of the floor where you are, and if one hits you, you drop her.
 - **📚 The library:** when you go in, IT says **"DO YOU LIKE THE INFECTION? CAUSE I LIKE IT"**. Bring her 5 books from the shelves, and she gets less green with every one. Don't touch a shelf while it's glowing green, because those books bite and she loses a book. She has to stay and keep reading, all by herself. IT says "I CAN WAIT."
 
-**She lives in the library now:** after this chapter, she isn't in her room, her crib or anywhere else at home, and you can't pick her up. There's a new **library door** in the cabin so you can visit her, and she stays green. IT says that line every time you go in. If you do an old chapter again, she goes back to how she was for that chapter.
+**She lives in the library now:** after this chapter, she isn't in her room, her crib or anywhere else at home, and you can't pick her up. There's a new **library door** in the cabin so you can visit her, and she stays green. IT says that line every time you go in. If you do an old chapter again, she goes back to how she was for that chapter: no green at all in the chapters from before IT got her.
 
 Chapter 20 is done once she's reading. Then the page turns to chapter 21. You can do all four again with "do it again", and there's a story look for each one.
 
@@ -348,7 +362,26 @@ Chapter 22 is done once everybody wakes up. Then the page turns to chapter 23. Y
 - **🗣️ Tell someone:** now IT wants you, and there's a bar for how much it hurts. It keeps going up. Run to each friend and press punch to tell them, and the bar goes down. Dodge the falling words ("DO NOT TELL", "NOBODY CARES") and the green hands. If the bar fills up, you lose a friend you told. IT says "WHY DOES IT WORK WHEN THEY SAY IT?"
 - **🕳️ The crack:** go down to IT. Green waves come out of it along the floor, so jump over them, get close and press punch to put a bandage on the crack in its chest. Do it 4 times. Then you find out how IT knows: "BECAUSE IT NEVER STOPPED." and "IT DOES NOT HELP." Back home, your friends argue about whether to bring IT a cookie.
 
-Chapter 23 is done once you're home. Then it says "The End... for now" and takes you home to the cabin. You can do all four again with "do it again", and there's a story look for each one.
+Chapter 23 is done once you're home. Then the page turns to chapter 24. You can do all four again with "do it again", and there's a story look for each one.
+
+**Chapter 24: new one** (on the chapters page, it opens once chapter 23 is done). It's night in the cabin, and something is SNORING in the closet. There are four parts:
+
+- **🚪 Snoring:** you hear snoring from the closet on the right (it gets louder the closer you get, and the closet door shakes). You can only move while it snores: the screen says "🦶 move!" and "Zzz... SNOOORE" floats over the closet. When it goes quiet, it says "🤫 FREEZE!". If you move or jump in the quiet, it hears you ("HUH?!") and you get scared back to the door. Get to the closet and press punch to open it. Inside is a tiny green baby girl, snoring in a puddle of green drips. She's drawn like Sly Diamond and Missing Arrow's baby: one simple little shape with a diaper. Hers is a pointy glowing green drip shape with a flat bottom (she leaked out of IT's crack), with a pink bow on top, one big eye with eyelashes, rosy cheeks, a little green heart on her diaper and a tiny glowing crack like her daddy's. Green drips fall off her now and then. She crawls along when she goes somewhere. She came out of IT's crack: she's IT's baby girl! Yelling Square yells "IT HAS A BABY?! A NEW ONE!!!!!", and then she wakes up.
+- **🍪 Hungry:** the new one is hungry, and she keeps walking over to sniff your sad friends' sad feelings (IT says "YES. SNIFF IT."). Press punch on Lovely Heart's cookie plate to get a cookie, then run to the new one and press punch to feed her. She stops to munch. Feed her 6 cookies. If she sniffs somebody first, you lose one. It turns out she doesn't eat pain like her daddy, just cookies. Then IT says "SHE IS MINE. SHE IS MY BABY."
+- **✋ Come home:** IT's eyes watch from above, and green hands come out of the floor and creep toward IT's baby. Run to a hand and press punch to pop it. Pop 10. If a hand grabs her, you lose 2. At the end IT asks "WHY DO YOU WANT MY BABY?", and says "FINE. KEEP HER. FOR NOW."
+- **💚 Thank you:** back in the cozy cabin, walk up to the new one and press punch. She says her very first words: "th... thank... you." Yelling Square cries, and Angry Triangle says they are NOT crying (okay, a little). IT watches and says "MY BABY SAID THANK YOU. I NEVER SAID THAT. NOT EVER." Then the new one falls asleep and starts snoring again.
+
+**IT's baby talks glitchy:** in chapters 24 and 25, whenever IT's baby says something, it comes out glitchy, like "N0!, T4ank y0U": some letters turn into numbers (o is 0, a and h are 4, e is 3, i and l are 1, s is 5, t is 7), some flip to CAPITALS or small letters, it's different every time, and she makes little beep-boop glitch noises. Her speech bubble twitches now and then too.
+Chapter 24 is done once she says thank you. Then the page turns to chapter 25. You can do all four again with "do it again", and there's a story look for each one.
+
+**Chapter 25: WHY DO YOU HATE ME** (on the chapters page, it opens once chapter 24 is done). IT's baby girl lives in the cabin now, and everybody takes care of her. But IT wants her back. There are four parts:
+
+- **🍼 Take care of her:** watch the bubble over IT's baby. 🍪 means she's hungry, 💩 means she needs a new diaper, and 😢 means she wants her blankie. Run to the cookie, diaper or blankie box, press punch to get it, then bring it to her and press punch. The wrong thing makes her cry. Take care of her 6 times and she giggles, gets sleepy, and goes to bed in the closet.
+- **💥 Rampage:** at night IT goes on a RAMPAGE. It stomps around the cabin swinging its long arms, tearing big holes in the walls with boards flying everywhere, and a sea of IT comes up through the floor. You're holding the baby up over your head. Run to each friend and press punch to send them up the ladder to the roof, and stay away from IT's arms. Once everyone is up, you're all on the roof of the torn-up cabin in the middle of a sea of IT, with long arms reaching out of it. Then IT's giant hand comes up out of the sea and takes her right out of your arms. "SHE IS MINE."
+- **🕳️ Down there:** you go down to get her back. Green waves come out of IT along the floor, so jump over them and get to her. But she doesn't want to go. She hugs IT and says "da... da!" She LIKES IT. "EVERYBODY IS AFRAID OF ME. NOT HER."
+- **💔 WHY DO YOU HATE ME:** your friends come down and throw mean words at IT ("MONSTER", "GO AWAY", "WE HATE YOU"), and the baby is right there. Get in the way: walk into the low words and jump into the high ones. Stop 8. If one gets to her, she cries and you lose 1. Then IT asks "WHY DO YOU HATE ME?" and says nobody ever knows its hurt. You say you were only scared, and IT says you can visit her.
+
+Chapter 25 is done once IT says you can visit. Then it says "The End... for now" and takes you home to the cabin. You can do all four again with "do it again", and there's a story look for each one.
 
 **The babies live with their parents:** in the cabin's dorms, each baby now has a crib in their parents' room, awake in the day and fast asleep at night. The Little Shopkeeper is in Mr. & Mrs. Shopkeeper's home (once she's moved into her own room), Sly Diamond and Missing Arrow's baby boy is in their room, and the baby robot is in Hexstar 2.0 and Hexstar 1.0's room, with the night light on. Once Sly Diamond and Missing Arrow's baby is here, their door isn't locked anymore, so everyone can come and see him. The babies' own rooms are all still there too.
 
@@ -394,6 +427,14 @@ The cabin has 3 floors. The stairs on the right of the living room go up to **th
 The host picks the game mode in the team lobby: Free for all, Team vs team, Racing (with a track picker) or Horror.
 
 The host's browser runs the fight, and everyone else connects to it directly using [PeerJS](https://peerjs.com/). Keep the host's game window open and in front while you play. Some school or work networks block these direct connections.
+
+## Profiles
+
+Everyone who plays on this computer can have their own **profile**, with their own name, picture and save: coins, chapters, shop stuff, everything. The button with your picture and name on the main menu opens the settings, where the **Profiles** cards are. Type a name and press **new profile** to make one (you start a brand new game as them). Press **play as them** to switch: the game saves the profile you're on first, then starts over as the other one. Click a picture to change it, type a name and press **rename** to rename one, and press 🗑️ to delete one (it asks first, and you can't delete the one you're playing). Your save from before profiles is the first profile, "Player 1". Up to 8 profiles.
+
+## Your save
+
+The game keeps your save in your browser, and nowhere else. To keep a copy, go to **settings** and press **download my save** to get a file with your chapters, coins, shop stuff and settings. If your save ever goes missing, or you move to another computer, press **load a save** and pick the file. It tells you which chapter and how many coins the file has and asks if you're sure, because it replaces the save you have now.
 
 ## Controls
 
