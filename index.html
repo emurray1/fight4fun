@@ -6671,7 +6671,7 @@ function openPage(id) { backTo = G.state; G.state = id; waitingKey = null; if (i
 document.querySelectorAll('[data-back]').forEach(b => b.onclick = () => { if (netStory && Net.role && G.state === 'shop') return openLobby(); if (G.state === 'shop') SHOP.replay = null; /* (leaving: doing something again is over) */ if (backTo === 'setup') openSetup(); else { G.state = 'title'; showScreen('title'); $('okBtn').focus(); } });
 $('howBtn').onclick = () => { audioOn(); openPage('howto'); };
 // ---------- codes: type in a secret code to get something ----------
-const CODES = { '50028':{ coins:500, msg:'Secret code from the shopkeepers\' 3rd floor! You found their hidden stash: 500 coins!' }, masonisthebest:{ unlock:'admin', item:'crown', coins:1000, msg:'Admin code accepted! You got the Admin, the Admin crown and 1000 coins! Turn him on in the "who is with who" screen.' } };
+const CODES = { '50028':{ coins:500, msg:'Secret code from the shopkeepers\' 3rd floor! You found their hidden stash: 500 coins!' }, usecodes7:{ coins:777, msg:'USE CODE S7! Lucky sevens: you got 777 coins!' }, masonisthebest:{ unlock:'admin', item:'crown', coins:1000, msg:'Admin code accepted! You got the Admin, the Admin crown and 1000 coins! Turn him on in the "who is with who" screen.' } };
 $('codesBtn').onclick = () => { audioOn(); openPage('codes'); $('secretIn').value = ''; $('codesMsg').textContent = ''; $('secretIn').focus(); };
 $('secretBtn').onclick = () => {
   const id = $('secretIn').value.trim().toLowerCase().replace(/\s+/g, ''), code = CODES[id];
