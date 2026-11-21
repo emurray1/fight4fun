@@ -259,6 +259,67 @@ All through October the game gets spooky: a purple night sky with a moon, stars 
 
 All through December snow falls on every map, the menu hills turn snowy with Christmas trees, the shop gets twinkly lights, a wreath and Christmas trees, and the menu music turns jingly with sleigh bells. Change it under **Christmas** in settings: In December, Always or Off. If both themes are set to Always, Halloween wins.
 
+## Battle pass
+
+Every month has its own **battle pass** (the **🎖️ battle pass** button on the main menu says which month it is). Each one has its own theme: January Snow Day ❄️, February Hearts 💖, March Lucky Clover 🍀, April Spring Showers 🌷, May Flower Power 🌼, June Beach Day 🏖️, July Fireworks 🎆, August Summer Camp ⛺, September Back to School 🎒, October Spooky 🎃, November Harvest 🍂 and December Winter Wonderland 🎄.
+- **30 levels**, 15 ⭐ stars each. You get **1 ⭐ for every fight** and **3 ⭐ when you win**.
+- **3 daily challenges**, new every day, worth 5 ⭐ each: play or win fights, jump in the shop or cabin, press punch on things, earn coins, walk around or take care of the babies at the daycare.
+- **Every 3 levels you get a prize** you can only get that month: a **hat** (like a Santa hat 🎅, a pumpkin 🎃 or a little snowman ⛄ that sits on your head) or a **skin** for every fighter (like Candy cane, Ocean or Northern lights). The last one, at level 30, is the best. Put hats on from the info card in the shop, and pick skins at the skins booth.
+- When a new month starts, the pass starts over with new prizes, but you keep everything you got.
+- A little sign pops up at the top when you level up or finish a challenge.
+- **Each month's pass has its own look:** its own colors, a big banner with the month's picture bouncing and a slogan ("Boo! It's spooky season!", "Light up the sky!"), and things falling or floating up in the background (snowflakes, hearts, leaves, bats, fireworks...). The bottom says what next month's theme will be.
+
+## Holiday events
+
+On **Thanksgiving, Halloween, Christmas and New Year's**, a holiday button shows up on the main menu (for a few days around each one: Halloween Oct 25-31, Thanksgiving the days around the 4th Thursday of November, Christmas Dec 20-26, New Year's Dec 31-Jan 2). It takes you to a holiday party in the cabin, decorated with a garland of flags in the holiday's colors and a big sign. First there's something to do, then the party starts:
+- **🦃 Thanksgiving dinner:** bring the turkey, the corn, the potatoes and the pie to the long table. Then everybody says what they're thankful for ("I'm thankful for my baby brother! ...most days.").
+- **🎃 Halloween trick-or-treat:** it's night, with jack-o'-lanterns, and the babies are in costumes (a witch, a ghost and a pumpkin). Knock on every door: "TRICK OR TREAT!" ...CANDY! 🍬
+- **🎄 Christmas morning:** a Christmas tree with blinking lights and a star. Open the presents under the tree: a teddy bear, a toy train, crayons and a cozy scarf.
+- **🎆 New Year's party:** light the fireworks, then everybody counts down "TEN! NINE! EIGHT!..." and fireworks fill the sky: "HAPPY NEW YEAR!!!"
+
+At the party, confetti flies, everybody jumps up and down and says holiday things ("BEEP. PIE LEVELS: HIGH."). The first time each year you get **50 coins**. In the admin panel, **🎉 Holiday events** lets you try any of them on any day.
+
+**The babies run around:** every minute or two, the babies run around the cabin, chasing each other back and forth and giggling ("You can't catch me! Hehe!", "T-t-tag! You're it!", "BEEP BEEP. CHASE MODE: ON."), with the baby boy wiggling along at the back. **After chapter 69 ("come back"), the babies are home again**, so they're back in the cabin and their rooms.
+
+**The cabin dresses up for the holidays**, too: all of October it's spooky (orange and purple lights, glowing jack-o'-lanterns, cobwebs, bats and a ghost), in November it's Thanksgiving until a few days after (a garland of leaves, leaves drifting down, pumpkins and corn by the fireplace, a turkey and pie), until December 26 it's Christmas (colored lights, a Christmas tree with presents under it, stockings and snow outside), and at New Year's there are party flags, balloons and confetti. Each one has a big sign too ("Happy Thanksgiving! 🦃").
+
+## Baby daycare
+
+In the **babies' room**, **walk to a baby's crib and press punch** to take care of that baby (day or night, even while something else is happening in the room). One press of **punch or grab** opens it, even while you are carrying a baby. Every crib has a 💖 over it, it turns into a bubble when that baby needs something, and a sign says "💖 take care of..." when you're right by the crib. At night, the baby starts out asleep in the crib. A big 2D screen opens just for that baby, and you take care of them with your **mouse** (or a finger):
+- **The baby card** (top left): the baby's name, a mood face (😄 🙂 😐 😢) and how happy they are.
+- **Round need circles** (on the right): 🍼 hungry, 🛁 bath, 🧸 play and 😴 sleepy. Each circle fills up green when the baby is happy, turns orange when it's getting low, and turns red and wobbles when the baby needs you. They go down over time, even when you're not there (just slower).
+- **The baby calls for you:** when they need something, they cry, wiggle, and show a bubble with what they need.
+- **The item bar** (at the bottom): pick 🍼 Feed, 🛁 Bath, 🧸 Play, 🛏️ Sleep or 🎨 Dress up (or press 1 to 5). Each one takes the baby to **a different room**:
+  - 🍼 **Kitchen** (with a fridge, a counter of snacks and a high chair): click the baby to **pick them up**. A close-up shows the baby in your arms, and you hold the bottle on the pink circle at their mouth. Click outside the circle to put them down.
+  - 🛁 **Bathroom** (tiles, a mirror, a towel and a big bubble bath): hold the mouse down on the baby and **carry them to the bathtub**, then let go. The baby sits in the bubbles with only their head and shoulders showing, and you rub them with the sponge.
+  - 🧸 **Playroom** (a rainbow rug, ABC blocks, a ball pit, balloons and a kite): hold the mouse down on the baby and **wiggle the teddy**.
+  - 🛏️ **Bedroom** (the crib, the mobile and the toy shelf): hold the mouse down on the baby and **carry them to the crib**, then let go for a nap.
+  - Where you need to bring the baby glows, and it turns green and says "let go!" when you're there.
+- **Outfits for each thing:** the babies dress up for what they're doing. A floppy **sleeping cap** with stars and a pink heart **blanket** in the crib, a frilly pink **shower cap** in the bath, a cozy star **swaddle blanket** when you hold them to feed them, and they **hug the teddy** and bounce when they play.
+- 🤖 **The robot baby can't go in water!** If you put him in the bathtub, he sparks ⚡ and cries "BZZT! WAAAH!" and jumps out. Polish him instead: hold the mouse down on him with the 🛁 Bath item and rub until he's ✨ shiny.
+- **The baby moves around**, so you have to catch them!
+- **Problems and resisting!** Bad things happen a lot more often now:
+  - 😝 The baby **spits the milk at you** and wiggles down! Milk splats all over the screen, and you wipe it off by moving your mouse over it.
+  - 🙅 The baby **turns away from the bottle**. The pink circle moves, so follow it!
+  - 🤸 The baby **wiggles out of your arms** while you carry them ("wiggle wiggle!"), so pick them up again.
+  - 💦 The baby **splashes you** in the bath. Wipe the water off the screen.
+  - 🫧 The baby **hides under the bubbles**! Click the bathtub to find them.
+  - 🚨 The baby **tries to climb out of the tub**. Click them quick! If you're too slow, they climb out dripping wet, and you have to carry them back.
+  - 💥 The baby **grabs the teddy and throws it at you**: BONK! The screen shakes.
+  - 😭 The napping baby **wakes up crying**. Rock them back to sleep by moving your mouse back and forth over the crib.
+  - 🚨 The baby **crawls to the door** to sneak out (more often now)! Click them to catch them. If they get out, click the door to bring them back.
+- **The bedroom is cozy:** a flag garland, a sunbeam from the window, a pink rug, a toy shelf, twinkly stars and a mobile over the crib that sways.
+- When you fill a need all the way up, sparkles burst out and you get **5 coins**. A happy baby makes little hearts. And when **every need is full**, confetti rains down and the baby is **⭐ SUPER HAPPY! ⭐** (+10 bonus coins).
+- The item you picked glows and bounces in the item bar. There's a battle pass challenge for it too: "Take care of the babies 3 times".
+
+**🎨 Dress up the babies:** pick 🎨 Dress up from the item bar and click the baby. You can give them a **face** (shades, glasses, a pacifier, blush, freckles, star or heart face paint, a mustache, or kitty whiskers), a **hat** (the ones you bought at the baby closet), and something to **hold** (a balloon, a lollipop, a teddy, a magic wand or a duck). Their new look shows in the babies' room too.
+
+## More sounds
+
+The game has more sounds now! A **door sound** when you go through a door, up the stairs or into a new place; a little **pop** when there's something you can press punch on; a **whoosh** when you punch at nothing; a **ka-ching** when you buy something in the shop; a **page turning** between chapters; and a tiny **tick** when you point at a button. Some places have sounds in the background too: birds tweeting and ducks quacking in the park, glasses clinking at Café Fun, wedding bells in the wedding hall, computer beeps in the admin room, the fire crackling softly in the cabin, and crickets chirping in the cabin at night.
+
+**Baby noises:** the babies make baby noises everywhere now, even in the cabin on the **main menu** (they used to be quiet there). They giggle, coo, babble, cry, snore and (the robot baby) beep, with little pictures popping up over them. Their voices are **twice as loud** as before. In the daycare they chatter more often, cry out loud when they need you, and make new noises: a big wet **raspberry** when they spit the milk, **gulp-gulp** when they drink, **splashing** in the bath, a whiny **"nuh-uh!"** when they resist, and a sleepy **"mmm"** hum.
+
 ## Thanksgiving
 
 All through November autumn leaves drift down on every map, the menu hills get orange and red autumn trees and a turkey, the shop gets leaf garlands and a turkey with a big fan of tail feathers (its head bobs!), the race track trees turn orange, the top of the title card turns orange-brown, and the shopkeeper says "Happy Thanksgiving! Gobble gobble!" You can turn it on all year or off in settings. If Halloween or Christmas is on too, they win. In November the holiday stand on the 2nd floor (where the bat wings are at Halloween) sells the limited **Turkey hat** (35 coins): a little turkey that stands on your head and bobs along with you. There's a limited **Harvest** skin too (35 coins). It's a **remake skin**: it turns your fighter into a scarecrow, with straw poking out all around, autumn leaves stuck on, a patch sewn on, a straw hat with a red band and a blue patch, and autumn leaves blowing by. Halloween things like the bat wings and the Pumpkin skin hide until next October, unless you already have them. Holiday things are only for sale in their real month, even if a holiday look is set to "Always" in settings.
@@ -979,6 +1040,14 @@ Chapter 71 ends with the words **THIS IS WHAT WORKS** in bright green on a warm 
 - **❓ Forgiving?:** Mama sits them down facing each other: "Nobody leaves until you two make up." Press punch next to her, then him, to nudge them closer (4). She says "I'm sorry. Not just saying it. I MEAN it. ...do you forgive me?" He looks at her... looks at his teddy... opens his mouth... and the screen goes **black** before he answers!
 
 Both babies have a 💢 over their heads the whole time they're mad. Chapter 72 ends with the word **forgiving?** in light purple, with a ❓ and "...will he forgive her? To be continued...". It has party music while they fight, and a lullaby at the end. It unlocks the **❓ forgiving?** look (🤝 floats around the cabin).
+
+**Chapter 73: YOU NEVER SAW THE HORROR** (on the chapters page, it opens once chapter 72 is done). The Little Shopkeeper and her baby brother **go back in time** to the night the old cabin broke (chapter 32: the sea's end), and they have to get back in time. You play as **the Little Shopkeeper**, and it has a **sad ending**.
+- **🕰️ The clock:** the whole chapter happens in the shopkeepers' **very first home**, like in chapters 1 and 2 (the striped wallpaper, the red brick fireplace, the big window with purple curtains and the bed). In the middle of the night, a glowing green clock on the wall ticks **backwards**, and green cracks glow in the floor. Her baby brother crawls behind her. Walk to each crack and press punch to peek in: the old cabin cracking, Mama screaming her name, green hands. Then he crawls up and touches the clock... she grabs him... "WHOOOAAAH!!!" Everything flashes green.
+- **👀 The horror:** the clock takes them all the way back to **chapters 1 and 2**, and they watch **exactly what happened**, in order... and then **everything Mama and Papa had to do to keep the babies alive**. Sneak to each hiding spot (🛏️ 📦 🪑 🧺) and press punch to hide and watch; everything swirls from one part to the next, in the real places: **the confession** in their room ("I-I... I l-like you..." "...I like you too!"), **the 1st date** (a walk in the park, holding hands), **the 2nd date** (spaghetti by candlelight at Café Fun), **the wedding** in the wedding hall ("I do!"), **the Admin's attack** in the admin room with red alarms ("INTRUDER!! Do my tasks... or you get KICKED OUT!"), **the arriving admins** (6 admins in green beams and the ceiling falling: "Hey! Who is breaking my shop?! ...More admins?!" "Eek! The ceiling is falling!"), **the code is gone** (a black hole of green code and the "1st floor ↓ GONE" sign: "My floor... my whole floor... GONE!" "At least I get to work next to my wife now! Hehe.") and **once in a life time** (Goofy Sparkle hiding in the attic with his toy car: "Vroom vroom! ...shh, quietly."). Then the babies see what their parents did for them: **chapter 20** (IT's hand grabs her from under the floor, and Papa punches it again and again: "LET! HER! GO!"), **chapter 26** (they hide the secret newborn boy in his basket by the closet, with IT's eyes inside: "Just until he's SAFE."), **chapter 32** (a tiny newborn baby, fast asleep on her little bed, with IT's green hand grabbing her, and Papa pulling: "LET... HER... GO!!!"), **chapter 49** (everything goes red, and Mama holds him tight while Papa knocks back IT's red arms: "NOT. MY. BABY.") and **chapter 53** (Papa jumps in front of IT's green lightning, "LOOK OUT!", and lies on the floor with a tiny ❤️ bar while Mama kneels by him). "...I never saw what they had to do to keep us alive." From the Admin's attack on, the floor glows green before a hand shoots up: get out of the way, or you get knocked back to your last hiding spot (the hiding spots are safe). Then IT sees her: "...LITTLE ONE? FROM THE FUTURE? YOU WERE ASLEEP THAT NIGHT. **YOU NEVER SAW THE HORROR.** NOW YOU DO."
+- **🏃 Get back in time:** the cabin is falling! She carries her baby brother in his basket and runs left to the green time crack. The sea rises, boards fall from the ceiling (watch their shadows: a board bonks you and you stop for a moment), and a timer counts down: "⏳ the cabin falls in 30...". If time runs out, *CRASH*, and you start the run again.
+- **💔 Too late:** "THE DOOR IS CLOSING, LITTLE ONE." The time crack is shrinking, and it only fits ONE. "...you go first." Press punch again and again to hold it open (a green bar fills up; it shrinks if you stop). Her baby brother crawls into the light: "...SIS?" "GO! I'll be RIGHT behind you! I PROMISE!" She jumps for it... and the crack **snaps shut** right in front of her. "...I didn't make it back in time."
+
+Chapter 73 ends with the words **YOU NEVER SAW THE HORROR** in red, with a 💔 and "...he made it home. She didn't make it back in time.". It has spooky music, and a lullaby at the end. It unlocks the **🕰️ THE HORROR** look.
 
 **More animations:**
 - **Fighters:** when they stand still they **breathe** (a little squish up and down). When they get hit they **shake** and a spiky yellow **"ouch!" burst** pops out. When a round ends, the winners do a **happy hop-and-wiggle dance** with ✨ sparkles spinning around them.
