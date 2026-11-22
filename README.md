@@ -27,6 +27,8 @@ Every fighter has 200 hp. When it runs out, they get dizzy and can be thrown.
 
 The computer fighters are **aggressive**: they pick who to chase quickly, punch more often, hop around and never stand still for long, jump up after you, and use their specials a lot (even more on Hard). Cool Star fires star shots from far away, and Hexstar 2.0 fires her laser once her tank has some energy.
 
+The computer fighters are **smarter** now too. They **punch the moment their punch is ready** again (no wasted swings), **step back** out of the way while they wait for the next punch (but never toward an edge), go after whoever is **easiest to knock out** (dizzy, or close to an edge), and escape grabs faster. Hard computers fight smart almost all the time, Normal ones a lot, and Easy ones only sometimes. (In test fights, a smart computer beat the old kind about 6 times out of 10.)
+
 ## Game modes
 
 - **Free for all:** everyone for themselves. The last fighter on the island wins the round.

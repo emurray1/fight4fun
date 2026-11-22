@@ -1200,7 +1200,7 @@ const MAPLIST = [['cloud','Cloud Island'],['snow','Snowy Hills'],['road','Roadsi
 // Missing Arrow and the Admin are brothers: they never hit each other (even in free for all, or on different teams)
 const brothers = (a, b) => (a.ch.id === 'arrow' && b.ch.id === 'admin') || (a.ch.id === 'admin' && b.ch.id === 'arrow');
 const allies = (a, b) => (G.mode === 'teams' && a.team === b.team) || brothers(a, b);
-const DIFF = { easy:{ punch:0.42, cd:0.75, mash:0.08, spec:1.6, label:'Easy' }, normal:{ punch:0.72, cd:0.42, mash:0.18, spec:2.6, label:'Normal' }, hard:{ punch:0.93, cd:0.28, mash:0.32, spec:3.6, label:'Hard' } }; // (spec: how much more often than before the computers use their specials)
+const DIFF = { easy:{ punch:0.42, cd:0.75, mash:0.08, spec:1.6, smart:0.25, label:'Easy' }, normal:{ punch:0.75, cd:0.4, mash:0.24, spec:2.6, smart:0.6, label:'Normal' }, hard:{ punch:0.95, cd:0.26, mash:0.4, spec:3.6, smart:0.92, label:'Hard' } }; // (spec: how much more often than before the computers use their specials)
 const MAX_HP = 200; // health points: when they run out, you get dizzy
 const TOPS = { star5:1.15, star4:1.25, tri:1.3, diamond:1.15, square:0.85, circle:1, star6:1.15, heart:0.75, shuriken:1.2, arrow:1.25, bolt:1.4 };
 
@@ -2867,18 +2867,22 @@ function aiInput(p) {
     a.think = rand(0.18, 0.45); let best = null, bd = 1e9; // (they pick who to go after quickly)
     for (const q of G.fighters) {
       if (q === p || !q.alive || (q.grabbedBy && q.grabbedBy !== p) || allies(p, q) || (G.cpuMode === 'eachother' && q.control !== 'cpu')) continue; // ("fight each other": the computers leave the people alone)
-      const d = Math.hypot(q.body.position.x - x, q.body.position.y - y) * (q.ko > 0 ? 0.55 : 1) * rand(0.85, 1.15);
+      const qx = q.body.position.x, qg = groundAt(qx) || nearestGround(qx), qEdge = Math.max(0, Math.min(qx - qg.x1, qg.x2 - qx)); // (Mason: "make the CPUs smarter": they go after whoever is easiest to knock out: dizzy, or close to an edge)
+      const d = Math.hypot(qx - x, q.body.position.y - y) * (q.ko > 0 ? 0.55 : 1) * (1 - 0.3*D.smart*Math.min(1, q.dizzy/MAX_HP)) * (1 - 0.25*D.smart*Math.max(0, 1 - qEdge/300)) * rand(0.85, 1.15);
       if (d < bd) { bd = d; best = q; }
     }
-    a.target = best;
+    a.target = best; a.roll = Math.random(); // (a.roll: whether they use their smarts this time. Hard computers almost always do)
   }
   const t = a.target; if (!t) return inp;
-  const dx = t.body.position.x - x, dy = t.body.position.y - y, reach = p.r + t.r + 32;
+  const dx = t.body.position.x - x, dy = t.body.position.y - y, reach = p.r + t.r + 32, smart = (a.roll ?? 1) < D.smart; // (smart: this time they fight like a pro. I tested lots of tricks in pretend fights, and perfect punch timing is what wins the most)
+  const mp = gp || ng, mEdge = x - mp.x1 < mp.x2 - x ? -1 : 1, mEdgeD = Math.min(x - mp.x1, mp.x2 - x);
   if (Math.abs(dx) > reach - 8) inp.x = Math.sign(dx);
   else {
     if (Math.abs(dx) > 3) p.facing = Math.sign(dx);
     if (Math.abs(dy) < p.r + t.r && a.cd <= 0) {
       if (t.ko > 0 && !t.grabbedBy) { inp.grabP = true; a.cd = 0.3; }
+      else if (smart && p.punchCD > 0) { if (p.punchCD > 0.12 && !(mEdge === -Math.sign(dx) && mEdgeD < 150)) inp.x = -Math.sign(dx); } // (waiting for the next punch: step back out of the way, but never toward an edge)
+      else if (smart) { if (Math.random() < D.punch) inp.punchP = true; a.cd = 0; } // (punch the moment the punch is ready again, no wasted swings)
       else if (Math.random() < D.punch) { inp.punchP = true; a.cd = D.cd*rand(0.7, 1.3); }
       else a.cd = 0.18;
     }
