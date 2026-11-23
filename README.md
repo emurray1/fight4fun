@@ -77,6 +77,21 @@ The computer fighters are **smarter** now too. They **punch the moment their pun
 - **🚀 Space Station:** floating metal platforms with rocket flames under them, high above the Earth (and a ringed planet in the sky). A blue solar panel slides back and forth in the middle. **Low gravity:** everyone jumps super high and floats down slowly. **Danger:** when a ❗ sign flashes, a **flaming meteor** (55 damage, KABOOM!) is about to crash down!
 - **🌴 Jungle Treetops:** fight on top of two giant trees over a river, with a log bridge between them. The middle platform swings back and forth on vines. At night, fireflies come out. **Danger:** when a ❗ sign flashes, a **coconut** (45 damage, BONK!) or a **banana bunch** (25, SPLAT!) is about to fall from the trees!
 
+## Emotes
+
+(Mason: "Add emotes please") Press the **😀 emotes** button at the bottom of the screen, or the number keys **1 to 8**, and an emote pops up over your head in a little bubble, with its own sound:
+
+1. 😂 Hahaha! (wiggles while you laugh)
+2. 😎 Too cool
+3. 👋 Hi! (waves)
+4. 😡 Grrr! (shakes, with steam)
+5. 😭 Waaah! (with tears)
+6. 🎉 Party! (with confetti)
+7. ❤️ Love you! (beats like a heart, with little hearts)
+8. 👍 Nice!
+
+They work in fights, in the shop and in the cabin. In an online fight everyone on the team sees your emotes. In a fight on one computer, the emotes go to player 1. You can only do one emote about every half second, so nobody can spam them. If you changed your controls so a number key does something else, that key won't do an emote.
+
 ## Shop
 
 Every fight you finish earns 10 coins, and 15 more if a person (not the computer) wins it. Spend coins in the **shop** on the main menu.
@@ -285,19 +300,41 @@ At the party, confetti flies, everybody jumps up and down and says holiday thing
 
 **The cabin dresses up for the holidays**, too: all of October it's spooky (orange and purple lights, glowing jack-o'-lanterns, cobwebs, bats and a ghost), in November it's Thanksgiving until a few days after (a garland of leaves, leaves drifting down, pumpkins and corn by the fireplace, a turkey and pie), until December 26 it's Christmas (colored lights, a Christmas tree with presents under it, stockings and snow outside), and at New Year's there are party flags, balloons and confetti. Each one has a big sign too ("Happy Thanksgiving! 🦃").
 
+**Things to do in the cabin:** (Mason: "add more stuff to do in the cabin") walk up to these in the cabin's living room and press punch. A sign pops up when you're close.
+- **🎹 Piano** (next to the bookshelf): every press plays the next note of Twinkle Twinkle Little Star, with music notes floating up. Finish the song for +2 coins.
+- **📖 Bookshelf:** read a random silly book, like "How To Win Every Fight" (page 1 says PUNCH. That is the whole book).
+- **🔥 Fireplace:** roast a marshmallow! Press punch to start, watch the bar, and press again to pull it out. Yellow = perfect golden (+3 coins), brown = toasty (+1 coin), black = burnt. Wait too long and it falls in the fire. Walk away and it falls off the stick.
+- **😋 Snack table:** eat the snack (a cookie, donut, cupcake, pizza, apple or pretzel) with a munch sound and crumbs. A new snack shows up 20 seconds later.
+
+Coins from the cabin can only be won once every 20 seconds. If someone is standing right there, whichever is closer to you (them or the thing) gets your punch.
+
 ## Baby daycare
 
 In the **babies' room**, **walk to a baby's crib and press punch** to take care of that baby (day or night, even while something else is happening in the room). One press of **punch or grab** opens it, even while you are carrying a baby. Every crib has a 💖 over it, it turns into a bubble when that baby needs something, and a sign says "💖 take care of..." when you're right by the crib. At night, the baby starts out asleep in the crib. A big 2D screen opens just for that baby, and you take care of them with your **mouse** (or a finger):
 - **The baby card** (top left): the baby's name, a mood face (😄 🙂 😐 😢) and how happy they are.
 - **Round need circles** (on the right): 🍼 hungry, 🛁 bath, 🧸 play and 😴 sleepy. Each circle fills up green when the baby is happy, turns orange when it's getting low, and turns red and wobbles when the baby needs you. They go down over time, even when you're not there (just slower).
 - **The baby calls for you:** when they need something, they cry, wiggle, and show a bubble with what they need.
-- **The item bar** (at the bottom): pick 🍼 Feed, 🛁 Bath, 🧸 Play, 🛏️ Sleep or 🎨 Dress up (or press 1 to 5). Each one takes the baby to **a different room**:
+- **The item bar** (at the bottom): pick 🍼 Feed, 🛁 Bath, 🧸 Play, 🛏️ Sleep, 🎨 Dress up, 🪥 Teeth, 🫧 Bubbles, 📖 Story, 🙈 Peekaboo, 🧷 Diaper, 🥣 Food, 🩺 Check-up or 🎵 Lullaby (or press a number key). Each one takes the baby to **a different room**:
   - 🍼 **Kitchen** (with a fridge, a counter of snacks and a high chair): click the baby to **pick them up**. A close-up shows the baby in your arms, and you hold the bottle on the pink circle at their mouth. Click outside the circle to put them down.
   - 🛁 **Bathroom** (tiles, a mirror, a towel and a big bubble bath): hold the mouse down on the baby and **carry them to the bathtub**, then let go. The baby sits in the bubbles with only their head and shoulders showing, and you rub them with the sponge.
   - 🧸 **Playroom** (a rainbow rug, ABC blocks, a ball pit, balloons and a kite): hold the mouse down on the baby and **wiggle the teddy**.
   - 🛏️ **Bedroom** (the crib, the mobile and the toy shelf): hold the mouse down on the baby and **carry them to the crib**, then let go for a nap.
   - Where you need to bring the baby glows, and it turns green and says "let go!" when you're there.
 - **Outfits for each thing:** the babies dress up for what they're doing. A floppy **sleeping cap** with stars and a pink heart **blanket** in the crib, a frilly pink **shower cap** in the bath, a cozy star **swaddle blanket** when you hold them to feed them, and they **hug the teddy** and bounce when they play.
+- **More things to do** (Mason: "make more stuff to do when caring for babies", then "more stuff to do in the buttons like changing their diaper"): 8 more buttons on the item bar:
+  - 🪥 **Teeth** (in the bathroom): a real toothbrush with a blob of toothpaste. Hold the mouse down and rub on the baby's mouth to brush, with foamy bubbles. Fills the 🛁 need. Sometimes the baby goes **CHOMP!** and bites the toothbrush, so wiggle it fast to get it back.
+  - 🫧 **Bubbles** (in the playroom): you hold a bubble wand next to a bottle of bubble soap, and see-through rainbow bubbles float up. Click them to pop them and the baby giggles. Fills the 🧸 need. Sometimes a bubble pops on the baby's nose: ACHOO!
+  - 📖 **Story** (in the bedroom): a big open storybook. Click it to turn the pages of one of 5 little stories ("The Sleepy Moon", "Duck's Big Splash", "The Hungry Dino", "Robo Goes to Bed", "Where Is Teddy?"). Fills 🧸 and 😴. Sometimes the baby **rips the page**, so click the book to tape it back.
+  - 🙈 **Peekaboo** (in the playroom): hold the mouse down and your hands cover your eyes, then let go: PEEKABOO! The baby giggles. Fills the 🧸 need. Sometimes it scares the baby, so click them to give them a hug.
+  - 🧷 **Diaper** (in the bedroom): the baby sits on a wooden changing table with a padded mat. 1) Click the diaper to open it (P-U! stinky lines float up), 2) hold the mouse down and rub with a baby wipe until the bar is full, 3) click 3 times to sprinkle baby powder, 4) click to put on a fresh diaper with little ducks on it. Fills the 🛁 need. Sometimes the baby **rolls to the edge**, so click them quick, or they roll off onto the soft rug (no ouchies!) and you start again. Sometimes the powder makes them sneeze it all over the screen.
+  - 🥣 **Food** (in the kitchen): the baby sits in the high chair, with a bowl of warm mush on a little table (carrot, banana, sweet potato, blueberry, peas or apple sauce). Click the bowl to scoop some onto the spoon, then bring it to the baby's mouth. Fly the spoon around first for "✈️ Here comes the airplane!" (extra fun). Fills the 🍼 need. Sometimes the baby turns away ("nuh-uh!"), and sometimes they blow a raspberry and mush splats all over the screen.
+  - 🩺 **Check-up** (in a new check-up room with an eye chart, a cabinet, a growth chart with a giraffe and a padded bench): hold the thermometer on the baby's mouth (98.6°F, just right!), hold the stethoscope on their tummy (ba-bump, ba-bump; the robot baby has a strong battery), click both sides of their head to check their ears, put a bandage on a boo-boo if they have one, and they get a gold **BRAVE BABY** sticker. Fills the 🧸 need. Sometimes the baby grabs the stethoscope, so click them to get it back.
+  - 🎵 **Lullaby** (in the bedroom): a wooden xylophone with 5 colored bars. Click the glowing bar each time to play a lullaby (13 notes). Each note makes the baby sleepier, and when the song is done they fall asleep in the crib. Fills the 😴 need. Sometimes the baby starts crying, so keep playing to calm them down.
+  - If you stop for 15 seconds, the baby gets bored and crawls away.
+- **The item bar has 2 rows now**, so all 13 things fit. Number keys 1 to 9 and 0 pick the first 10, and you click the rest.
+- **Real-life look** (Mason: "keep them the same but different models not human like real life looking"): the babies keep their own looks, but on the care screen they're lit like real things: soft warm light from the window, shading underneath, a soft shadow on the floor, a little fabric texture, chrome shine on the robot baby and a green glow around the glitch baby. The toothbrush, the spoon, the bowl, the thermometer, the stethoscope, the bandage, the xylophone, the bubbles, the storybook and the peekaboo hands are drawn to look real. Each room has a real window with the sky (or the moon and stars at night), a tree, curtains and sunlight coming in.
+- **Real body parts** (Mason: "make it so it has more like realist looks like body parts (try to make it kid friendly)"): on the care screen the babies get chubby arms with elbows, little hands with fingers, fingernails and creases, and feet with 5 toes. The baby boy holds on to the side of his basket (and his feet poke out of his blanket when he crawls), and the robot baby has metal arms with ball joints and pincer hands, and legs with little boots. During the buttons they move their arms: they reach up when you carry them or when they cry, reach for the spoon and the bottle, clap during Bubbles, Peekaboo, Story, Play and the Lullaby, and splash in the bath.
+- **Real moves** (Mason: "and make them have realist stuff"): their tummies go up and down when they breathe (slower when they're asleep), they kick their feet during the buttons, and every few seconds they wiggle their diaper bottom side to side. The little shopkeeper and the glitch baby have puffy real-looking diapers with soft folds, frilly leg holes, sticky tapes and little ducks.
 - 🤖 **The robot baby can't go in water!** If you put him in the bathtub, he sparks ⚡ and cries "BZZT! WAAAH!" and jumps out. Polish him instead: hold the mouse down on him with the 🛁 Bath item and rub until he's ✨ shiny.
 - **The baby moves around**, so you have to catch them!
 - **Problems and resisting!** Bad things happen a lot more often now:
