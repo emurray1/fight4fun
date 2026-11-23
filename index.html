@@ -1562,6 +1562,7 @@ function shapeVerts(shape, r, visual) {
     case 'arrow': return [{ x:0, y:-1.25*r }, { x:0.72*r, y:-0.35*r }, { x:0.72*r, y:0.9*r }, { x:-0.72*r, y:0.9*r }, { x:-0.72*r, y:-0.35*r }]; // a house shape, pointing up like an arrow
     case 'heart': return HEART_HULL.map(([x, y]) => ({ x:(x - HEART_C.x)*r*1.1, y:(y - HEART_C.y)*r*1.1 }));
     case 'bolt': return (visual ? BOLT_PTS : BOLT_HULL).map(([x, y]) => ({ x:x*r, y:y*r })); // a lightning bolt (Dark Bolt), with a simpler body for bumping into things
+    case 'block': return (visual ? [[-0.45, -1.5], [0.45, -1.5], [0.45, -0.78], [0.8, -0.78], [0.8, 1.0], [-0.8, 1.0], [-0.8, -0.78], [-0.45, -0.78]] : [[-0.5, -1.5], [0.5, -1.5], [0.8, -0.78], [0.8, 1.0], [-0.8, 1.0], [-0.8, -0.78]]).map(([x, y]) => ({ x:x*r, y:y*r })); // (Red, Blue and Purple: a square head on top of a blocky body)
   }
 }
 function shapePath(g, shape, r) {
@@ -1588,8 +1589,8 @@ function twinklePath(g, x, y, R, c) { // four points joined by curves that bend 
   g.quadraticCurveTo(x - c, y + c, x - R, y); g.quadraticCurveTo(x - c, y - c, x, y - R); g.closePath();
 }
 function drawFace(g, ch, r, o = {}) {
-  const fs = ch.shape==='star4' ? 0.8 : ch.shape==='star5' ? 0.85 : ch.shape==='shuriken' ? 0.75 : ch.shape==='star6' ? 0.9 : ch.shape==='bolt' ? 0.6 : 1;
-  const fy = ch.shape==='tri' || ch.shape==='arrow' ? r*0.15 : ch.shape==='star5' ? r*0.06 : ch.shape==='bolt' ? -r*1.0 : 0;
+  const fs = ch.shape==='star4' ? 0.8 : ch.shape==='star5' ? 0.85 : ch.shape==='shuriken' ? 0.75 : ch.shape==='star6' ? 0.9 : ch.shape==='bolt' ? 0.6 : ch.shape==='block' ? 0.62 : 1;
+  const fy = ch.shape==='tri' || ch.shape==='arrow' ? r*0.15 : ch.shape==='star5' ? r*0.06 : ch.shape==='bolt' ? -r*1.0 : ch.shape==='block' ? -r*1.12 : 0;
   g.save(); g.translate(ch.shape === 'bolt' ? -r*0.24 : (o.facing||1)*r*0.1, fy); g.scale(fs*r, fs*r);
   g.fillStyle = C.ink; g.strokeStyle = C.ink; g.lineCap = 'round'; g.lineJoin = 'round'; g.lineWidth = 0.09;
   const dot = (x,y,rad) => { g.beginPath(); g.arc(x,y,rad,0,TAU); g.fill(); };
@@ -1681,6 +1682,14 @@ function drawFace(g, ch, r, o = {}) {
       g.strokeStyle = C.ink; g.lineWidth = 0.08; for (const s of [-1, 1]) { g.beginPath(); g.moveTo(0, 0.16); g.quadraticCurveTo(s*0.2, 0.06, s*0.34, 0.2); g.quadraticCurveTo(s*0.4, 0.27, s*0.32, 0.3); g.stroke(); }
       if (o.shout) oval(0, 0.37, 0.12, 0.09); else { g.lineWidth = 0.06; line(-0.1, 0.35, 0.1, 0.35); }
       break;
+    case 'red': // dark eyes with angry-looking brows and a little smirk (but he's nice)
+      g.fillStyle = '#2a0006'; oval(-0.2, 0.0, 0.13, 0.15); oval(0.2, 0.0, 0.13, 0.15); g.fillStyle = 'rgba(255,255,255,.6)'; dot(-0.24, -0.05, 0.035); dot(0.16, -0.05, 0.035);
+      g.strokeStyle = '#2a0006'; g.lineWidth = 0.08; line(-0.38, -0.3, -0.08, -0.18); line(0.38, -0.3, 0.08, -0.18); g.lineWidth = 0.06; g.beginPath(); g.moveTo(-0.14, 0.3); g.quadraticCurveTo(0.06, 0.42, 0.24, 0.26); g.stroke(); break;
+    case 'blue': // dark blue eyes and a big happy open smile
+      g.fillStyle = '#3434c8'; oval(-0.22, -0.05, 0.12, 0.15); oval(0.2, -0.08, 0.12, 0.15); g.beginPath(); g.moveTo(-0.3, 0.18); g.quadraticCurveTo(0.0, 0.55, 0.32, 0.14); g.closePath(); g.fill(); break;
+    case 'purple': // a tiny baby face
+      g.fillStyle = '#2a1036'; dot(-0.18, -0.02, 0.09); dot(0.18, -0.02, 0.09); g.fillStyle = 'rgba(255,255,255,.7)'; dot(-0.21, -0.06, 0.03); dot(0.15, -0.06, 0.03); g.fillStyle = 'rgba(255,140,190,.5)'; dot(-0.33, 0.16, 0.08); dot(0.33, 0.16, 0.08);
+      g.strokeStyle = '#2a1036'; g.lineWidth = 0.05; g.beginPath(); g.arc(0, 0.2, 0.1, 0.2, Math.PI - 0.2); g.stroke(); break;
     case 'bolt': { // big white eyes with black edges (so they show up on his black body and yellow scribbles), and a white smile
       g.fillStyle = C.white; g.strokeStyle = C.ink; g.lineWidth = 0.06;
       for (const ex of [-0.19, 0.19]) { g.beginPath(); g.ellipse(ex,-0.04,0.13,0.17,0,0,TAU); g.fill(); g.stroke(); }
@@ -9387,6 +9396,7 @@ function cabinStep() { nbEvTick(); // who you're next to, and walking through th
   if (jobsPlace(SHOP.floor)) return jobsStep(); // (chapter 6, real life: everyone's jobs, each in its own room)
   if (SHOP.floor === LAB_FLOOR) { if (Math.abs(SHOP.x - OLD_HEX_X) < 90) SHOP.nearCabin = 'oldhex'; else { const p = labPals().find(p => Math.abs(p.x - SHOP.x) < 70); if (p) SHOP.nearCabin = p.ch.id; } return; } // (in the repair shop: the old Hexstar, and everyone fixing him)
   if (retCabinOn()) return retStep(); // (chapter 11: hide and seek, in the cabin)
+  if (SHOP.floor === CABIN_DORMS) { rbTick(); if (!SHOP.nearCabin && Math.abs(SHOP.x - RB_DOOR_X) < 70) SHOP.nearCabin = 'rbdoor'; } // (Red and Blue's locked door, at the end of the dorms)
   if (SHOP.floor !== CABIN_FLOOR) return;
   if (apLife()) lifeTick(); // (playing as the Admin: everyday life)
   const free = !SHOP.nearCabin, p = cabinPals().find(p => Math.abs(p.x - SHOP.x) < 80); if (p) SHOP.nearCabin = p.ch.id;
@@ -9404,7 +9414,7 @@ function cabFunNear(pal) { if (SHOP.floor !== CABIN_FLOOR || campOn()) return; c
   for (const [id, x, r] of CAB_FUN) if (Math.abs(SHOP.x - x) < r) { if (!pal || Math.abs(SHOP.x - x) < Math.abs(SHOP.x - pal.x)) SHOP.nearCabin = 'cab:' + id; return; } } // (if a thing is closer than the person standing there, the thing wins)
 function cabFunAct(id) { const f = cabFun(), now = performance.now(), say = (s, d = 3) => { SHOP.youSay = s; SHOP.youSayT = d; };
   if (id === 'piano') { const n = CAB_SONG[f.note % CAB_SONG.length]; tone(n, n, 0.6, 'triangle', 0.16); tone(n*2, n*2, 0.35, 'sine', 0.05); f.notes.push({ x:540 + (Math.random() - 0.5)*90, t:now, e:f.note % 2 ? '🎶' : '🎵' }); f.note++; if (f.note % CAB_SONG.length === 0) { const c = cabFunCoins(2); say(`🎶 I played Twinkle Twinkle Little Star! *bows*${c ? ' +2 🪙' : ''}`); } return; }
-  if (id === 'book') { f.book = (f.book + 1 + Math.floor(Math.random()*(CAB_BOOKS.length - 1))) % CAB_BOOKS.length; say('📖 ' + CAB_BOOKS[f.book], 5); sfx.page && sfx.page(); return; }
+  if (id === 'book') { f.book = (f.book + 1 + Math.floor(Math.random()*(CAB_BOOKS.length - 1))) % CAB_BOOKS.length; say('📖 ' + CAB_BOOKS[f.book], 5); sfx.page && sfx.page(); if (!shop.rbKey && (f.reads = (f.reads || 0) + 1) >= 3) { shop.rbKey = true; saveShop(); tone(1200, 1600, 0.15, 'sine', 0.08); say('🗝️ A little key fell out of the book! It has a red and blue ribbon on it... Where does it go?', 6); } return; }
   if (id === 'snack') { if (now < f.snackT) return say('The plate is empty! More snacks are coming soon...'); const [e, name] = CAB_SNACKS[f.snack]; f.snackT = now + 20000; f.snack = (f.snack + 1 + Math.floor(Math.random()*(CAB_SNACKS.length - 1))) % CAB_SNACKS.length; for (let i = 0; i < 3; i++) tone(200, 150, 0.07, 'square', 0.06, i*0.16); for (let i = 0; i < 10; i++) f.crumbs.push({ x:SHOP.x + (Math.random() - 0.5)*40, y:SHOP_FLOOR - 90, vx:(Math.random() - 0.5)*120, vy:-Math.random()*120, t:now }); say(`*munch munch* Mmm, ${name}! ${e}`); return; }
   if (id === 'fire') { if (!f.fire) { f.fire = now; sfx.click && sfx.click(); say('🔥 Roasting! Press punch again to pull it out when it is golden!', 3); return; }
     const s = (now - f.fire)/1000; f.fire = null;
@@ -9431,7 +9441,7 @@ function drawCabFunFront(t) { if (SHOP.floor !== CABIN_FLOOR || campOn()) return
   if (cf && !f.fire) { const [id, x] = cf, text = { piano:'🎹 press punch to play a note', book:'📖 press punch to read a book', fire:'🔥 press punch to roast a marshmallow', snack:now < f.snackT ? '🍽️ the plate is empty' : '😋 press punch to eat the snack' }[id], y = id === 'book' ? F - 340 : id === 'fire' ? F - 330 : F - 230;
     g.font = `20px ${FONT}`; const w = g.measureText(text).width + 26; g.fillStyle = '#fff'; g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.roundRect(x - w/2, y - 18, w, 36, 10); g.fill(); g.stroke(); g.fillStyle = C.ink; g.fillText(text, x, y + 1); }
   g.restore(); }
-function cabinTalk() { // talking to someone in the cabin
+function cabinTalk() { if (SHOP.nearCabin === 'rbdoor') return rbDoorAct(); // talking to someone in the cabin (and Red and Blue's door)
   if (SHOP.nearCabin && SHOP.nearCabin.startsWith('btdcrib')) return btdOpen(SHOP.nearCabin.slice(7)); // (taking care of a baby, at their crib)
   if (SHOP.nearCabin && SHOP.nearCabin.startsWith('cab:')) return cabFunAct(SHOP.nearCabin.slice(4)); // (things to do in the cabin)
   if (SHOP.floor === NB_FLOOR && meKickNow()) return meMove('kick'); // (a baby being looked after: punch = kick!)
@@ -19940,10 +19950,34 @@ function drawCabinShop(t) { // the 2nd floor: the cabin shop, extra big (three s
   drawCounterSnore(t); // (chapter 7: the baby, hidden inside the counter)
   drawCabinStairs(80, false, '↓ downstairs', t); drawCabinStairs(CW - 100, true, '↑ the dorms', t);
 }
+// (Mason drew Red and Blue patting their new baby: "what should we name him Blue" / "maybe Purple, Red") their room is a locked door at the end of the cabin's dorms. The key is hiding in a book on the cabin's bookshelf. Open the door and you see them name their baby, and after that you can knock to visit them any time (they aren't fighters)
+const RB_DOOR_X = 105, RB_LINES = [[0, 'red', 'Oh! Hi! You found our spare key!'], [3200, 'red', 'What should we name him, Blue?'], [6600, 'blue', 'Maybe Purple, Red!'], [10000, 'red', 'Purple it is! Hehe!'], [13000, 'blue', 'Come visit us any time! Purple loves visitors!']], RB_END = 16500;
+const rbOpen = () => !!shop.rbOpen; const RB_CH = { red:{ id:'red', name:'Red', shape:'block', color:'#a3121f' }, blue:{ id:'blue', name:'Blue', shape:'block', color:'#1ea7e8' }, purple:{ id:'purple', name:'Purple', shape:'block', color:'#a85cc9' } }; // (they aren't fighters, so they get their own little entries, like the old Hexstar)
+function rbDoorAct() { const say = (s, d = 3.5) => { SHOP.youSay = s; SHOP.youSayT = d; }, now = performance.now();
+  if (SHOP.rbScene && now - SHOP.rbScene < RB_END) return;
+  if (rbOpen()) { SHOP.rbScene = now - 3200; SHOP.rbDone = SHOP.rbScene; return say('*knock knock*', 1.5); } // (knock again to see them pat Purple)
+  if (!shop.rbKey) { sfx.bonk && sfx.bonk(); return say('🔒 Locked! A little note on the door says: "we hid our spare key in a book downstairs"', 5); }
+  shop.rbOpen = true; saveShop(); SHOP.rbScene = now; tone(500, 900, 0.2, 'triangle', 0.08); tone(900, 1300, 0.25, 'triangle', 0.08, 0.2); say('🗝️ *click*', 1.2); }
+function drawRBDoor(t) { const x = RB_DOOR_X, F = SHOP_FLOOR, now = performance.now(), sc = SHOP.rbScene && now - SHOP.rbScene < RB_END ? now - SHOP.rbScene : -1; // (half red, half blue, with their names on it)
+  g.save(); g.fillStyle = '#5a3a1e'; g.fillRect(x - 66, F - 260, 132, 260);
+  if (sc >= 0) { g.fillStyle = '#2a1a30'; g.fillRect(x - 56, F - 250, 112, 250); g.fillStyle = 'rgba(255,220,150,.35)'; g.fillRect(x - 56, F - 250, 112, 250); }
+  else { g.fillStyle = '#b0182c'; g.fillRect(x - 56, F - 250, 56, 250); g.fillStyle = '#1ea7e8'; g.fillRect(x, F - 250, 56, 250); g.strokeStyle = C.ink; g.lineWidth = 4; g.strokeRect(x - 56, F - 250, 112, 250); g.fillStyle = C.yellow; g.beginPath(); g.arc(x + 38, F - 120, 7, 0, TAU); g.fill(); }
+  g.fillStyle = '#f3e2c7'; g.strokeStyle = C.ink; g.lineWidth = 2; g.fillRect(x - 50, F - 225, 100, 56); g.strokeRect(x - 50, F - 225, 100, 56); g.fillStyle = C.ink; g.font = `15px ${BODYFONT}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  if (rbOpen()) { g.fillText('Red and Blue', x, F - 208, 94); g.fillStyle = '#8a3fb0'; g.fillText('and Purple', x, F - 187, 94); } else { g.fillText('Red', x, F - 208, 94); g.fillText('and Blue', x, F - 187, 94); }
+  if (!rbOpen()) drawPadlock(x + 30, F - 105, 0.22);
+  if (sc >= 0) { const bob = Math.abs(Math.sin(t*4))*4, rx = x + 40, bx = x + 270, px = x + 155; // (Red, Blue and baby Purple come out to say hi)
+    g.save(); g.translate(rx, F - 66 - bob); drawCharacter(g, RB_CH.red, 66, { facing:1 }); g.restore();
+    g.save(); g.translate(bx, F - 66); drawCharacter(g, RB_CH.blue, 66, { facing:-1 }); g.restore();
+    g.save(); g.translate(px, F - 120 + Math.sin(t*3)*3); drawCharacter(g, RB_CH.purple, 34, { facing:-1 }); g.restore();
+    if (sc > 6600 && sc < 10000) { g.fillStyle = C.ink; g.font = `italic 20px ${FONT}`; g.strokeStyle = '#fff'; g.lineWidth = 5; g.lineJoin = 'round'; for (let i = 0; i < 3; i++) if ((sc - 6600) > i*500) { g.strokeText('*pat*', px - 40 + i*34, F - 192 - i*12); g.fillText('*pat*', px - 40 + i*34, F - 192 - i*12); } } // (Blue pats Purple on the head)
+    let line = null; for (const l of RB_LINES) if (sc >= l[0]) line = l; if (line) { const sx = line[1] === 'red' ? rx : bx; drawBubble(line[2], Math.min(W - 20, sx + 260), F - 200, sx); } }
+  g.restore(); }
+function rbTick() { if (!SHOP.rbScene || performance.now() - SHOP.rbScene < RB_END || SHOP.rbDone === SHOP.rbScene) return; SHOP.rbDone = SHOP.rbScene; if (sfx.win) sfx.win(); SHOP.youSay = '🟥🟦🟪 You met Red, Blue and baby Purple! Knock on their door any time to visit.'; SHOP.youSayT = 4; }
 function drawCabinDorms(t) { // the 3rd floor: the dorms, like the old ones: a hallway with a door for each pair of roommates (and each room is its own, decorated just for them)
   drawLogWalls(W); g.fillStyle = '#c0392b'; g.fillRect(0, SHOP_FLOOR + 8, W, 26); // a long carpet down the hallway
   g.fillStyle = '#f3e2c7'; g.strokeStyle = '#4a2e18'; g.lineWidth = 5; g.fillRect(620, 90, 360, 70); g.strokeRect(620, 90, 360, 70); g.fillStyle = '#4a2e18'; g.font = `44px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('the dorms', 800, 127);
   DORMS.forEach((d, i) => { if (d.keepers) drawKeeperDoor(DORM_ROOM_X[i], t); else drawNameDoor(DORM_ROOM_X[i], dormDoorNames(i)); if (d.crush) { drawLittleHeart(DORM_ROOM_X[i], SHOP_FLOOR - 322, 14); drawTherapistSign(DORM_ROOM_X[i]); } if (!dormOpen(i)) drawPadlock(DORM_ROOM_X[i] + 30, SHOP_FLOOR - 105, 0.22); });
+  drawRBDoor(t); // (Red and Blue's door, at the end of the hall)
   if (dormNight()) { g.fillStyle = 'rgba(15,10,50,.3)'; g.fillRect(0, 0, W, H); } // (the hallway is dim at night)
   const near = SHOP.nearStairs && SHOP.stairTo === 12 ? DORM_ROOM_X[SHOP.stairRoom] : null; if (near != null) drawPointer(near, SHOP_FLOOR - 330, t);
   drawCabinStairs(1520, false, '↓ the shop', t);
