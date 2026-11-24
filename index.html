@@ -2484,20 +2484,21 @@ const XMAS_TUNE = [
 const XMAS_CHORDS = ['G','G','C','C','D','D','G','G','Em','Em','C','C','D','D7','G','G'];
 const XMAS_CH = { G:['G2','D3',['B3','D4','G4']], C:['C3','G2',['C4','E4','G4']], D:['D3','A2',['D4','F#4','A4']], D7:['D3','A2',['C4','F#4','A4']], Em:['E2','B2',['E4','G4','B4']] };
 const melMap = tune => { const m = {}; let t = 0; for (const [n, l] of tune) { m[t] = [n, l]; t += l; } return m; };
+let mOut = null; // (where the music notes go: the menu music, or the K vs S chase song)
 function mNote(f, t, dur, type, vol) {
   const o = AC.createOscillator(), gn = AC.createGain(); o.type = type; o.frequency.setValueAtTime(f, t);
   gn.gain.setValueAtTime(0.0001, t); gn.gain.exponentialRampToValueAtTime(vol, t + 0.008); gn.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-  o.connect(gn).connect(Music.gain); o.start(t); o.stop(t + dur + 0.02);
+  o.connect(gn).connect(mOut || Music.gain); o.start(t); o.stop(t + dur + 0.02);
 }
 function mGlide(f1, f2, t, dur, vol) {
   const o = AC.createOscillator(), gn = AC.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(f1, t); o.frequency.exponentialRampToValueAtTime(f2, t + dur);
-  gn.gain.setValueAtTime(vol, t); gn.gain.exponentialRampToValueAtTime(0.0001, t + dur); o.connect(gn).connect(Music.gain); o.start(t); o.stop(t + dur);
+  gn.gain.setValueAtTime(vol, t); gn.gain.exponentialRampToValueAtTime(0.0001, t + dur); o.connect(gn).connect(mOut || Music.gain); o.start(t); o.stop(t + dur);
 }
 let bellBuf = null;
 function mBell(t, vol) { // a tiny burst of high noise, like a sleigh bell
   if (!bellBuf) { bellBuf = AC.createBuffer(1, Math.floor(AC.sampleRate*0.08), AC.sampleRate); const d = bellBuf.getChannelData(0); for (let i=0;i<d.length;i++) d[i] = Math.random()*2 - 1; }
   const s = AC.createBufferSource(), f = AC.createBiquadFilter(), gn = AC.createGain(); s.buffer = bellBuf; f.type = 'highpass'; f.frequency.value = 6500;
-  gn.gain.setValueAtTime(vol, t); gn.gain.exponentialRampToValueAtTime(0.0001, t + 0.07); s.connect(f).connect(gn).connect(Music.gain); s.start(t); s.stop(t + 0.08);
+  gn.gain.setValueAtTime(vol, t); gn.gain.exponentialRampToValueAtTime(0.0001, t + 0.07); s.connect(f).connect(gn).connect(mOut || Music.gain); s.start(t); s.stop(t + 0.08);
 }
 // each song: tempo, tune and chords, and how one eighth-note step is played
 const SONGS = {
@@ -2536,6 +2537,57 @@ const mSeq = str => { const out = []; for (const tk of str.split(/\s+/).filter(s
 const MORE_CH = { Am:['A2','E3',['A3','C4','E4']], Dm:['D3','A2',['D4','F4','A4']], Em:['E2','B2',['E4','G4','B4']], C:['C3','G2',['C4','E4','G4']], G:['G2','D3',['B3','D4','G4']], F:['F2','C3',['A3','C4','F4']], D:['D3','A2',['D4','F#4','A4']],
   pE:['E2','E3',[]], pD:['D2','D3',[]], pBb:['A#1','A#2',[]], pC:['C2','C3',[]], pB:['B1','B2',[]] };
 const kick = (t, v = 0.3) => mGlide(150, 45, t, 0.13, v);
+// ---------- chase themes in K vs S (Mason: "make chase themes please") ----------
+// Every Killer has their own chase song. It starts when the Killer comes near you, and the closer they get the more of the song you hear:
+// layer 1 = drums and bass (the Killer is around), layer 2 = more beats and notes (close!), layer 3 = the whole song with the tune (RIGHT behind you!)
+// When you are the Killer, it plays when you get close to a Survivor. It stays quiet while the Killer is hiding (SHADOW WALK or DIG).
+const CHASE = {
+  admin:{ name:'BAN WAVE', bpm:156, mel:mSeq('E5 . E5 . G5 . E5 . | D5 . D5 . F#5 . D5 . | C5 . C5 . E5 . G5 . | B4 - - - B4 . . . | E5 . G5 . B5 . A5 G5 | F#5 . A5 . F#5 . D5 . | C5 . E5 . D5 . B4 . | E5 - - - . . . .'),
+    chords:['pE','pE','pC','pD','pE','pE','pC','pB','pE','pE','pC','pD','pC','pD','pB','pB'], play(st, t, E, m, c, lv) { // (heavy and loud, like a ban hammer)
+    if (st % 2 === 0) mNote(hz(c[0]), t, E*0.9, 'sawtooth', 0.07); if (st % 4 === 0 || (lv > 1 && st % 4 === 2)) kick(t, 0.4);
+    if (lv > 1) { if (st % 4 === 2) mBell(t, 0.1); if (st % 2 === 1) mNote(hz(c[1]), t, E*0.5, 'square', 0.03); }
+    if (lv > 2) { if (m && m[0] !== 'R') { const f = hz(m[0]); mNote(f, t, m[1]*E*0.9, 'square', 0.05); mNote(f/2, t, m[1]*E*0.9, 'sawtooth', 0.025); } if (st % 16 === 0) mGlide(1200, 500, t, E*4, 0.03); }
+  } },
+  it:{ name:'LONG ARMS', bpm:132, mel:mSeq('A4 . C5 . B4 . A#4 . | A4 - - . E5 . . . | D5 . F5 . E5 . D#5 . | D5 - - . A4 . . . | B4 . D5 . C5 . B4 . | G#4 - - . E4 . . . | A4 . C5 . E5 . G5 . | F5 - E5 - D#5 - E5 -'),
+    chords:['Am','Am','Dm','Dm','Em','Em','Am','Am','Am','Am','Dm','Dm','F','F','Em','Em'], play(st, t, E, m, c, lv) { // (creepy: a heartbeat, a wobbly music box, and arms stretching... eeeeoooo)
+    if (st % 8 === 0 || st % 8 === 1) kick(t, st % 8 ? 0.25 : 0.4); if (st % 4 === 0) mNote(hz(c[0]), t, E*3.5, 'triangle', 0.12);
+    if (lv > 1) mNote(hz(c[2][st % 3])*2*(1 + Math.sin(t*9)*0.012), t, E*0.9, 'triangle', 0.025);
+    if (lv > 2) { if (m && m[0] !== 'R') { const f = hz(m[0]); mNote(f, t, m[1]*E, 'sawtooth', 0.035); mNote(f*1.012, t, m[1]*E, 'sawtooth', 0.025); } if (st % 16 === 8) mGlide(700, 90, t, E*5, 0.04); }
+  } },
+  glitch:{ name:'ERR0R 404', bpm:172, mel:mSeq('E5 E5 . E6 . E5 G5 . | A#4 . A#5 . . A#4 . . | E5 . G5 A5 A#5 A5 G5 E5 | D5 . . . D6 . . . | E5 E5 . E6 . E5 G5 . | C5 . C6 . . B4 . . | B4 . D5 . F5 . A#5 . | B5 - - - . . . .'),
+    chords:['pE','pBb','pE','pBb','pD','pC','pB','pB','pE','pBb','pE','pBb','pC','pD','pB','pB'], play(st, t, E, m, c, lv) { // (glitchy: random beeps, and the tune jumps around)
+    if (st % 2 === 0) { kick(t, 0.35); mNote(hz(c[0]), t, E*0.8, 'square', 0.06); }
+    if (lv > 1) { if (st % 2 === 1) mNote(200 + Math.random()*1800, t, 0.04, 'square', 0.025); if (st % 8 === 4) mBell(t, 0.12); }
+    if (lv > 2 && m && m[0] !== 'R') { const f = hz(m[0])*(Math.random() < 0.15 ? 2 : 1); mNote(f, t, m[1]*E*0.8, 'square', 0.045); if (Math.random() < 0.3) mGlide(f*2, f/2, t + E*0.5, E*0.4, 0.02); }
+  } },
+  bolt:{ name:'THUNDER RUN', bpm:184, mel:mSeq('B4 . E5 . G5 . B5 . | A5 . G5 . E5 . G5 . | C5 . E5 . G5 . C6 . | B5 . A5 . G5 . A5 . | D5 . F#5 . A5 . D6 . | C6 . B5 . A5 . F#5 . | E5 . G5 . B5 . E6 . | E6 - - - . . . .'),
+    chords:['Em','Em','C','C','D','D','Em','Em','Em','Em','C','C','D','D','Em','Em'], play(st, t, E, m, c, lv) { // (super fast, with rain and THUNDER)
+    if (st % 2 === 0) kick(t, 0.4); mNote(hz(c[st % 2 ? 1 : 0]), t, E*0.8, 'sawtooth', 0.06);
+    if (lv > 1) { mNote(hz(c[2][st % 3])*2, t, E*0.6, 'sawtooth', 0.018); mBell(t, 0.04); }
+    if (lv > 2) { if (m && m[0] !== 'R') { const f = hz(m[0]); mNote(f, t, m[1]*E*0.9, 'square', 0.045); mNote(f*2, t, m[1]*E*0.5, 'sine', 0.012); } if (st % 32 === 0) mGlide(90, 28, t, 0.9, 0.2); }
+  } },
+};
+const Chase = { timer:null, next:0, step:0, gain:null, kind:'admin', layer:0, quietT:0, offT:0 };
+function chaseLevel() { try { // 0: no chase, 1: the Killer is around, 2: close, 3: right behind you!
+  if (!setup.sound || !setup.music || G.state !== 'fight' || G.mode !== 'kvs' || !KV || !KV.k || G.paused || G.phase !== 'fight' || !KV.me) return 0;
+  const me = KV.me, k = KV.k; let d = Infinity;
+  if (me === k) { for (const f of G.fighters) if (!f.out) d = Math.min(d, kvDist(f, k)); }
+  else if (!me.out && !(k.shadowT > 0) && !(k.digT > 0)) d = kvDist(me, k);
+  return d < 12 ? 3 : d < 22 ? 2 : d < 34 ? 1 : 0;
+} catch (e) { return 0; } }
+function chaseTick() {
+  const lv = chaseLevel(); if (KV && KV.k && CHASE[KV.k.kind]) Chase.kind = KV.k.kind;
+  const now = performance.now(); if (lv >= Chase.layer) { Chase.layer = lv; Chase.quietT = now; } else if (now - Chase.quietT > 2500) { Chase.layer = lv; Chase.quietT = now; } // (it waits a bit before getting quieter, so it doesn't flicker)
+  Chase.gain.gain.setTargetAtTime(Chase.layer ? (0.3 + Chase.layer*0.12)*setup.volume : 0, AC.currentTime, Chase.layer ? 0.15 : 0.6);
+  if (!Chase.layer) { Chase.offT += 0.05; if (Chase.offT > 3) { clearInterval(Chase.timer); Chase.timer = null; } return; }
+  Chase.offT = 0; const song = CHASE[Chase.kind], E = 60/song.bpm/2;
+  if (Chase.next < AC.currentTime) Chase.next = AC.currentTime + 0.05;
+  mOut = Chase.gain; try { while (Chase.next < AC.currentTime + 0.2) { const t = Chase.next, st = Chase.step; song.play(st, t, E, song.mel[st], MORE_CH[song.chords[(st/4)|0]], Chase.layer); Chase.next += E; Chase.step = (st + 1) % 64; } } finally { mOut = null; }
+}
+function chaseUpdate() { // (called every tick of K vs S: starts the chase song when the Killer gets close)
+  if (!AC || Chase.timer || !chaseLevel()) return; if (!Chase.gain) { Chase.gain = AC.createGain(); Chase.gain.gain.value = 0; Chase.gain.connect(AC.destination); }
+  Chase.layer = 0; Chase.quietT = 0; Chase.offT = 0; Chase.step = 0; Chase.next = AC.currentTime + 0.05; Chase.timer = setInterval(chaseTick, 50); chaseTick();
+}
 Object.assign(SONGS, {
   party:{ bpm:124, mel:mSeq('A4 . A4 C5 E5 . D5 C5 | D5 . D5 F5 A5 . G5 F5 | E5 . E5 G5 B5 . A5 G5 | A5 - - - E5 . . . | C5 . C5 E5 G5 . F5 E5 | D5 . F5 A5 C6 . B5 A5 | G5 . E5 . D5 . B4 . | A4 - - - . . . .'),
     chords:['Am','Am','Dm','Dm','Em','Em','Am','Am','C','C','Dm','Dm','G','G','Am','Am'], ch:MORE_CH, play(st, t, E, m, chord) { // (chapter 41: a disco beat for the party)
@@ -4129,7 +4181,7 @@ function drawRace(t, dt) {
 // (Mason: "remake it all") The Creepy Carnival: an old carnival at night, with a Ferris wheel, a merry-go-round, striped circus tents, a fun house, food stands and two big EXIT gates.
 // The Survivors pick up golden tickets all over the carnival. Find enough and the gates get power (and the whole carnival lights up): hold punch at a gate's lever to open it, then run out to ESCAPE. Survivors who escape win. The Killer wins if nobody gets out.
 // Everybody has abilities: each Survivor has their own (special), and each Killer has four. The Killer finds people by their clues: red scratch marks where someone ran, and noises (picking up a ticket, opening a gate, running close by).
-// Near the Killer you hear a heartbeat (the terror radius), and in a chase the chase music starts.
+// Near the Killer you hear a heartbeat (the terror radius), and when it comes close its own chase song starts (see CHASE).
 // It uses three.js for the 3D, loaded from the internet the first time you play.
 const KV_TIME = 210, KV_HIT = 34, KV_SIZE = 48, KV_TERROR = 30;
 const KV_TIX = [[-40, -40], [-14, -36], [16, -40], [40, -38], [-42, -4], [-18, -14], [16, -16], [42, 12], [-10, 16], [12, 20], [-40, 38], [-2, 32], [22, 42], [42, 30]]; // where the golden tickets are
@@ -4688,16 +4740,16 @@ function kvMove(o, fwd, side, speed) { // walk forward/back and side to side at 
 }
 const kvWalkHelp = kn => kvLocked() ? `${kn('u')} ${kn('l')} ${kn('d')} ${kn('r')} walk · move the mouse to look around` : `${kn('u')} ${kn('d')} walk · ${kn('l')} ${kn('r')} turn · CLICK the game to look around with the mouse!`;
 function kvKeys(o) { const h = readHeld(o.control), pr = o.prevH || {}; o.prevH = h; if (h.start && !pr.start) { if (!$('quitAsk').hidden) closeQuit(); else togglePause(); } return { turn:h.x, fwd:(h.jump ? 1 : 0) - (h.down ? 1 : 0), down:h.down, punch:h.punch, punchP:h.punch && !pr.punch, grab:h.grab, grabP:h.grab && !pr.grab, specialP:h.special && !pr.special }; }
-function kvAudio() { // the terror radius: a heartbeat when the Killer is near (faster when it's closer), and chase music when it's right on you. And once the gates have power, carnival music
+function kvAudio() { // the terror radius: a heartbeat when the Killer is near (faster when it's closer), (the chase songs are up by the music: CHASE). And once the gates have power, carnival music
   const me = KV.me, k = KV.k; if (!me || me.out || G.phase !== 'fight') return;
   const near = me === k ? kvAlive().reduce((m, f) => Math.min(m, kvDist(f, k)), 99) : kvDist(k, me), hid = me !== k && (k.shadowT > 0 || k.digT > 0); // (SHADOW WALK and DIG: you can't hear IT coming!)
   KV.beatT -= DT; if (me !== k && !hid && near < KV_TERROR && KV.beatT <= 0) { const n = near/KV_TERROR, v = 0.4*(1 - n) + 0.06; KV.beatT = 0.32 + n*0.9; tone(75, 40, 0.13, 'sine', v); tone(65, 35, 0.13, 'sine', v*0.8, 0.17); }
-  KV.chaseT -= DT; if (!hid && near < 12 && KV.chaseT <= 0) { const notes = [110, 110, 131, 98, 110, 147, 131, 82]; KV.chaseT = 0.2; const nt = notes[KV.chaseN++ % notes.length]; tone(nt, nt, 0.18, 'sawtooth', 0.05); if (KV.chaseN % 2) noise(0.05, 3000, 0.03, 'highpass'); }
   KV.musT -= DT; if (KV.power && KV.musT <= 0) { const mel = [523, 659, 784, 659, 587, 698, 880, 698, 523, 659, 784, 1047, 988, 784, 659, 587]; KV.musT = 0.28; const nt = mel[KV.musN++ % mel.length]; tone(nt, nt, 0.22, 'triangle', 0.018); }
 }
 function kvStep() { // one tick
   G.time += DT; if (!KV || !KV.k || G.phase === 'loading' || G.phase === 'error') return;
   const live = countdownTick(), k = KV.k;
+  chaseUpdate(); // (the chase song: it starts when the Killer gets close)
   if (G.phase === 'end') { KV.end.t -= DT; if (KV.end.t <= 0) showResults(); return; }
   // the Survivors
   for (const f of G.fighters) {
@@ -4855,6 +4907,7 @@ function drawKvHud(t) {
   if (KV.power && me && me !== k && !me.out) { const gt = KV.gates.slice().sort((p, q) => (q.open - p.open) || kvDist(p, me) - kvDist(q, me))[0], ang = wrap(Math.atan2(gt.x - me.x, gt.z - me.z) - me.a); // (an arrow pointing to the closest gate, or the open one)
     g.save(); g.translate(W/2, 112); g.rotate(-ang); g.fillStyle = C.green; g.strokeStyle = C.ink; g.lineWidth = 4; g.beginPath(); g.moveTo(0, -26); g.lineTo(-18, 6); g.lineTo(-7, 6); g.lineTo(-7, 24); g.lineTo(7, 24); g.lineTo(7, 6); g.lineTo(18, 6); g.closePath(); g.fill(); g.stroke(); g.restore();
     g.font = `20px ${BODYFONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineWidth = 4; g.strokeStyle = C.ink; g.strokeText(gt.open ? 'EXIT (open!)' : 'EXIT', W/2, 152); g.fillStyle = C.green; g.fillText(gt.open ? 'EXIT (open!)' : 'EXIT', W/2, 152); }
+  if (Chase.timer && Chase.layer && CHASE[Chase.kind]) { const s = 1 + (Chase.layer === 3 ? Math.abs(Math.sin(G.time*6))*0.12 : 0), txt = `CHASE THEME: ${CHASE[Chase.kind].name}`; g.save(); g.translate(W/2, 190); g.scale(s, s); g.font = `${18 + Chase.layer*3}px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineWidth = 5; g.strokeStyle = C.ink; g.strokeText(txt, 0, 0); g.fillStyle = KV_UI[KV.k.kind] || C.red; g.fillText(txt, 0, 0); g.restore(); } // (the name of the chase song, bigger the closer the Killer is)
   // the Survivors, down the left side
   G.fighters.forEach((f, i) => { const x = L + 20, y = 92 + i*58; g.globalAlpha = f.out && !f.escaped ? 0.45 : 1; g.fillStyle = 'rgba(0,0,0,.55)'; roundRect(x, y, 220, 50, 8); g.fill(); g.save(); g.translate(x + 26, y + 30); drawCharacter(g, f.ch, 15, { facing:1, ko:f.out && !f.escaped, skin:mySkin(f.ch) }); g.restore();
     g.fillStyle = C.white; g.font = `20px ${FONT}`; g.textAlign = 'left'; g.textBaseline = 'alphabetic'; g.fillText(f.escaped ? `${f.ch.name}: ESCAPED!` : f.out ? `${f.ch.name}: OUT` : f.ch.name, x + 50, y + 22, 165);
